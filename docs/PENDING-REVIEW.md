@@ -82,7 +82,9 @@ Noted for after the apples-to-apples Campfire comparison.
 1. **Enum cases without `case`:** one bare case name per line, or separated
    by `;`. The formatter writes the bare form, and `case` stays readable
    during migration.
-2. **`expect` tests:**
+2. **`expect` tests:** done (272). Flow/2 tests parse step lists with
+   `expect`, `expect a == b`, an implicit final Bool, and `expect effects`;
+   `applications/campfire` `.flow` tests are not migrated yet.
    - `expect <Bool expression>`; a test may hold several.
    - `expect effects { … }` asserts exact effect counts.
    - A failed `a == b` reports both values.
@@ -105,6 +107,16 @@ Noted for after the apples-to-apples Campfire comparison.
    diagnostic. Then collapse the copied override sets in
    `applications/campfire/*-tests.flow`. `http-tests.flow` alone repeats the
    same 10 overrides in 9 blocks, many unused (user, 2026-10-14).
+6. **C-like infix operators:** done (272, user 2026-10-14). `* / % + - < <= > >=
+   == != && ||` with C precedence, each written with whitespace on both sides
+   (see CURRENT-SYNTAX "Operators"). No implicit conversions; `%` is the new
+   `int.remainder` primitive. Unary `-`/`!` and compound assignment are not added.
+7. **Loops and `var` locals:** done (272, user 2026-10-14). `var`/reassignment,
+   `for i in a..b`, `for x in items`, `for x, i in items`, `break`/`continue`,
+   Flow/2 statement `if` without `else`. Real native back edges, with
+   per-iteration arena reclamation, and a 10M-iteration per-invocation budget
+   (`RUNTIME_LOOP_BUDGET_EXCEEDED`); see CURRENT-SYNTAX "Loops and var". The arena
+   LLVM backend rejects loops.
 
 Then the stdlib restructure in report 271's "Next".
 
@@ -137,3 +149,18 @@ acceptable.
    addition to run time. Proven values need no runtime check, so they stay
    efficient. Compile-time evaluation also allows better error messages that
    show the failing value, validator and source.
+
+## Research: unused test overrides as failures (user, 2026-10-14; not yet coded)
+
+Question: if a test (or `test-file` block) overrides a function but no test
+in that scope ever calls the override, should that be a test failure rather
+than a diagnostic (item 5 above)?
+
+- For: an unused override is either dead setup or a sign the test no longer
+  exercises the path it was written for; failing makes that drift visible.
+- Against: shared, file-level overrides (item 5) would fail whenever one block
+  does not need them, which pushes back toward copied per-block sets.
+- To research: measure how often overrides go unused across
+  applications/campfire tests today; decide whether the scope that must use an
+  override is the test, the block, or the file; and whether a failure or a
+  warning suits agent-written tests better.

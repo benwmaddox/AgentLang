@@ -12,7 +12,29 @@ list: `PublishOutcome.created()`. They are different from record properties such
 as `customer.email`. An exact-root call also keeps its parentheses:
 `.PublishOutcome.created()`.
 
-An attached test compares a constructed value with a value-expression expectation:
+An attached test is a list of steps. `let` binds intermediate values and
+`expect <Bool expression>` checks one; a test may hold several, in any order:
+
+```flow
+test word.name/case {
+    let total = word.name(1, 2)
+    expect total == 3
+    expect word.ok?(total)
+}
+```
+
+- `expect a == b` reports both values when it fails (`TEST_ASSERTION_FAILED`);
+  any other false `expect` fails with the same code.
+- A final bare Bool expression is an implicit `expect`, so
+  `test x/y { string.contains(a, b) }` is a complete test.
+- `expect effects { fs.read: 1 }`, as the last step, asserts exact
+  target-scoped effect counts.
+- `expect` is only a top-level statement of a Flow/2 test body; functions and
+  nested blocks reject it (`FLOW_EXPECT_OUTSIDE_TEST`). A step-list test must
+  leave nothing on the stack.
+
+The older `=>` expectation forms remain readable during migration (legacy).
+A legacy test compares a constructed value with a value-expression expectation:
 
 ```flow
 test configuration.publish-safely/created {
@@ -144,6 +166,111 @@ fn marker.read(path: String) -> String {
     file.read(path)
 }
 ```
+
+## Operators
+
+Flow/2 has C-like binary infix operators. An operator glyph is an operator
+only when it has whitespace (space, tab or newline) on both sides:
+
+```flow
+fn order.total(count: Int, price: Int, fee: Int) -> Int {
+    count * price + fee
+}
+```
+
+Without the spaces nothing changes: `a-b` and `room-id` are names, `-1` is a
+negative literal (so `f(-1)` and `x - -1` both work), and `List<String>` or
+`option.none<Bytes>()` are generic brackets. Parentheses group:
+`(a + b) * c`.
+
+| Level (high to low) | Operators | Operands | Lowers to |
+| --- | --- | --- | --- |
+| 1 | `*` `/` `%` (left-assoc) | Int, Int | `multiply`, `divide`, `int.remainder` |
+| | `*` `/` | Float, Float | `float.multiply`, `float.divide` |
+| 2 | `+` `-` (left-assoc) | Int, Int | `add`, `subtract` |
+| | | Float, Float | `float.add`, `float.subtract` |
+| 3 | `<` `<=` `>` `>=` (do not chain) | Int, Int or Float, Float | `int.less-than` ... / `float.less-than` ... |
+| 4 | `==` `!=` (do not chain) | two values of one type | `equals`; `!=` is `equals` negated |
+| 5 | `&&` | Bool, Bool | `if a { b } else { false }` |
+| 6 | `\|\|` | Bool, Bool | `if a { true } else { b }` |
+
+- There are no implicit conversions. Int with Float, `%` on Float, and nominal
+  scalars such as `MessageId : Int` are `FLOW_OPERATOR_TYPE` errors; unwrap
+  or convert explicitly (`int.to-float`, `id.value()`). Join strings with
+  `string.concat`, not `+`.
+- `&&` and `||` short-circuit: the right side runs only when it decides the
+  result, so `b != 0 && a / b > 2` never divides by zero.
+- Int `+ - *` keep the primitives' overflow checks (`RUNTIME_OVERFLOW`); `/`
+  and `%` by zero fail with `RUNTIME_DIVIDE_BY_ZERO`. `/` truncates toward
+  zero and `%` takes the dividend's sign, as in C: `-7 % 3` is `-1`,
+  `7 % -3` is `1`, and `Int64.MinValue % -1` is `0`.
+- `a < b < c` is `FLOW_COMPARISON_CHAIN` and `a == b != c` is
+  `FLOW_EQUALITY_CHAIN`; parenthesize or join with `&&`.
+- `expect a == b` still reports both values; `expect a != b` is an ordinary
+  Bool check.
+- The formatter writes one space around each operator and only the
+  parentheses that precedence needs.
+
+## Loops and var
+
+Flow/2 has mutable locals and two loop forms. There is no `while`.
+
+```flow
+fn sum-evens(values: List<Int>, limit: Int) -> Int {
+    effects none
+    var total = 0
+    for value, index in values {
+        if index >= limit {
+            break
+        }
+        if value % 2 != 0 {
+            continue
+        }
+        total = total + value
+    }
+    total
+}
+```
+
+- `var name = value` declares a mutable local anywhere in a body. `name = value`
+  reassigns it. Only a `var` can be reassigned; assigning a `let`, a parameter,
+  a loop name or an unknown name fails (`FLOW_ASSIGN_IMMUTABLE`,
+  `FLOW_ASSIGN_UNKNOWN_LOCAL`). The new value must have the exact declared type
+  (`FLOW_ASSIGN_TYPE`). Like `let`, a `var` cannot shadow another local.
+- `for i in start..end { }` counts Int `i` from `start` up to `end - 1`. Both
+  bounds are Int expressions evaluated once, before the loop. The loop is empty
+  when `end <= start`. `..` needs no spaces, but `n-1` is one name, so write
+  `0..n - 1`.
+- `for item in items { }` visits a `List<T>` in order. `for item, i in items { }`
+  also binds the Int index `i`.
+- Loop names are immutable and scoped to the body. A loop is a statement and
+  produces no value. A value a body statement computes is discarded. Use a
+  `var` declared before the loop to carry results out. `return` is rejected in
+  a loop body (`FLOW_RETURN_IN_LOOP`).
+- `break` leaves the innermost loop. `continue` starts its next iteration. Both
+  must be the last statement of their block (`FLOW_LOOP_CONTROL_NOT_LAST`).
+  Outside a loop body, or inside a `compact { }` within one, they fail with
+  `FLOW_LOOP_CONTROL_OUTSIDE_LOOP`.
+- An `if` whose branches both produce nothing is a statement. Its `else` may be
+  omitted: `if done { break }`. Loops also work inside test bodies.
+- **Budget.** Loops may be unbounded in source, but each invocation of an entry
+  point may run at most 10,000,000 loop iterations in total, counted across all
+  loops and called words (`IrLoops.DefaultIterationBudget` in `TypedIR.fs`). One
+  more iteration fails with `RUNTIME_LOOP_BUDGET_EXCEEDED`, in the interpreter
+  and in native code alike.
+- **Memory (owning AOT).** A loop is a real native back edge. Everything an
+  iteration allocates sits above the loop's arena mark. At the end of each
+  iteration (`continue` included), the `var`s the body assigned are moved down
+  to the mark, and the rest of the iteration is released. A loop that only
+  updates an Int `var` therefore uses constant arena. A loop that grows a
+  String `var` peaks near three times the final value, not at the sum of all
+  intermediates. The compiler must prove that only those `var`s refer to an
+  iteration's allocations, as it does for `compact { }`. When the body passes an
+  allocation to an effect that may keep it, iterations are not reclaimed. The
+  loop still runs correctly, but its memory grows.
+- Loops and `var` are supported by the interpreter and the owning-stack
+  backend. The older arena LLVM backend rejects them
+  (`IR_LLVM_LOOP_UNSUPPORTED`).
 
 ## Names
 

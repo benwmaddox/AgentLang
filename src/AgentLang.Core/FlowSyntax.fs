@@ -60,9 +60,77 @@ type FlowAstPathSegment =
     | EnumScrutinee
     | EnumCaseStatement of int * int
     | TestOverrideDefinition of int
+    | BinaryLeft
+    | BinaryRight
+    | VarInitializer
+    | AssignValue
+    | ForRangeStart
+    | ForRangeEnd
+    | ForItems
+    | ForBodyStatement of int
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type FlowAstPath = FlowAstPath of FlowAstPathSegment list
+
+/// Spaced C-like infix operators other than `==` (which stays FlowExpression.Equality).
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type FlowBinaryOperator =
+    | Multiply
+    | Divide
+    | Remainder
+    | Add
+    | Subtract
+    | Less
+    | LessOrEqual
+    | Greater
+    | GreaterOrEqual
+    | NotEqual
+    | And
+    | Or
+
+module FlowBinaryOperator =
+    let symbol = function
+        | FlowBinaryOperator.Multiply -> "*"
+        | FlowBinaryOperator.Divide -> "/"
+        | FlowBinaryOperator.Remainder -> "%"
+        | FlowBinaryOperator.Add -> "+"
+        | FlowBinaryOperator.Subtract -> "-"
+        | FlowBinaryOperator.Less -> "<"
+        | FlowBinaryOperator.LessOrEqual -> "<="
+        | FlowBinaryOperator.Greater -> ">"
+        | FlowBinaryOperator.GreaterOrEqual -> ">="
+        | FlowBinaryOperator.NotEqual -> "!="
+        | FlowBinaryOperator.And -> "&&"
+        | FlowBinaryOperator.Or -> "||"
+
+    let tryParse = function
+        | "*" -> Some FlowBinaryOperator.Multiply
+        | "/" -> Some FlowBinaryOperator.Divide
+        | "%" -> Some FlowBinaryOperator.Remainder
+        | "+" -> Some FlowBinaryOperator.Add
+        | "-" -> Some FlowBinaryOperator.Subtract
+        | "<" -> Some FlowBinaryOperator.Less
+        | "<=" -> Some FlowBinaryOperator.LessOrEqual
+        | ">" -> Some FlowBinaryOperator.Greater
+        | ">=" -> Some FlowBinaryOperator.GreaterOrEqual
+        | "!=" -> Some FlowBinaryOperator.NotEqual
+        | "&&" -> Some FlowBinaryOperator.And
+        | "||" -> Some FlowBinaryOperator.Or
+        | _ -> None
+
+    /// C precedence, higher binds tighter. `==` (FlowExpression.Equality) shares level 3 with `!=`.
+    let precedence = function
+        | FlowBinaryOperator.Multiply | FlowBinaryOperator.Divide | FlowBinaryOperator.Remainder -> 6
+        | FlowBinaryOperator.Add | FlowBinaryOperator.Subtract -> 5
+        | FlowBinaryOperator.Less | FlowBinaryOperator.LessOrEqual | FlowBinaryOperator.Greater | FlowBinaryOperator.GreaterOrEqual -> 4
+        | FlowBinaryOperator.NotEqual -> 3
+        | FlowBinaryOperator.And -> 2
+        | FlowBinaryOperator.Or -> 1
+
+    let equalityPrecedence = 3
+
+    /// Comparison and equality levels do not chain.
+    let nonAssociative level = level = 3 || level = 4
 
 type FlowWordReference =
     { Name: string
@@ -78,6 +146,8 @@ type FlowExpression =
     | DotCall of FlowExpression * string * FlowArgument list * SourceSpan
     | Property of FlowExpression * string * SourceSpan
     | Equality of FlowExpression * FlowExpression * SourceSpan
+    /// Spaced infix operator (`a + b`, `a < b`, `a && b`, ...); see FlowBinaryOperator.
+    | Binary of FlowBinaryOperator * FlowExpression * FlowExpression * SourceSpan
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
     /// compact { ... }: a block whose single result may be relocated to its arena mark.
     | Compact of FlowStatement list * SourceSpan
@@ -98,6 +168,16 @@ and [<RequireQualifiedAccess>] FlowStatement =
     | LetMany of (string * SourceSpan) list * FlowExpression * SourceSpan
     | Evaluate of FlowExpression
     | Return of FlowExpression list * SourceSpan
+    /// `var name = value`: a mutable local (Flow/2).
+    | Var of string * FlowExpression * SourceSpan
+    /// `name = value`: reassigns a `var` local with a value of its exact type.
+    | Assign of string * FlowExpression * SourceSpan
+    /// `for index in start..end { body }`: start inclusive, end exclusive.
+    | ForRange of string * FlowExpression * FlowExpression * FlowStatement list * SourceSpan
+    /// `for item in items { body }` or `for item, index in items { body }`.
+    | ForEach of string * string option * FlowExpression * FlowStatement list * SourceSpan
+    | Break of SourceSpan
+    | Continue of SourceSpan
 
 and FlowCaseBlock =
     { Statements: FlowStatement list
@@ -137,6 +217,8 @@ type FlowTestExpectation =
     | Literal of Literal * SourceSpan
     | RuntimeError of string * SourceSpan
     | Expression of FlowExpression
+    /// Step-list test: `expect` statements live in the body; no `=>` line.
+    | Checks
 
 type FlowTestDefinition =
     { Word: string
@@ -228,6 +310,16 @@ type FlowLoweredExample =
       SyntaxVersion: int
       Projection: FlowSourceProjection }
 
+/// Test-only `expect` statements parse to calls of these intrinsic names; `<` keeps them unreachable from authored calls.
+module FlowExpect =
+    let checkIntrinsic = "<expect>"
+    let equalIntrinsic = "<expect-equal>"
+    let isIntrinsic name = name = checkIntrinsic || name = equalIntrinsic
+
+    let isExpectStatement = function
+        | FlowStatement.Evaluate(FlowExpression.Call(name, _, _)) -> isIntrinsic name
+        | _ -> false
+
 /// Shared structural limits and validation for source-authored and host-built
 /// Flow trees. This walk is iterative so recursive consumers can rely on the
 /// same bound before rendering or lowering an expression.
@@ -247,6 +339,7 @@ module FlowStructure =
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
+        | FlowExpression.Binary(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
         | FlowExpression.ListLiteral(_, span)
@@ -326,20 +419,38 @@ module FlowStructure =
                 elif not (names.Add name) then
                     Diagnostics.raiseError "FLOW_DESTRUCTURE_DUPLICATE" $"Destructuring local '{name}' is repeated." None (Some nameSpan) [] [ name ]
 
-        let scheduleStatement depth statement =
+        let requireLoopSyntax span =
+            if syntaxVersion <> 2 then
+                Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "Loops and var locals require Flow/2 syntax." owner (Some span) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+        let rec scheduleStatement depth statement =
             match statement with
             | FlowStatement.Let(_, value, _)
             | FlowStatement.LetMany(_, value, _)
             | FlowStatement.Evaluate value -> schedule (ExpressionNode(value, depth)) (expressionSpan value)
             | FlowStatement.Return(values, _) ->
                 for value in values do schedule (ExpressionNode(value, depth)) (expressionSpan value)
-        let scheduleArguments depth arguments =
+            | FlowStatement.Var(_, value, span)
+            | FlowStatement.Assign(_, value, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(value, depth)) (expressionSpan value)
+            | FlowStatement.ForRange(_, start, finish, body, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(start, depth)) (expressionSpan start)
+                schedule (ExpressionNode(finish, depth)) (expressionSpan finish)
+                scheduleStatements (depth + 1) body
+            | FlowStatement.ForEach(_, _, items, body, span) ->
+                requireLoopSyntax span
+                schedule (ExpressionNode(items, depth)) (expressionSpan items)
+                scheduleStatements (depth + 1) body
+            | FlowStatement.Break span
+            | FlowStatement.Continue span -> requireLoopSyntax span
+        and scheduleArguments depth arguments =
             for argument in arguments do
                 match argument with
                 | FlowArgument.Positional expression -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.Named(_, expression, _) -> schedule (ExpressionNode(expression, depth)) (expressionSpan expression)
                 | FlowArgument.WordReference reference -> validateWordReference reference
-        let scheduleStatements depth statements =
+        and scheduleStatements depth statements =
             let validateStatement isTerminal statement =
                 match statement with
                 | FlowStatement.LetMany(bindings, _, span) -> validateBindings bindings span
@@ -393,6 +504,11 @@ module FlowStructure =
                 | FlowExpression.Equality(left, right, equalitySpan) ->
                     if syntaxVersion <> 2 then
                         Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "The '==' operator requires Flow/2 syntax." owner (Some equalitySpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+                    schedule (ExpressionNode(left, depth + 1)) (expressionSpan left)
+                    schedule (ExpressionNode(right, depth + 1)) (expressionSpan right)
+                | FlowExpression.Binary(operator, left, right, operatorSpan) ->
+                    if syntaxVersion <> 2 then
+                        Diagnostics.raiseError "FLOW_SYNTAX_VERSION" $"The '{FlowBinaryOperator.symbol operator}' operator requires Flow/2 syntax." owner (Some operatorSpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
                     schedule (ExpressionNode(left, depth + 1)) (expressionSpan left)
                     schedule (ExpressionNode(right, depth + 1)) (expressionSpan right)
                 | FlowExpression.If(condition, thenBody, elseBody, _) ->
@@ -475,7 +591,7 @@ module FlowStructure =
         let expressionRoots =
             match definition.Expected with
             | FlowTestExpectation.Expression expression -> [ expression ]
-            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+            | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
         match definition.Expected with
         | FlowTestExpectation.RuntimeError(code, codeSpan) when not (TestExpectation.isValidRuntimeErrorCode code) ->
             Diagnostics.raiseError "FLOW_INVALID_EXPECTED_ERROR_CODE" "Runtime-error expectations use a stable uppercase diagnostic code." (Some definition.Word) (Some codeSpan) [ "[A-Z][A-Z0-9_]*" ] [ code ]
@@ -557,7 +673,12 @@ module FlowSource =
             prefix + indentContinuationLines depth (renderPostfixReceiver syntaxVersion locals receiver) + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            prefix + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals left) + " == " + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals right)
+            let level = FlowBinaryOperator.equalityPrecedence
+            prefix + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level false left) + " == " + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level true right)
+        | FlowExpression.Binary(operator, left, right, span) ->
+            requireFlow2 syntaxVersion None (Some span) "Infix operator"
+            let level = FlowBinaryOperator.precedence operator
+            prefix + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level false left) + " " + FlowBinaryOperator.symbol operator + " " + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level true right)
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
             prefix + indentContinuationLines depth (renderContainer syntaxVersion locals kind typeArguments payload)
         | FlowExpression.ListLiteral(items, span) ->
@@ -574,9 +695,13 @@ module FlowSource =
             let lines = ResizeArray<string>()
             lines.Add(prefix + "if " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals condition) + " {")
             renderStatements syntaxVersion locals (depth + 1) thenBranch |> fst |> List.iter lines.Add
-            lines.Add(prefix + "} else {")
-            renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
-            lines.Add(prefix + "}")
+            // A statement if (Flow/2) may omit an empty else block.
+            if List.isEmpty elseBranch && syntaxVersion = 2 then
+                lines.Add(prefix + "}")
+            else
+                lines.Add(prefix + "} else {")
+                renderStatements syntaxVersion locals (depth + 1) elseBranch |> fst |> List.iter lines.Add
+                lines.Add(prefix + "}")
             String.concat "\n" lines
         | FlowExpression.MatchOption(scrutinee, someCase, noneCase, _) ->
             renderMatchBlock syntaxVersion locals depth scrutinee
@@ -645,16 +770,31 @@ module FlowSource =
             renderPostfixReceiver syntaxVersion locals receiver + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            renderEqualityOperand syntaxVersion locals left + " == " + renderEqualityOperand syntaxVersion locals right
+            let level = FlowBinaryOperator.equalityPrecedence
+            renderInfixOperand syntaxVersion locals level false left + " == " + renderInfixOperand syntaxVersion locals level true right
+        | FlowExpression.Binary(operator, left, right, span) ->
+            requireFlow2 syntaxVersion None (Some span) "Infix operator"
+            let level = FlowBinaryOperator.precedence operator
+            renderInfixOperand syntaxVersion locals level false left + " " + FlowBinaryOperator.symbol operator + " " + renderInfixOperand syntaxVersion locals level true right
         | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion locals 0 expression
-    and private renderEqualityOperand syntaxVersion locals expression =
-        match expression with
-        | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
+    /// Minimal parentheses by C precedence: a lower-precedence operand is grouped; at equal
+    /// precedence the right operand (left-associative levels) or either operand
+    /// (non-associative comparison/equality levels) is grouped.
+    and private renderInfixOperand syntaxVersion locals parentLevel isRight expression =
+        let operandLevel =
+            match expression with
+            | FlowExpression.Equality _ -> Some FlowBinaryOperator.equalityPrecedence
+            | FlowExpression.Binary(operator, _, _, _) -> Some(FlowBinaryOperator.precedence operator)
+            | _ -> None
+        match operandLevel with
+        | Some level when level < parentLevel || (level = parentLevel && (isRight || FlowBinaryOperator.nonAssociative parentLevel)) ->
+            "(" + renderInlineExpression syntaxVersion locals expression + ")"
         | _ -> renderInlineExpression syntaxVersion locals expression
     and private renderPostfixReceiver syntaxVersion locals expression =
         if syntaxVersion = 2 then
             match expression with
             | FlowExpression.Equality _
+            | FlowExpression.Binary _
             | FlowExpression.If _
             | FlowExpression.Compact _
             | FlowExpression.MatchOption _
@@ -683,6 +823,10 @@ module FlowSource =
                     | FlowStatement.LetMany(bindings, value, _) ->
                         let names = bindings |> List.map fst |> String.concat ", "
                         indent depth + "let (" + names + ") = " + indentContinuationLines (if syntaxVersion = 2 then depth else 0) (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.Evaluate(FlowExpression.Call(name, [ FlowArgument.Positional checkedValue ], _)) when name = FlowExpect.checkIntrinsic ->
+                        indent depth + "expect " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals checkedValue)
+                    | FlowStatement.Evaluate(FlowExpression.Call(name, [ FlowArgument.Positional left; FlowArgument.Positional right ], span)) when name = FlowExpect.equalIntrinsic ->
+                        indent depth + "expect " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals (FlowExpression.Equality(left, right, span)))
                     | FlowStatement.Evaluate value -> renderExpressionAt syntaxVersion locals depth value
                     | FlowStatement.Return(values, _) ->
                         let renderedValues =
@@ -690,8 +834,26 @@ module FlowSource =
                             |> List.map (renderInlineExpression syntaxVersion locals >> indentContinuationLines (if syntaxVersion = 2 then depth else 0))
                             |> String.concat ", "
                         indent depth + "return (" + renderedValues + ")"
+                    | FlowStatement.Var(name, value, _) ->
+                        indent depth + "var " + name + " = " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.Assign(name, value, _) ->
+                        indent depth + name + " = " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals value)
+                    | FlowStatement.ForRange(index, start, finish, body, _) ->
+                        let header =
+                            indent depth + "for " + index + " in "
+                            + renderInlineExpression syntaxVersion locals start + ".." + renderInlineExpression syntaxVersion locals finish + " {"
+                        let bodyLines = renderStatements syntaxVersion (Set.add index locals) (depth + 1) body |> fst
+                        String.concat "\n" ([ header ] @ bodyLines @ [ indent depth + "}" ])
+                    | FlowStatement.ForEach(item, index, items, body, _) ->
+                        let names = item + (index |> Option.map (fun value -> ", " + value) |> Option.defaultValue "")
+                        let header = indent depth + "for " + names + " in " + indentContinuationLines depth (renderInlineExpression syntaxVersion locals items) + " {"
+                        let bodyLocals = Set.add item locals |> fun found -> index |> Option.map (fun value -> Set.add value found) |> Option.defaultValue found
+                        let bodyLines = renderStatements syntaxVersion bodyLocals (depth + 1) body |> fst
+                        String.concat "\n" ([ header ] @ bodyLines @ [ indent depth + "}" ])
+                    | FlowStatement.Break _ -> indent depth + "break"
+                    | FlowStatement.Continue _ -> indent depth + "continue"
                 match statement with
-                | FlowStatement.Let(name, _, _) -> locals <- Set.add name locals
+                | FlowStatement.Let(name, _, _) | FlowStatement.Var(name, _, _) -> locals <- Set.add name locals
                 | FlowStatement.LetMany(bindings, _, _) -> locals <- Set.union (bindings |> List.map fst |> Set.ofList) locals
                 | _ -> ()
                 let suffix = if syntaxVersion = 1 && index < statements.Length - 1 then ";" else ""
@@ -730,6 +892,7 @@ module FlowSource =
         | FlowExpression.DotCall(receiver, _, arguments, _) -> safeBareArmExpression receiver && List.forall safeBareArmArgument arguments
         | FlowExpression.Property(receiver, _, _) -> safeBareArmExpression receiver
         | FlowExpression.Equality(left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
+        | FlowExpression.Binary(_, left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
         | FlowExpression.Container(_, _, payload, _) -> payload |> Option.forall safeBareArmExpression
         | FlowExpression.ListLiteral(items, _) -> items |> List.forall safeBareArmExpression
         | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false
@@ -784,6 +947,7 @@ module FlowSource =
         | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal
         | FlowTestExpectation.RuntimeError(code, _) -> "error " + code
         | FlowTestExpectation.Expression expression -> "value " + renderInlineExpression syntaxVersion locals expression
+        | FlowTestExpectation.Checks -> ""
 
     let renderTest (definition: FlowTestDefinition) =
         FlowStructure.validateTestNesting definition
@@ -796,10 +960,11 @@ module FlowSource =
         lines.Add($"test {definition.Word}/{definition.CaseName} {{")
         let bodyLines, bodyLocals = renderStatements definition.SyntaxVersion Set.empty 1 definition.Body
         bodyLines |> List.iter lines.Add
-        lines.Add("    => " + renderExpectation definition.SyntaxVersion bodyLocals definition.Expected)
+        let isChecks = match definition.Expected with FlowTestExpectation.Checks -> true | _ -> false
+        if not isChecks then lines.Add("    => " + renderExpectation definition.SyntaxVersion bodyLocals definition.Expected)
         definition.EffectAssertion
         |> Option.iter (fun assertion ->
-            lines.Add("    effects {")
+            lines.Add(if isChecks then "    expect effects {" else "    effects {")
             assertion.Counts
             |> Map.toList
             |> List.iter (fun (name, count) -> lines.Add($"        {name}: {count}"))

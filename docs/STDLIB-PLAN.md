@@ -162,6 +162,12 @@ Slice 1 (report 272) landed as native primitives so the ports can start now:
 | base64.*, hex.encode | Flow later | needs byte access, a byte builder and bit operations in Flow |
 | string.split / index-of / slice / byte-at / to-lower-ascii, int.parse | Flow later | expressible once Flow has loops or efficient recursion over bytes |
 
+Flow now has loops and `var` locals (272; CURRENT-SYNTAX "Loops and var"), with
+native back edges and per-iteration arena reclamation. The byte-scanning
+primitives can now be written in Flow; `stdlib.count-byte` and
+`stdlib.first-byte-index` in `tests/AgentLang.Stdlib.Tests/stdlib.flow` show
+the pattern. base64 and hex still need a byte builder and bit operations.
+
 Moving a "Flow later" primitive needs the building blocks it uses, the same
 known-answer tests (tests/AgentLang.Stdlib.Tests), and a quick-bench check
 that the Flow version does not cost noticeable throughput.

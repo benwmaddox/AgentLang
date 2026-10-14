@@ -89,6 +89,12 @@ module FlowRewrite =
                 add role path StoredCallForm.Direct "equals" span
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityLeft) left
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Binary(operator, left, right, span) ->
+                // && and || lower to an if, so they bind no call; other operators bind under their symbol.
+                if operator <> FlowBinaryOperator.And && operator <> FlowBinaryOperator.Or then
+                    add role path StoredCallForm.Direct (FlowBinaryOperator.symbol operator) span
+                visitExpression role (pathChild path FlowAstPathSegment.BinaryLeft) left
+                visitExpression role (pathChild path FlowAstPathSegment.BinaryRight) right
             | FlowExpression.Compact(body, _) ->
                 visitStatements role (pathChild path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
@@ -138,7 +144,19 @@ module FlowRewrite =
                 | FlowStatement.Return(values, _) ->
                     values
                     |> List.iteri (fun outputIndex value ->
-                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value)
+                | FlowStatement.Var(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeStart) start
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForItems) items
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ())
 
         and visitStatementsWithPath role path statementPathSegment statements =
             statements
@@ -154,7 +172,19 @@ module FlowRewrite =
                 | FlowStatement.Return(values, _) ->
                     values
                     |> List.iteri (fun outputIndex value ->
-                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value))
+                        visitExpression role (pathChild statementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value)
+                | FlowStatement.Var(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.VarInitializer) value
+                | FlowStatement.Assign(_, value, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.AssignValue) value
+                | FlowStatement.ForRange(_, start, finish, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeStart) start
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForRangeEnd) finish
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.ForEach(_, _, items, body, _) ->
+                    visitExpression role (pathChild statementPath FlowAstPathSegment.ForItems) items
+                    visitStatementsWithPath role statementPath FlowAstPathSegment.ForBodyStatement body
+                | FlowStatement.Break _ | FlowStatement.Continue _ -> ())
 
         let rootPath = FlowAstPath.FlowAstPath []
         for role, expressions, statements in roots do
@@ -445,6 +475,24 @@ module FlowRewrite =
                             (pathChild newPath FlowAstPathSegment.EqualityRight) right
                     recordSite role oldPath newPath StoredCallForm.Direct "equals" StoredCallForm.Direct "equals" span |> ignore
                     FlowExpression.Equality(newLeft, newRight, span)
+                | FlowExpression.Binary(operator, left, right, span) ->
+                    let symbol = FlowBinaryOperator.symbol operator
+                    let bindsCall = operator <> FlowBinaryOperator.And && operator <> FlowBinaryOperator.Or
+                    if bindsCall && bindingMap[(role, oldPath)].Target = target then
+                        Diagnostics.raiseError "FLOW_REWRITE_OPERATOR_TARGET"
+                            $"The '{symbol}' operator is intrinsic syntax and cannot be rewritten as a renamed dictionary call."
+                            (Some owner) (Some span) [ $"unchanged '{symbol}' operator" ] [ newName ]
+                    let newLeft =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.BinaryLeft)
+                            (pathChild newPath FlowAstPathSegment.BinaryLeft) left
+                    let newRight =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.BinaryRight)
+                            (pathChild newPath FlowAstPathSegment.BinaryRight) right
+                    if bindsCall then
+                        recordSite role oldPath newPath StoredCallForm.Direct symbol StoredCallForm.Direct symbol span |> ignore
+                    FlowExpression.Binary(operator, newLeft, newRight, span)
                 | FlowExpression.Compact(body, span) ->
                     FlowExpression.Compact(
                         rewriteStatements role
@@ -559,7 +607,37 @@ module FlowRewrite =
                                 rewriteExpression role
                                     (pathChild oldStatementPath (FlowAstPathSegment.ReturnOutput outputIndex))
                                     (pathChild newStatementPath (FlowAstPathSegment.ReturnOutput outputIndex)) value),
-                            span))
+                            span)
+                    | FlowStatement.Var(name, value, span) ->
+                        FlowStatement.Var(name,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.VarInitializer)
+                                (pathChild newStatementPath FlowAstPathSegment.VarInitializer) value,
+                            span)
+                    | FlowStatement.Assign(name, value, span) ->
+                        FlowStatement.Assign(name,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.AssignValue)
+                                (pathChild newStatementPath FlowAstPathSegment.AssignValue) value,
+                            span)
+                    | FlowStatement.ForRange(index, start, finish, body, span) ->
+                        FlowStatement.ForRange(index,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForRangeStart)
+                                (pathChild newStatementPath FlowAstPathSegment.ForRangeStart) start,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForRangeEnd)
+                                (pathChild newStatementPath FlowAstPathSegment.ForRangeEnd) finish,
+                            rewriteStatementsWithPath role oldStatementPath newStatementPath FlowAstPathSegment.ForBodyStatement body,
+                            span)
+                    | FlowStatement.ForEach(item, index, items, body, span) ->
+                        FlowStatement.ForEach(item, index,
+                            rewriteExpression role
+                                (pathChild oldStatementPath FlowAstPathSegment.ForItems)
+                                (pathChild newStatementPath FlowAstPathSegment.ForItems) items,
+                            rewriteStatementsWithPath role oldStatementPath newStatementPath FlowAstPathSegment.ForBodyStatement body,
+                            span)
+                    | FlowStatement.Break _ | FlowStatement.Continue _ -> statement)
 
             let rootPath = FlowAstPath.FlowAstPath []
             let rewritten = rewriteAst rootPath rewriteStatements rewriteStatementsWithPath rewriteExpression
@@ -613,7 +691,7 @@ module FlowRewrite =
                 let expected =
                     match definition.Expected with
                     | FlowTestExpectation.Expression expression -> [ expression ]
-                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                 [ StoredCallBodyRole.Actual, [], definition.Body
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
             let rewrite rootPath rewriteStatements _ rewriteExpression =
@@ -629,7 +707,7 @@ module FlowRewrite =
                 let expected =
                     match parsed.Expected with
                     | FlowTestExpectation.Expression expression -> [ expression ]
-                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                    | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                 [ StoredCallBodyRole.Actual, [], parsed.Body
                   StoredCallBodyRole.ExpectedExpression, expected, [] ]
             rewriteDocument newName target definition.Word (Some definition.CaseName)
@@ -801,7 +879,7 @@ module FlowRewrite =
                     let expressions =
                         match test.Expected with
                         | FlowTestExpectation.Expression expression -> [ expression ]
-                        | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ -> []
+                        | FlowTestExpectation.Literal _ | FlowTestExpectation.RuntimeError _ | FlowTestExpectation.Checks -> []
                     [ StoredCallBodyRole.Actual, [], test.Body
                       StoredCallBodyRole.ExpectedExpression, expressions, [] ]
                 validateBindingSet test.Word (Some test.CaseName)

@@ -4315,6 +4315,72 @@ void AL_OWNING_PROFILE_IMPL(al_owning_duplicate)(
 #endif
 }
 
+/* Loop back edge (Flow `for`): the count loop-carried values described by
+ * descriptors (offset, extent, payload, owner_end quads) that lie at or above
+ * mark are copied above the cursor, then moved as one block down to mark, and
+ * everything above them is released. Values below mark are left in place. The
+ * descriptors are rewritten in place. Arena values are position independent, so
+ * a byte move relocates them; copying through the top keeps aliased or
+ * overlapping values correct. Peak use is bounded by twice the live values. */
+void al_owning_loop_relocate(al_owning_stack_context *ctx, uint32_t mark,
+                             uint32_t count, uint32_t *descriptors) {
+  uint32_t index;
+  uint32_t top;
+  uint64_t total = 0u;
+  uint32_t written = 0u;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return;
+  if (mark > ctx->cursor_bytes || (count != 0u && descriptors == 0)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, mark,
+                          ctx->cursor_bytes);
+    return;
+  }
+  top = ctx->cursor_bytes;
+  for (index = 0u; index < count; ++index) {
+    const uint32_t offset = descriptors[index * 4u];
+    const uint32_t extent = descriptors[index * 4u + 1u];
+    if (offset < mark)
+      continue;
+    if (!al_owning_range_valid(ctx, offset, extent) || offset > top ||
+        extent > top - offset) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, 0u, offset,
+                            top);
+      return;
+    }
+    total += extent;
+  }
+  if (total != 0u) {
+    if (total > (uint64_t)(UINT32_MAX - top)) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_STACK_CAPACITY, 0u,
+                            UINT32_MAX, ctx->stack_capacity_bytes);
+      return;
+    }
+    if (al_owning_reserve_to(ctx, top + (uint32_t)total, 0u) != 0)
+      return;
+    for (index = 0u; index < count; ++index) {
+      const uint32_t offset = descriptors[index * 4u];
+      const uint32_t extent = descriptors[index * 4u + 1u];
+      if (offset < mark)
+        continue;
+      if (al_owning_check_initialized(ctx, offset, extent) != 0)
+        return;
+      al_owning_bytes_copy(ctx->stack_data + top + written,
+                           ctx->stack_data + offset, extent);
+      descriptors[index * 4u] = mark + written;
+      descriptors[index * 4u + 3u] = mark + written + extent;
+      written += extent;
+    }
+    al_owning_stack_bytes_move(ctx, mark, top, written);
+    al_owning_mark(ctx, mark, written, 1, 0);
+    ctx->move_bytes += written;
+  }
+  al_owning_release_to(ctx, mark + written, 0u, 0u, 0u);
+  /* Live-payload accounting only grows; released iterations cannot hold
+   * more live payload than the bytes that remain below the cursor. */
+  if (ctx->live_payload_bytes > ctx->cursor_bytes)
+    ctx->live_payload_bytes = ctx->cursor_bytes;
+}
+
 #if AL_OWNING_DETAILED_PROFILE
 void al_owning_duplicate(al_owning_stack_context *ctx,
                          uint32_t destination_offset, uint32_t source_offset,
@@ -4711,8 +4777,21 @@ enum {
   AL_STDLIB_STRING_SLICE = 18,
   AL_STDLIB_STRING_BYTE_AT = 19,
   AL_STDLIB_INT_PARSE = 20,
-  AL_STDLIB_STRING_TO_LOWER_ASCII = 21
+  AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
+  AL_STDLIB_RANDOM_BYTES = 22
 };
+
+/* The OS random source. Modules that call crypto.random-bytes define
+ * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
+ * other module resolves the weak reference to this failing stub, so its
+ * import table is unchanged. Returns a negative status on failure. */
+int32_t al_owning_os_random_unavailable(uint8_t *buffer, uint32_t length) {
+  (void)buffer;
+  (void)length;
+  return -1;
+}
+int32_t al_owning_os_random_fill(uint8_t *buffer, uint32_t length);
+#pragma comment(linker, "/alternatename:al_owning_os_random_fill=al_owning_os_random_unavailable")
 
 typedef struct {
   uint32_t h[8];
@@ -5093,15 +5172,15 @@ static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
 static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
                                    const al_stdlib_argument *arguments,
                                    uint32_t error_id, uint32_t lengths[4]) {
-  static const char *const shapes[22] = {
+  static const char *const shapes[23] = {
       "----", "t---", "t---", "t---", "tt--", "tii-", "tt--", "tt--",
       "t---", "t---", "t---", "t---", "t---", "t---", "tt--", "ttii",
-      "tt--", "tti-", "tii-", "ti--", "t---", "t---"};
+      "tt--", "tti-", "tii-", "ti--", "t---", "t---", "i---"};
   uint32_t i;
   uint32_t ignored;
-  if (op < 1 || op > 21) {
+  if (op < 1 || op > 22) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
-                          (uint32_t)op, 21u);
+                          (uint32_t)op, 22u);
     return 0;
   }
   for (i = 0u; i < 4u; ++i) {
@@ -5129,6 +5208,23 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
                               al_stdlib_writer *w, uint32_t error_id) {
   const uint8_t *x = al_stdlib_data(ctx, a[0]);
   switch (op) {
+  case AL_STDLIB_RANDOM_BYTES: {
+    /* Same bound as the interpreter: 0..65536 bytes. Plan only sizes; the
+     * write pass fills the destination from the OS. */
+    const int64_t count = al_stdlib_int(ctx, a[0]);
+    if (count < 0 || count > 65536)
+      break;
+    al_stdlib_begin_text(w, (uint32_t)count);
+    if (w->base != 0 && count > 0 &&
+        al_owning_os_random_fill(w->base + w->extent, (uint32_t)count) < 0) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                            (uint32_t)count, 0u);
+      return 0;
+    }
+    w->extent += (uint64_t)count;
+    al_stdlib_pad(w);
+    return 1;
+  }
   case AL_STDLIB_BYTES_FROM_UTF8:
     al_stdlib_text(w, x, n[0]);
     return 1;

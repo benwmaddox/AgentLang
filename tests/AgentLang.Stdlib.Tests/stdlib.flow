@@ -471,3 +471,245 @@ test stdlib.lower/empty {
     stdlib.lower("")
     => value ""
 }
+
+fn stdlib.random-length(count: Int) -> Int {
+    effects random.read
+    bytes.length(crypto.random-bytes(count))
+}
+
+test stdlib.random-length/thirty-two {
+    stdlib.random-length(32)
+    => value 32
+}
+
+test stdlib.random-length/zero {
+    stdlib.random-length(0)
+    => value 0
+}
+
+fn stdlib.random-differs?(count: Int) -> Bool {
+    effects random.read
+    let first = crypto.random-bytes(count)
+    let second = crypto.random-bytes(count)
+    bool.not(bytes.equal-constant-time?(first, second))
+}
+
+test stdlib.random-differs?/thirty-two {
+    stdlib.random-differs?(32)
+    => value true
+}
+
+// Spaced C-like infix operators (lowered to the Int primitives; % is int.remainder).
+fn stdlib.op-remainder(a: Int, b: Int) -> Int {
+    a % b
+}
+
+test stdlib.op-remainder/positive {
+    stdlib.op-remainder(7, 3)
+    => value 1
+}
+
+test stdlib.op-remainder/negative-dividend {
+    stdlib.op-remainder(-7, 3)
+    => value -1
+}
+
+test stdlib.op-remainder/negative-divisor {
+    stdlib.op-remainder(7, -3)
+    => value 1
+}
+
+test stdlib.op-remainder/min-by-negative-one {
+    stdlib.op-remainder(-9223372036854775808, -1)
+    => value 0
+}
+
+fn stdlib.op-arithmetic(a: Int, b: Int) -> Int {
+    (a + b) * 2 - a / b + a % b * 10
+}
+
+test stdlib.op-arithmetic/mixed {
+    stdlib.op-arithmetic(17, 5)
+    => value 61
+}
+
+test stdlib.op-arithmetic/negative {
+    stdlib.op-arithmetic(-17, 5)
+    => value -41
+}
+
+fn stdlib.op-logic(a: Int, b: Int) -> Bool {
+    b != 0 && a / b > 2 || a <= -10
+}
+
+test stdlib.op-logic/divides {
+    stdlib.op-logic(9, 2)
+    => value true
+}
+
+test stdlib.op-logic/zero-divisor-short-circuits {
+    stdlib.op-logic(9, 0)
+    => value false
+}
+
+test stdlib.op-logic/negative {
+    stdlib.op-logic(-12, 0)
+    => value true
+}
+
+test stdlib.op-logic/small {
+    stdlib.op-logic(5, 3)
+    => value false
+}
+
+// Loops (report 272): counted ranges, list loops, var locals, break/continue.
+
+fn stdlib.range-sum(start: Int, finish: Int) -> Int {
+    var total = 0
+    for i in start..finish {
+        total = total + i
+    }
+    total
+}
+
+test stdlib.range-sum/ten {
+    stdlib.range-sum(0, 10)
+    => value 45
+}
+
+test stdlib.range-sum/empty {
+    stdlib.range-sum(5, 2)
+    => value 0
+}
+
+test stdlib.range-sum/negative {
+    stdlib.range-sum(-3, 3)
+    => value -3
+}
+
+test stdlib.range-sum/loop-in-test {
+    var total = 0
+    for i in 1..4 {
+        total = total + stdlib.range-sum(0, i)
+    }
+    expect total == 4
+}
+
+fn stdlib.count-byte(text: String, target: Int) -> Int {
+    var count = 0
+    for i in 0..string.byte-length(text) {
+        let byte = match string.byte-at(text, i) {
+            none => -1
+            some value => value
+        }
+        if byte == target {
+            count = count + 1
+        }
+    }
+    count
+}
+
+test stdlib.count-byte/spaces {
+    stdlib.count-byte("a b  c ", 32)
+    => value 4
+}
+
+test stdlib.count-byte/utf8-continuation {
+    stdlib.count-byte("éé", 169)
+    => value 2
+}
+
+test stdlib.count-byte/empty {
+    stdlib.count-byte("", 32)
+    => value 0
+}
+
+fn stdlib.first-byte-index(text: String, target: Int) -> Int {
+    var found = -1
+    for i in 0..string.byte-length(text) {
+        if stdlib.byte-at(text, i) == target {
+            found = i
+            break
+        }
+    }
+    found
+}
+
+test stdlib.first-byte-index/found {
+    stdlib.first-byte-index("key=value=x", 61)
+    => value 3
+}
+
+test stdlib.first-byte-index/missing {
+    stdlib.first-byte-index("key", 61)
+    => value -1
+}
+
+fn stdlib.repeat(text: String, count: Int) -> String {
+    var result = ""
+    for i in 0..count {
+        result = string.concat(result, text)
+    }
+    result
+}
+
+test stdlib.repeat/three {
+    stdlib.repeat("ab", 3)
+    => value "ababab"
+}
+
+test stdlib.repeat/zero {
+    stdlib.repeat("ab", 0)
+    => value ""
+}
+
+fn stdlib.number-fields(text: String) -> String {
+    var result = ""
+    for field, index in string.split(text, ",") {
+        if field == "" {
+            continue
+        }
+        if index > 0 {
+            result = string.concat(result, ";")
+        }
+        result = string.concat(result, string.concat(int.to-string(index), string.concat(":", field)))
+    }
+    result
+}
+
+test stdlib.number-fields/three {
+    stdlib.number-fields("a,b,c")
+    => value "0:a;1:b;2:c"
+}
+
+test stdlib.number-fields/skip-empty {
+    stdlib.number-fields("a,,c")
+    => value "0:a;2:c"
+}
+
+fn stdlib.digit-sum(text: String) -> Int {
+    var total = 0
+    var digits = 0
+    for i in 0..string.byte-length(text) {
+        let byte = stdlib.byte-at(text, i)
+        if byte < 48 || byte > 57 {
+            continue
+        }
+        total = total + byte - 48
+        digits = digits + 1
+        if digits == 4 {
+            break
+        }
+    }
+    total
+}
+
+test stdlib.digit-sum/stops-after-four {
+    stdlib.digit-sum("a1b2c3d4e5")
+    => value 10
+}
+
+test stdlib.digit-sum/none {
+    stdlib.digit-sum("abc")
+    => value 0
+}

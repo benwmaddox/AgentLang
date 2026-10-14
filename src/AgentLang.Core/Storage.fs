@@ -469,6 +469,14 @@ module Storage =
         | FlowAstPathSegment.PropertyReceiver -> setNamed "propertyReceiver"
         | FlowAstPathSegment.EqualityLeft -> setNamed "equalityLeft"
         | FlowAstPathSegment.EqualityRight -> setNamed "equalityRight"
+        | FlowAstPathSegment.BinaryLeft -> setNamed "binaryLeft"
+        | FlowAstPathSegment.BinaryRight -> setNamed "binaryRight"
+        | FlowAstPathSegment.VarInitializer -> setNamed "varInitializer"
+        | FlowAstPathSegment.AssignValue -> setNamed "assignValue"
+        | FlowAstPathSegment.ForRangeStart -> setNamed "forRangeStart"
+        | FlowAstPathSegment.ForRangeEnd -> setNamed "forRangeEnd"
+        | FlowAstPathSegment.ForItems -> setNamed "forItems"
+        | FlowAstPathSegment.ForBodyStatement index -> setIndexed "forBodyStatement" index
         | FlowAstPathSegment.IfCondition -> setNamed "ifCondition"
         | FlowAstPathSegment.IfThenStatement index -> setIndexed "ifThenStatement" index
         | FlowAstPathSegment.IfElseStatement index -> setIndexed "ifElseStatement" index
@@ -516,6 +524,14 @@ module Storage =
         | "propertyReceiver" -> FlowAstPathSegment.PropertyReceiver
         | "equalityLeft" -> FlowAstPathSegment.EqualityLeft
         | "equalityRight" -> FlowAstPathSegment.EqualityRight
+        | "binaryLeft" -> FlowAstPathSegment.BinaryLeft
+        | "binaryRight" -> FlowAstPathSegment.BinaryRight
+        | "varInitializer" -> FlowAstPathSegment.VarInitializer
+        | "assignValue" -> FlowAstPathSegment.AssignValue
+        | "forRangeStart" -> FlowAstPathSegment.ForRangeStart
+        | "forRangeEnd" -> FlowAstPathSegment.ForRangeEnd
+        | "forItems" -> FlowAstPathSegment.ForItems
+        | "forBodyStatement" -> indexed FlowAstPathSegment.ForBodyStatement
         | "ifCondition" -> FlowAstPathSegment.IfCondition
         | "ifThenStatement" -> indexed FlowAstPathSegment.IfThenStatement
         | "ifElseStatement" -> indexed FlowAstPathSegment.IfElseStatement
@@ -671,6 +687,7 @@ module Storage =
         | FlowAstPathSegment.IfThenStatement index
         | FlowAstPathSegment.IfElseStatement index
         | FlowAstPathSegment.CompactStatement index
+        | FlowAstPathSegment.ForBodyStatement index
         | FlowAstPathSegment.ListLiteralItem index
         | FlowAstPathSegment.OptionSomeStatement index
         | FlowAstPathSegment.OptionNoneStatement index
@@ -685,6 +702,13 @@ module Storage =
         | FlowAstPathSegment.PropertyReceiver
         | FlowAstPathSegment.EqualityLeft
         | FlowAstPathSegment.EqualityRight
+        | FlowAstPathSegment.BinaryLeft
+        | FlowAstPathSegment.BinaryRight
+        | FlowAstPathSegment.VarInitializer
+        | FlowAstPathSegment.AssignValue
+        | FlowAstPathSegment.ForRangeStart
+        | FlowAstPathSegment.ForRangeEnd
+        | FlowAstPathSegment.ForItems
         | FlowAstPathSegment.IfCondition
         | FlowAstPathSegment.ContainerPayload
         | FlowAstPathSegment.OptionScrutinee
@@ -1138,6 +1162,14 @@ module Storage =
                             | FlowAstPathSegment.PropertyReceiver
                             | FlowAstPathSegment.EqualityLeft
                             | FlowAstPathSegment.EqualityRight
+                            | FlowAstPathSegment.BinaryLeft
+                            | FlowAstPathSegment.BinaryRight
+                            | FlowAstPathSegment.VarInitializer
+                            | FlowAstPathSegment.AssignValue
+                            | FlowAstPathSegment.ForRangeStart
+                            | FlowAstPathSegment.ForRangeEnd
+                            | FlowAstPathSegment.ForItems
+                            | FlowAstPathSegment.ForBodyStatement _
                             | FlowAstPathSegment.EnumScrutinee
                             | FlowAstPathSegment.EnumCaseStatement _ -> true
                             | _ -> false)

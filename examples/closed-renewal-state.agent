@@ -1,7 +1,7 @@
 enum RenewalState {
-    case pending
-    case renewed
-    case cancelled
+    pending
+    renewed
+    cancelled
 }
 
 fn renewal.echo(value: RenewalState) -> RenewalState {

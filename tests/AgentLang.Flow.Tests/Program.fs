@@ -2490,7 +2490,7 @@ let private testFlowOutputVectors () =
                 |> List.map (function
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
-                    | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
+                    | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source) | FlowExpression.Binary(_, _, _, source)
                     | FlowExpression.If(_, _, _, source) | FlowExpression.Compact(_, source) | FlowExpression.ListLiteral(_, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source)
                     | FlowExpression.MatchEnum(_, _, source) -> source)
@@ -5857,8 +5857,358 @@ let private testFlowRecordValidatorSyntax () =
     expectRecordError "Flow record allows at most one validator" "FLOW_RECORD_VALIDATOR_DUPLICATE"
         "record Customer { field id: Int; validate ::valid?; validate ::other?; }"
 
+let private testFlow2InfixOperators () =
+    let parse source =
+        match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" source with
+        | Ok expression -> expression
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let render = FlowSource.renderExpressionWithVersion 2
+    let roundTrip label source expected =
+        let text = source |> parse |> render
+        equal label expected text
+        equal (label + " (stable)") text (text |> parse |> render)
+
+    // Precedence and associativity in the AST.
+    match parse "1 + 2 * 3" with
+    | FlowExpression.Binary(FlowBinaryOperator.Add, FlowExpression.Literal(LInt 1L, _), FlowExpression.Binary(FlowBinaryOperator.Multiply, _, _, _), _) ->
+        check "* binds tighter than +" true
+    | other -> failwithf "unexpected precedence AST: %A" other
+    match parse "10 - 4 - 3" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, FlowExpression.Binary(FlowBinaryOperator.Subtract, _, _, _), FlowExpression.Literal(LInt 3L, _), _) ->
+        check "- is left-associative" true
+    | other -> failwithf "unexpected associativity AST: %A" other
+    match parse "a < b && b <= c || d == e" with
+    | FlowExpression.Binary(FlowBinaryOperator.Or,
+                            FlowExpression.Binary(FlowBinaryOperator.And, FlowExpression.Binary(FlowBinaryOperator.Less, _, _, _), FlowExpression.Binary(FlowBinaryOperator.LessOrEqual, _, _, _), _),
+                            FlowExpression.Equality _, _) ->
+        check "comparison > equality > && > || precedence" true
+    | other -> failwithf "unexpected logical AST: %A" other
+    match parse "1 + 2 == 3" with
+    | FlowExpression.Equality(FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _), FlowExpression.Literal(LInt 3L, _), _) ->
+        check "== binds looser than +" true
+    | other -> failwithf "unexpected equality AST: %A" other
+
+    // The spacing rule: only a symbol with whitespace on both sides is an operator.
+    match parse "a-b" with
+    | FlowExpression.Local("a-b", _) -> check "a-b stays one name" true
+    | other -> failwithf "a-b should be a name: %A" other
+    match parse "x - 1" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, FlowExpression.Local("x", _), FlowExpression.Literal(LInt 1L, _), _) -> check "x - 1 is subtraction" true
+    | other -> failwithf "x - 1 should subtract: %A" other
+    match parse "f(-1)" with
+    | FlowExpression.Call("f", [ FlowArgument.Positional(FlowExpression.Literal(LInt -1L, _)) ], _) -> check "f(-1) keeps a negative literal" true
+    | other -> failwithf "f(-1) should be a literal argument: %A" other
+    match parse "x - -1" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, _, FlowExpression.Literal(LInt -1L, _), _) -> check "x - -1 subtracts a negative literal" true
+    | other -> failwithf "x - -1: %A" other
+    match parse "list.empty<String>()" with
+    | FlowExpression.Container _ -> check "unspaced generic brackets are not comparisons" true
+    | other -> failwithf "generic container should parse: %A" other
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "a*b" with
+    | Ok(FlowExpression.Binary _) -> failwith "a*b must not be multiplication"
+    | _ -> check "a*b is not multiplication" true
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "a <b" with
+    | Ok(FlowExpression.Binary _) -> failwith "a <b must not be a comparison"
+    | _ -> check "a one-sided < is not a comparison" true
+    match parse "1 +\n    2" with
+    | FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _) -> check "a newline counts as operator spacing" true
+    | other -> failwithf "multi-line operator: %A" other
+
+    // Non-associative levels.
+    expectError "comparisons do not chain" "FLOW_COMPARISON_CHAIN"
+        (FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "1 < 2 < 3") |> ignore
+    expectError "equality and != do not chain" "FLOW_EQUALITY_CHAIN"
+        (FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "1 == 2 != false") |> ignore
+    expectError "Flow/1 does not gain spaced operators" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseExpressionWithVersion 1 "<flow1-operators>" "1 == 1 + 1") |> ignore
+
+    // Formatter: minimal parentheses by precedence, spaces around operators.
+    roundTrip "formatter drops redundant grouping" "(1 * 2) + 3" "1 * 2 + 3"
+    roundTrip "formatter keeps needed grouping" "(1 + 2) * 3" "(1 + 2) * 3"
+    roundTrip "formatter keeps right-operand grouping for left-associative operators" "10 - (4 - 3)" "10 - (4 - 3)"
+    roundTrip "formatter renders left chains bare" "10 - 4 - 3" "10 - 4 - 3"
+    roundTrip "formatter drops grouping a comparison under ==" "(1 < 2) == true" "1 < 2 == true"
+    roundTrip "formatter groups chained comparisons" "(a < b) < c" "(a < b) < c"
+    roundTrip "formatter renders logical precedence bare" "a && b || c && d" "a && b || c && d"
+    roundTrip "formatter groups || under &&" "a && (b || c)" "a && (b || c)"
+    roundTrip "formatter groups an operator receiver" "(a + b).identity()" "(a + b).identity()"
+    roundTrip "formatter renders != and %" "a % 2 != 0" "a % 2 != 0"
+
+    // Execution through verified IR.
+    let context = loweringContext [] Map.empty
+    let run label (body: string) =
+        let source = $"fn op.eval() -> {body}"
+        let word =
+            match FlowParser.parseWordWithVersion 2 "<flow2-operators-run>" source with
+            | Ok word -> word
+            | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+        let compiled = FlowLowering.compileWord context (WordId("flow2-op-" + label)) word
+        let invocation =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext compiled.Program ("flow2-op-invoke-" + label) []
+                [ Call("op.eval", sourceSpan) ]
+                compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) ("flow2-op-" + label) invocation
+    let int label expected body =
+        equal label [ IntValue expected ] (run label ("Int {\n    " + body + "\n}"))
+    let bool label expected body =
+        equal label [ BoolValue expected ] (run label ("Bool {\n    " + body + "\n}"))
+    int "1 + 2 * 3" 7L "1 + 2 * 3"
+    int "(1 + 2) * 3" 9L "(1 + 2) * 3"
+    int "10 - 4 - 3" 3L "10 - 4 - 3"
+    int "7 / 2" 3L "7 / 2"
+    int "-7 / 2 truncates" -3L "-7 / 2"
+    int "-7 % 3" -1L "-7 % 3"
+    int "7 % -3" 1L "7 % -3"
+    int "7 % 3" 1L "7 % 3"
+    int "MIN % -1" 0L "-9223372036854775808 % -1"
+    int "nested operators inside calls" 12L "int.max(2 * 3, 4) * 2"
+    equal "float arithmetic" [ FloatValue 3.75 ] (run "float" "Float {\n    1.5 * 2.0 + 3.0 / 4.0\n}")
+    bool "int <" true "1 < 2"
+    bool "int <=" true "2 <= 2"
+    bool "int >" false "1 > 2"
+    bool "int >=" true "3 >= 2"
+    bool "float <" true "1.5 < 2.5"
+    bool "float >=" false "1.5 >= 2.5"
+    bool "!= on Int" true "1 != 2"
+    bool "!= on String" false "\"a\" != \"a\""
+    bool "== with arithmetic" true "2 + 2 == 4"
+    bool "&&" false "true && false"
+    bool "||" true "false || true"
+    bool "&& short-circuits" false "1 > 2 && 1 / 0 == 1"
+    bool "|| short-circuits" true "1 < 2 || 1 / 0 == 1"
+    bool "operators in if conditions" true "if 3 % 2 == 1 && 2 * 2 >= 4 { true } else { false }"
+    expectLanguageError "% by zero is a runtime divide-by-zero" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "rem0" "Int {\n    7 % 0\n}" |> ignore)
+    expectLanguageError "/ by zero keeps its runtime error" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "div0" "Int {\n    7 / 0\n}" |> ignore)
+    expectLanguageError "&& evaluates its right side when needed" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "and0" "Bool {\n    true && 1 / 0 == 1\n}" |> ignore)
+    expectLanguageError "+ keeps add's overflow check" "RUNTIME_OVERFLOW" (fun () -> run "ovf" "Int {\n    9223372036854775807 + 1\n}" |> ignore)
+
+    // Typing: no implicit conversions.
+    let typeError label (body: string) =
+        let diagnostic = captureLanguageError label "FLOW_OPERATOR_TYPE" (fun () -> run label body |> ignore)
+        diagnostic
+    typeError "Int + Float" "Int {\n    1 + 2.0\n}" |> ignore
+    let concat = typeError "String + String" "String {\n    \"a\" + \"b\"\n}"
+    check "String + mentions string.concat" (concat.Message.Contains("string.concat", StringComparison.Ordinal))
+    typeError "Float % Float" "Float {\n    1.0 % 2.0\n}" |> ignore
+    typeError "Bool + Bool" "Bool {\n    true + false\n}" |> ignore
+    typeError "Int && Int" "Bool {\n    1 && 2\n}" |> ignore
+    typeError "String < String" "Bool {\n    \"a\" < \"b\"\n}" |> ignore
+    typeError "Int != String" "Bool {\n    1 != \"1\"\n}" |> ignore
+    let moneyType =
+        { Name = "Money"
+          BaseType = TInt
+          Validator = None
+          SourceText = "type Money : Int { }"
+          Span = sourceSpan }
+    let moneyContext =
+        loweringContextWith Map.empty (Map.ofList [ "Money", moneyType ])
+            [ generatedEntry "money.new" (ScalarConstructor "Money") [ TInt ] [ TNamed "Money" ] Set.empty
+              generatedEntry "money.value" (ScalarAccessor "Money") [ TNamed "Money" ] [ TInt ] Set.empty ]
+            Map.empty
+    let scalarWord =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-scalar>" "fn money.bump(value: Money) -> Int {\n    value + 1\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let scalarError = captureLanguageError "nominal scalar + Int" "FLOW_OPERATOR_TYPE" (fun () -> FlowLowering.compileWord moneyContext (WordId "flow2-op-money") scalarWord |> ignore)
+    check "nominal scalar error names both types" (scalarError.Message.Contains("Money", StringComparison.Ordinal) && scalarError.Message.Contains("Int", StringComparison.Ordinal))
+    let unwrapped =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-unwrap>" "fn money.bump(value: Money) -> Int {\n    value.value() + 1\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    FlowLowering.compileWord moneyContext (WordId "flow2-op-money-ok") unwrapped |> ignore
+    check "an unwrapped nominal scalar is numeric" true
+
+    // Call bindings: each non-logical operator is one Direct site named by its symbol; && and || bind none.
+    let mixedWord =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-bindings>" "fn op.mix(a: Int, b: Int) -> Bool {\n    a + b * 2 > 3 && a != b || a % 2 == 0\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let bound = FlowLowering.compileWordWithCallBindings context (WordId "flow2-op-mix") mixedWord
+    equal "operator call sites use operator symbols as requested names"
+        [ "!="; "%"; "*"; "+"; ">"; "equals" ]
+        (bound.CallSites |> List.map (fun site -> site.RequestedName) |> List.sort)
+    let plusSite = bound.CallSites |> List.find (fun site -> site.RequestedName = "+")
+    equal "operator binding paths descend through operands"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression
+                                   FlowAstPathSegment.BinaryLeft; FlowAstPathSegment.BinaryLeft; FlowAstPathSegment.BinaryLeft ])
+        plusSite.Path
+    let mixedSource = Storage.sourceObject StorageObjectKind.WordDefinition mixedWord.SourceText
+    let mixedBindings =
+        bound.CallSites
+        |> List.map (fun site ->
+            { OwnerName = mixedWord.Name
+              OwnerId = WordId "flow2-op-mix"
+              OwnerRevision = 1
+              Source = mixedSource.Reference
+              Site = site })
+        |> FlowPersistence.wordBindings
+    match FlowRewrite.rewriteWord mixedWord.Name "op.mixed" (StoredCallTarget.UserWord "unrelated-target") mixedWord mixedBindings with
+    | Ok result ->
+        check "rewrite keeps operators" (FlowSource.renderWord result.Definition |> fun text -> text.Contains("a + b * 2 > 3 && a != b || a % 2 == 0", StringComparison.Ordinal))
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+    // expect with == and !=.
+    let parsedTest =
+        FlowParser.parseTestWithVersion 2 "<flow2-operators-expect>" "test word.name/ops {\n    expect 1 + 2 == 3\n    expect 1 + 2 != 4\n}"
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    match parsedTest.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.Call(equalName, [ FlowArgument.Positional(FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _)); _ ], _))
+        FlowStatement.Evaluate(FlowExpression.Call(checkName, [ FlowArgument.Positional(FlowExpression.Binary(FlowBinaryOperator.NotEqual, _, _, _)) ], _)) ]
+        when equalName = FlowExpect.equalIntrinsic && checkName = FlowExpect.checkIntrinsic ->
+        check "expect a + b == c lowers to <expect-equal>; expect != lowers to <expect>" true
+    | other -> failwithf "unexpected expect operator body: %A" other
+    let canonical = FlowSource.renderTest parsedTest
+    check "expect operators render canonically" (canonical.Contains("    expect 1 + 2 == 3\n    expect 1 + 2 != 4\n", StringComparison.Ordinal))
+
+let private testFlow2ExpectStatements () =
+    let parseV2Test source =
+        FlowParser.parseTestWithVersion 2 "<flow2-expect>" source
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    let roundTrips label (definition: FlowTestDefinition) =
+        let canonical = FlowSource.renderTest definition
+        equal label canonical (canonical |> parseV2Test |> FlowSource.renderTest)
+        canonical
+    let stepList =
+        parseV2Test "test word.name/case {\n    let total = word.name(1, 2)\n    expect total == 3\n    expect word.ok?(total)\n}"
+    check "expect tests parse as step-check expectations" (match stepList.Expected with FlowTestExpectation.Checks -> true | _ -> false)
+    let intrinsicNames =
+        stepList.Body |> List.choose (function
+            | FlowStatement.Evaluate(FlowExpression.Call(name, _, _)) -> Some name
+            | _ -> None)
+    equal "expect == lowers to <expect-equal>; other expects lower to <expect>" [ "<expect-equal>"; "<expect>" ] intrinsicNames
+    let canonical = roundTrips "expect step lists render idempotently" stepList
+    check "expect step lists render without a => line" (canonical.Contains("    expect total == 3\n    expect word.ok?(total)\n}", StringComparison.Ordinal) && not (canonical.Contains("=>", StringComparison.Ordinal)))
+
+    let implicitFinal = parseV2Test "test word.name/implicit {\n    let total = word.name(1, 2)\n    total == 3\n}"
+    check "a final bare expression makes a step-check test" (match implicitFinal.Expected with FlowTestExpectation.Checks -> true | _ -> false)
+    let implicitCanonical = roundTrips "implicit final expect renders idempotently" implicitFinal
+    check "an implicit final expect stays a bare expression" (implicitCanonical.Contains("\n    total == 3\n}", StringComparison.Ordinal))
+
+    let withEffects = parseV2Test "test word.name/effects {\n    expect word.name(1, 2) == 3\n    expect effects {\n        fs.read: 1\n    }\n}"
+    equal "expect effects carries exact effect counts" (Map.ofList [ "fs.read", 1 ]) withEffects.EffectAssertion.Value.Counts
+    let effectsCanonical = roundTrips "expect effects renders idempotently" withEffects
+    check "expect effects renders in step-list form" (effectsCanonical.Contains("    expect effects {\n        fs.read: 1\n    }\n}", StringComparison.Ordinal))
+
+    let legacy = parseV2Test "test word.name/legacy {\n    word.name(1, 2)\n    => value 3\n}"
+    check "legacy => value tests still parse" (match legacy.Expected with FlowTestExpectation.Expression _ -> true | _ -> false)
+
+    expectError "a step-list test needs a check" "FLOW_EXPECTATION_REQUIRED"
+        (FlowParser.parseTestWithVersion 2 "<flow2-expect-none>" "test word.name/none {\n    let total = word.name(1, 2)\n}") |> ignore
+    expectError "expect is not a function-body statement" "FLOW_EXPECT_OUTSIDE_TEST"
+        (FlowParser.parseWordWithVersion 2 "<flow2-expect-fn>" "fn word.bad(value: Int) -> Int {\n    expect value == 1\n    value\n}") |> ignore
+    expectError "expect is not available inside nested test blocks" "FLOW_EXPECT_OUTSIDE_TEST"
+        (FlowParser.parseTestWithVersion 2 "<flow2-expect-nested>" "test word.name/nested {\n    let total = if true {\n        expect true\n        1\n    } else {\n        2\n    }\n    expect total == 1\n}") |> ignore
+    expectError "Flow/1 tests keep requiring =>" "FLOW_EXPECTATION_REQUIRED"
+        (FlowParser.parseTestWithVersion 1 "<flow1-expect>" "test word.name/v1 {\n    word::name(1, 2)\n}") |> ignore
+    let namespaceCall = parseV2Test "test expect.sum/call {\n    expect.sum(1, 2) == 3\n}"
+    check "a call into an expect namespace is not an expect statement"
+        (match namespaceCall.Body with [ FlowStatement.Evaluate(FlowExpression.Equality _) ] -> true | _ -> false)
+
+let private testFlow2Loops () =
+    let parseWord2 label source =
+        match FlowParser.parseWordWithVersion 2 ("<flow2-loops-" + label + ">") source with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let context = loweringContext [] Map.empty
+    let runWith label (source: string) (arguments: Literal list) =
+        let word = parseWord2 label source
+        let compiled = FlowLowering.compileWord context (WordId("flow2-loop-" + label)) word
+        let invocation =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext compiled.Program ("flow2-loop-invoke-" + label) []
+                ((arguments |> List.map (fun literal -> Push(literal, sourceSpan))) @ [ Call(word.Name, sourceSpan) ])
+                compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) ("flow2-loop-" + label) invocation
+    let int label expected source arguments = equal label [ IntValue expected ] (runWith label source arguments)
+
+    let sumSource = "fn loop.sum(n: Int) -> Int {\n    var total = 0\n    for i in 0..n {\n        total = total + i\n    }\n    total\n}"
+    int "sum 0..10" 45L sumSource [ LInt 10L ]
+    int "sum 0..1000" 499500L sumSource [ LInt 1000L ]
+    int "empty range (end == start)" 0L sumSource [ LInt 0L ]
+    int "empty range (end < start)" 0L sumSource [ LInt -5L ]
+    int "range bounds are expressions" 6L "fn loop.bounds(n: Int) -> Int {\n    var total = 0\n    for i in n - 3..n + 1 {\n        total = total + 1\n    }\n    total + 2\n}" [ LInt 7L ]
+    int "nested loops" 45L
+        "fn loop.pairs(n: Int) -> Int {\n    var count = 0\n    for i in 0..n {\n        for j in 0..n {\n            if i < j {\n                count = count + 1\n            }\n        }\n    }\n    count\n}" [ LInt 10L ]
+    int "for-in over a list" 60L "fn loop.items() -> Int {\n    var total = 0\n    for x in [10, 20, 30] {\n        total = total + x\n    }\n    total\n}" []
+    int "for-in with an index" 80L "fn loop.indexed() -> Int {\n    var total = 0\n    for x, i in [10, 20, 30] {\n        total = total + x * i\n    }\n    total\n}" []
+    int "for-in over an empty list" 7L "fn loop.none() -> Int {\n    var total = 7\n    for x in list.empty<Int>() {\n        total = x\n    }\n    total\n}" []
+    int "break and continue" 25L
+        "fn loop.odd() -> Int {\n    var total = 0\n    for i in 0..100 {\n        if i % 2 == 0 {\n            continue\n        }\n        if i > 9 {\n            break\n        }\n        total = total + i\n    }\n    total\n}" []
+    int "break leaves only the inner loop" 30L
+        "fn loop.inner() -> Int {\n    var total = 0\n    for i in 0..10 {\n        for j in 0..10 {\n            if j == 3 {\n                break\n            }\n            total = total + 1\n        }\n    }\n    total\n}" []
+    int "continue in a list loop" 40L
+        "fn loop.skip() -> Int {\n    var total = 0\n    for x in [10, 20, 30] {\n        if x == 20 {\n            continue\n        } else {\n        }\n        total = total + x\n    }\n    total\n}" []
+    equal "String var building" [ StringValue "a-b-c-" ]
+        (runWith "concat" "fn loop.concat() -> String {\n    var text = \"\"\n    for part in [\"a\", \"b\", \"c\"] {\n        text = string.concat(string.concat(text, part), \"-\")\n    }\n    text\n}" [])
+    int "var outside loops" 12L "fn loop.var() -> Int {\n    var x = 5\n    x = x + 1\n    x = x * 2\n    x\n}" []
+    int "lets inside a loop body are per-iteration" 30L
+        "fn loop.lets() -> Int {\n    var total = 0\n    for i in 0..5 {\n        let doubled = i * 2\n        var step = doubled\n        step = step + 1\n        total = total + step\n    }\n    total + 5\n}" []
+    int "value statements in a loop body are discarded" 3L
+        "fn loop.discard() -> Int {\n    var total = 0\n    for i in 0..3 {\n        total = total + 1\n        int.max(i, 2)\n    }\n    total\n}" []
+    int "statement if outside loops" 2L "fn loop.stmtif(flag: Bool) -> Int {\n    var x = 1\n    if flag {\n        x = 2\n    }\n    x\n}" [ LBool true ]
+
+    // Static errors.
+    let compileError label code source =
+        expectLanguageError label code (fun () -> FlowLowering.compileWord context (WordId("flow2-loop-err-" + label)) (parseWord2 label source) |> ignore)
+    compileError "assign changes the type" "FLOW_ASSIGN_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    x = \"a\"\n    x\n}"
+    compileError "assign a let" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad() -> Int {\n    let x = 0\n    x = 1\n    x\n}"
+    compileError "assign a parameter" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad(x: Int) -> Int {\n    x = 1\n    x\n}"
+    compileError "assign a loop index" "FLOW_ASSIGN_IMMUTABLE" "fn loop.bad() -> Int {\n    var t = 0\n    for i in 0..3 {\n        i = 2\n    }\n    t\n}"
+    compileError "assign an undeclared name" "FLOW_ASSIGN_UNKNOWN_LOCAL" "fn loop.bad() -> Int {\n    y = 1\n    2\n}"
+    compileError "break outside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP" "fn loop.bad() -> Int {\n    var x = 0\n    if true {\n        break\n    }\n    x\n}"
+    compileError "continue outside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP" "fn loop.bad() -> Int {\n    continue\n    1\n}"
+    compileError "break inside compact inside a loop" "FLOW_LOOP_CONTROL_OUTSIDE_LOOP"
+        "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..3 {\n        x = compact {\n            break\n            1\n        }\n    }\n    x\n}"
+    compileError "statements after break" "FLOW_LOOP_CONTROL_NOT_LAST" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..3 {\n        break\n        x = 1\n    }\n    x\n}"
+    compileError "range bounds must be Int" "FLOW_LOOP_RANGE_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 0..\"a\" {\n        x = i\n    }\n    x\n}"
+    compileError "for-in needs a list" "FLOW_LOOP_ITEMS_TYPE" "fn loop.bad() -> Int {\n    var x = 0\n    for i in 5 {\n        x = i\n    }\n    x\n}"
+    compileError "loop names cannot shadow" "FLOW_LOCAL_REBOUND" "fn loop.bad(i: Int) -> Int {\n    var x = 0\n    for i in 0..3 {\n        x = i\n    }\n    x\n}"
+    compileError "loop locals do not escape" "FLOW_UNKNOWN_LOCAL" "fn loop.bad() -> Int {\n    for i in 0..3 {\n    }\n    i\n}"
+    compileError "var cannot rebind" "FLOW_LOCAL_REBOUND" "fn loop.bad() -> Int {\n    var x = 0\n    var x = 1\n    x\n}"
+    expectError "loops are Flow/2 only" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseWordWithVersion 1 "<flow1-loop>" "fn loop.v1() -> Int {\n    var x = 0;\n    x\n}") |> ignore
+
+    // Runtime budget: exactly the budget passes; one more iteration fails.
+    let budget = int64 IrLoops.DefaultIterationBudget
+    // The interpreter spends about a microsecond per empty iteration, so these take seconds.
+    let budgetLoop = "fn loop.budget(n: Int) -> Int {\n    for i in 0..n {\n    }\n    1\n}"
+    int "a loop of exactly the budget runs" 1L budgetLoop [ LInt budget ]
+    let overBudget = captureLanguageError "a loop beyond the budget fails" IrLoops.budgetExceededCode (fun () -> runWith "over" budgetLoop [ LInt(budget + 1L) ] |> ignore)
+    check "the budget diagnostic names the limit" (overBudget.Message.Contains(string IrLoops.DefaultIterationBudget, StringComparison.Ordinal))
+    int "the budget is per invocation" 1L budgetLoop [ LInt budget ]
+
+    // Statement-if detection is syntactic: deep value else-if chains stay linear.
+    let depth = 25
+    let chain =
+        let rec build level =
+            if level = depth then string level
+            else $"if n == {level} {{\n{level}\n}} else {{\n{build (level + 1)}\n}}"
+        "fn loop.chain(n: Int) -> Int {\n" + build 0 + "\n}"
+    let chainWatch = Diagnostics.Stopwatch.StartNew()
+    int "a 25-deep value else-if chain" 7L chain [ LInt 7L ]
+    check $"deep else-if chains compile quickly ({chainWatch.ElapsedMilliseconds} ms)" (chainWatch.ElapsedMilliseconds < 5000L)
+
+    // Formatter round-trip.
+    let canonical =
+        "fn loop.format(items: List<Int>, n: Int) -> Int {\n    var total = 0\n    for i in 0..n - 1 {\n        if i == 3 {\n            continue\n        }\n        total = total + i\n    }\n    for x, k in items {\n        if x > 100 {\n            break\n        }\n        total = total + x * k\n    }\n    for x in items {\n        total = total - x\n    }\n    total\n}"
+    let rendered = FlowSource.renderWord (parseWord2 "format" canonical)
+    check "loops render canonically" (rendered.Contains(canonical.Substring(canonical.IndexOf('{') + 1), StringComparison.Ordinal))
+    equal "loop rendering is stable" rendered (FlowSource.renderWord (parseWord2 "format2" rendered))
+    match (parseWord2 "ast" "fn loop.ast() -> Int {\n    var x = 0\n    for i in 0..10 {\n        x = i\n        break\n    }\n    x\n}").Body with
+    | [ FlowStatement.Var("x", _, _)
+        FlowStatement.ForRange("i", FlowExpression.Literal(LInt 0L, _), FlowExpression.Literal(LInt 10L, _), [ FlowStatement.Assign("x", _, _); FlowStatement.Break _ ], _)
+        FlowStatement.Evaluate(FlowExpression.Local("x", _)) ] -> check "loop AST shape" true
+    | other -> failwithf "unexpected loop AST: %A" other
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-range-token>" "a.b" with
+    | Ok _ -> check "dotted names still parse beside the range token" true
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
 [<EntryPoint>]
 let main _ =
+    testFlow2ExpectStatements ()
+    testFlow2InfixOperators ()
+    testFlow2Loops ()
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()

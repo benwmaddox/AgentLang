@@ -54,6 +54,21 @@ module Source =
                 renderBodyAt (depth + 1) elseBranch |> List.iter lines.Add
             lines.Add(prefix + "end")
             String.concat "\n" lines
+        | Assign(name, _) -> prefix + "assign " + name
+        | Break _ -> prefix + "break"
+        | Continue _ -> prefix + "continue"
+        | ForRange(name, body, _) ->
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "for-range " + name)
+            renderBodyAt (depth + 1) body |> List.iter lines.Add
+            lines.Add(prefix + "end")
+            String.concat "\n" lines
+        | ForList(name, index, body, _) ->
+            let lines = ResizeArray<string>()
+            lines.Add(prefix + "for-list " + name + (index |> Option.map (fun value -> " " + value) |> Option.defaultValue ""))
+            renderBodyAt (depth + 1) body |> List.iter lines.Add
+            lines.Add(prefix + "end")
+            String.concat "\n" lines
         | Compact(body, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "compact")
@@ -144,6 +159,8 @@ module Source =
             | ExpectedValue literal -> [ indent 1 + "=> " + renderLiteral literal ]
             | ExpectedRuntimeError code -> [ indent 1 + "=> error " + code ]
             | ExpectedExpression expressions -> [ indent 1 + "=> value" ] @ renderBodyAt 2 expressions
+            // Step-list checks are inline in the body; their Source rendering is not yet implemented.
+            | ExpectedChecks -> []
         renderTestLike "test" definition.Name definition.Word definition.Body expectedLines
 
     let renderExample (definition: ExampleDefinition) =
@@ -163,6 +180,8 @@ module Source =
             | If(thenBranch, elseBranch, span) -> If(rewrite thenBranch, rewrite elseBranch, span)
             | Scope(body, span) -> Scope(rewrite body, span)
             | Compact(body, span) -> Compact(rewrite body, span)
+            | ForRange(name, body, span) -> ForRange(name, rewrite body, span)
+            | ForList(name, index, body, span) -> ForList(name, index, rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)
             | MatchResult(okName, errorName, okBranch, errorBranch, span) -> MatchResult(okName, errorName, rewrite okBranch, rewrite errorBranch, span)
             | MatchEnum(cases, span) -> MatchEnum(cases |> List.map (fun (caseName, body) -> caseName, rewrite body), span)
