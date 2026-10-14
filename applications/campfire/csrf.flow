@@ -1,0 +1,114 @@
+// Rails CSRF tokens in Flow (stdlib step 2; replaces host operations 11-13).
+//
+// The session's _csrf_token is URL-safe Base64 of 32 random bytes (43
+// characters, no padding). A form's authenticity token is Rails' masked
+// token: a fresh 32-byte pad followed by pad XOR HMAC-SHA256(secret,
+// identifier), URL-safe Base64 without padding (86 characters). The
+// identifier is "<path>#<method>", or "!real_csrf_token" for the page's
+// global token.
+
+fn campfire.csrf.decode-secret(text: String) -> Option<Bytes> {
+    doc "Decodes a session CSRF secret: exactly 43 canonical URL-safe Base64 characters for 32 bytes, else none."
+
+    if string.byte-length(text) == 43 {
+        base64.url-decode(text)
+    } else {
+        option.none<Bytes>()
+    }
+}
+
+fn campfire.csrf.fresh-secret() -> CsrfSecret {
+    effects random.read
+    doc "Draws a new 32-byte session secret."
+
+    csrfSecret.new(value = base64.url-encode(crypto.random-bytes(32)), fresh = true)
+}
+
+fn campfire.csrf.session-secret(cookie-token: Option<String>) -> CsrfSecret {
+    effects random.read
+    doc "Keeps a well-formed session secret from the cookie; otherwise draws a fresh one that the response must store."
+
+    match cookie-token {
+        none => campfire.csrf.fresh-secret()
+        some token => match campfire.csrf.decode-secret(token) {
+            none => campfire.csrf.fresh-secret()
+            some _ => csrfSecret.new(value = token, fresh = false)
+        }
+    }
+}
+
+fn campfire.csrf.mask(pad: Bytes, digest: Bytes) -> String {
+    doc "Rails' masked token: URL-safe Base64 of pad followed by pad XOR digest. Both are 32 bytes."
+
+    match bytes.xor(pad, digest) {
+        none => ""
+        some masked => base64.url-encode(bytes.concat(pad, masked))
+    }
+}
+
+fn campfire.csrf.digest(secret: Bytes, identifier: String) -> Bytes {
+    crypto.hmac-sha256(secret, bytes.from-utf8(identifier))
+}
+
+fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
+    effects random.read
+    doc "A fresh masked authenticity token for one form. The secret comes from campfire.csrf.session-secret, so it always decodes; an invalid secret yields an empty token."
+
+    match campfire.csrf.decode-secret(secret) {
+        none => ""
+        some raw => campfire.csrf.mask(crypto.random-bytes(32), campfire.csrf.digest(raw, identifier))
+    }
+}
+
+fn campfire.csrf.pad-at(pads: Bytes, index: Int) -> Bytes {
+    match bytes.slice(pads, multiply(index, 32), 32) {
+        none => pads
+        some pad => pad
+    }
+}
+
+fn campfire.csrf.boost-tokens(secret: String, message-id: MessageId) -> BoostTokens {
+    effects random.read
+    doc "Masked tokens for a message's eight quick-boost forms (/messages/:id/boosts#post): one HMAC and one 256-byte random draw for all eight pads."
+
+    let identifier = string.concat(string.concat("/messages/", int.to-string(MessageId.value(message-id))), "/boosts#post")
+    let digest = match campfire.csrf.decode-secret(secret) {
+        none => bytes.from-utf8("")
+        some raw => campfire.csrf.digest(raw, identifier)
+    }
+    let pads = crypto.random-bytes(256)
+    boostTokens.new(
+        thumbs-up = campfire.csrf.mask(campfire.csrf.pad-at(pads, 0), digest),
+        clapping = campfire.csrf.mask(campfire.csrf.pad-at(pads, 1), digest),
+        waving-hand = campfire.csrf.mask(campfire.csrf.pad-at(pads, 2), digest),
+        muscle = campfire.csrf.mask(campfire.csrf.pad-at(pads, 3), digest),
+        red-heart = campfire.csrf.mask(campfire.csrf.pad-at(pads, 4), digest),
+        tears-of-joy = campfire.csrf.mask(campfire.csrf.pad-at(pads, 5), digest),
+        party-popper = campfire.csrf.mask(campfire.csrf.pad-at(pads, 6), digest),
+        fire = campfire.csrf.mask(campfire.csrf.pad-at(pads, 7), digest))
+}
+
+fn campfire.csrf.valid-token?(secret: String, identifier: String, token: String) -> Bool {
+    doc "Rails' verification of a masked token: 64 decoded bytes whose second half XOR the first equals HMAC-SHA256(secret, identifier), compared in constant time."
+
+    match campfire.csrf.decode-secret(secret) {
+        none => false
+        some raw => match base64.url-decode(token) {
+            none => false
+            some decoded => match bytes.slice(decoded, 0, 32) {
+                none => false
+                some pad => match bytes.slice(decoded, 32, 32) {
+                    none => false
+                    some masked => if bytes.length(decoded) == 64 {
+                        match bytes.xor(pad, masked) {
+                            none => false
+                            some unmasked => bytes.equal-constant-time?(unmasked, campfire.csrf.digest(raw, identifier))
+                        }
+                    } else {
+                        false
+                    }
+                }
+            }
+        }
+    }
+}
