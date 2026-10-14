@@ -27,7 +27,7 @@ let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sources =
     // The app's bootstrap type documents (as in Http/Application.fs), then the views.
     [ "campfire-types.flow"; "session-policy.flow"; "authentication-types.flow"; "browser-types.flow"
-      "request-policy.flow"; "http-types.flow"; "views.flow"; "layout.flow"; "views-tests.flow" ]
+      "request-policy.flow"; "http-types.flow"; "views.flow"; "layout.flow"; "message.flow"; "views-tests.flow" ]
     |> List.map (fun name -> "applications/campfire/" + name)
     |> List.map (fun path -> Path.Combine(repo, path))
 let private privateCapture = Path.Combine(repo, ".agentlang", "views-reference", "private", "native-265.html")
@@ -192,7 +192,7 @@ let private profile (extraFlow: string option) =
         + (match extraFlow with Some path -> "\n" + File.ReadAllText path | None -> "")
     let defined = engine.Dispatch("define", flowArgs source)
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "campfire.views.text"; "campfire.views.message"; "campfire.views.room"; "campfire.views.room-text"; "bench.item"; "bench.names"; "bench.client-id"; "bench.ids"; "bench.id-text"; "bench.id-texts"; "bench.count"; "bench.rails-page"; "bench.static-page" ] |> List.filter (fun name -> not (name.StartsWith "bench.rails" || name.StartsWith "bench.static") || (extraFlow.IsSome && File.ReadAllText(extraFlow.Value).Contains(name))) do
+    for name in [ "campfire.views.text"; "campfire.views.message"; "campfire.views.room"; "campfire.views.room-text"; "bench.item"; "bench.names"; "bench.client-id"; "bench.ids"; "bench.id-text"; "bench.id-texts"; "bench.count"; "bench.rails-page"; "bench.static-page"; "bench.ctx-page" ] |> List.filter (fun name -> not (name.StartsWith "bench.rails" || name.StartsWith "bench.static" || name.StartsWith "bench.ctx") || (extraFlow.IsSome && File.ReadAllText(extraFlow.Value).Contains(name))) do
         let args = JsonObject()
         args["word"] <- JsonValue.Create(name)
         let response = engine.Dispatch("commit", args)
@@ -232,6 +232,8 @@ let private profile (extraFlow: string option) =
                 "time", StringValue "2026-03-02T15:30:00Z"; "ms", StringValue "1772465400000" ])
         let messages = ListValue(TNamed "BenchMessage", [ for index in 1 .. 40 -> benchMessage index ])
         time "Rails-sized partial x40" "bench.rails-page" [ TList(TNamed "BenchMessage") ] [ TString ] [ messages ]
+        if File.ReadAllText(extraFlow.Value).Contains("bench.ctx-page") then
+            time "map with context x40" "bench.ctx-page" [ TList(TNamed "BenchMessage") ] [ TString ] [ messages ]
         if File.ReadAllText(extraFlow.Value).Contains("bench.static-page") then
             time "static partial x40 (no holes)" "bench.static-page" [ TList(TNamed "BenchMessage") ] [ TString ] [ messages ]
 

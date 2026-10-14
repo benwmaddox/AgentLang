@@ -76,7 +76,7 @@ module Application =
                   "sign-in.flow"; "sign-in-tests.flow"
                   "sign-out.flow"; "sign-out-tests.flow"
                   "browser-policy.flow"; "browser-tests.flow"
-                  "views.flow"; "layout.flow"; "views-tests.flow"
+                  "views.flow"; "layout.flow"; "message.flow"; "views-tests.flow"
                   "http-login.flow"; "http.flow"; "http-login-tests.flow"; "http-tests.flow"; "http-logout-tests.flow"
                   "http-room-read-tests.flow" ])
             for name in
