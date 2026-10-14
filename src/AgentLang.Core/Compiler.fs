@@ -633,6 +633,9 @@ module Compiler =
                 Diagnostics.raiseError "TEST_EXPECTED_STACK" $"Test '{test.Name}' must leave exactly one value matching its expected literal." (Some test.Word) (Some test.Span) [ Types.format expectedType ] (checkedExpression.Stack |> List.map Types.format)
         | ExpectedRuntimeError _ -> ()
         | ExpectedExpression _ -> ()
+        | ExpectedChecks ->
+            if checkedExpression.Stack <> [] then
+                Diagnostics.raiseError "TEST_EXPECTED_CHECKS_STACK" $"Test '{test.Name}' with expect checks must leave no value on the stack." (Some test.Word) (Some test.Span) [ "empty stack" ] (checkedExpression.Stack |> List.map Types.format)
         checkedExpression, inferred.InferredBody, expectedInference
 
     let checkTest knownTypes words test = checkTestDetailed knownTypes Map.empty words test |> fun (checkedExpression, _, _) -> checkedExpression
@@ -1745,7 +1748,7 @@ module Compiler =
         let expectedExpressions =
             match test.Expected with
             | ExpectedExpression expressions -> expressions
-            | ExpectedValue _ | ExpectedRuntimeError _ -> []
+            | ExpectedValue _ | ExpectedRuntimeError _ | ExpectedChecks -> []
         let expectedMarkers = zeroWidthMarkers expectedExpressions
         ensureDisjointOriginMarkers (Some test.Word) contextMarkers actualMarkers
         ensureDisjointOriginMarkers (Some test.Word) contextMarkers expectedMarkers

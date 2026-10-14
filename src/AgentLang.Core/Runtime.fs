@@ -3018,6 +3018,19 @@ module Runtime =
                               Expected = [ code ]
                               Actual = stack |> List.map Types.formatValue }
                         makeResult false (Some diagnostic) stack None
+                    | ExpectedChecks ->
+                        let passed = stack.IsEmpty
+                        let diagnostic =
+                            if passed then None
+                            else
+                                Some
+                                    { Code = "TEST_EXPECTED_CHECKS_STACK"
+                                      Message = "Step-list test left values on the stack; every expect step must consume its value."
+                                      Word = Some test.Word
+                                      Span = Some test.Span
+                                      Expected = [ "empty stack" ]
+                                      Actual = stack |> List.map Types.formatValue }
+                        makeResult passed diagnostic stack None
                     | ExpectedExpression _ ->
                         let expectedBody =
                             snapshot.TestExpectationBodies.TryFind bodyKey
@@ -3116,6 +3129,9 @@ module Runtime =
             | ExpectedRuntimeError code ->
                 node["expected"] <- jstr ("error " + code)
                 node["expectedErrorCode"] <- jstr code
+            | ExpectedChecks ->
+                node["expectedKind"] <- jstr "step-checks"
+                node["expected"] <- jstr "empty stack"
             | ExpectedExpression _ ->
                 node["expectedKind"] <- jstr "value-expression"
                 addStructuredObservation "actualStructured" result.Actual
