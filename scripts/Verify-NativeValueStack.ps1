@@ -43,6 +43,7 @@ $sourceInputPaths = @(
     (Join-Path $nativeSourceDirectory 'owning_stack_runtime.h'),
     $nativeRuntimeSource,
     (Join-Path $nativeSourceDirectory 'float_format.h'),
+    (Join-Path $nativeSourceDirectory 'owning_stdlib2.h'),
     $nativeTestSource,
     (Join-Path $repo 'docs/STACK-ONLY-RESEARCH.md'),
     (Join-Path $repo 'docs/NATIVE-NOMINALS-IMPLEMENTATION.md'),
