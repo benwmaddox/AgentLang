@@ -76,7 +76,8 @@ Unix-microseconds clock primitive.
   cookie_response_codec.c and Rails 7 defaults).
 - Native backing: the OS library on each platform (libcrypto on Linux, BCrypt
   on Windows) — Rails uses OpenSSL with AES-NI, so a portable C AES would
-  handicap us. SHA-256/HMAC/PBKDF2-SHA256 stay portable C (slice 1).
+  handicap us. Since 275 every crypto primitive (SHA-256, HMAC-SHA1/SHA256,
+  PBKDF2-SHA256, AES-GCM, constant-time compare on Linux) is an OS library call.
 - JSON, host-parsed: `json.parse(text) -> Option<Json>` with typed accessors
   (`json.field(json, name) -> Option<Json>`, `json.text`, `json.int`,
   `json.bool`, `json.index`), plus `json.object(fields)`/`json.string` builders

@@ -82,7 +82,7 @@ Slice 1 (report 272) and slice 2 (report 274) are done (marked *).
    `crypto.aes-256-gcm-open(key, nonce, ciphertext, tag, aad) -> Option<Bytes>`. None for a key
    other than 32 bytes, a nonce other than 12 or a tag other than 16, and for a failed tag check.
    AES runs on the OS library: BCrypt (CNG, `BCRYPT_AES_GCM_ALG_HANDLE`) on Windows, linked only
-   into modules that call it (their IR defines `al_owning_os_aes_table`); OpenSSL libcrypto (EVP,
+   into modules that call it (their IR defines `al_owning_os_crypto_table`); OpenSSL libcrypto (EVP,
    weak references; link `-lcrypto`) on Linux; .NET `AesGcm` in the interpreter. PBKDF2-SHA1 is
    not needed: Rails 7 derives both cookie keys with PBKDF2-HMAC-SHA256.
 4. Randomness*: `crypto.random-bytes(count)`, one call fills `count` bytes.
@@ -191,11 +191,11 @@ Slice 1 (report 272) landed as native primitives so the ports can start now:
 | Primitive | Long-term home | Why |
 | --- | --- | --- |
 | Bytes kind, bytes.length / concat / slice / xor / equal-constant-time? | native | value representation and constant-time compare |
-| crypto.sha256 / hmac-sha256 / pbkdf2-sha256, crypto.random-bytes | native | no fixed-width or bit operations in Flow; boundary code |
+| crypto.sha256 / hmac-sha256 / pbkdf2-sha256, crypto.random-bytes | native | OS library since 275: BCryptHash / BCryptDeriveKeyPBKDF2 (pseudo-handles) on Windows, EVP_Digest / HMAC / PKCS5_PBKDF2_HMAC on Linux; random: BCryptGenRandom / getrandom |
 | bytes.from-utf8 / to-utf8 | native | UTF-8 validity is a runtime invariant |
 | base64.*, hex.encode | Flow later | needs byte access, a byte builder and bit operations in Flow |
 | string.split / index-of / slice / byte-at / to-lower-ascii, int.parse | Flow later | expressible once Flow has loops or efficient recursion over bytes |
-| crypto.hmac-sha1, crypto.aes-256-gcm-seal / open (274) | native | AES on the OS library (BCrypt / libcrypto); SHA-1 portable C |
+| crypto.hmac-sha1, crypto.aes-256-gcm-seal / open (274) | native | AES on the OS library (BCrypt / libcrypto); HMAC-SHA1 on BCryptHash / HMAC() too |
 | Json type, json.* (274) | native | no recursive types; strict parsing is boundary code |
 | cookie.*, time.* (274) | Flow later | byte loops and calendar arithmetic, once Flow has a byte builder |
 
