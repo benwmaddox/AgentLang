@@ -31,7 +31,8 @@ enum {
   AL_OWNING_TYPE_OPTION = 7u,
   AL_OWNING_TYPE_RESULT = 8u,
   AL_OWNING_TYPE_F64 = 9u,
-  AL_OWNING_TYPE_LIST = 10u
+  AL_OWNING_TYPE_LIST = 10u,
+  AL_OWNING_TYPE_BYTES = 11u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };
@@ -299,6 +300,22 @@ int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
                                       const al_owning_template_part *parts,
                                       uint32_t count, uint32_t type_id,
                                       uint32_t error_id);
+int32_t al_owning_stdlib_plan(al_owning_stack_context *ctx, int32_t op,
+                              uint32_t o0, uint32_t e0, uint32_t o1,
+                              uint32_t e1, uint32_t o2, uint32_t e2,
+                              uint32_t o3, uint32_t e3, uint32_t error_id,
+                              uint32_t *out_payload_bytes,
+                              uint32_t *out_extent_bytes);
+int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
+                               uint32_t destination_offset,
+                               uint32_t destination_extent_bytes, uint32_t o0,
+                               uint32_t e0, uint32_t o1, uint32_t e1,
+                               uint32_t o2, uint32_t e2, uint32_t o3,
+                               uint32_t e3, uint32_t error_id);
+int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
+                                uint32_t o0, uint32_t e0, uint32_t o1,
+                                uint32_t e1, uint32_t error_id,
+                                int64_t *out_value);
 int32_t al_owning_string_find(al_owning_stack_context *ctx,
                               uint32_t haystack_offset,
                               uint32_t haystack_extent_bytes,

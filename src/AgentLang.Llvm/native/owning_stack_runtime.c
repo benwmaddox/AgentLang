@@ -1020,6 +1020,7 @@ static int32_t al_owning_validate_type_descriptor(
        type->kind != AL_OWNING_TYPE_F64 &&
        type->kind != AL_OWNING_TYPE_RECORD &&
        type->kind != AL_OWNING_TYPE_STRING &&
+       type->kind != AL_OWNING_TYPE_BYTES &&
        type->kind != AL_OWNING_TYPE_ENUM &&
        type->kind != AL_OWNING_TYPE_OPTION &&
        type->kind != AL_OWNING_TYPE_RESULT &&
@@ -1050,7 +1051,8 @@ static int32_t al_owning_validate_type_descriptor(
                           type_index, layout->type_count);
     return 0;
   }
-  if (type->kind == AL_OWNING_TYPE_STRING &&
+  if ((type->kind == AL_OWNING_TYPE_STRING ||
+       type->kind == AL_OWNING_TYPE_BYTES) &&
       (type->field_count != 0u || !payload_dynamic ||
        type->minimum_payload_bytes != 8u || type->minimum_extent_bytes != 8u)) {
     al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
@@ -1507,11 +1509,12 @@ static int32_t al_owning_utf8_valid(const uint8_t *bytes, uint32_t length) {
   return 1;
 }
 
-static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
-                                     uint32_t containing_owner_end,
-                                     uint32_t *out_string_bytes,
-                                     uint32_t *out_payload_bytes,
-                                     uint32_t *out_extent_bytes) {
+static int32_t al_owning_scan_text(al_owning_scan_view *view, uint32_t offset,
+                                   uint32_t containing_owner_end,
+                                   uint32_t *out_string_bytes,
+                                   uint32_t *out_payload_bytes,
+                                   uint32_t *out_extent_bytes,
+                                   int32_t require_utf8) {
   uint32_t string_bytes;
   uint32_t payload;
   uint32_t extent;
@@ -1560,7 +1563,7 @@ static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
   }
   /* Strings created by native code are well formed by construction; bytes
    * admitted from a host or caller are checked here. */
-  if (view->external &&
+  if (require_utf8 && view->external &&
       !al_owning_utf8_valid(view->bytes + offset + 8u, string_bytes)) {
     al_owning_scan_failure(view, extent, available);
     return 0;
@@ -1569,6 +1572,16 @@ static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
   *out_payload_bytes = payload;
   *out_extent_bytes = extent;
   return 1;
+}
+
+static int32_t al_owning_scan_string(al_owning_scan_view *view, uint32_t offset,
+                                     uint32_t containing_owner_end,
+                                     uint32_t *out_string_bytes,
+                                     uint32_t *out_payload_bytes,
+                                     uint32_t *out_extent_bytes) {
+  return al_owning_scan_text(view, offset, containing_owner_end,
+                             out_string_bytes, out_payload_bytes,
+                             out_extent_bytes, 1);
 }
 
 static int32_t al_owning_scan_value(al_owning_scan_view *view,
@@ -1731,10 +1744,13 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     }
     payload = (uint32_t)payload_wide;
     extent = (uint32_t)extent_wide;
-  } else if (type->kind == AL_OWNING_TYPE_STRING) {
+  } else if (type->kind == AL_OWNING_TYPE_STRING ||
+             type->kind == AL_OWNING_TYPE_BYTES) {
     uint32_t string_bytes;
-    if (!al_owning_scan_string(view, offset, containing_owner_end, &string_bytes,
-                               &payload, &extent))
+    /* Bytes share the String layout without the UTF-8 requirement. */
+    if (!al_owning_scan_text(view, offset, containing_owner_end, &string_bytes,
+                             &payload, &extent,
+                             type->kind == AL_OWNING_TYPE_STRING))
       return 0;
     (void)string_bytes;
   } else if (type->kind == AL_OWNING_TYPE_ENUM) {
@@ -2194,7 +2210,8 @@ static int32_t al_owning_equal_typed_inner(
            al_owning_read_u64_le(right_view->bytes, right_offset);
   }
 
-  if (type->kind == AL_OWNING_TYPE_STRING) {
+  if (type->kind == AL_OWNING_TYPE_STRING ||
+      type->kind == AL_OWNING_TYPE_BYTES) {
     uint32_t index;
     if (left_extent != right_extent)
       return 0;
@@ -4660,4 +4677,825 @@ int32_t al_owning_check_cursor(al_owning_stack_context *ctx,
  * statistics. */
 uint8_t *al_owning_stack_base(al_owning_stack_context *ctx) {
   return ctx == 0 ? 0 : ctx->stack_data;
+}
+
+/* ------------------------------------------------------------------------
+ * Standard library slice 1 (report 272): Bytes, base64, hex, SHA-256,
+ * HMAC-SHA256, PBKDF2-SHA256 and byte-offset String primitives.
+ *
+ * Bytes share the String layout (u32 count, 4 zero bytes, data, zero pad to
+ * 8) under runtime kind 11, which skips the UTF-8 check. Every operation runs
+ * through one writer: the plan pass counts payload and extent without
+ * touching memory, the write pass emits the same bytes at the destination.
+ * Results follow the interpreter exactly, including every none case.
+ * ---------------------------------------------------------------------- */
+
+enum {
+  AL_STDLIB_BYTES_FROM_UTF8 = 1,
+  AL_STDLIB_BYTES_TO_UTF8 = 2,
+  AL_STDLIB_BYTES_LENGTH = 3,
+  AL_STDLIB_BYTES_CONCAT = 4,
+  AL_STDLIB_BYTES_SLICE = 5,
+  AL_STDLIB_BYTES_XOR = 6,
+  AL_STDLIB_BYTES_EQUAL = 7,
+  AL_STDLIB_BASE64_ENCODE = 8,
+  AL_STDLIB_BASE64_DECODE = 9,
+  AL_STDLIB_BASE64_URL_ENCODE = 10,
+  AL_STDLIB_BASE64_URL_DECODE = 11,
+  AL_STDLIB_HEX_ENCODE = 12,
+  AL_STDLIB_SHA256 = 13,
+  AL_STDLIB_HMAC_SHA256 = 14,
+  AL_STDLIB_PBKDF2_SHA256 = 15,
+  AL_STDLIB_STRING_SPLIT = 16,
+  AL_STDLIB_STRING_INDEX_OF = 17,
+  AL_STDLIB_STRING_SLICE = 18,
+  AL_STDLIB_STRING_BYTE_AT = 19,
+  AL_STDLIB_INT_PARSE = 20
+};
+
+typedef struct {
+  uint32_t h[8];
+  uint64_t length;
+  uint8_t block[64];
+  uint32_t used;
+} al_stdlib_sha256;
+
+static const uint32_t al_stdlib_sha256_k[64] = {
+    0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu,
+    0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u, 0xd807aa98u, 0x12835b01u,
+    0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u,
+    0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
+    0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u,
+    0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u,
+    0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
+    0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
+    0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u, 0xd192e819u,
+    0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u, 0x1e376c08u,
+    0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu,
+    0x682e6ff3u, 0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
+    0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u};
+
+#define AL_STDLIB_ROTR(x, n) (((x) >> (n)) | ((x) << (32u - (n))))
+
+static void al_stdlib_sha256_compress(uint32_t h[8], const uint8_t *block) {
+  uint32_t w[64];
+  uint32_t a, b, c, d, e, f, g, hh;
+  uint32_t i;
+  for (i = 0u; i < 16u; ++i)
+    w[i] = ((uint32_t)block[i * 4u] << 24) |
+           ((uint32_t)block[i * 4u + 1u] << 16) |
+           ((uint32_t)block[i * 4u + 2u] << 8) | (uint32_t)block[i * 4u + 3u];
+  for (i = 16u; i < 64u; ++i) {
+    const uint32_t s0 = AL_STDLIB_ROTR(w[i - 15u], 7u) ^
+                        AL_STDLIB_ROTR(w[i - 15u], 18u) ^ (w[i - 15u] >> 3);
+    const uint32_t s1 = AL_STDLIB_ROTR(w[i - 2u], 17u) ^
+                        AL_STDLIB_ROTR(w[i - 2u], 19u) ^ (w[i - 2u] >> 10);
+    w[i] = w[i - 16u] + s0 + w[i - 7u] + s1;
+  }
+  a = h[0];
+  b = h[1];
+  c = h[2];
+  d = h[3];
+  e = h[4];
+  f = h[5];
+  g = h[6];
+  hh = h[7];
+  for (i = 0u; i < 64u; ++i) {
+    const uint32_t s1 =
+        AL_STDLIB_ROTR(e, 6u) ^ AL_STDLIB_ROTR(e, 11u) ^ AL_STDLIB_ROTR(e, 25u);
+    const uint32_t ch = (e & f) ^ (~e & g);
+    const uint32_t t1 = hh + s1 + ch + al_stdlib_sha256_k[i] + w[i];
+    const uint32_t s0 =
+        AL_STDLIB_ROTR(a, 2u) ^ AL_STDLIB_ROTR(a, 13u) ^ AL_STDLIB_ROTR(a, 22u);
+    const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+    const uint32_t t2 = s0 + maj;
+    hh = g;
+    g = f;
+    f = e;
+    e = d + t1;
+    d = c;
+    c = b;
+    b = a;
+    a = t1 + t2;
+  }
+  h[0] += a;
+  h[1] += b;
+  h[2] += c;
+  h[3] += d;
+  h[4] += e;
+  h[5] += f;
+  h[6] += g;
+  h[7] += hh;
+}
+
+static void al_stdlib_sha256_init(al_stdlib_sha256 *s) {
+  static const uint32_t initial[8] = {0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u,
+                                      0xa54ff53au, 0x510e527fu, 0x9b05688cu,
+                                      0x1f83d9abu, 0x5be0cd19u};
+  uint32_t i;
+  for (i = 0u; i < 8u; ++i)
+    s->h[i] = initial[i];
+  s->length = 0u;
+  s->used = 0u;
+}
+
+static void al_stdlib_sha256_update(al_stdlib_sha256 *s, const uint8_t *data,
+                                    uint32_t length) {
+  uint32_t i;
+  s->length += length;
+  for (i = 0u; i < length; ++i) {
+    s->block[s->used++] = data[i];
+    if (s->used == 64u) {
+      al_stdlib_sha256_compress(s->h, s->block);
+      s->used = 0u;
+    }
+  }
+}
+
+static void al_stdlib_sha256_final(al_stdlib_sha256 *s, uint8_t out[32]) {
+  const uint64_t bits = s->length * 8u;
+  uint32_t i;
+  s->block[s->used++] = 0x80u;
+  if (s->used > 56u) {
+    while (s->used < 64u)
+      s->block[s->used++] = 0u;
+    al_stdlib_sha256_compress(s->h, s->block);
+    s->used = 0u;
+  }
+  while (s->used < 56u)
+    s->block[s->used++] = 0u;
+  for (i = 0u; i < 8u; ++i)
+    s->block[56u + i] = (uint8_t)(bits >> (56u - i * 8u));
+  al_stdlib_sha256_compress(s->h, s->block);
+  for (i = 0u; i < 8u; ++i) {
+    out[i * 4u] = (uint8_t)(s->h[i] >> 24);
+    out[i * 4u + 1u] = (uint8_t)(s->h[i] >> 16);
+    out[i * 4u + 2u] = (uint8_t)(s->h[i] >> 8);
+    out[i * 4u + 3u] = (uint8_t)s->h[i];
+  }
+}
+
+/* HMAC-SHA256 with precomputed inner and outer states, so PBKDF2 hashes the
+ * key once rather than once per iteration. */
+typedef struct {
+  al_stdlib_sha256 inner;
+  al_stdlib_sha256 outer;
+} al_stdlib_hmac;
+
+static void al_stdlib_hmac_init(al_stdlib_hmac *m, const uint8_t *key,
+                                uint32_t key_length) {
+  uint8_t block[64];
+  uint8_t pad[64];
+  uint32_t i;
+  for (i = 0u; i < 64u; ++i)
+    block[i] = 0u;
+  if (key_length > 64u) {
+    al_stdlib_sha256 hashed;
+    al_stdlib_sha256_init(&hashed);
+    al_stdlib_sha256_update(&hashed, key, key_length);
+    al_stdlib_sha256_final(&hashed, block);
+  } else {
+    for (i = 0u; i < key_length; ++i)
+      block[i] = key[i];
+  }
+  for (i = 0u; i < 64u; ++i)
+    pad[i] = (uint8_t)(block[i] ^ 0x36u);
+  al_stdlib_sha256_init(&m->inner);
+  al_stdlib_sha256_update(&m->inner, pad, 64u);
+  for (i = 0u; i < 64u; ++i)
+    pad[i] = (uint8_t)(block[i] ^ 0x5cu);
+  al_stdlib_sha256_init(&m->outer);
+  al_stdlib_sha256_update(&m->outer, pad, 64u);
+}
+
+/* The runtime is freestanding: no struct copies (they lower to memcpy). */
+static void al_stdlib_sha256_copy(al_stdlib_sha256 *target,
+                                  const al_stdlib_sha256 *source) {
+  uint32_t i;
+  for (i = 0u; i < 8u; ++i)
+    target->h[i] = source->h[i];
+  for (i = 0u; i < 64u; ++i)
+    target->block[i] = source->block[i];
+  target->length = source->length;
+  target->used = source->used;
+}
+
+static void al_stdlib_hmac_run(const al_stdlib_hmac *m, const uint8_t *a,
+                               uint32_t a_length, const uint8_t *b,
+                               uint32_t b_length, uint8_t out[32]) {
+  al_stdlib_sha256 inner;
+  al_stdlib_sha256 outer;
+  uint8_t digest[32];
+  al_stdlib_sha256_copy(&inner, &m->inner);
+  al_stdlib_sha256_copy(&outer, &m->outer);
+  al_stdlib_sha256_update(&inner, a, a_length);
+  if (b_length != 0u)
+    al_stdlib_sha256_update(&inner, b, b_length);
+  al_stdlib_sha256_final(&inner, digest);
+  al_stdlib_sha256_update(&outer, digest, 32u);
+  al_stdlib_sha256_final(&outer, out);
+}
+
+/* The writer: base == 0 counts only. */
+typedef struct {
+  uint8_t *base;
+  uint64_t extent;
+  uint64_t payload;
+} al_stdlib_writer;
+
+static void al_stdlib_put(al_stdlib_writer *w, const uint8_t *data,
+                          uint32_t length) {
+  if (w->base != 0 && length != 0u)
+    al_owning_bytes_copy(w->base + w->extent, data, length);
+  w->extent += length;
+}
+
+static void al_stdlib_put_byte(al_stdlib_writer *w, uint8_t value) {
+  if (w->base != 0)
+    w->base[w->extent] = value;
+  w->extent += 1u;
+}
+
+static void al_stdlib_put_u64(al_stdlib_writer *w, uint64_t value) {
+  uint32_t i;
+  for (i = 0u; i < 8u; ++i)
+    al_stdlib_put_byte(w, (uint8_t)(value >> (i * 8u)));
+}
+
+static void al_stdlib_pad(al_stdlib_writer *w) {
+  while ((w->extent & 7u) != 0u)
+    al_stdlib_put_byte(w, 0u);
+}
+
+/* A String or Bytes header; the caller writes the content and the pad. */
+static void al_stdlib_begin_text(al_stdlib_writer *w, uint32_t length) {
+  al_stdlib_put_u64(w, (uint64_t)length);
+  w->payload += 8u + (uint64_t)length;
+}
+
+static void al_stdlib_text(al_stdlib_writer *w, const uint8_t *data,
+                           uint32_t length) {
+  al_stdlib_begin_text(w, length);
+  al_stdlib_put(w, data, length);
+  al_stdlib_pad(w);
+}
+
+/* Option tags: 0 = Some (payload follows), 1 = None. */
+static void al_stdlib_some(al_stdlib_writer *w) {
+  al_stdlib_put_u64(w, 0u);
+  w->payload += 8u;
+}
+
+static void al_stdlib_none(al_stdlib_writer *w) {
+  al_stdlib_put_u64(w, 1u);
+  w->payload += 8u;
+}
+
+static void al_stdlib_some_int(al_stdlib_writer *w, int64_t value) {
+  al_stdlib_some(w);
+  al_stdlib_put_u64(w, (uint64_t)value);
+  w->payload += 8u;
+}
+
+static int32_t al_stdlib_base64_value(uint8_t ch, int32_t url_safe) {
+  if (ch >= 'A' && ch <= 'Z')
+    return (int32_t)(ch - 'A');
+  if (ch >= 'a' && ch <= 'z')
+    return (int32_t)(ch - 'a') + 26;
+  if (ch >= '0' && ch <= '9')
+    return (int32_t)(ch - '0') + 52;
+  if (ch == (url_safe ? '-' : '+'))
+    return 62;
+  if (ch == (url_safe ? '_' : '/'))
+    return 63;
+  return -1;
+}
+
+/* Strict base64, as in the interpreter: exact alphabet, '=' only as final
+ * padding, zero unused tail bits. Returns the decoded length or -1; with
+ * out != 0 the bytes are written there. */
+static int64_t al_stdlib_base64_decode(const uint8_t *text, uint32_t length,
+                                       int32_t url_safe,
+                                       int32_t padding_required,
+                                       uint8_t *out) {
+  uint32_t data_length = length;
+  uint32_t padding;
+  uint32_t remainder;
+  uint32_t expected;
+  uint32_t i;
+  uint32_t bits = 0u;
+  uint32_t count = 0u;
+  uint32_t written = 0u;
+  int32_t last = 0;
+  while (data_length > 0u && text[data_length - 1u] == '=')
+    --data_length;
+  padding = length - data_length;
+  remainder = data_length % 4u;
+  expected = remainder == 0u ? 0u : 4u - remainder;
+  if (remainder == 1u || padding > 2u ||
+      (padding > 0u && padding != expected) ||
+      (padding_required && padding != expected))
+    return -1;
+  for (i = 0u; i < data_length; ++i) {
+    const int32_t value = al_stdlib_base64_value(text[i], url_safe);
+    if (value < 0)
+      return -1;
+    last = value;
+    bits = ((bits << 6) | (uint32_t)value) & 0xFFFFFFu;
+    count += 6u;
+    if (count >= 8u) {
+      count -= 8u;
+      if (out != 0)
+        out[written] = (uint8_t)(bits >> count);
+      ++written;
+    }
+  }
+  if ((remainder == 2u && (last & 0x0F) != 0) ||
+      (remainder == 3u && (last & 0x03) != 0))
+    return -1;
+  return (int64_t)written;
+}
+
+static void al_stdlib_base64_encode(al_stdlib_writer *w, const uint8_t *data,
+                                    uint32_t length, int32_t url_safe) {
+  static const char standard[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  static const char url[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  const char *alphabet = url_safe ? url : standard;
+  const uint32_t full = length / 3u;
+  const uint32_t rest = length % 3u;
+  uint32_t encoded = full * 4u;
+  uint32_t i;
+  if (rest != 0u)
+    encoded += url_safe ? rest + 1u : 4u;
+  al_stdlib_begin_text(w, encoded);
+  for (i = 0u; i < full; ++i) {
+    const uint32_t v = ((uint32_t)data[i * 3u] << 16) |
+                       ((uint32_t)data[i * 3u + 1u] << 8) |
+                       (uint32_t)data[i * 3u + 2u];
+    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 18) & 63u]);
+    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 12) & 63u]);
+    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 6) & 63u]);
+    al_stdlib_put_byte(w, (uint8_t)alphabet[v & 63u]);
+  }
+  if (rest != 0u) {
+    uint32_t v = (uint32_t)data[full * 3u] << 16;
+    if (rest == 2u)
+      v |= (uint32_t)data[full * 3u + 1u] << 8;
+    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 18) & 63u]);
+    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 12) & 63u]);
+    if (rest == 2u)
+      al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 6) & 63u]);
+    else if (!url_safe)
+      al_stdlib_put_byte(w, (uint8_t)'=');
+    if (!url_safe)
+      al_stdlib_put_byte(w, (uint8_t)'=');
+  }
+  al_stdlib_pad(w);
+}
+
+static int32_t al_stdlib_text_boundary(const uint8_t *text, uint32_t length,
+                                       uint64_t index) {
+  return index == length || (text[index] & 0xC0u) != 0x80u;
+}
+
+static int32_t al_stdlib_matches_at(const uint8_t *text, uint32_t length,
+                                    uint32_t index, const uint8_t *needle,
+                                    uint32_t needle_length) {
+  uint32_t i;
+  if (needle_length > length || index > length - needle_length)
+    return 0;
+  for (i = 0u; i < needle_length; ++i)
+    if (text[index + i] != needle[i])
+      return 0;
+  return 1;
+}
+
+typedef struct {
+  uint32_t offset;
+  uint32_t extent;
+} al_stdlib_argument;
+
+static const uint8_t *al_stdlib_data(const al_owning_stack_context *ctx,
+                                     al_stdlib_argument argument) {
+  return ctx->stack_data + argument.offset + 8u;
+}
+
+static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
+                             al_stdlib_argument argument) {
+  return (int64_t)al_owning_read_u64_le(ctx->stack_data, argument.offset);
+}
+
+/* Validates the arguments an operation reads and returns String/Bytes byte
+ * counts. 't' = String or Bytes, 'i' = Int, '-' = unused. */
+static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
+                                   const al_stdlib_argument *arguments,
+                                   uint32_t error_id, uint32_t lengths[4]) {
+  static const char *const shapes[21] = {
+      "----", "t---", "t---", "t---", "tt--", "tii-", "tt--", "tt--",
+      "t---", "t---", "t---", "t---", "t---", "t---", "tt--", "ttii",
+      "tt--", "tti-", "tii-", "ti--", "t---"};
+  uint32_t i;
+  uint32_t ignored;
+  if (op < 1 || op > 20) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          (uint32_t)op, 20u);
+    return 0;
+  }
+  for (i = 0u; i < 4u; ++i) {
+    lengths[i] = 0u;
+    if (shapes[op][i] == 't') {
+      if (!al_owning_string_scan_stack_exact(ctx, arguments[i].offset,
+                                             arguments[i].extent, error_id,
+                                             &lengths[i], &ignored))
+        return 0;
+    } else if (shapes[op][i] == 'i') {
+      if ((arguments[i].offset & 7u) != 0u ||
+          !al_owning_range_valid(ctx, arguments[i].offset, 8u) ||
+          arguments[i].offset + 8u > ctx->cursor_bytes) {
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                              arguments[i].offset, ctx->cursor_bytes);
+        return 0;
+      }
+    }
+  }
+  return 1;
+}
+
+static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
+                              const al_stdlib_argument *a, const uint32_t *n,
+                              al_stdlib_writer *w, uint32_t error_id) {
+  const uint8_t *x = al_stdlib_data(ctx, a[0]);
+  switch (op) {
+  case AL_STDLIB_BYTES_FROM_UTF8:
+    al_stdlib_text(w, x, n[0]);
+    return 1;
+  case AL_STDLIB_BYTES_TO_UTF8:
+    /* Trusted builds assume native Strings are well formed: check here. */
+    if (al_owning_utf8_valid(x, n[0])) {
+      al_stdlib_some(w);
+      al_stdlib_text(w, x, n[0]);
+    } else {
+      al_stdlib_none(w);
+    }
+    return 1;
+  case AL_STDLIB_BYTES_CONCAT:
+    if ((uint64_t)n[0] + n[1] > (uint64_t)INT32_MAX)
+      break;
+    al_stdlib_begin_text(w, n[0] + n[1]);
+    al_stdlib_put(w, x, n[0]);
+    al_stdlib_put(w, al_stdlib_data(ctx, a[1]), n[1]);
+    al_stdlib_pad(w);
+    return 1;
+  case AL_STDLIB_BYTES_SLICE: {
+    const int64_t start = al_stdlib_int(ctx, a[1]);
+    const int64_t count = al_stdlib_int(ctx, a[2]);
+    if (start < 0 || count < 0 || start > (int64_t)n[0] ||
+        count > (int64_t)n[0] - start) {
+      al_stdlib_none(w);
+    } else {
+      al_stdlib_some(w);
+      al_stdlib_text(w, x + start, (uint32_t)count);
+    }
+    return 1;
+  }
+  case AL_STDLIB_BYTES_XOR:
+    if (n[0] != n[1]) {
+      al_stdlib_none(w);
+    } else {
+      const uint8_t *y = al_stdlib_data(ctx, a[1]);
+      uint32_t i;
+      al_stdlib_some(w);
+      al_stdlib_begin_text(w, n[0]);
+      for (i = 0u; i < n[0]; ++i)
+        al_stdlib_put_byte(w, (uint8_t)(x[i] ^ y[i]));
+      al_stdlib_pad(w);
+    }
+    return 1;
+  case AL_STDLIB_BASE64_ENCODE:
+  case AL_STDLIB_BASE64_URL_ENCODE:
+    if ((uint64_t)n[0] / 3u * 4u + 4u > (uint64_t)INT32_MAX)
+      break;
+    al_stdlib_base64_encode(w, x, n[0], op == AL_STDLIB_BASE64_URL_ENCODE);
+    return 1;
+  case AL_STDLIB_BASE64_DECODE:
+  case AL_STDLIB_BASE64_URL_DECODE: {
+    const int32_t url_safe = op == AL_STDLIB_BASE64_URL_DECODE;
+    const int64_t decoded =
+        al_stdlib_base64_decode(x, n[0], url_safe, !url_safe, 0);
+    if (decoded < 0) {
+      al_stdlib_none(w);
+    } else {
+      al_stdlib_some(w);
+      al_stdlib_begin_text(w, (uint32_t)decoded);
+      if (w->base != 0)
+        (void)al_stdlib_base64_decode(x, n[0], url_safe, !url_safe,
+                                      w->base + w->extent);
+      w->extent += (uint64_t)decoded;
+      al_stdlib_pad(w);
+    }
+    return 1;
+  }
+  case AL_STDLIB_HEX_ENCODE: {
+    static const char digits[] = "0123456789abcdef";
+    uint32_t i;
+    if ((uint64_t)n[0] * 2u > (uint64_t)INT32_MAX)
+      break;
+    al_stdlib_begin_text(w, n[0] * 2u);
+    for (i = 0u; i < n[0]; ++i) {
+      al_stdlib_put_byte(w, (uint8_t)digits[x[i] >> 4]);
+      al_stdlib_put_byte(w, (uint8_t)digits[x[i] & 15u]);
+    }
+    al_stdlib_pad(w);
+    return 1;
+  }
+  case AL_STDLIB_SHA256: {
+    uint8_t digest[32];
+    uint32_t i;
+    for (i = 0u; i < 32u; ++i)
+      digest[i] = 0u;
+    if (w->base != 0) {
+      al_stdlib_sha256 s;
+      al_stdlib_sha256_init(&s);
+      al_stdlib_sha256_update(&s, x, n[0]);
+      al_stdlib_sha256_final(&s, digest);
+    }
+    al_stdlib_text(w, digest, 32u);
+    return 1;
+  }
+  case AL_STDLIB_HMAC_SHA256: {
+    uint8_t digest[32];
+    uint32_t i;
+    for (i = 0u; i < 32u; ++i)
+      digest[i] = 0u;
+    if (w->base != 0) {
+      al_stdlib_hmac m;
+      al_stdlib_hmac_init(&m, x, n[0]);
+      al_stdlib_hmac_run(&m, al_stdlib_data(ctx, a[1]), n[1], 0, 0u, digest);
+    }
+    al_stdlib_text(w, digest, 32u);
+    return 1;
+  }
+  case AL_STDLIB_PBKDF2_SHA256: {
+    const int64_t iterations = al_stdlib_int(ctx, a[2]);
+    const int64_t length = al_stdlib_int(ctx, a[3]);
+    if (iterations < 1 || iterations > 1000000 || length < 1 ||
+        length > 1024) {
+      al_stdlib_none(w);
+      return 1;
+    }
+    al_stdlib_some(w);
+    al_stdlib_begin_text(w, (uint32_t)length);
+    if (w->base == 0) {
+      w->extent += (uint64_t)length;
+    } else {
+      const uint8_t *salt = al_stdlib_data(ctx, a[1]);
+      al_stdlib_hmac m;
+      uint32_t block_index = 1u;
+      uint32_t produced = 0u;
+      al_stdlib_hmac_init(&m, x, n[0]);
+      while (produced < (uint32_t)length) {
+        uint8_t counter[4];
+        uint8_t u[32];
+        uint8_t t[32];
+        uint32_t i;
+        int64_t round;
+        counter[0] = (uint8_t)(block_index >> 24);
+        counter[1] = (uint8_t)(block_index >> 16);
+        counter[2] = (uint8_t)(block_index >> 8);
+        counter[3] = (uint8_t)block_index;
+        al_stdlib_hmac_run(&m, salt, n[1], counter, 4u, u);
+        for (i = 0u; i < 32u; ++i)
+          t[i] = u[i];
+        for (round = 1; round < iterations; ++round) {
+          al_stdlib_hmac_run(&m, u, 32u, 0, 0u, u);
+          for (i = 0u; i < 32u; ++i)
+            t[i] = (uint8_t)(t[i] ^ u[i]);
+        }
+        for (i = 0u; i < 32u && produced < (uint32_t)length; ++i, ++produced)
+          al_stdlib_put_byte(w, t[i]);
+        ++block_index;
+      }
+    }
+    al_stdlib_pad(w);
+    return 1;
+  }
+  case AL_STDLIB_STRING_SPLIT: {
+    const uint8_t *separator = al_stdlib_data(ctx, a[1]);
+    uint64_t pieces = 1u;
+    uint32_t index = 0u;
+    uint32_t start = 0u;
+    if (n[1] != 0u) {
+      while ((uint64_t)index + n[1] <= n[0]) {
+        if (al_stdlib_matches_at(x, n[0], index, separator, n[1])) {
+          ++pieces;
+          index += n[1];
+        } else {
+          ++index;
+        }
+      }
+    }
+    al_stdlib_put_u64(w, pieces);
+    w->payload += 8u;
+    if (n[1] == 0u) {
+      al_stdlib_text(w, x, n[0]);
+      return 1;
+    }
+    index = 0u;
+    while ((uint64_t)index + n[1] <= n[0]) {
+      if (al_stdlib_matches_at(x, n[0], index, separator, n[1])) {
+        al_stdlib_text(w, x + start, index - start);
+        index += n[1];
+        start = index;
+      } else {
+        ++index;
+      }
+    }
+    al_stdlib_text(w, x + start, n[0] - start);
+    return 1;
+  }
+  case AL_STDLIB_STRING_INDEX_OF: {
+    const uint8_t *needle = al_stdlib_data(ctx, a[1]);
+    const int64_t start = al_stdlib_int(ctx, a[2]);
+    uint32_t index;
+    if (start < 0 || start > (int64_t)n[0]) {
+      al_stdlib_none(w);
+      return 1;
+    }
+    for (index = (uint32_t)start; (uint64_t)index + n[1] <= n[0]; ++index) {
+      if (al_stdlib_matches_at(x, n[0], index, needle, n[1])) {
+        al_stdlib_some_int(w, (int64_t)index);
+        return 1;
+      }
+    }
+    al_stdlib_none(w);
+    return 1;
+  }
+  case AL_STDLIB_STRING_SLICE: {
+    const int64_t start = al_stdlib_int(ctx, a[1]);
+    const int64_t count = al_stdlib_int(ctx, a[2]);
+    /* A slice that splits a UTF-8 sequence would be an invalid String. */
+    if (start < 0 || count < 0 || start > (int64_t)n[0] ||
+        count > (int64_t)n[0] - start ||
+        !al_stdlib_text_boundary(x, n[0], (uint64_t)start) ||
+        !al_stdlib_text_boundary(x, n[0], (uint64_t)(start + count))) {
+      al_stdlib_none(w);
+    } else {
+      al_stdlib_some(w);
+      al_stdlib_text(w, x + start, (uint32_t)count);
+    }
+    return 1;
+  }
+  case AL_STDLIB_STRING_BYTE_AT: {
+    const int64_t index = al_stdlib_int(ctx, a[1]);
+    if (index < 0 || index >= (int64_t)n[0])
+      al_stdlib_none(w);
+    else
+      al_stdlib_some_int(w, (int64_t)x[index]);
+    return 1;
+  }
+  case AL_STDLIB_INT_PARSE: {
+    uint32_t i = 0u;
+    int32_t negative = 0;
+    uint64_t magnitude = 0u;
+    if (n[0] > 0u && x[0] == '-') {
+      negative = 1;
+      i = 1u;
+    }
+    if (i == n[0]) {
+      al_stdlib_none(w);
+      return 1;
+    }
+    for (; i < n[0]; ++i) {
+      if (x[i] < '0' || x[i] > '9' || magnitude > 922337203685477580ull ||
+          (magnitude == 922337203685477580ull &&
+           (uint64_t)(x[i] - '0') > (negative ? 8u : 7u))) {
+        al_stdlib_none(w);
+        return 1;
+      }
+      magnitude = magnitude * 10u + (uint64_t)(x[i] - '0');
+    }
+    al_stdlib_some_int(w, negative ? (int64_t)(0u - magnitude)
+                                   : (int64_t)magnitude);
+    return 1;
+  }
+  default:
+    break;
+  }
+  if (ctx->status == AL_OWNING_STATUS_OK)
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+  return 0;
+}
+
+int32_t al_owning_stdlib_plan(al_owning_stack_context *ctx, int32_t op,
+                              uint32_t o0, uint32_t e0, uint32_t o1,
+                              uint32_t e1, uint32_t o2, uint32_t e2,
+                              uint32_t o3, uint32_t e3, uint32_t error_id,
+                              uint32_t *out_payload_bytes,
+                              uint32_t *out_extent_bytes) {
+  const al_stdlib_argument arguments[4] = {
+      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3}};
+  uint32_t lengths[4];
+  al_stdlib_writer w;
+  w.base = 0;
+  w.extent = 0u;
+  w.payload = 0u;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_payload_bytes == 0 || out_extent_bytes == 0) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_stdlib_arguments(ctx, op, arguments, error_id, lengths) ||
+      !al_stdlib_emit(ctx, op, arguments, lengths, &w, error_id))
+    return 1;
+  if (w.extent > INT32_MAX || w.payload > INT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+    return 1;
+  }
+  *out_payload_bytes = (uint32_t)w.payload;
+  *out_extent_bytes = (uint32_t)w.extent;
+  return 0;
+}
+
+int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
+                               uint32_t destination_offset,
+                               uint32_t destination_extent_bytes, uint32_t o0,
+                               uint32_t e0, uint32_t o1, uint32_t e1,
+                               uint32_t o2, uint32_t e2, uint32_t o3,
+                               uint32_t e3, uint32_t error_id) {
+  const al_stdlib_argument arguments[4] = {
+      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3}};
+  uint32_t lengths[4];
+  uint32_t i;
+  al_stdlib_writer w;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if ((destination_offset & 7u) != 0u ||
+      destination_offset > ctx->cursor_bytes ||
+      destination_extent_bytes > ctx->cursor_bytes - destination_offset ||
+      !al_stdlib_arguments(ctx, op, arguments, error_id, lengths)) {
+    if (ctx->status == AL_OWNING_STATUS_OK)
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            destination_offset, ctx->cursor_bytes);
+    return 1;
+  }
+  for (i = 0u; i < 4u; ++i) {
+    if (arguments[i].extent != 0u &&
+        destination_offset < arguments[i].offset + arguments[i].extent &&
+        arguments[i].offset < destination_offset + destination_extent_bytes) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            destination_extent_bytes, destination_offset);
+      return 1;
+    }
+  }
+  w.base = ctx->stack_data + destination_offset;
+  w.extent = 0u;
+  w.payload = 0u;
+  if (!al_stdlib_emit(ctx, op, arguments, lengths, &w, error_id))
+    return 1;
+  if (w.extent != destination_extent_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          (uint32_t)w.extent, destination_extent_bytes);
+    return 1;
+  }
+  al_owning_mark(ctx, destination_offset, destination_extent_bytes, 1, 0);
+  ctx->deep_copy_bytes += destination_extent_bytes;
+  return 0;
+}
+
+/* Int and Bool results: bytes.length and bytes.equal-constant-time?. */
+int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
+                                uint32_t o0, uint32_t e0, uint32_t o1,
+                                uint32_t e1, uint32_t error_id,
+                                int64_t *out_value) {
+  const al_stdlib_argument arguments[4] = {
+      {o0, e0}, {o1, e1}, {0u, 0u}, {0u, 0u}};
+  uint32_t lengths[4];
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_value == 0 ||
+      (op != AL_STDLIB_BYTES_LENGTH && op != AL_STDLIB_BYTES_EQUAL)) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
+    return 1;
+  }
+  if (!al_stdlib_arguments(ctx, op, arguments, error_id, lengths))
+    return 1;
+  if (op == AL_STDLIB_BYTES_LENGTH) {
+    *out_value = (int64_t)lengths[0];
+  } else {
+    /* Constant time in the shorter length; unequal lengths are unequal. */
+    const uint8_t *x = al_stdlib_data(ctx, arguments[0]);
+    const uint8_t *y = al_stdlib_data(ctx, arguments[1]);
+    const uint32_t shorter = lengths[0] < lengths[1] ? lengths[0] : lengths[1];
+    uint32_t difference = lengths[0] ^ lengths[1];
+    uint32_t i;
+    for (i = 0u; i < shorter; ++i)
+      difference |= (uint32_t)(x[i] ^ y[i]);
+    *out_value = difference == 0u ? 1 : 0;
+  }
+  return 0;
 }
