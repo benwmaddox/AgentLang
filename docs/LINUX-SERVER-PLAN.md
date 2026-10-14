@@ -145,6 +145,35 @@ room_read_adapter.c into Flow); the avatar token key derived in
 `worker-init`; the response with Set-Cookie. Then delete the Campfire native
 host and the .NET hosts (stdlib plan step 5).
 
+### D as built (276)
+
+- `applications/campfire/server/*.flow`, app `campfire.server`, loaded only by
+  `scripts/Build-CampfireFlowServer.ps1` (with the shared policy, view, CSRF,
+  user-agent and session-restore words and their test files):
+  - `worker-init` derives the three Rails keys (encrypted cookie 32 bytes,
+    signed cookie 64, `active_record/signed_id` 64) once per worker;
+  - `server-db.flow`: the room-read host operations on `db.query`/`db.execute`
+    with room_read_adapter.c's SQL, transactions (BEGIN DEFERRED page read,
+    BEGIN IMMEDIATE refresh with three guarded attempts), row validation,
+    timestamp parsing/formatting and error mapping;
+  - `server-cookies.flow`: signed `session_token` verify/sign, encrypted
+    `_campfire_session` decrypt/encrypt and the session JSON mutation;
+  - `server-request.flow` / `server.flow`: HttpRequest -> CampfireHttpRequest
+    with the native host's transport checks, the room-read chain (copies of the
+    `campfire.http` words that thread the worker context), and the response
+    with the renderer's contract, headers and cookie order;
+  - `server-accounts.flow`: the password-free sign-in/out operations (bans,
+    users.any?, sessions.destroy, push-subscriptions.destroy-for-user).
+- The stdlib record `DbError` is now `SqlError` (Campfire's enum keeps the name).
+- Config: `scripts/Write-CampfireFlowServerConfig.ps1` writes
+  `secret_key_base` and `authority` to a private file.
+- Parity: `scripts/Test-CampfireFlowServerParity.ps1` (Windows; `-LinuxServer`
+  runs the Flow side in WSL) against the native HTTP.sys host.
+- Not ported: sign-in (`campfire.users.authenticate-password` needs bcrypt,
+  which neither the stdlib nor BCrypt/libcrypto provide), the login rate
+  limiter and `sessions.start`; only GET/HEAD `/rooms/<id>` is routed, as in the
+  native host.
+
 ## Benchmark protocol (Linux)
 
 - All three servers natively in WSL2 (not Docker), each against its own copy
