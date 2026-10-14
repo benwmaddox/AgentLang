@@ -58,6 +58,17 @@ Probe results (2026-10-14):
 
 ### B. Stdlib: crypto, JSON, cookies (interpreter and native)
 
+Done in 274; the final signatures are in STDLIB-PLAN.md section 3 (seal
+returns ciphertext followed by the tag, not a record; no pbkdf2-sha1). Rails 7
+scheme, read from cookie_response_codec.c: keys are PBKDF2-HMAC-SHA256 of
+secret_key_base, 1000 iterations, salt "authenticated encrypted cookie" (32
+bytes, AES-256-GCM, empty AAD, 12-byte IV, 16-byte tag; value
+base64(ciphertext)--base64(iv)--base64(tag), Rack-escaped) and "signed cookie"
+(64 bytes, HMAC-SHA1, value base64(envelope)--hex(digest)). The plaintext is
+the envelope {"_rails":{"message":base64(json),"exp":"...Z"|null,"pur":
+"cookie.<name>"}} with exp 20 calendar years after now. Still needed for D: a
+Unix-microseconds clock primitive.
+
 - `crypto.aes-256-gcm-open(key, nonce, ciphertext, tag, aad) -> Option<Bytes>`
   and `crypto.aes-256-gcm-seal(key, nonce, plaintext, aad) -> AesGcmSealed`
   (ciphertext + tag); `crypto.hmac-sha1`, `crypto.pbkdf2-sha1` if Rails' cookie

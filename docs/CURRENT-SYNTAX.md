@@ -367,6 +367,17 @@ Search and escaping work on whole characters.
 `fallback` outside `0..byte-length`. Natively it is an inline bounds check and
 one load, with no Option and no runtime call.
 
+## Stdlib value types: Bytes and Json
+
+`Bytes` and `Json` are built-in type names (reserved, like `String`). Neither
+has a literal: Bytes come from `bytes.from-utf8`, `base64.decode` or crypto
+primitives, and a Json value only from `json.parse` and its accessors
+(`json.field`, `json.index`, ...). A Json value is the exact text of one
+validated JSON value. A parameter named like a namespace (`json`, `cookie`)
+turns `json.field(json, ...)` into a bound-receiver call, so name it
+`document`. The primitives are listed in [the stdlib plan](STDLIB-PLAN.md),
+section 3.
+
 ## List literals
 
 `[a, b, c]` builds a `List<T>` from one or more elements in order. Every element

@@ -592,6 +592,41 @@ test stdlib.cookie-escape/rack {
     => value "a+b%2Bc%2F%C3%A9%7E*_-."
 }
 
+// Rails' own escaping vectors (tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json).
+test stdlib.cookie-escape/rails-separators {
+    stdlib.cookie-escape("a+b/c=d--0f")
+    => value "a%2Bb%2Fc%3Dd--0f"
+}
+
+test stdlib.cookie-escape/rails-reserved {
+    stdlib.cookie-escape("é~*'()!")
+    => value "%C3%A9%7E*%27%28%29%21"
+}
+
+test stdlib.cookie-escape/rails-percent {
+    stdlib.cookie-escape("a%20b")
+    => value "a%2520b"
+}
+
+fn stdlib.cookie-unescape(text: String) -> String {
+    cookie.unescape(text)
+}
+
+test stdlib.cookie-unescape/rails-reserved {
+    stdlib.cookie-unescape("%C3%A9%7E*%27%28%29%21")
+    => value "é~*'()!"
+}
+
+test stdlib.cookie-unescape/rails-percent {
+    stdlib.cookie-unescape("a%2520b")
+    => value "a%20b"
+}
+
+test stdlib.cookie-unescape/rails-bad-escape {
+    stdlib.cookie-unescape("bad%zzescape")
+    => value "bad%zzescape"
+}
+
 fn stdlib.cookie-unescape-hex(text: String) -> String {
     hex.encode(bytes.from-utf8(cookie.unescape(text)))
 }
