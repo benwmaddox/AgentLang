@@ -2,3 +2,5 @@
 - WIP: parser+lowering+renderer for expect built (compiles). Next: add Flow.Tests cases and run suites.
 - WIP: define+run of expect tests passes in Flow.Runtime.Tests (testFlow2ExpectStepLists). Next: COMMIT_SELECTED_TEST_NOT_DURABLE on commit/reload. Note: pre-existing failure testFlow2EnumsPersistReloadAndBindings (examples/closed-renewal-state.agent still uses 'case'), my test ordered before it.
 - WIP: Flow.Runtime.Tests expect test fully passes incl. commit+reload. Next: Flow.Tests parser/render cases, run other suites.
+- WIP: Flow.Tests 1353 pass. Next: IR/Interpreter/Source/Vocabulary suites, docs.
+- Done: docs updated. applications/campfire .flow: 144 '=> value' lines, 273 '=>' expectation lines total (not migrated). Pre-existing failures from f81e6fa (not this task): Source.Tests testFlow2CanonicalRoundTrip (record 'field' render), Flow.Runtime.Tests testFlow2EnumsPersistReloadAndBindings (examples/closed-renewal-state.agent uses 'case').

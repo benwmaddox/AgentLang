@@ -82,7 +82,9 @@ Noted for after the apples-to-apples Campfire comparison.
 1. **Enum cases without `case`:** one bare case name per line, or separated
    by `;`. The formatter writes the bare form, and `case` stays readable
    during migration.
-2. **`expect` tests:**
+2. **`expect` tests:** done (272). Flow/2 tests parse step lists with
+   `expect`, `expect a == b`, an implicit final Bool, and `expect effects`;
+   `applications/campfire` `.flow` tests are not migrated yet.
    - `expect <Bool expression>`; a test may hold several.
    - `expect effects { … }` asserts exact effect counts.
    - A failed `a == b` reports both values.
