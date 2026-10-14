@@ -32,7 +32,7 @@ fn campfire.http.show-room(request: CampfireHttpRequest, user: AuthUser, room: R
     effects db.read
     doc "Lists the authorized room's newest forty messages. A last-room directive is emitted only when the incoming cookie differs."
 
-    match campfire.messages.list-for-member(user.id, room.id) {
+    match campfire.messages.page-for-member(user.id, room.id) {
         error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
         ok messages => {
             let remember-room = match request.last-room {

@@ -46,6 +46,20 @@ type MessageRow =
       CreatedAt: string
       UpdatedAt: string }
 
+type MessageWithCreator =
+    { Id: MessageId
+      RoomId: RoomId
+      CreatorId: UserId
+      CreatedAtMs: int64
+      UpdatedAtMs: int64
+      ClientMessageId: string
+      CreatedAt: string
+      CreatorName: string
+      CreatorBio: string
+      CreatorUpdatedAt: string
+      CreatorAvatarToken: string
+      Body: string option }
+
 type NewMessage =
     { RoomId: RoomId
       CreatorId: UserId
@@ -209,6 +223,50 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
                       Body = SqliteDetails.nullableString reader 4
                       CreatedAt = reader.GetString(5)
                       UpdatedAt = reader.GetString(6) }
+            rows |> Seq.toList |> List.rev)
+
+    member _.LastPageWithCreators(roomId: RoomId) =
+        run (fun connection ->
+            let (RoomId rawRoomId) = roomId
+            let hasRoom =
+                SqliteDetails.existing connection
+                    "SELECT EXISTS (SELECT 1 FROM \"rooms\" WHERE \"id\" = $roomId)"
+                    "$roomId"
+                    rawRoomId
+            if not hasRoom then raise (ProviderFailure NotFound)
+
+            use command = connection.CreateCommand()
+            command.CommandText <-
+                "SELECT messages.id, messages.room_id, messages.creator_id, " +
+                "CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + " +
+                "CAST(CASE WHEN length(messages.created_at) > 19 THEN substr(messages.created_at, 21, 3) ELSE '0' END AS INTEGER), " +
+                "CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + " +
+                "CAST(CASE WHEN length(messages.updated_at) > 19 THEN substr(messages.updated_at, 21, 3) ELSE '0' END AS INTEGER), " +
+                "messages.client_message_id, rich_text.body, messages.created_at, " +
+                "users.name, users.bio, users.updated_at, users.avatar_token_seed " +
+                "FROM messages " +
+                "INNER JOIN users ON users.id = messages.creator_id " +
+                "LEFT JOIN action_text_rich_texts AS rich_text " +
+                "ON rich_text.record_id = messages.id AND rich_text.record_type = 'Message' AND rich_text.name = 'body' " +
+                "WHERE messages.room_id = $roomId ORDER BY messages.created_at DESC LIMIT 40"
+            SqliteDetails.addParameter command "$roomId" (box rawRoomId)
+            command.Prepare()
+            use reader = command.ExecuteReader()
+            let rows = ResizeArray<MessageWithCreator>()
+            while reader.Read() do
+                rows.Add
+                    { Id = MessageId(reader.GetInt64(0))
+                      RoomId = RoomId(reader.GetInt64(1))
+                      CreatorId = UserId(reader.GetInt64(2))
+                      CreatedAtMs = reader.GetInt64(3)
+                      UpdatedAtMs = reader.GetInt64(4)
+                      ClientMessageId = reader.GetString(5)
+                      Body = SqliteDetails.nullableString reader 6
+                      CreatedAt = reader.GetString(7)
+                      CreatorName = reader.GetString(8)
+                      CreatorBio = reader.GetString(9)
+                      CreatorUpdatedAt = reader.GetString(10)
+                      CreatorAvatarToken = reader.GetString(11) }
             rows |> Seq.toList |> List.rev)
 
     member _.CreateMessage(message: NewMessage) =

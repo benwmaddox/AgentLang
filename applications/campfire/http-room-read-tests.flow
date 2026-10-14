@@ -153,8 +153,8 @@ test-file campfire-http-room-read-route {
         }
     }
 
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     test campfire.http.room-read-route/member-room-renders {

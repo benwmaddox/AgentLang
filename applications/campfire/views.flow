@@ -124,3 +124,21 @@ fn campfire.views.room-page(chrome: PageChrome, messages: List<MessageRow>) -> S
 
     campfire.views.text(campfire.views.page(chrome, messages.map(campfire.views.message)))
 }
+
+fn campfire.views.creator-message(message: MessageWithCreator) -> Html {
+    effects none
+    doc "One message from the creator-joined page, in the same interim shape as campfire.views.message until the Rails partial lands."
+
+    let body = match message.body {
+        none => ""
+        some text => text
+    }
+    html"""<div id="message_{message.client-message-id}" class="message" data-message-id="{int.to-string(MessageId.value(message.id))}"><div id="presentation_message_{message.client-message-id}" dir="auto">{body}</div></div>"""
+}
+
+fn campfire.views.creator-room-page(chrome: PageChrome, messages: List<MessageWithCreator>) -> String {
+    effects none
+    doc "The room page from the creator-joined message page."
+
+    campfire.views.text(campfire.views.page(chrome, messages.map(campfire.views.creator-message)))
+}

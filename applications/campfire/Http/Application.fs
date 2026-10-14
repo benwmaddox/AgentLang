@@ -81,7 +81,7 @@ module Application =
                   "http-room-read-tests.flow" ])
             for name in
                 [ "user.can-administer?"; "message.can-administer?"
-                  "campfire.rooms.list-for-user"; "campfire.messages.list-for-member"
+                  "campfire.rooms.list-for-user"; "campfire.messages.page-for-member"
                   "campfire.messages.create-for-member"; "campfire.authentication.restore-session"
                   "campfire.authentication.sign-in"; "campfire.authentication.sign-out"
                   "campfire.browser.supported?" ] do

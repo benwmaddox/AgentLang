@@ -1,6 +1,6 @@
 test-file campfire-http-authenticate {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -145,8 +145,8 @@ test-file campfire-http-authenticate {
 }
 
 test-file campfire-http-authenticated {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -291,8 +291,8 @@ test-file campfire-http-authenticated {
 }
 
 test-file campfire-http-bot-or-redirect {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -405,8 +405,8 @@ test-file campfire-http-bot-or-redirect {
 }
 
 test-file campfire-http-create-message {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -679,8 +679,8 @@ test-file campfire-http-create-message {
 }
 
 test-file campfire-http-dispatch {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -889,8 +889,8 @@ test-file campfire-http-dispatch {
 }
 
 test-file campfire-http-response {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -951,8 +951,8 @@ test-file campfire-http-response {
 }
 
 test-file campfire-http-route {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -1129,8 +1129,8 @@ test-file campfire-http-route {
 }
 
 test-file campfire-http-show-room {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -1243,8 +1243,8 @@ test-file campfire-http-show-room {
 }
 
 test-file campfire-http-unauthenticated {
-    override fn campfire.messages.list-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageRow>, RoomMessageError> {
-        result.ok<List<MessageRow>, RoomMessageError>(list.empty<MessageRow>())
+    override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
+        result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
