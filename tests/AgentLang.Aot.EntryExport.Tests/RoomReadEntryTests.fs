@@ -6,7 +6,6 @@ open System.IO
 open System.Text
 open AgentLang
 open AgentLang.Campfire.Authentication.Host
-open AgentLang.Campfire.Browser.Host
 open AgentLang.Campfire.Host
 open AgentLang.Campfire.Http
 
@@ -51,9 +50,7 @@ module RoomReadEntryTests =
           Cookie: string option
           BotKey: string option
           LastRoom: string option
-          BrowserFamily: string
-          BrowserVersion: string option
-          BrowserAtLeastMinimum: bool
+          UserAgent: string option
           Session: SessionState
           Refresh: RefreshState
           User: UserState
@@ -148,9 +145,7 @@ module RoomReadEntryTests =
           Cookie = Some "signed-valid-cookie"
           BotKey = None
           LastRoom = None
-          BrowserFamily = "other"
-          BrowserVersion = None
-          BrowserAtLeastMinimum = true
+          UserAgent = None
           Session = SessionFound false
           Refresh = RefreshSuccess
           User = UserFound
@@ -202,8 +197,6 @@ module RoomReadEntryTests =
                 | BotFound -> Ok [ resultOk (TOption(TNamed "AuthUser")) (optionValue (TNamed "AuthUser") (Some(authUser "bot"))) ]
                 | BotMissing -> Ok [ resultOk (TOption(TNamed "AuthUser")) (optionValue (TNamed "AuthUser") None) ]
                 | BotLookupError -> Ok [ resultError (TOption(TNamed "AuthUser")) ]
-            | "campfire.browser.version-at-least?", [ StringValue _; StringValue _ ] ->
-                Ok [ BoolValue scenario.BrowserAtLeastMinimum ]
             | "campfire.rooms.find-for-user", [ NamedValue("UserId", IntValue 7L); NamedValue("RoomId", IntValue 101L) ] ->
                 match scenario.Room with
                 | RoomFound -> Ok [ resultOk (TOption(TNamed "RoomRow")) (optionValue (TNamed "RoomRow") (Some roomRow)) ]
@@ -225,7 +218,6 @@ module RoomReadEntryTests =
                 [ CampfireHost.manifest
                   CampfireAuthenticationHost.manifest
                   CookieHost.manifest
-                  BrowserHost.manifest
                   LoginHost.manifest ]
         let provider: HostOperationProvider =
             { OperationIds = manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq
@@ -251,7 +243,7 @@ module RoomReadEntryTests =
                   "room-id", NamedValue("RoomId", IntValue 101L)
                   "now", NamedValue("UtcInstant", IntValue 3_600_000_001L)
                   "remote-ip", NamedValue("RemoteIp", StringValue "198.51.100.9")
-                  "user-agent", optionalString (Some "RoomReadParity/1.0")
+                  "user-agent", optionalString (scenario.UserAgent |> Option.orElse (Some "RoomReadParity/1.0"))
                   "base-url", StringValue "https://campfire.example.test"
                   "request-is-ssl", BoolValue true
                   "force-ssl", BoolValue false
@@ -264,11 +256,7 @@ module RoomReadEntryTests =
                   "logout-form", ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Ok(optionValue (TNamed "HttpLogoutInput") None))
                   "accepts-turbo", BoolValue false
                   "accepts-html", BoolValue true
-                  "last-room", optionalString scenario.LastRoom
-                  "browser", RecordValue("BrowserInfo", Map.ofList
-                      [ "family", EnumValue("BrowserFamily", scenario.BrowserFamily)
-                        "version", optionalString scenario.BrowserVersion
-                        "is-bot", BoolValue false ]) ])
+                  "last-room", optionalString scenario.LastRoom ])
 
     let private responseFields label = function
         | Ok(RecordValue("CampfireHttpResponse", fields)) -> fields
@@ -352,8 +340,8 @@ module RoomReadEntryTests =
           { baseScenario "get-bot-key-active" with Cookie = None; BotKey = Some "reader-bot-key"; Bot = BotFound; ExpectedStatus = 403 }
           { baseScenario "get-bot-key-missing" with Cookie = Some "signed-invalid-cookie"; BotKey = Some "unknown-bot-key"; Bot = BotMissing; ExpectedStatus = 302 }
           { baseScenario "get-bot-key-error" with Cookie = None; BotKey = Some "reader-bot-key"; Bot = BotLookupError; ExpectedStatus = 500 }
-          { baseScenario "get-unsupported-internet-explorer" with BrowserFamily = "internet-explorer"; BrowserVersion = Some "11"; BrowserAtLeastMinimum = false; ExpectedStatus = 200 }
-          { baseScenario "get-unsupported-old-chrome" with BrowserFamily = "chrome"; BrowserVersion = Some "119"; BrowserAtLeastMinimum = false; ExpectedStatus = 200 }
+          { baseScenario "get-unsupported-internet-explorer" with UserAgent = Some "Mozilla/5.0 (Windows NT 10.0; Trident/7.0; rv:11.0) like Gecko"; ExpectedStatus = 200 }
+          { baseScenario "get-unsupported-old-chrome" with UserAgent = Some "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"; ExpectedStatus = 200 }
           { baseScenario "get-room-unavailable" with Room = RoomLookupError; ExpectedStatus = 500 }
           { baseScenario "get-room-not-found-for-member" with Room = RoomMissing; ExpectedStatus = 302 }
           { baseScenario "get-room-row-without-membership" with Membership = MembershipMissing; ExpectedStatus = 500 }
@@ -425,7 +413,6 @@ module RoomReadEntryTests =
                   "campfire.sessions.refresh-before"
                   "campfire.users.find-by-id"
                   "campfire.users.authenticate-bot-key"
-                  "campfire.browser.version-at-least?"
                   "campfire.rooms.find-for-user"
                   "campfire.membership.exists?"
                   "campfire.messages.last-page" ]

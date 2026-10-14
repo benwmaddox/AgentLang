@@ -40,13 +40,13 @@ module Program =
     let private corpusPath = applicationSource "user-agent-corpus-tests.flow"
     let private fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "campfire_user_agents.json")
 
-    let private flowSource () =
+    let private flowSource includeCorpus =
         [ applicationSource "browser-types.flow"
           applicationSource "text-scan.flow"
           applicationSource "user-agent.flow"
           applicationSource "text-scan-tests.flow"
           applicationSource "user-agent-tests.flow"
-          corpusPath
+          if includeCorpus then corpusPath
           applicationSource "browser-policy.flow"
           applicationSource "browser-tests.flow"
           Path.Combine(__SOURCE_DIRECTORY__, "native-browser.flow") ]
@@ -178,9 +178,14 @@ module Program =
         check (comparisons.Length >= 40) $"parity corpus has at least 40 version comparisons ({comparisons.Length})"
         fixtureCoverage userAgents
 
+        // The parity corpus runs uncommitted: commits rerun attached tests.
+        let corpusEngine = createEngine (Path.Combine(runDirectory, "corpus-project"))
+        dispatch corpusEngine "define" [ "frontend", JsonValue.Create("flow"); "syntaxVersion", JsonValue.Create(2); "source", JsonValue.Create(flowSource true) ] |> ignore
+        let corpusRun = testAll corpusEngine "browser Flow tests with parity corpus"
+
         let project = Path.Combine(runDirectory, "project")
         let engine = createEngine project
-        dispatch engine "define" [ "frontend", JsonValue.Create("flow"); "syntaxVersion", JsonValue.Create(2); "source", JsonValue.Create(flowSource ()) ] |> ignore
+        dispatch engine "define" [ "frontend", JsonValue.Create("flow"); "syntaxVersion", JsonValue.Create(2); "source", JsonValue.Create(flowSource false) ] |> ignore
         let firstRun = testAll engine "browser Flow tests"
         for word in libraryWords do
             dispatch engine "commit" [ "word", JsonValue.Create(word: string); "library", JsonValue.Create(true) ] |> ignore
@@ -198,5 +203,5 @@ module Program =
 
         let nativeUserAgents, nativeComparisons = nativeParity reloaded userAgents comparisons
         Console.WriteLine(
-            $"PASS: {assertions} assertions; {firstRun} attached Flow tests (corpus: {userAgents.Length} User-Agents, {comparisons.Length} comparisons) before and after reload; native O0/O2 parity on {nativeUserAgents} User-Agents and {nativeComparisons} comparisons.")
+            $"PASS: {assertions} assertions; {corpusRun} Flow tests with the parity corpus ({userAgents.Length} User-Agents, {comparisons.Length} comparisons); {firstRun} committed tests (library closure) before and after reload; native O0/O2 parity on {nativeUserAgents} User-Agents and {nativeComparisons} comparisons.")
         0

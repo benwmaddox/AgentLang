@@ -142,7 +142,7 @@ fn campfire.http.authenticated(request: CampfireHttpRequest, restored: RestoredS
         option.none<SessionToken>()
     }
     if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
-        if campfire.browser.supported?(request.browser) {
+        if campfire.browser.supported?(campfire.browser.from-user-agent(request.user-agent)) {
             match restored.user {
                 none => campfire.http.response(500, HttpView.empty(), "", refresh)
                 some user => {

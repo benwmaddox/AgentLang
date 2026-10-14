@@ -20,7 +20,6 @@ type HttpApplicationOptions =
       ForceSsl: bool
       Cookies: CookieService
       Clock: unit -> DateTimeOffset
-      NormalizeBrowser: string option -> Value
       Invoke: Value -> Result<Value, string> }
 
 module Transport =
@@ -258,7 +257,6 @@ module Transport =
               "accepts-turbo", BoolValue(acceptsTurbo request)
               "accepts-html", BoolValue(acceptsHtml request)
               "last-room", stringOption (Map.tryFind "last_room" cookies)
-              "browser", options.NormalizeBrowser agent
               "csrf-token", stringOption csrfToken ])
     }
 

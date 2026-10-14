@@ -9,7 +9,6 @@
     <ProjectReference Include="../Cookies/AgentLang.Campfire.Cookies.fsproj" />
     <ProjectReference Include="../Host/AgentLang.Campfire.Host.fsproj" />
     <ProjectReference Include="../Authentication.Host/AgentLang.Campfire.Authentication.Host.fsproj" />
-    <ProjectReference Include="../Browser/AgentLang.Campfire.Browser.Host.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CookieHost.fs" />

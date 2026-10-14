@@ -17,7 +17,6 @@
 #include "campfire_room_read_host_abi.h"
 #include "room_read_adapter.h"
 #include "request_encoder.h"
-#include "browser_normalizer.h"
 #include "campfire_http_renderer.h"
 #include "cookie_response_codec.h"
 #include "cookie_wire.h"
@@ -151,7 +150,6 @@ typedef struct worker_state {
   uint16_t *session_token;
   uint16_t *encrypted_session;
   uint16_t *last_room;
-  uint16_t browser_version[4096];
   uint16_t cookie_decoded[4][CF_COOKIE_UNESCAPE_MAX_OUTPUT_UTF16_UNITS_V1];
   uint32_t cookie_decoded_units[4];
   uint8_t *unescape_scratch;
@@ -170,9 +168,6 @@ typedef struct worker_state {
   uint32_t active_input_bytes;
   uint32_t active_retained_bytes;
   uint32_t active_body_bytes;
-  void *browser_scratch_raw;
-  void *browser_scratch;
-  size_t browser_scratch_bytes;
 #if CAMPFIRE_HTTP_STAGE_PROFILE
   host_stage_profile stage_profile;
 #endif
@@ -247,9 +242,6 @@ static void clear_request_sensitive(worker_state *worker) {
     bytes_zero(worker->cookie_json_input, worker->cookie_json_input_bytes);
   if (worker->return_url != NULL && worker->return_url_bytes <= HOST_RETURN_URL_BYTES)
     bytes_zero(worker->return_url, worker->return_url_bytes);
-  if (worker->browser_scratch != NULL && worker->browser_scratch_bytes != 0u)
-    bytes_zero(worker->browser_scratch, worker->browser_scratch_bytes);
-  bytes_zero(worker->browser_version, sizeof(worker->browser_version));
   for (uint32_t i = 0u; i < 3u; ++i) {
     if (worker->cookie_raw[i] != NULL && worker->cookie_raw_bytes[i] <= HOST_COOKIE_RAW_BYTES)
       bytes_zero(worker->cookie_raw[i], worker->cookie_raw_bytes[i]);
@@ -761,7 +753,6 @@ static void worker_release(worker_state *worker) {
   if (worker->cookie_json != NULL) VirtualFree(worker->cookie_json, 0u, MEM_RELEASE);
   if (worker->cookie_json_input != NULL) VirtualFree(worker->cookie_json_input, 0u, MEM_RELEASE);
   if (worker->return_url != NULL) VirtualFree(worker->return_url, 0u, MEM_RELEASE);
-  if (worker->browser_scratch_raw != NULL) VirtualFree(worker->browser_scratch_raw, 0u, MEM_RELEASE);
   { uint32_t i; for (i = 0u; i < 3u; ++i) { if (worker->cookie_wire[i] != NULL) VirtualFree(worker->cookie_wire[i], 0u, MEM_RELEASE); if (worker->cookie_raw[i] != NULL) VirtualFree(worker->cookie_raw[i], 0u, MEM_RELEASE); } }
   if (worker->index < config->worker_count) InterlockedIncrement((volatile LONG *)&config->cleaned_workers);
 }
@@ -804,15 +795,12 @@ static uint32_t worker_allocate(worker_state *worker) {
   worker->cookie_json = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_JSON_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   worker->cookie_json_input = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_RAW_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   worker->return_url = (uint8_t *)VirtualAlloc(NULL, HOST_RETURN_URL_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-  worker->browser_scratch_bytes = al_campfire_browser_scratch_size_v1();
-  if (!align_pointer(&worker->browser_scratch_raw, (uint32_t)worker->browser_scratch_bytes,
-                     (uint32_t)al_campfire_browser_scratch_alignment_v1(), &worker->browser_scratch)) return 0u;
   { uint32_t i; for (i = 0u; i < 3u; ++i) { worker->cookie_wire[i] = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_WIRE_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); worker->cookie_raw[i] = (uint8_t *)VirtualAlloc(NULL, HOST_COOKIE_RAW_BYTES, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE); } }
   if (worker->stack == NULL ||
       (config->owning_runtime_profile == 0u && (worker->init_bitmap == NULL || worker->poison_bitmap == NULL)) ||
       worker->request_buffer == NULL ||
       worker->input == NULL || worker->retained == NULL || worker->body == NULL || worker->text_arena == NULL || worker->cookie_input == NULL ||
-      worker->unescape_scratch == NULL || worker->cookie_json == NULL || worker->cookie_json_input == NULL || worker->return_url == NULL || worker->browser_scratch == NULL) return 0u;
+      worker->unescape_scratch == NULL || worker->cookie_json == NULL || worker->cookie_json_input == NULL || worker->return_url == NULL) return 0u;
   for (uint32_t i = 0u; i < 3u; ++i) if (worker->cookie_wire[i] == NULL || worker->cookie_raw[i] == NULL) return 0u;
   if (config->api.pure_init(worker->pure_context, worker->pure_bytes, config->secret, config->secret_bytes) != 0) return 0u;
   if (al_campfire_cookie_response_context_init_v1(worker->response_context, worker->response_bytes, config->secret, config->secret_bytes) != 0) {
@@ -1260,17 +1248,6 @@ static uint32_t remote_ip_text(worker_state *worker, const HTTP_REQUEST *request
   return 0u;
 }
 
-static uint32_t browser_info(worker_state *worker, text_span user_agent,
-                             al_campfire_browser_result_v1 *result) {
-  al_campfire_browser_status_v1 status;
-  bytes_zero(result, sizeof(*result));
-  status = al_campfire_browser_normalize_utf16_v1(user_agent.present,
-      user_agent.data, user_agent.units,
-      worker->browser_scratch, worker->browser_scratch_bytes,
-      worker->browser_version, 4096u, result);
-  return status == AL_CAMPFIRE_BROWSER_OK_V1;
-}
-
 static uint32_t header_text(worker_state *worker, const HTTP_REQUEST *request,
                             int known_id, const char *name,
                             text_span *out) {
@@ -1416,7 +1393,6 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   uint32_t cookie_status, required = 0u;
   uint16_t *remote = NULL, *base = NULL;
   uint32_t remote_units = 0u, base_units = 0u;
-  al_campfire_browser_result_v1 browser;
   cf_room_request request_value;
   uint32_t status;
   worker->text_used = 0u;
@@ -1465,10 +1441,6 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   bytes_copy(base, worker->config->authority, base_units * sizeof(uint16_t));
   base[base_units] = 0u;
   worker->text_used += base_units + 1u;
-  if (!browser_info(worker, user_agent, &browser)) {
-    /* Browser input and product bounds are explicit 431 failures, never fallback. */
-    return 3u;
-  }
   request_value.method = method;
   request_value.room_id = room_id;
   request_value.now_unix_microseconds = worker->request_now_unix_microseconds;
@@ -1482,11 +1454,6 @@ static uint32_t make_entry_input(worker_state *worker, const HTTP_REQUEST *reque
   request_value.last_room.present = last_room.present; request_value.last_room.value.data = last_room.data; request_value.last_room.value.length = last_room.units;
   request_value.request_is_ssl = 0u; request_value.force_ssl = 0u;
   request_value.accepts_turbo = 0u; request_value.accepts_html = 1u;
-  request_value.browser_family = browser.family;
-  request_value.browser_version.present = browser.has_version;
-  request_value.browser_version.value.data = browser.has_version ? worker->browser_version : NULL;
-  request_value.browser_version.value.length = browser.version_units;
-  request_value.browser_is_bot = browser.is_bot;
   request_value.csrf_token.present = csrf_token.present; request_value.csrf_token.value.data = csrf_token.data; request_value.csrf_token.value.length = csrf_token.units;
   status = cf_encode_room_request(&request_value, NULL, 0u, &required);
   if (status != 2u || required == 0u || required > HOST_INPUT_BYTES) return 0u;

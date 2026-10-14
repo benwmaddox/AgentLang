@@ -194,7 +194,7 @@ fn campfire.http.authenticated-user(request: CampfireHttpRequest, restored: Rest
     doc "Applies CSRF, browser, and current-user gates in their established order, preserving any pending session refresh on failures."
 
     if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
-        if campfire.browser.supported?(request.browser) {
+        if campfire.browser.supported?(campfire.browser.from-user-agent(request.user-agent)) {
             match restored.user {
                 none => result.error<AuthUser, CampfireHttpResponse>(campfire.http.response(500, HttpView.empty(), "", refresh))
                 some user => result.ok<AuthUser, CampfireHttpResponse>(user)

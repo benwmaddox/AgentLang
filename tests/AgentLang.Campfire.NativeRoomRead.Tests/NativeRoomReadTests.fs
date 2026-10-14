@@ -14,7 +14,6 @@ open Microsoft.Data.Sqlite
 open AgentLang
 open AgentLang.Llvm
 open AgentLang.Campfire.Authentication.Host
-open AgentLang.Campfire.Browser.Host
 open AgentLang.Campfire.Cookies
 open AgentLang.Campfire.Host
 open AgentLang.Campfire.Http
@@ -187,8 +186,7 @@ module NativeRoomReadTests =
         { Name: string
           Cookie: string option
           BotKey: string option
-          BrowserFamily: string
-          BrowserVersion: string option
+          UserAgent: string
           RequestNow: DateTimeOffset
           SessionToken: string option
           SessionUserId: int64
@@ -425,7 +423,7 @@ module NativeRoomReadTests =
                   "room-id", NamedValue("RoomId", IntValue testCase.RoomId)
                   "now", NamedValue("UtcInstant", IntValue(unixMicroseconds testCase.RequestNow))
                   "remote-ip", NamedValue("RemoteIp", StringValue "198.51.100.9")
-                  "user-agent", optionString (Some "NativeRoomReadTests/1.0")
+                  "user-agent", optionString (Some testCase.UserAgent)
                   "base-url", StringValue "https://campfire.example.test"
                   "request-is-ssl", BoolValue true
                   "force-ssl", BoolValue false
@@ -439,10 +437,6 @@ module NativeRoomReadTests =
                   "accepts-turbo", BoolValue false
                   "accepts-html", BoolValue true
                   "last-room", optionString (Some "101")
-                  "browser", RecordValue("BrowserInfo", Map.ofList
-                      [ "family", EnumValue("BrowserFamily", testCase.BrowserFamily)
-                        "version", optionString testCase.BrowserVersion
-                        "is-bot", BoolValue false ])
                   "csrf-token", optionString (Some csrfSecret) ])
 
     /// Rails' CSRF tokens are randomly masked per form, so pages compare with
@@ -539,9 +533,8 @@ module NativeRoomReadTests =
             [ campfire
               authentication
               CookieHost.createProvider cookies
-              BrowserHost.createProvider()
               LoginHost.createProvider() ]
-        { Manifest = HostComposition.manifest [ CampfireHost.manifest; CampfireAuthenticationHost.manifest; CookieHost.manifest; BrowserHost.manifest; LoginHost.manifest ]
+        { Manifest = HostComposition.manifest [ CampfireHost.manifest; CampfireAuthenticationHost.manifest; CookieHost.manifest; LoginHost.manifest ]
           ProductionProvider = HostComposition.provider parts
           CreateTestProvider = fun () -> Error HostOperationFailure.TestProviderUnavailable }
 
@@ -805,7 +798,7 @@ module NativeRoomReadTests =
             Marshal.FreeHGlobal pureRaw
             reraise()
 
-    let private verifyEightByteBrowserDispatch (counter: int ref) nativeHandle providerContext =
+    let private verifyRetiredBrowserTag (counter: int ref) nativeHandle providerContext =
         let dispatch = Marshal.GetDelegateForFunctionPointer<RoomReadDispatch>(NativeLibrary.GetExport(nativeHandle, "al_host_campfire_room_read_v1"))
         let descriptorSize = 36
         let descriptors = Marshal.AllocHGlobal(descriptorSize * 2)
@@ -861,7 +854,9 @@ module NativeRoomReadTests =
             let status = dispatch.Invoke(providerContext, 6u, layoutStorage, inputStorage, 2u, 1u, outputStorage, 8u, extentStorage)
             let extent = Marshal.ReadInt32 extentStorage
             let result = Marshal.ReadInt64 outputStorage
-            check counter "direct browser dispatch accepts the exact 8-byte Bool capacity" (status = 0 && extent = 8 && result = 1L)
+            ignore result
+            ignore extent
+            check counter "retired host tag 6 (browser.version-at-least?) is rejected; version comparison is Flow" (status <> 0)
         finally
             Marshal.FreeHGlobal layoutStorage
             Marshal.FreeHGlobal extentStorage
@@ -883,8 +878,7 @@ module NativeRoomReadTests =
             { Name = testName
               Cookie = Some validCookie
               BotKey = None
-              BrowserFamily = "other"
-              BrowserVersion = None
+              UserAgent = "NativeRoomReadTests/1.0"
               RequestNow = fixedNow
               SessionToken = Some sessionToken
               SessionUserId = 7L
@@ -908,8 +902,8 @@ module NativeRoomReadTests =
           { common "refresh-before-missing-user" with LastActiveAt = "2026-01-01 10:00:00.000000"; SessionUserId = 99L; ExpectedStatus = 500L; ExpectedView = "empty"; ExpectedRefresh = true; ExpectedMessageCount = None }
           { common "bot-key-fallback-authorized-bot" with Cookie = None; SessionToken = None; BotKey = Some($"13-{botToken}"); ExpectedStatus = 403L; ExpectedView = "empty"; ExpectedMessageCount = None }
           { common "bot-key-fallback-unknown-key" with Cookie = None; SessionToken = None; BotKey = Some "unknown-bot-key"; ExpectedStatus = 302L; ExpectedView = "redirect-session"; ExpectedMessageCount = None }
-          { common "old-browser-gate" with BrowserFamily = "chrome"; BrowserVersion = Some "119.0.0.0"; ExpectedView = "incompatible-browser"; ExpectedMessageCount = None }
-          { common "minimum-browser-gate" with BrowserFamily = "chrome"; BrowserVersion = Some "120.0.0.0" }
+          { common "old-browser-gate" with UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"; ExpectedView = "incompatible-browser"; ExpectedMessageCount = None }
+          { common "minimum-browser-gate" with UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
           { common "missing-room" with RoomId = 999L; ExpectedStatus = 302L; ExpectedView = "redirect-root"; ExpectedMessageCount = None }
           { common "room-not-member" with RoomId = 102L; ExpectedStatus = 302L; ExpectedView = "redirect-root"; ExpectedMessageCount = None }
           { common "empty-message-list" with RoomId = 103L; ExpectedMessageCount = Some 0 }
@@ -1082,8 +1076,7 @@ module NativeRoomReadTests =
             { Name = "native-refresh-under-writer-lock"
               Cookie = Some validCookie
               BotKey = None
-              BrowserFamily = "other"
-              BrowserVersion = None
+              UserAgent = "NativeRoomReadTests/1.0"
               RequestNow = fixedNow
               SessionToken = Some sessionToken
               SessionUserId = 7L
@@ -1247,9 +1240,9 @@ module NativeRoomReadTests =
                             verifyDetailedProfileAbi assertions api
                             verifyDetailedProfileThreadIsolation assertions api
                             Some api
-                    progress $"{optimizationName}: checking direct 8-byte browser callback capacity"
-                    verifyEightByteBrowserDispatch assertions handle context
-                    progress $"{optimizationName}: direct 8-byte browser callback passed"
+                    progress $"{optimizationName}: checking retired browser host tag"
+                    verifyRetiredBrowserTag assertions handle context
+                    progress $"{optimizationName}: retired browser host tag rejected"
                     for testCase in cases do
                         progress $"{optimizationName}/{testCase.Name}: invoking reference and native entry"
                         configureSession referenceDatabase testCase

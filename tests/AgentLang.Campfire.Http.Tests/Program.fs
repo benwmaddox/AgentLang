@@ -14,7 +14,6 @@ open System.Text.Json.Nodes
 open System.Threading
 open System.Threading.Tasks
 open AgentLang
-open AgentLang.Campfire.Browser.Host
 open AgentLang.Campfire.Cookies
 open AgentLang.Campfire.Host
 open AgentLang.Campfire.Authentication.Host
@@ -390,13 +389,12 @@ module Program =
             CampfireAuthenticationHost.createProvider databasePath
             |> expectOk "open existing authentication SQLite provider"
         let cookieProvider = CookieHost.createProvider cookies
-        let browser = BrowserHost.createProvider()
         let login = LoginHost.createProvider()
-        let combined = HostComposition.provider [ campfire; authentication; cookieProvider; browser; login ]
+        let combined = HostComposition.provider [ campfire; authentication; cookieProvider; login ]
         let probe = ProviderProbe(combined)
         let manifest =
             HostComposition.manifest
-                [ CookieHost.manifest; CampfireHost.manifest; CampfireAuthenticationHost.manifest; BrowserHost.manifest; LoginHost.manifest ]
+                [ CookieHost.manifest; CampfireHost.manifest; CampfireAuthenticationHost.manifest; LoginHost.manifest ]
         let mutable testFactoryCalls = 0
         let environment =
             { Manifest = manifest
@@ -540,6 +538,10 @@ module Program =
               "applications/campfire/request-policy.flow"
               "applications/campfire/browser-policy.flow"
               "applications/campfire/browser-tests.flow"
+              "applications/campfire/text-scan.flow"
+              "applications/campfire/text-scan-tests.flow"
+              "applications/campfire/user-agent.flow"
+              "applications/campfire/user-agent-tests.flow"
               "applications/campfire/Host/CampfireHost.fs"
               "applications/campfire/Host/AgentLang.Campfire.Host.fsproj"
               "applications/campfire/Persistence/SqliteProvider.fs"
@@ -548,11 +550,6 @@ module Program =
               "applications/campfire/Authentication.Host/AgentLang.Campfire.Authentication.Host.fsproj"
               "applications/campfire/Authentication.Persistence/SqliteProvider.fs"
               "applications/campfire/Authentication.Persistence/AgentLang.Campfire.Authentication.Persistence.fsproj"
-              "applications/campfire/Browser/BrowserHost.fs"
-              "applications/campfire/Browser/AgentLang.Campfire.Browser.Host.fsproj"
-              "applications/campfire/Browser/AgentLang.Campfire.Browser.fsproj"
-              "applications/campfire/Browser/RubyVersion.fs"
-              "applications/campfire/Browser/UserAgentNormalizer.fs"
               "applications/campfire/Cookies/CookieService.fs"
               "applications/campfire/Cookies/AgentLang.Campfire.Cookies.fsproj"
               "src/AgentLang.Core/Core.fs"
@@ -588,7 +585,7 @@ module Program =
         check (not (room.Body.Contains("<script>", StringComparison.Ordinal))) "stored markup is not emitted as executable markup"
         expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace room.Body
+              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace room.Body
         check (room.SetCookies |> List.exists (fun value -> value.StartsWith("last_room=", StringComparison.Ordinal))) "first successful room visit writes the last-room cookie"
 
         // Report 271: Rails' CSRF model. A session without _csrf_token gets one,
@@ -649,7 +646,7 @@ module Program =
             equal (Some "/") response.Location $"room id {id} is an ordinary missing-or-inaccessible room lookup"
             expectTrace probe
                 [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-                  "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user" ]
+                  "campfire.rooms.find-for-user" ]
 
         currentCheck <- "malformed and overflowing route identifiers fail before provider dispatch"
         for path in [ "/rooms/not-an-id"; "/rooms/9223372036854775808"; "/rooms/-9223372036854775809" ] do
@@ -680,7 +677,7 @@ module Program =
         check (noAccess.SetCookies |> List.exists (fun value -> value.StartsWith("_campfire_session=", StringComparison.Ordinal))) "root redirect sets encrypted flash state"
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user" ]
+              "campfire.rooms.find-for-user" ]
 
         currentCheck <- "message POST generates absent UUID and derives creator from the session"
         probe.Clear()
@@ -705,7 +702,7 @@ module Program =
         equal "posted from member" (scalarString databasePath "SELECT body FROM action_text_rich_texts ORDER BY id DESC LIMIT 1" []) "posted rich-text body is persisted"
         expectTrace probe
             [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"
-              "campfire.users.find-by-id"; "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"
+              "campfire.users.find-by-id"; "campfire.rooms.find-for-user"
               "campfire.membership.exists?"; "campfire.messages.create" ]
 
         currentCheck <- "message POST preserves an explicitly empty client ID"
@@ -725,7 +722,7 @@ module Program =
         equal "" (scalarString databasePath "SELECT client_message_id FROM messages ORDER BY id DESC LIMIT 1" []) "Some empty client ID is preserved verbatim"
         expectTrace probe
             [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"
-              "campfire.users.find-by-id"; "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"
+              "campfire.users.find-by-id"; "campfire.rooms.find-for-user"
               "campfire.membership.exists?"; "campfire.messages.create" ]
 
         currentCheck <- "CSRF failure occurs after due-session refresh and before message creation"
@@ -769,7 +766,7 @@ module Program =
             equal label (scalarString databasePath "SELECT body FROM action_text_rich_texts ORDER BY id DESC LIMIT 1" []) $"{label} remains stored"
             expectTrace probe
                 [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"
-                  "campfire.users.find-by-id"; "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"
+                  "campfire.users.find-by-id"; "campfire.rooms.find-for-user"
                   "campfire.membership.exists?"; "campfire.messages.create" ]
             response
         let notAcceptable = createWithNegotiation "html response is not available" "/rooms/1/messages" (Some "text/html") 406
@@ -806,7 +803,7 @@ module Program =
         equal beforeFailure.RoomUpdatedAt afterFailure.RoomUpdatedAt "failed message transaction does not touch the room"
         expectTrace probe
             [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"
-              "campfire.users.find-by-id"; "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"
+              "campfire.users.find-by-id"; "campfire.rooms.find-for-user"
               "campfire.membership.exists?"; "campfire.messages.create" ]
 
         currentCheck <- "malformed and unsupported forms fail before any message write"
@@ -849,7 +846,7 @@ module Program =
         equal beforeMalformed (scalarLong databasePath "SELECT COUNT(*) FROM messages" []) "invalid, unsupported, and attachment forms perform no writes"
         let authenticatedRoomLookup =
             [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user" ]
+              "campfire.rooms.find-for-user" ]
         expectTrace probe (List.concat [ authenticatedRoomLookup; authenticatedRoomLookup; authenticatedRoomLookup ])
 
         currentCheck <- "duplicate critical Origin headers fail CSRF before room lookup or message creation"
@@ -889,7 +886,7 @@ module Program =
         equal beforeMissingRoom (scalarLong databasePath "SELECT COUNT(*) FROM messages" []) "missing-room POST does not create a message"
         expectTrace probe
             [ "campfire.bans.ip-banned?"; "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"
-              "campfire.users.find-by-id"; "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user" ]
+              "campfire.users.find-by-id"; "campfire.rooms.find-for-user" ]
 
         currentCheck <- "orphan session refreshes before missing-user failure and skips room lookup"
         probe.Clear()
@@ -903,7 +900,7 @@ module Program =
         check (orphan.SetCookies |> List.exists (fun value -> value.StartsWith("session_token=", StringComparison.Ordinal))) "orphan error retains the due refresh cookie"
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.sessions.refresh-before"
-              "campfire.users.find-by-id"; "campfire.browser.version-at-least?" ]
+              "campfire.users.find-by-id" ]
 
         currentCheck <- "failed session refresh stops before user lookup and preserves database row"
         probe.Clear()
@@ -967,10 +964,9 @@ module Program =
         let passwordDigest = "$2a$12$I/2qP3ixlNN..JU2dXSN0umG7/Folk3aUaqgSHn/Rl0G82O9WYk66"
         let memberEmail = "member@example.test"
         let goodToken = createSignedCookie cookies "fresh-token"
-        let browserAndUsers = [ "campfire.browser.version-at-least?"; "campfire.users.any?" ]
+        let browserAndUsers = [ "campfire.users.any?" ]
         let loginAttempt =
             [ "campfire.bans.ip-banned?"
-              "campfire.browser.version-at-least?"
               "campfire.sessions.login-attempt-count" ]
         let loginCredentialCheck = loginAttempt @ [ "campfire.users.authenticate-password" ]
         let loginSuccessTrace = loginCredentialCheck @ [ "campfire.sessions.start" ]
@@ -1271,7 +1267,6 @@ module Program =
         currentCheck <- "login attempt budget allows ten posts and rejects the eleventh"
         let loginAttempt =
             [ "campfire.bans.ip-banned?"
-              "campfire.browser.version-at-least?"
               "campfire.sessions.login-attempt-count" ]
         clock.Advance(TimeSpan.FromSeconds 180.0)
         for _ in 1 .. 10 do
@@ -1301,8 +1296,7 @@ module Program =
             [ "campfire.bans.ip-banned?"
               "campfire.cookies.verify-session-token"
               "campfire.sessions.find-by-token"
-              "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?" ]
+              "campfire.users.find-by-id" ]
         let revocationTrace endpoint = validGateTrace @ [ endpoint; "campfire.sessions.destroy" ]
         let signedOut response =
             expectStatus 302 response
@@ -1544,7 +1538,7 @@ module Program =
         expectStatus 200 getWhileBanned
         expectTrace probe <|
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace getWhileBanned.Body
+              "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ] @ csrfTrace getWhileBanned.Body
 
     let private checkEmptyUsersHttpBehavior (sourceDirectory: string) (clock: FixedClock) (cookies: CookieService) =
         currentCheck <- "empty users login redirects to first run"
@@ -1563,7 +1557,6 @@ module Program =
               ForceSsl = false
               Cookies = cookies
               Clock = fun () -> clock.CurrentInstant
-              NormalizeBrowser = Application.normalizeBrowser
               Invoke = application.Invoke }
         let builder = WebApplication.CreateBuilder([||])
         builder.WebHost.UseUrls("http://127.0.0.1:0") |> ignore
@@ -1583,7 +1576,7 @@ module Program =
             let firstRun = send client (baseSpec "GET" "/session/new")
             expectStatus 302 firstRun
             equal (Some "/first_run") firstRun.Location "empty users redirect to first run"
-            expectTrace probe [ "campfire.browser.version-at-least?"; "campfire.users.any?" ]
+            expectTrace probe [ "campfire.users.any?" ]
         finally
             web.StopAsync().GetAwaiter().GetResult()
             probe.AsProvider.Dispose()
@@ -1610,7 +1603,6 @@ module Program =
               ForceSsl = false
               Cookies = cookies
               Clock = fun () -> clock.CurrentInstant
-              NormalizeBrowser = Application.normalizeBrowser
               Invoke = application.Invoke }
 
         let builder = WebApplication.CreateBuilder([||])
@@ -1696,7 +1688,7 @@ module Program =
                     check (restoredRoom.Body.Contains("<title>Main room</title>", StringComparison.Ordinal)) "restarted application restores the persisted login session"
                     expectTrace restartedProbe <|
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-                          "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"
+                          "campfire.rooms.find-for-user"; "campfire.membership.exists?"
                           "campfire.messages.last-page-with-creators" ] @ csrfTrace restoredRoom.Body
 
                     currentCheck <- "revoked signed logout token stays rejected after application restart"

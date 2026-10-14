@@ -12,9 +12,6 @@ typedef struct cf_room_request {
  cf_text remote_ip, base_url;
  cf_optional_text user_agent, origin, fetch_site, session_token, bot_key, last_room;
  uint32_t request_is_ssl, force_ssl, accepts_turbo, accepts_html;
- uint32_t browser_family; /* BrowserFamily declaration order, 0..5. */
- cf_optional_text browser_version;
- uint32_t browser_is_bot;
  cf_optional_text csrf_token; /* the Rails session's _csrf_token (report 271) */
 } cf_room_request;
 /* Returns 0 on success, 1 invalid input, 2 insufficient output capacity.

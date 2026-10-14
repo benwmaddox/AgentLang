@@ -13,7 +13,7 @@ enum al_campfire_room_read_operation {
   AL_CAMPFIRE_SESSION_REFRESH = 3,
   AL_CAMPFIRE_USER_FIND = 4,
   AL_CAMPFIRE_USER_BOT_KEY = 5,
-  AL_CAMPFIRE_BROWSER_VERSION = 6,
+  /* 6 (browser.version-at-least?) is retired: version comparison is Flow. */
   AL_CAMPFIRE_ROOM_FIND = 7,
   AL_CAMPFIRE_MEMBERSHIP_EXISTS = 8,
   /* 9 (messages.last-page) is retired; tags are never reused. */

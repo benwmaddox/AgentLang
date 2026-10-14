@@ -9,7 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\applications\campfire\Http\AgentLang.Campfire.Http.fsproj" />
-    <ProjectReference Include="..\..\applications\campfire\Browser\AgentLang.Campfire.Browser.Host.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />

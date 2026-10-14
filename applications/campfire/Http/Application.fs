@@ -4,7 +4,6 @@ open System
 open System.IO
 open System.Text.Json.Nodes
 open AgentLang
-open AgentLang.Campfire.Browser.Host
 
 type CampfireApplication =
     { Engine: Runtime.Engine
@@ -12,9 +11,6 @@ type CampfireApplication =
 
 module Application =
     let capabilities = Set.ofList [ "db.read"; "db.write"; "clock.read"; "random.read" ]
-
-    let normalizeBrowser (userAgent: string option) =
-        BrowserHost.normalizeUserAgent userAgent
 
     let private arguments (fields: (string * JsonNode) list) =
         let value = JsonObject()
@@ -75,6 +71,7 @@ module Application =
                   "authentication.flow"; "authentication-tests.flow"
                   "sign-in.flow"; "sign-in-tests.flow"
                   "sign-out.flow"; "sign-out-tests.flow"
+                  "text-scan.flow"; "user-agent.flow"; "text-scan-tests.flow"; "user-agent-tests.flow"
                   "browser-policy.flow"; "browser-tests.flow"
                   "views.flow"; "layout.flow"; "message.flow"; "views-tests.flow"
                   "http-login.flow"; "http.flow"; "http-login-tests.flow"; "http-tests.flow"; "http-logout-tests.flow"
@@ -84,6 +81,14 @@ module Application =
                   "campfire.rooms.list-for-user"; "campfire.messages.page-for-member"
                   "campfire.messages.create-for-member"; "campfire.authentication.restore-session"
                   "campfire.authentication.sign-in"; "campfire.authentication.sign-out"
+                  "scan.byte"; "scan.between"; "scan.from"; "scan.found-or"
+                  "scan.positions"; "scan.digits"; "scan.remove"; "scan.remove-all"
+                  "scan.char-width"; "scan.first-char"; "scan.run-end"; "scan.compare-step"
+                  "scan.compare-ticks"; "scan.compare-bytes"; "campfire.ua.ruby-spaces"; "campfire.ua.ruby-blank?"
+                  "campfire.ua.letter?"; "campfire.ua.alnum-dash"; "campfire.ua.comparable-version?"; "campfire.ua.normalized-integer"
+                  "campfire.ua.version-scan-step"; "campfire.ua.scan-version"; "campfire.ua.version-segments"; "campfire.ua.compare-segment"
+                  "campfire.ua.segment-pick-step"; "campfire.ua.segment-at"; "campfire.ua.first-order"; "campfire.ua.first-nonzero"
+                  "campfire.ua.compare-segments"; "campfire.browser.version-compare"; "campfire.browser.version-at-least?"
                   "campfire.browser.supported?" ] do
                 commit engine name true
             invokeCommand engine "commit" [] |> ignore

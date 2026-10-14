@@ -208,7 +208,6 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room) {
     $required = @(
         $hostPath,
         'applications/campfire/Native/http/request_encoder.c', 'applications/campfire/Native/http/request_encoder.h',
-        'applications/campfire/Native/http/browser_normalizer.c', 'applications/campfire/Native/http/browser_normalizer.h',
         
         'applications/campfire/Native/http/campfire_http_renderer.c', 'applications/campfire/Native/http/campfire_http_renderer.h',
         'applications/campfire/Native/http/cookie_response_codec.c', 'applications/campfire/Native/http/cookie_response_codec.h',
@@ -244,7 +243,7 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room) {
         Require ([string]$m['moduleInfo']['profileId'] -ceq 'campfire-room-read-v1' -and [string]$m['moduleInfo']['operationName'] -ceq 'campfire.http.room-read') "$opt manifest profile identity mismatch."
         Require ((EqList @($m['moduleInfo']['effects']) @('db.read', 'db.write')) -and (EqList @($m['moduleInfo']['fixedEffectAllowlist']) @('db.read', 'db.write'))) "$opt manifest effects mismatch."
         $opIds = @($m['moduleInfo']['operations'] | ForEach-Object { [string]$_.operationId })
-        Require (EqList $opIds @('campfire.cookies.verify-session-token', 'campfire.sessions.find-by-token', 'campfire.sessions.refresh-before', 'campfire.users.find-by-id', 'campfire.users.authenticate-bot-key', 'campfire.browser.version-at-least?', 'campfire.rooms.find-for-user', 'campfire.membership.exists?', 'campfire.messages.last-page')) "$opt manifest operation closure mismatch."
+        Require (EqList $opIds @('campfire.cookies.verify-session-token', 'campfire.sessions.find-by-token', 'campfire.sessions.refresh-before', 'campfire.users.find-by-id', 'campfire.users.authenticate-bot-key', 'campfire.rooms.find-for-user', 'campfire.membership.exists?', 'campfire.messages.last-page')) "$opt manifest operation closure mismatch."
         Require (EqList @($m['moduleInfo']['operations'] | ForEach-Object { [string]$_.tag }) @('1','2','3','4','5','6','7','8','9')) "$opt manifest operation tags mismatch."
         Require (EqList @($m['moduleInfo']['inputTypes']) @('CampfireHttpRequest') -and (EqList @($m['moduleInfo']['outputTypes']) @('CampfireHttpResponse'))) "$opt manifest entry types mismatch."
         Require (([string]$r['GeneratedPinsHeaderSha256']).ToLowerInvariant() -eq (Hash $header)) "$opt generated pin-header hash mismatch."

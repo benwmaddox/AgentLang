@@ -240,7 +240,6 @@ function Assert-ClosedRoomReadManifest([string] $ManifestPath, [string] $Expecte
         'campfire.sessions.refresh-before',
         'campfire.users.find-by-id',
         'campfire.users.authenticate-bot-key',
-        'campfire.browser.version-at-least?',
         'campfire.rooms.find-for-user',
         'campfire.membership.exists?',
         'campfire.messages.last-page-with-creators',
@@ -259,10 +258,8 @@ function Find-UniqueHelper([string] $Name) {
 }
 
 $helperPins = [ordered]@{
-    'request_encoder.c' = 'C0DF185A11D2050FDFA8E233591F594E0647F239FD1CCE6C950813A92AAF4D50'
-    'request_encoder.h' = '6F3C1C980E48AE15DED4E4FFAE74E0F135BB13D2FD43F9F62E2E4A187D908876'
-    'browser_normalizer.c' = '37CBCE440FFD22D5800570ED593426E48AACCF611319F7A9B8C3CFE8EE4040A2'
-    'browser_normalizer.h' = 'B2D5289556A9A13F9C33C2E02ABBEFED4071DC2C1172B7B8B14B6520C082182E'
+    'request_encoder.c' = '354AC77A792FB2415B3B1E8E6CBBE30B9AE4B3D7B26917F08A56228CEDC91BAD'
+    'request_encoder.h' = 'B832F3FBFF28CB69C3CF482925C2DD1ECE15A6449089BD15EF1C97F0DFCA148F'
     'campfire_http_renderer.c' = 'EE596DE77C16F09E6335B57E72CC6B02768CBF3F1B53C179C50E2256409EE6E8'
     'campfire_http_renderer.h' = 'B90B258883BEABCC69F9FBF35ECE8572778741F9E47BF22F62127EE121FD5BF3'
     'cookie_response_codec.c' = 'DF6F6AA20DB915DE028F76DB8D7EB51553FB4BB1C23D73EE24BEFF41296E6CBD'
@@ -377,7 +374,6 @@ $campfireNative = Join-Path $repositoryRoot 'applications\campfire\Native'
 $runtimeSource = Join-Path $llvmNative 'owning_stack_runtime.c'
 $helperSources = @(
     $helperPaths['request_encoder.c'],
-    $helperPaths['browser_normalizer.c'],
     $helperPaths['campfire_http_renderer.c'],
     $helperPaths['cookie_response_codec.c'],
     $helperPaths['cookie_wire.c'],

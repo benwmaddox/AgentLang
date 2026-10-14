@@ -47,7 +47,6 @@ record CampfireHttpRequest {
     accepts-turbo: Bool
     accepts-html: Bool
     last-room: Option<String>
-    browser: BrowserInfo
     csrf-token: Option<String>
 }
 

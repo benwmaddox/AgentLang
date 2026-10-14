@@ -13,7 +13,6 @@ open AgentLang.Llvm
 open AgentLang.Campfire.Http
 open AgentLang.Campfire.Host
 open AgentLang.Campfire.Authentication.Host
-open AgentLang.Campfire.Browser.Host
 open AgentLang.Aot.EntryExport
 
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))

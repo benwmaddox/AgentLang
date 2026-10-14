@@ -232,7 +232,6 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room, [string
     $required = @(
         $hostPath,
         'applications/campfire/Native/http/request_encoder.c', 'applications/campfire/Native/http/request_encoder.h',
-        'applications/campfire/Native/http/browser_normalizer.c', 'applications/campfire/Native/http/browser_normalizer.h',
         
         'applications/campfire/Native/http/campfire_http_renderer.c', 'applications/campfire/Native/http/campfire_http_renderer.h',
         'applications/campfire/Native/http/cookie_response_codec.c', 'applications/campfire/Native/http/cookie_response_codec.h',
@@ -274,7 +273,6 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room, [string
         [ordered]@{ id = 'campfire.sessions.refresh-before'; tag = 3; input = @('SessionRefresh'); output = @('Result<SessionRow, DbError>'); effects = @('db.write') },
         [ordered]@{ id = 'campfire.users.find-by-id'; tag = 4; input = @('UserId'); output = @('Result<Option<AuthUser>, DbError>'); effects = @('db.read') },
         [ordered]@{ id = 'campfire.users.authenticate-bot-key'; tag = 5; input = @('BotKey'); output = @('Result<Option<AuthUser>, DbError>'); effects = @('db.read') },
-        [ordered]@{ id = 'campfire.browser.version-at-least?'; tag = 6; input = @('String', 'String'); output = @('Bool'); effects = @() },
         [ordered]@{ id = 'campfire.rooms.find-for-user'; tag = 7; input = @('UserId', 'RoomId'); output = @('Result<Option<RoomRow>, DbError>'); effects = @('db.read') },
         [ordered]@{ id = 'campfire.membership.exists?'; tag = 8; input = @('MembershipKey'); output = @('Result<Bool, DbError>'); effects = @('db.read') },
         [ordered]@{ id = 'campfire.messages.last-page'; tag = 9; input = @('RoomId'); output = @('Result<List<MessageRow>, DbError>'); effects = @('db.read') }

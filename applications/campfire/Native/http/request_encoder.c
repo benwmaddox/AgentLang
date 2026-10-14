@@ -56,23 +56,23 @@ int cf_encode_room_request(const cf_room_request *r, uint8_t *out,
  writer w;
  if (required == NULL) return 1;
  *required=0u;
- if (r == NULL || r->method > 1u || r->browser_family > 5u ||
+ if (r == NULL || r->method > 1u ||
      r->now_unix_microseconds < INT64_C(-62135596800000000) ||
      r->now_unix_microseconds > INT64_C(253402300799999999) ||
      r->request_is_ssl > 1u || r->force_ssl > 1u || r->accepts_turbo > 1u ||
-     r->accepts_html > 1u || r->browser_is_bot > 1u ||
+     r->accepts_html > 1u ||
      !valid_text(r->remote_ip) || !valid_text(r->base_url) ||
      !valid_optional(r->user_agent) || !valid_optional(r->origin) ||
      !valid_optional(r->fetch_site) || !valid_optional(r->session_token) ||
      !valid_optional(r->bot_key) || !valid_optional(r->last_room) ||
-     !valid_optional(r->browser_version) || !valid_optional(r->csrf_token)) return 1;
- /* Scalars: route/method/room/now, SSL flags, accepts flags, browser family/bot.
+     !valid_optional(r->csrf_token)) return 1;
+ /* Scalars: route/method/room/now, SSL flags, accepts flags.
   * Three form fields each hold Result.Ok(Option.None), 16 bytes. */
- extent=10u*8u + 3u*16u + text_size(r->remote_ip) + text_size(r->base_url) +
+ extent=8u*8u + 3u*16u + text_size(r->remote_ip) + text_size(r->base_url) +
   optional_size(r->user_agent) + optional_size(r->origin) +
   optional_size(r->fetch_site) + optional_size(r->session_token) +
   optional_size(r->bot_key) + optional_size(r->last_room) +
-  optional_size(r->browser_version) + optional_size(r->csrf_token);
+  optional_size(r->csrf_token);
  if (extent > CF_INPUT_MAX_BYTES) return 1;
  *required=extent;
  if (out == NULL || capacity < extent) return 2;
@@ -88,8 +88,7 @@ int cf_encode_room_request(const cf_room_request *r, uint8_t *out,
  scalar(&w,0u); scalar(&w,1u); /* login-form */
  scalar(&w,0u); scalar(&w,1u); /* logout-form */
  scalar(&w,r->accepts_turbo); scalar(&w,r->accepts_html);
- optional(&w,r->last_room); scalar(&w,r->browser_family);
- optional(&w,r->browser_version); scalar(&w,r->browser_is_bot);
+ optional(&w,r->last_room);
  optional(&w,r->csrf_token);
  return 0;
 }

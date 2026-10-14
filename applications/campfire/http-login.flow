@@ -136,7 +136,7 @@ fn campfire.http.session-login-route(request: CampfireHttpRequest) -> CampfireHt
     doc "Applies the same forgery and browser gates as authenticated routes before public GET or POST login behavior."
 
     if campfire.request.forgery-check-passed?(request.method, request.origin, request.fetch-site, request.base-url, true, request.request-is-ssl, request.force-ssl) {
-        if campfire.browser.supported?(request.browser) {
+        if campfire.browser.supported?(campfire.browser.from-user-agent(request.user-agent)) {
             match request.route {
                 session-new => {
                     match request.method {

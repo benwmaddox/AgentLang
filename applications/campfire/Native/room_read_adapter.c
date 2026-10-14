@@ -90,8 +90,6 @@ static uint32_t room_profile_category_for_operation(uint32_t operation) {
     return AL_OWNING_PROFILE_USER_FIND_BY_ID;
   case AL_CAMPFIRE_USER_BOT_KEY:
     return AL_OWNING_PROFILE_USER_AUTHENTICATE_BOT_KEY;
-  case AL_CAMPFIRE_BROWSER_VERSION:
-    return AL_OWNING_PROFILE_BROWSER_VERSION_AT_LEAST;
   case AL_CAMPFIRE_ROOM_FIND:
     return AL_OWNING_PROFILE_ROOM_FIND_FOR_USER;
   case AL_CAMPFIRE_MEMBERSHIP_EXISTS:
@@ -2485,17 +2483,11 @@ AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
                        output_extent_bytes);
     goto callback_complete;
   }
-  if (operation == AL_CAMPFIRE_COOKIE_VERIFY ||
-      operation == AL_CAMPFIRE_BROWSER_VERSION) {
-    result = operation == AL_CAMPFIRE_COOKIE_VERIFY
-                 ? al_campfire_verify_cookie_v1(
-                       ctx->pure_context, layout, inputs, input_count,
-                       output_type_index, output, effective_capacity,
-                       output_extent_bytes)
-                 : al_campfire_browser_version_v1(
-                       ctx->pure_context, layout, inputs, input_count,
-                       output_type_index, output, effective_capacity,
-                       output_extent_bytes);
+  if (operation == AL_CAMPFIRE_COOKIE_VERIFY) {
+    result = al_campfire_verify_cookie_v1(
+        ctx->pure_context, layout, inputs, input_count,
+        output_type_index, output, effective_capacity,
+        output_extent_bytes);
     goto callback_complete;
   }
 

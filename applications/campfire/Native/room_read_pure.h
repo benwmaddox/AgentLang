@@ -33,12 +33,6 @@ AL_CAMPFIRE_PURE_API int32_t al_campfire_verify_cookie_v1(
     uint32_t output_type_index, uint8_t *output,
     uint32_t output_capacity_bytes, uint32_t *output_extent_bytes);
 
-AL_CAMPFIRE_PURE_API int32_t al_campfire_browser_version_v1(
-    void *pure_context, const al_owning_layout *layout,
-    const al_campfire_room_read_input *inputs, uint32_t input_count,
-    uint32_t output_type_index, uint8_t *output,
-    uint32_t output_capacity_bytes, uint32_t *output_extent_bytes);
-
 /* Rails CSRF (report 271): the session secret, one masked form token, and a
  * message's eight quick-boost form tokens. Same callback ABI as above. */
 AL_CAMPFIRE_PURE_API int32_t al_campfire_csrf_session_secret_v1(
