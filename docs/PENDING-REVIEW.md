@@ -77,6 +77,34 @@ Noted for after the apples-to-apples Campfire comparison.
   room GET, roughly 3 ns each in trusted) and status checks after runtime calls
   that cannot fail.
 
+## Syntax changes, next (user, 2026-10-14)
+
+1. **Enum cases without `case`:** one bare case name per line, or separated
+   by `;`. The formatter writes the bare form, and `case` stays readable
+   during migration.
+2. **`expect` tests:**
+   - `expect <Bool expression>`; a test may hold several.
+   - `expect effects { … }` asserts exact effect counts.
+   - A failed `a == b` reports both values.
+   - A test whose last expression is a Bool treats it as `expect <that value>`
+     (user, 2026-10-14), so `test x/y { string.contains(a, b) }` is a complete
+     test.
+   - The old `=> literal` / `=> value …` forms stay readable during migration.
+
+3. **Records without `field`:** a record body holds only fields, so
+   `name: Type` lines are enough. `field` stays readable during migration,
+   and the formatter drops it (user, 2026-10-14).
+4. **Name rule:** word and namespace-segment names may not contain `(` or
+   `)`. Dots stay namespace separators (user, 2026-10-14).
+5. **Shared test overrides:** overrides declared at the top of a test file
+   apply to every `test-file` block in it, and blocks may still override
+   locally. An override that none of its block's tests reach is a
+   diagnostic. Then collapse the copied override sets in
+   `applications/campfire/*-tests.flow`. `http-tests.flow` alone repeats the
+   same 10 overrides in 9 blocks, many unused (user, 2026-10-14).
+
+Then the stdlib restructure in report 271's "Next".
+
 ## Scheduled removals
 
 | Item | Action | Deadline |

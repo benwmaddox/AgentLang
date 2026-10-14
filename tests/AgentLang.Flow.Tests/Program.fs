@@ -408,7 +408,7 @@ let private testIterativeAstDepthLimit () =
           Span = sourceSpan }
     let shallowRecordSource = FlowSource.renderRecord (recordWithFieldType (nestedListType 2))
     check "record renderer keeps ordinary closed container field types"
-        (shallowRecordSource.Contains("field value: List<List<Int>>;", StringComparison.Ordinal))
+        (shallowRecordSource.Contains("    value: List<List<Int>>;", StringComparison.Ordinal))
     let recordBoundaryType = nestedListType (FlowStructure.maxExpressionDepth - 1)
     let recordBoundarySource = FlowSource.renderRecord (recordWithFieldType recordBoundaryType)
     check "record renderer accepts the exact closed-type depth boundary" (not (String.IsNullOrWhiteSpace recordBoundarySource))
@@ -1046,7 +1046,7 @@ let private testFlow2DottedCallsAndNewlineSeparators () =
 
     let documentSource =
         """record Customer {
-    field email: String
+    email: String
     validate customer.valid?
 }
 
@@ -5533,8 +5533,8 @@ let private testFlowProjectDocumentParser () =
     let file = "<flow-project>"
     let recordSource =
         """record Customer {
-    field email: Email;
-    field balance: Float;
+    email: Email;
+    balance: Float;
 }"""
     let scalarSource =
         """type Email : String {
@@ -5628,8 +5628,8 @@ let private testFlowProjectDocumentParser () =
 
     let expectedRecord =
         """record Customer {
-    field email: Email;
-    field balance: Float;
+    email: Email;
+    balance: Float;
 }"""
     let expectedScalar =
         """type Email : String {
@@ -5839,7 +5839,7 @@ let private testFlowRecordValidatorSyntax () =
         | Error diagnostic -> failwith (Diagnostics.render diagnostic)
     equal "Flow record validator resolves namespace qualification to the exact word name" (Some "customer.valid?") document.Records.Head.Validator
     equal "Flow record validator parse/render is canonical and stable"
-        "record Customer {\n    field id: Int;\n    validate customer::valid?;\n}"
+        "record Customer {\n    id: Int;\n    validate customer::valid?;\n}"
         (FlowSource.renderRecord document.Records.Head)
     let canonical = FlowSource.renderDocument document
     let reparsed =

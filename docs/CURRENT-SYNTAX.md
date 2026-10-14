@@ -38,8 +38,8 @@ property is also written with a dot, but has no call parentheses:
 
 ```flow
 record Customer {
-    field balance: Int
-    field email: String
+    balance: Int
+    email: String
 }
 
 fn customer.active?(customer: Customer) -> Bool {
@@ -128,8 +128,8 @@ are separated by a newline:
 
 ```flow
 record Coordinate {
-    field x: Int
-    field y: Int
+    x: Int
+    y: Int
 }
 ```
 
@@ -145,6 +145,13 @@ fn marker.read(path: String) -> String {
 }
 ```
 
+## Enums
+
+An enum lists its case names, one per line or separated by `;`, like record
+fields. Payload-free cases are built with a constructor call such as
+`RenewalState.pending()`. The older `case pending` spelling is still accepted
+while sources migrate; the formatter writes bare names.
+
 ## Match arms
 
 A single-expression arm can omit its block. Keep a block when an arm has
@@ -152,8 +159,8 @@ multiple statements:
 
 ```flow
 enum RenewalState {
-    case pending
-    case renewed
+    pending
+    renewed
 }
 
 fn renewal.label(state: RenewalState) -> String {

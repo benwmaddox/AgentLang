@@ -1,79 +1,79 @@
 enum HttpRoute {
-    case room-show
-    case message-create
-    case session-new
-    case session-create
-    case session-destroy
+    room-show
+    message-create
+    session-new
+    session-create
+    session-destroy
 }
 
 enum HttpFormError {
-    case invalid-form
-    case unsupported-media
-    case unsupported-attachment
-    case body-too-large
+    invalid-form
+    unsupported-media
+    unsupported-attachment
+    body-too-large
 }
 
 record HttpMessageInput {
-    field client-message-id: Option<String>
-    field body: Option<String>
+    client-message-id: Option<String>
+    body: Option<String>
 }
 
 record HttpLoginInput {
-    field email-address: Option<String>
-    field password: Option<String>
+    email-address: Option<String>
+    password: Option<String>
 }
 
 record HttpLogoutInput {
-    field push-subscription-endpoint: Option<String>
+    push-subscription-endpoint: Option<String>
 }
 
 record CampfireHttpRequest {
-    field route: HttpRoute
-    field method: RequestMethod
-    field room-id: RoomId
-    field now: UtcInstant
-    field remote-ip: RemoteIp
-    field user-agent: Option<String>
-    field base-url: String
-    field request-is-ssl: Bool
-    field force-ssl: Bool
-    field origin: Option<String>
-    field fetch-site: Option<String>
-    field session-token: Option<String>
-    field bot-key: Option<BotKey>
-    field message-form: Result<Option<HttpMessageInput>, HttpFormError>
-    field login-form: Result<Option<HttpLoginInput>, HttpFormError>
-    field logout-form: Result<Option<HttpLogoutInput>, HttpFormError>
-    field accepts-turbo: Bool
-    field accepts-html: Bool
-    field last-room: Option<String>
-    field browser: BrowserInfo
-    field csrf-token: Option<String>
+    route: HttpRoute
+    method: RequestMethod
+    room-id: RoomId
+    now: UtcInstant
+    remote-ip: RemoteIp
+    user-agent: Option<String>
+    base-url: String
+    request-is-ssl: Bool
+    force-ssl: Bool
+    origin: Option<String>
+    fetch-site: Option<String>
+    session-token: Option<String>
+    bot-key: Option<BotKey>
+    message-form: Result<Option<HttpMessageInput>, HttpFormError>
+    login-form: Result<Option<HttpLoginInput>, HttpFormError>
+    logout-form: Result<Option<HttpLogoutInput>, HttpFormError>
+    accepts-turbo: Bool
+    accepts-html: Bool
+    last-room: Option<String>
+    browser: BrowserInfo
+    csrf-token: Option<String>
 }
 
 enum HttpView {
-    case empty
-    case room
-    case append-message
-    case redirect-root
-    case redirect-session
-    case incompatible-browser
-    case room-not-found
-    case login-page
-    case redirect-authenticated
-    case redirect-first-run
-    case redirect-signed-out
+    empty
+    room
+    append-message
+    redirect-root
+    redirect-session
+    incompatible-browser
+    room-not-found
+    login-page
+    redirect-authenticated
+    redirect-first-run
+    redirect-signed-out
 }
 
 record CampfireHttpResponse {
-    field status: Int
-    field view: HttpView
-    field text: String
-    field room: Option<RoomRow>
-    field message: Option<MessageRow>
-    field refresh-session-token: Option<SessionToken>
-    field remember-return-to: Bool
-    field last-room: Option<RoomId>
-    field new-csrf-token: Option<String>
-    field body: String
+    status: Int
+    view: HttpView
+    text: String
+    room: Option<RoomRow>
+    message: Option<MessageRow>
+    refresh-session-token: Option<SessionToken>
+    remember-return-to: Bool
+    last-room: Option<RoomId>
+    new-csrf-token: Option<String>
+    body: String
 }

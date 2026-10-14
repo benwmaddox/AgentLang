@@ -1,18 +1,18 @@
 type UserId : Int { }
 
 enum Role {
-    case member
-    case administrator
-    case bot
+    member
+    administrator
+    bot
 }
 
 record User {
-    field id: UserId
-    field role: Role
+    id: UserId
+    role: Role
 }
 
 record ExistingMessage {
-    field creator-id: UserId
+    creator-id: UserId
 }
 
 type RoomId : Int { }
@@ -20,89 +20,89 @@ type RoomId : Int { }
 type MessageId : Int { }
 
 enum RoomKind {
-    case open
-    case closed
-    case direct
+    open
+    closed
+    direct
 }
 
 enum DbError {
-    case unavailable
-    case not-found
-    case constraint-conflict
-    case invalid-input
+    unavailable
+    not-found
+    constraint-conflict
+    invalid-input
 }
 
 enum RoomMessageError {
-    case access-denied
-    case database-unavailable
-    case database-not-found
-    case database-constraint-conflict
-    case database-invalid-input
+    access-denied
+    database-unavailable
+    database-not-found
+    database-constraint-conflict
+    database-invalid-input
 }
 
 record RoomRow {
-    field id: RoomId
-    field name: Option<String>
-    field kind: RoomKind
-    field creator-id: UserId
-    field created-at: String
-    field updated-at: String
+    id: RoomId
+    name: Option<String>
+    kind: RoomKind
+    creator-id: UserId
+    created-at: String
+    updated-at: String
 }
 
 record MembershipKey {
-    field user-id: UserId
-    field room-id: RoomId
+    user-id: UserId
+    room-id: RoomId
 }
 
 record MessageRow {
-    field id: MessageId
-    field room-id: RoomId
-    field creator-id: UserId
-    field client-message-id: String
-    field body: Option<String>
-    field created-at: String
-    field updated-at: String
+    id: MessageId
+    room-id: RoomId
+    creator-id: UserId
+    client-message-id: String
+    body: Option<String>
+    created-at: String
+    updated-at: String
 }
 
 record MessageWithCreator {
-    field id: MessageId
-    field room-id: RoomId
-    field creator-id: UserId
-    field created-at-ms: Int
-    field updated-at-ms: Int
-    field client-message-id: String
-    field created-at: String
-    field creator-name: String
-    field creator-bio: String
-    field creator-updated-at: String
-    field creator-avatar-token: String
-    field body: Option<String>
+    id: MessageId
+    room-id: RoomId
+    creator-id: UserId
+    created-at-ms: Int
+    updated-at-ms: Int
+    client-message-id: String
+    created-at: String
+    creator-name: String
+    creator-bio: String
+    creator-updated-at: String
+    creator-avatar-token: String
+    body: Option<String>
 }
 
 record CsrfSecret {
-    field value: String
-    field fresh: Bool
+    value: String
+    fresh: Bool
 }
 
 record BoostTokens {
-    field thumbs-up: String
-    field clapping: String
-    field waving-hand: String
-    field muscle: String
-    field red-heart: String
-    field tears-of-joy: String
-    field party-popper: String
-    field fire: String
+    thumbs-up: String
+    clapping: String
+    waving-hand: String
+    muscle: String
+    red-heart: String
+    tears-of-joy: String
+    party-popper: String
+    fire: String
 }
 
 record TokenedMessage {
-    field message: MessageWithCreator
-    field boost-tokens: BoostTokens
+    message: MessageWithCreator
+    boost-tokens: BoostTokens
 }
 
 record NewMessage {
-    field room-id: RoomId
-    field creator-id: UserId
-    field client-message-id: Option<String>
-    field body: Option<String>
+    room-id: RoomId
+    creator-id: UserId
+    client-message-id: Option<String>
+    body: Option<String>
 }

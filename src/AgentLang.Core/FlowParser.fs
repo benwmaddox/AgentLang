@@ -1475,9 +1475,12 @@ module FlowParser =
         let fieldNames = HashSet<string>(StringComparer.Ordinal)
         let mutable validator = None
         while not (atEnd state) && peek state <> Some "}" do
+            // A record body holds fields and at most one validator. Fields are
+            // `name: Type` (report 272); the older `field name: Type` stays readable.
+            let isValidator = peek state = Some "validate" && peekAt state 1 <> Some ":"
             match peek state with
-            | Some "field" ->
-                expect state "field" |> ignore
+            | Some _ when not isValidator ->
+                if peek state = Some "field" && peekAt state 1 <> Some ":" then consume state |> ignore
                 let fieldName = expectIdentifier state
                 if not (validFieldName fieldName.Text) then
                     fail state.File fieldName.Line fieldName.Column fieldName.Text.Length "FLOW_RECORD_FIELD_NAME_INVALID" "Record fields must use non-reserved identifier names."
@@ -1561,7 +1564,8 @@ module FlowParser =
         let caseNames = ResizeArray<string>()
         let seen = HashSet<string>(StringComparer.Ordinal)
         while not (atEnd state) && peek state <> Some "}" do
-            expect state "case" |> ignore
+            // Cases are bare names (report 272); the older `case name` spelling stays readable.
+            if peek state = Some "case" then consume state |> ignore
             let caseToken = expectIdentifier state
             if reservedEnumCases.Contains caseToken.Text then
                 fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_RESERVED_CASE" "Enum case names cannot use the reserved Option and Result labels."

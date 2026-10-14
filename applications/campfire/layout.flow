@@ -1,18 +1,18 @@
 record PageChrome {
-    field room-name: String
-    field room-id: String
-    field room-key: String
-    field room-path: String
-    field user-id: String
-    field user-name: String
-    field body-class: String
-    field base-url: String
-    field account-version: String
-    field csrf-token: String
-    field composer-token: String
-    field user-avatar-url: String
-    field stream-name: String
-    field loaded-at: String
+    room-name: String
+    room-id: String
+    room-key: String
+    room-path: String
+    user-id: String
+    user-name: String
+    body-class: String
+    base-url: String
+    account-version: String
+    csrf-token: String
+    composer-token: String
+    user-avatar-url: String
+    stream-name: String
+    loaded-at: String
 }
 
 fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {

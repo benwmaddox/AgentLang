@@ -7,46 +7,46 @@ type BotKey : String { }
 type RemoteIp : String { }
 
 enum AuthUserStatus {
-    case active
-    case deactivated
-    case banned
+    active
+    deactivated
+    banned
 }
 
 record AuthUser {
-    field id: UserId
-    field name: String
-    field role: Role
-    field status: AuthUserStatus
+    id: UserId
+    name: String
+    role: Role
+    status: AuthUserStatus
 }
 
 record SessionRow {
-    field id: SessionId
-    field user-id: UserId
-    field token: SessionToken
-    field ip-address: Option<RemoteIp>
-    field user-agent: Option<String>
-    field last-active-at: UtcInstant
-    field created-at: UtcInstant
-    field updated-at: UtcInstant
+    id: SessionId
+    user-id: UserId
+    token: SessionToken
+    ip-address: Option<RemoteIp>
+    user-agent: Option<String>
+    last-active-at: UtcInstant
+    created-at: UtcInstant
+    updated-at: UtcInstant
 }
 
 record SessionStart {
-    field user-id: UserId
-    field now: UtcInstant
-    field ip-address: Option<RemoteIp>
-    field user-agent: Option<String>
+    user-id: UserId
+    now: UtcInstant
+    ip-address: Option<RemoteIp>
+    user-agent: Option<String>
 }
 
 record SessionRefresh {
-    field session-id: SessionId
-    field cutoff: UtcInstant
-    field now: UtcInstant
-    field ip-address: Option<RemoteIp>
-    field user-agent: Option<String>
+    session-id: SessionId
+    cutoff: UtcInstant
+    now: UtcInstant
+    ip-address: Option<RemoteIp>
+    user-agent: Option<String>
 }
 
 record RestoredSession {
-    field user: Option<AuthUser>
-    field session: SessionRow
-    field refresh-cookie: Bool
+    user: Option<AuthUser>
+    session: SessionRow
+    refresh-cookie: Bool
 }

@@ -918,7 +918,7 @@ module FlowSource =
         let semicolon = if syntaxVersion = 1 then ";" else ""
         let fields =
             definition.Fields
-            |> List.map (fun field -> "    field " + field.Name + ": " + Types.format field.Type + semicolon)
+            |> List.map (fun field -> "    " + field.Name + ": " + Types.format field.Type + semicolon)
         let validatorLine =
             match definition.Validator with
             | None -> []
@@ -992,7 +992,7 @@ module FlowSource =
                     Diagnostics.raiseError "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseName}' is repeated." (Some definition.Name) (Some definition.Span) [] [ caseName ]
             else
                 Diagnostics.raiseError "FLOW_ENUM_CASE_NAME_INVALID" "Enum cases must use non-reserved identifiers." (Some definition.Name) (Some definition.Span) [ "case-name" ] [ caseName ]
-        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    case " + caseName)) @ [ "}" ])
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    " + caseName)) @ [ "}" ])
 
     let renderEnum definition = renderEnumWithVersion 2 definition
 

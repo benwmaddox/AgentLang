@@ -1,7 +1,7 @@
 record MessageContext {
-    field room-id: String
-    field room-name: String
-    field base-url: String
+    room-id: String
+    room-name: String
+    base-url: String
 }
 
 fn campfire.views.rails-message(context: MessageContext, tokened: TokenedMessage) -> Html {
