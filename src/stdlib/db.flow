@@ -46,7 +46,31 @@ fn db.null-param() -> DbValue {
 }
 
 fn db.column(row: DbRow, column: Int) -> Option<DbValue> {
-    list.get(row.values, column)
+    var found = option.none<DbValue>()
+    for value, index in row.values {
+        if index == column {
+            found = option.some<DbValue>(value)
+            break
+        }
+    }
+    found
+}
+
+fn db.first-row(rows: List<DbRow>) -> Option<DbRow> {
+    doc "The first row of a query result, if any."
+    var found = option.none<DbRow>()
+    for row in rows {
+        found = option.some<DbRow>(row)
+        break
+    }
+    found
+}
+
+test db.first-row/rows {
+    let one = dbRow.new(values = [db.int-param(1)])
+    let two = dbRow.new(values = [db.int-param(2)])
+    expect db.first-row([one, two]) == option.some<DbRow>(one)
+    expect db.first-row(list.empty<DbRow>()) == option.none<DbRow>()
 }
 
 fn db.optional-int(row: DbRow, column: Int) -> Option<Int> {
@@ -117,4 +141,50 @@ test db.text/values {
     expect db.optional-text(row, 2) == option.none<String>()
     expect db.text(row, 3) == ""
     expect hex.encode(db.blob(row, 3)) == "62"
+}
+
+test db.int-param/kind {
+    expect db.int(dbRow.new(values = [db.int-param(-3)]), 0) == -3
+}
+
+test db.text-param/kind {
+    expect db.text(dbRow.new(values = [db.text-param("é")]), 0) == "é"
+}
+
+test db.blob-param/kind {
+    expect hex.encode(db.blob(dbRow.new(values = [db.blob-param(bytes.from-utf8("ab"))]), 0)) == "6162"
+}
+
+test db.null-param/kind {
+    expect db.optional-text(dbRow.new(values = [db.null-param()]), 0) == option.none<String>()
+}
+
+test db.column/range {
+    let row = dbRow.new(values = [db.int-param(1)])
+    expect db.column(row, 0) == option.some<DbValue>(db.int-param(1))
+    expect db.column(row, 1) == option.none<DbValue>()
+}
+
+test db.optional-int/values {
+    let row = dbRow.new(values = [db.int-param(5), db.text-param("5"), db.null-param(), db.blob-param(bytes.from-utf8(""))])
+    expect db.optional-int(row, 0) == option.some<Int>(5)
+    expect db.optional-int(row, 1) == option.none<Int>()
+    expect db.optional-int(row, 3) == option.none<Int>()
+    expect db.optional-int(row, 4) == option.none<Int>()
+}
+
+test db.optional-text/values {
+    let row = dbRow.new(values = [db.int-param(5), db.text-param("t"), db.null-param(), db.blob-param(bytes.from-utf8(""))])
+    expect db.optional-text(row, 0) == option.some<String>("5")
+    expect db.optional-text(row, 1) == option.some<String>("t")
+    expect db.optional-text(row, 3) == option.none<String>()
+    expect db.optional-text(row, 4) == option.none<String>()
+}
+
+test db.blob/values {
+    let row = dbRow.new(values = [db.int-param(5), db.text-param("t"), db.null-param()])
+    expect hex.encode(db.blob(row, 0)) == ""
+    expect hex.encode(db.blob(row, 1)) == "74"
+    expect hex.encode(db.blob(row, 2)) == ""
+    expect hex.encode(db.blob(row, 3)) == ""
 }
