@@ -67,7 +67,7 @@ Note: S + F + D is about 11,800. The remaining ~1,300 lines are headers, blank l
 ## 3. Standard-library surface (Flow names)
 
 Generic, in `src/` (interpreter and owning runtime), with no Campfire names.
-Slice 1 is being built now (marked *).
+Slice 1 (report 272) and slice 2 (report 274) are done (marked *).
 
 1. `Bytes`* (pure): `bytes.from-utf8`, `bytes.to-utf8 -> Option<String>`,
    `bytes.length`, `bytes.concat`, `bytes.slice -> Option<Bytes>`,
@@ -76,8 +76,15 @@ Slice 1 is being built now (marked *).
    (standard, padded); `base64.url-encode` / `base64.url-decode` (URL-safe,
    unpadded output, either input).
 3. Crypto* (pure): `crypto.sha256`, `crypto.hmac-sha256`,
-   `crypto.pbkdf2-sha256 -> Option<Bytes>`. Later: `crypto.hmac-sha1`,
-   `crypto.aes-256-gcm-seal` / `crypto.aes-256-gcm-open -> Result<Bytes, CryptoError>`.
+   `crypto.pbkdf2-sha256 -> Option<Bytes>`; slice 2: `crypto.hmac-sha1(key, message) -> Bytes`,
+   `crypto.aes-256-gcm-seal(key, nonce, plaintext, aad) -> Option<Bytes>` (ciphertext followed by
+   the 16-byte tag; builtins cannot return records, so split it with `bytes.slice`) and
+   `crypto.aes-256-gcm-open(key, nonce, ciphertext, tag, aad) -> Option<Bytes>`. None for a key
+   other than 32 bytes, a nonce other than 12 or a tag other than 16, and for a failed tag check.
+   AES runs on the OS library: BCrypt (CNG, `BCRYPT_AES_GCM_ALG_HANDLE`) on Windows, linked only
+   into modules that call it (their IR defines `al_owning_os_aes_table`); OpenSSL libcrypto (EVP,
+   weak references; link `-lcrypto`) on Linux; .NET `AesGcm` in the interpreter. PBKDF2-SHA1 is
+   not needed: Rails 7 derives both cookie keys with PBKDF2-HMAC-SHA256.
 4. Randomness*: `crypto.random-bytes(count)`, one call fills `count` bytes.
    Effect: `random.read`.
 5. Per-worker configuration: values derived once per worker at startup, such
@@ -87,13 +94,40 @@ Slice 1 is being built now (marked *).
 6. Database: a statement prepared once per worker; `db.query<Row>(statement,
    parameters) -> Result<List<Row>, DbError>`, one host call per query
    returning typed rows. Effects: `db.read` / `db.write`.
-7. JSON, host-parsed: `json.parse(text) -> Result<Json, JsonError>` with typed
-   accessors (`json.text`, `json.int`, `json.bool`, `json.object`,
-   `json.list`). Flow has no recursive types, so this avoids needing them.
-8. Cookies: parse a `Cookie` header and build `Set-Cookie` values (Rack
-   escaping). Rails signed and encrypted cookies are then written in Flow from
-   the crypto primitives.
-9. Time: `clock.now` exists; add RFC 1123 formatting for cookie expiry.
+7. JSON*, host-parsed, as the opaque type `Json` (the exact text of one
+   validated value; Bytes layout natively): `json.parse(String) -> Option<Json>`
+   (strict RFC 8259, containers nest at most 32 deep, unpaired surrogate escapes
+   rejected); `json.field(Json, String) -> Option<Json>` (the last duplicate key
+   wins, as in Ruby); `json.index(Json, Int) -> Option<Json>` (array element or
+   object member value); `json.key-at(Json, Int) -> Option<String>`;
+   `json.count -> Option<Int>`; `json.text -> Option<String>`; `json.int ->
+   Option<Int>` (integer literals within Int64); `json.bool -> Option<Bool>`;
+   `json.null? -> Bool`; `json.encode(Json) -> String` (the text). Encoder:
+   `json.quote(String) -> String`, escaped as Rails writes the cookie envelope
+   (quote, backslash, b f n r t, other controls and `< > &` as lower-case
+   u00xx escapes; `/` and non-ASCII raw). Objects are composed in Flow with
+   `string.concat`.
+8. Cookies*: `cookie.find(header, name) -> Option<String>` (first match, as
+   Rack; parts trimmed of Unicode whitespace) and `cookie.count(header, name) ->
+   Int` (to reject duplicates); `cookie.escape` (Rack
+   `URI.encode_www_form_component` over UTF-8, upper-case hex) and
+   `cookie.unescape` (`+` is space; a malformed `%` keeps the whole value;
+   invalid UTF-8 becomes U+FFFD per maximal subpart);
+   `cookie.set-cookie(name, value, path, expires, same-site, secure, http-only)
+   -> Option<String>` (`name=escaped; Path=; SameSite=; Expires=; Secure;
+   HttpOnly`, empty attributes left out; None for a non-token name or an
+   attribute with `;`, controls or non-ASCII). Rails signed and encrypted
+   cookies are written in Flow from these and the crypto primitives
+   (tests/AgentLang.Stdlib.Tests/stdlib2.flow has both directions, checked
+   against cookies made with OpenSSL through Node).
+9. Time* over Unix microseconds (the .NET DateTime range, years 1-9999):
+   `time.rfc1123(Int) -> Option<String>` (cookie Expires),
+   `time.iso8601-ms(Int) -> Option<String>` (Rails `exp`,
+   `2046-10-14T12:00:00.000Z`), `time.parse-iso8601(String) -> Option<Int>` (the
+   forms Rails' `exp` parser accepts; digits below a microsecond round up) and
+   `time.add-years(Int, Int) -> Option<Int>` (AddYears: Feb 29 becomes Feb 28).
+   Still missing: a clock that returns Unix microseconds (`clock.now` returns
+   text and has no native implementation).
 10. Secrets: key material is never rendered in logs or errors. Native buffers
    holding keys are zeroed (a scrub policy for arena regions is still to be
    decided).
@@ -161,6 +195,9 @@ Slice 1 (report 272) landed as native primitives so the ports can start now:
 | bytes.from-utf8 / to-utf8 | native | UTF-8 validity is a runtime invariant |
 | base64.*, hex.encode | Flow later | needs byte access, a byte builder and bit operations in Flow |
 | string.split / index-of / slice / byte-at / to-lower-ascii, int.parse | Flow later | expressible once Flow has loops or efficient recursion over bytes |
+| crypto.hmac-sha1, crypto.aes-256-gcm-seal / open (274) | native | AES on the OS library (BCrypt / libcrypto); SHA-1 portable C |
+| Json type, json.* (274) | native | no recursive types; strict parsing is boundary code |
+| cookie.*, time.* (274) | Flow later | byte loops and calendar arithmetic, once Flow has a byte builder |
 
 Flow now has loops and `var` locals (272; CURRENT-SYNTAX "Loops and var"), with
 native back edges and per-iteration arena reclamation. The byte-scanning

@@ -59,6 +59,7 @@ module FiniteCoverage =
         | IrBool -> "Bool"
         | IrString -> "String"
         | IrBytes -> "Bytes"
+        | IrJson -> "Json"
         | IrUnit -> "Unit"
         | IrList item -> $"List<{formatType program item}>"
         | IrOption item -> $"Option<{formatType program item}>"
@@ -71,6 +72,7 @@ module FiniteCoverage =
         | IrBool -> TBool
         | IrString -> TString
         | IrBytes -> TBytes
+        | IrJson -> TJson
         | IrUnit -> TUnit
         | IrList item -> TList(langType program item)
         | IrOption item -> TOption(langType program item)
@@ -106,7 +108,7 @@ module FiniteCoverage =
         | IrBool ->
             closed [ { Key = "bool:false"; Label = "false" }; { Key = "bool:true"; Label = "true" } ]
         | IrUnit -> closed [ { Key = "unit"; Label = "unit" } ]
-        | IrInt | IrFloat | IrString | IrBytes -> OpenScalar typeValue
+        | IrInt | IrFloat | IrString | IrBytes | IrJson -> OpenScalar typeValue
         | IrList _ -> OpenList typeValue
         | IrOption itemType ->
             match buildShape program visited itemType with

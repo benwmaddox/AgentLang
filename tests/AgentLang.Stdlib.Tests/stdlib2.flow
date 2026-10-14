@@ -1,0 +1,885 @@
+// Standard library slice 2 (report 274): HMAC-SHA1, AES-256-GCM, JSON,
+// cookies and time. Every key and secret here is synthetic. Expected cookie
+// values were produced independently with Node's OpenSSL bindings.
+
+fn stdlib.hmac-sha1-hex(key: String, message: String) -> String {
+    hex.encode(crypto.hmac-sha1(bytes.from-utf8(key), bytes.from-utf8(message)))
+}
+
+test stdlib.hmac-sha1-hex/fox {
+    stdlib.hmac-sha1-hex("key", "The quick brown fox jumps over the lazy dog")
+    => value "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9"
+}
+
+test stdlib.hmac-sha1-hex/empty {
+    stdlib.hmac-sha1-hex("", "")
+    => value "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d"
+}
+
+test stdlib.hmac-sha1-hex/long-key {
+    stdlib.hmac-sha1-hex("0123456789012345678901234567890123456789012345678901234567890123456789", "message")
+    => value "3a1ed3050e3c10cda0464646eedca9d2c59c2332"
+}
+
+// ---------------------------------------------------------------- AES-GCM
+
+fn stdlib.b64(text: String) -> Bytes {
+    match base64.decode(text) {
+        none => bytes.from-utf8("")
+        some data => data
+    }
+}
+
+fn stdlib.gcm-seal-hex(key: String, nonce: String, plaintext: String, aad: String) -> String {
+    match crypto.aes-256-gcm-seal(stdlib.b64(key), stdlib.b64(nonce), stdlib.b64(plaintext), stdlib.b64(aad)) {
+        none => "<none>"
+        some sealed => hex.encode(sealed)
+    }
+}
+
+// GCM spec test case 13: empty plaintext, tag only.
+test stdlib.gcm-seal-hex/spec-13 {
+    stdlib.gcm-seal-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAA", "", "")
+    => value "530f8afbc74536b9a963b4f1c4cb738b"
+}
+
+// Test case 14: one zero block.
+test stdlib.gcm-seal-hex/spec-14 {
+    stdlib.gcm-seal-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAAAAAAAAA==", "")
+    => value "cea7403d4d606b6e074ec5d3baf39d18d0d1c8a799996bf0265b98b5d48ab919"
+}
+
+// Test case 16: 60-byte plaintext with additional data.
+test stdlib.gcm-seal-hex/spec-16 {
+    stdlib.gcm-seal-hex("/v/pkoZlcxxtao+UZzCDCP7/6ZKGZXMcbWqPlGcwgwg=", "yv66vvrO263eyviI", "2TEyJfiEBuWlWQnFr/UmmoanqVMVNPfaLkwwPYoxinIcPAyVlWgJUy/PDiRJprUlsWrt9aoN5le6Y3s5", "/u36zt6tvu/+7frO3q2+76ut2tI=")
+    => value "522dc1f099567d07f47f37a32a84427d643a8cdcbfe5c0c97598a2bd2555d1aa8cb08e48590dbb3da7b08b1056828838c5f61e6393ba7a0abcc9f66276fc6ece0f4e1768cddf8853bb2d551b"
+}
+
+test stdlib.gcm-seal-hex/short-key {
+    stdlib.gcm-seal-hex("AAAA", "AAAAAAAAAAAAAAAA", "", "")
+    => value "<none>"
+}
+
+test stdlib.gcm-seal-hex/short-nonce {
+    stdlib.gcm-seal-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAA", "", "")
+    => value "<none>"
+}
+
+fn stdlib.gcm-open-hex(key: String, nonce: String, ciphertext: String, tag: String, aad: String) -> String {
+    match crypto.aes-256-gcm-open(stdlib.b64(key), stdlib.b64(nonce), stdlib.b64(ciphertext), stdlib.b64(tag), stdlib.b64(aad)) {
+        none => "<rejected>"
+        some plaintext => hex.encode(plaintext)
+    }
+}
+
+test stdlib.gcm-open-hex/spec-16 {
+    stdlib.gcm-open-hex("/v/pkoZlcxxtao+UZzCDCP7/6ZKGZXMcbWqPlGcwgwg=", "yv66vvrO263eyviI", "Ui3B8JlWfQf0fzejKoRCfWQ6jNy/5cDJdZiivSVV0aqMsI5IWQ27PaewixBWgog4xfYeY5O6egq8yfZi", "dvxuzg9OF2jN34hTuy1VGw==", "/u36zt6tvu/+7frO3q2+76ut2tI=")
+    => value "d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b39"
+}
+
+test stdlib.gcm-open-hex/bad-tag {
+    stdlib.gcm-open-hex("/v/pkoZlcxxtao+UZzCDCP7/6ZKGZXMcbWqPlGcwgwg=", "yv66vvrO263eyviI", "Ui3B8JlWfQf0fzejKoRCfWQ6jNy/5cDJdZiivSVV0aqMsI5IWQ27PaewixBWgog4xfYeY5O6egq8yfZi", "dvxuzg9OF2jN34hTuy1VGQ==", "/u36zt6tvu/+7frO3q2+76ut2tI=")
+    => value "<rejected>"
+}
+
+test stdlib.gcm-open-hex/wrong-aad {
+    stdlib.gcm-open-hex("/v/pkoZlcxxtao+UZzCDCP7/6ZKGZXMcbWqPlGcwgwg=", "yv66vvrO263eyviI", "Ui3B8JlWfQf0fzejKoRCfWQ6jNy/5cDJdZiivSVV0aqMsI5IWQ27PaewixBWgog4xfYeY5O6egq8yfZi", "dvxuzg9OF2jN34hTuy1VGw==", "")
+    => value "<rejected>"
+}
+
+test stdlib.gcm-open-hex/wrong-key {
+    stdlib.gcm-open-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "yv66vvrO263eyviI", "Ui3B8JlWfQf0fzejKoRCfWQ6jNy/5cDJdZiivSVV0aqMsI5IWQ27PaewixBWgog4xfYeY5O6egq8yfZi", "dvxuzg9OF2jN34hTuy1VGw==", "/u36zt6tvu/+7frO3q2+76ut2tI=")
+    => value "<rejected>"
+}
+
+test stdlib.gcm-open-hex/short-tag {
+    stdlib.gcm-open-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAA", "", "AAAA", "")
+    => value "<rejected>"
+}
+
+test stdlib.gcm-open-hex/empty-plaintext {
+    stdlib.gcm-open-hex("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "AAAAAAAAAAAAAAAA", "", "Uw+K+8dFNrmpY7TxxMtziw==", "")
+    => value ""
+}
+
+// ------------------------------------------- Rails 7 encrypted cookies
+
+// Rails 7 key: PBKDF2-HMAC-SHA256(secret_key_base, salt, 1000 iterations).
+fn stdlib.rails-key(secret: String, salt: String, length: Int) -> Bytes {
+    match crypto.pbkdf2-sha256(bytes.from-utf8(secret), bytes.from-utf8(salt), 1000, length) {
+        none => bytes.from-utf8("")
+        some key => key
+    }
+}
+
+// Loops rather than list.get / list.count, which the owning backend lacks.
+fn stdlib.part(parts: List<String>, index: Int) -> String {
+    var found = ""
+    for part, position in parts {
+        if position == index {
+            found = part
+        }
+    }
+    found
+}
+
+fn stdlib.count(parts: List<String>) -> Int {
+    var total = 0
+    for part in parts {
+        total = total + 1
+    }
+    total
+}
+
+test stdlib.count/three {
+    stdlib.count(string.split("a--b--c", "--"))
+    => value 3
+}
+
+fn stdlib.json-string-field(document: Json, name: String) -> String {
+    match json.field(document, name) {
+        none => "<missing>"
+        some value => match json.text(value) {
+            none => "<not text>"
+            some text => text
+        }
+    }
+}
+
+// The Rails metadata envelope {"_rails":{"message":base64,"exp":iso|null,"pur":...}}:
+// the decoded message when the purpose matches and exp is absent, null or later than now.
+fn stdlib.rails-envelope-message(envelope: String, purpose: String, now: Int) -> String {
+    match json.parse(envelope) {
+        none => "<bad json>"
+        some root => match json.field(root, "_rails") {
+            none => "<no metadata>"
+            some rails => {
+                let expired = match json.field(rails, "exp") {
+                    none => false
+                    some exp => if json.null?(exp) {
+                        false
+                    } else {
+                        match json.text(exp) {
+                            none => true
+                            some text => match time.parse-iso8601(text) {
+                                none => true
+                                some expiry => now >= expiry
+                            }
+                        }
+                    }
+                }
+                if stdlib.json-string-field(rails, "pur") != purpose {
+                    "<wrong purpose>"
+                } else if expired {
+                    "<expired>"
+                } else {
+                    match base64.decode(stdlib.json-string-field(rails, "message")) {
+                        none => "<bad message>"
+                        some message => match bytes.to-utf8(message) {
+                            none => "<bad message>"
+                            some text => text
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The _campfire_session value from a Cookie header: unescape,
+// base64(ciphertext)--base64(iv)--base64(tag), AES-256-GCM with no AAD.
+fn stdlib.rails-cookie-open(secret: String, header: String, now: Int) -> String {
+    match cookie.find(header, "_campfire_session") {
+        none => "<no cookie>"
+        some wire => {
+            let parts = string.split(cookie.unescape(wire), "--")
+            if stdlib.count(parts) != 3 {
+                "<format>"
+            } else {
+                let key = stdlib.rails-key(secret, "authenticated encrypted cookie", 32)
+                match crypto.aes-256-gcm-open(key, stdlib.b64(stdlib.part(parts, 1)), stdlib.b64(stdlib.part(parts, 0)), stdlib.b64(stdlib.part(parts, 2)), bytes.from-utf8("")) {
+                    none => "<rejected>"
+                    some plaintext => match bytes.to-utf8(plaintext) {
+                        none => "<bad utf8>"
+                        some envelope => stdlib.rails-envelope-message(envelope, "cookie._campfire_session", now)
+                    }
+                }
+            }
+        }
+    }
+}
+
+test stdlib.rails-cookie-open/node-cookie {
+    stdlib.rails-cookie-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "last_room=4; _campfire_session=ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D", 1791979200000000)
+    => value "{\"session_id\":\"abc123\",\"_csrf_token\":\"tok\\u003cen\"}"
+}
+
+test stdlib.rails-cookie-open/expired {
+    stdlib.rails-cookie-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "_campfire_session=ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D", 2423131200000000)
+    => value "<expired>"
+}
+
+test stdlib.rails-cookie-open/wrong-secret {
+    stdlib.rails-cookie-open("another-synthetic-secret-key-base-0123456789abcdef-0123456789", "_campfire_session=ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D", 1791979200000000)
+    => value "<rejected>"
+}
+
+test stdlib.rails-cookie-open/tampered {
+    stdlib.rails-cookie-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "_campfire_session=san44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D", 1791979200000000)
+    => value "<rejected>"
+}
+
+test stdlib.rails-cookie-open/missing {
+    stdlib.rails-cookie-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "session_token=abc", 1791979200000000)
+    => value "<no cookie>"
+}
+
+// Writes the cookie value Rails would: the envelope expires 20 calendar years
+// after now; the nonce is passed in so the result is deterministic.
+fn stdlib.rails-cookie-seal(secret: String, inner: String, nonce: String, now: Int) -> String {
+    let expiry = match time.add-years(now, 20) {
+        none => ""
+        some later => match time.iso8601-ms(later) {
+            none => ""
+            some text => text
+        }
+    }
+    let envelope = string.concat("{\"_rails\":{\"message\":", string.concat(json.quote(base64.encode(bytes.from-utf8(inner))), string.concat(",\"exp\":", string.concat(json.quote(expiry), ",\"pur\":\"cookie._campfire_session\"}}"))))
+    let key = stdlib.rails-key(secret, "authenticated encrypted cookie", 32)
+    match crypto.aes-256-gcm-seal(key, stdlib.b64(nonce), bytes.from-utf8(envelope), bytes.from-utf8("")) {
+        none => "<none>"
+        some sealed => {
+            let count = bytes.length(sealed) - 16
+            let ciphertext = match bytes.slice(sealed, 0, count) {
+                none => bytes.from-utf8("")
+                some data => data
+            }
+            let tag = match bytes.slice(sealed, count, 16) {
+                none => bytes.from-utf8("")
+                some data => data
+            }
+            cookie.escape(string.concat(base64.encode(ciphertext), string.concat("--", string.concat(nonce, string.concat("--", base64.encode(tag))))))
+        }
+    }
+}
+
+test stdlib.rails-cookie-seal/matches-node {
+    stdlib.rails-cookie-seal("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "{\"session_id\":\"abc123\",\"_csrf_token\":\"tok\\u003cen\"}", "AAECAwQFBgcICQoL", 1791979200000000)
+    => value "ran44C2kDDci5MMQUGOERkoDjUdzEzq0t4%2BoYsDjvko5jUw5BhN9DklqxELd2Qbf9dK86iZq3H0%2Barqms7lEeJddHix2umJ7XEzcZ2LIJCfRMH%2B61CmejqLrnxh8%2F%2BMPC4TyTYgncwuaKkTBgMETtB2%2FaRU3LqtAk3TlsP3n6Xd%2Bl6lsHV%2F3%2BmOFKWJJ2mVQ0%2FIbo8%2Fmorx%2B7cVBchjA--AAECAwQFBgcICQoL--Z%2ByE4Koevv3JHTK2xcGT3Q%3D%3D"
+}
+
+// The signed session_token cookie: base64(envelope)--hex(HMAC-SHA1(signing key)).
+fn stdlib.rails-signed-open(secret: String, value: String, now: Int) -> String {
+    let parts = string.split(value, "--")
+    if stdlib.count(parts) != 2 {
+        "<format>"
+    } else {
+        let data = stdlib.part(parts, 0)
+        let digest = hex.encode(crypto.hmac-sha1(stdlib.rails-key(secret, "signed cookie", 64), bytes.from-utf8(data)))
+        if bool.not(bytes.equal-constant-time?(bytes.from-utf8(digest), bytes.from-utf8(stdlib.part(parts, 1)))) {
+            "<bad digest>"
+        } else {
+            match base64.decode(data) {
+                none => "<bad data>"
+                some envelope => match bytes.to-utf8(envelope) {
+                    none => "<bad data>"
+                    some text => match json.parse(stdlib.rails-envelope-message(text, "cookie.session_token", now)) {
+                        none => "<bad token json>"
+                        some token => match json.text(token) {
+                            none => "<not text>"
+                            some result => result
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+test stdlib.rails-signed-open/node-token {
+    stdlib.rails-signed-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUnZhMlZ1TFhaaGJIVmxJZz09IiwiZXhwIjoiMjA0Ni0xMC0xNFQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--8704e18d5a8588cbd123ab767e534e69fa0dfac4", 1791979200000000)
+    => value "token-value"
+}
+
+test stdlib.rails-signed-open/bad-digest {
+    stdlib.rails-signed-open("synthetic-secret-key-base-for-agentlang-tests-0123456789abcdef", "eyJfcmFpbHMiOnsibWVzc2FnZSI6IkluUnZhMlZ1TFhaaGJIVmxJZz09IiwiZXhwIjoiMjA0Ni0xMC0xNFQxMjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLnNlc3Npb25fdG9rZW4ifX0=--8704e18d5a8588cbd123ab767e534e69fa0dfac5", 1791979200000000)
+    => value "<bad digest>"
+}
+
+// ------------------------------------------------------------------- JSON
+
+fn stdlib.json-valid?(text: String) -> Bool {
+    match json.parse(text) {
+        none => false
+        some _ => true
+    }
+}
+
+test stdlib.json-valid?/object {
+    stdlib.json-valid?(" {\"a\": [1, -2.5e+3, true, false, null, \"x\"], \"b\": {}} ")
+    => value true
+}
+
+test stdlib.json-valid?/scalar {
+    stdlib.json-valid?("-0")
+    => value true
+}
+
+test stdlib.json-valid?/trailing-comma {
+    stdlib.json-valid?("[1,]")
+    => value false
+}
+
+test stdlib.json-valid?/leading-zero {
+    stdlib.json-valid?("01")
+    => value false
+}
+
+test stdlib.json-valid?/two-values {
+    stdlib.json-valid?("1 2")
+    => value false
+}
+
+test stdlib.json-valid?/empty {
+    stdlib.json-valid?("")
+    => value false
+}
+
+test stdlib.json-valid?/single-quotes {
+    stdlib.json-valid?("{'a':1}")
+    => value false
+}
+
+test stdlib.json-valid?/bad-escape {
+    stdlib.json-valid?("\"\\x\"")
+    => value false
+}
+
+test stdlib.json-valid?/lone-surrogate {
+    stdlib.json-valid?("\"\\ud800\"")
+    => value false
+}
+
+test stdlib.json-valid?/raw-control {
+    stdlib.json-valid?("\"a\nb\"")
+    => value false
+}
+
+test stdlib.json-valid?/bare-fraction {
+    stdlib.json-valid?("1.")
+    => value false
+}
+
+test stdlib.json-valid?/depth-32 {
+    stdlib.json-valid?("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
+    => value true
+}
+
+test stdlib.json-valid?/depth-33 {
+    stdlib.json-valid?("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
+    => value false
+}
+
+fn stdlib.json-text-at(text: String, name: String) -> String {
+    match json.parse(text) {
+        none => "<invalid>"
+        some root => stdlib.json-string-field(root, name)
+    }
+}
+
+test stdlib.json-text-at/escapes {
+    stdlib.json-text-at("{\"a\": \"x\\\"y\\\\z\\/\\n\\u00e9\\ud83d\\ude80\"}", "a")
+    => value "x\"y\\z/\né🚀"
+}
+
+test stdlib.json-text-at/last-duplicate-wins {
+    stdlib.json-text-at("{\"a\": \"first\", \"a\": \"last\"}", "a")
+    => value "last"
+}
+
+test stdlib.json-text-at/escaped-key {
+    stdlib.json-text-at("{\"a\\u0062\": \"found\"}", "ab")
+    => value "found"
+}
+
+test stdlib.json-text-at/missing {
+    stdlib.json-text-at("{\"a\": 1}", "b")
+    => value "<missing>"
+}
+
+test stdlib.json-text-at/not-text {
+    stdlib.json-text-at("{\"a\": 1}", "a")
+    => value "<not text>"
+}
+
+test stdlib.json-text-at/not-object {
+    stdlib.json-text-at("[\"a\"]", "a")
+    => value "<missing>"
+}
+
+fn stdlib.json-int-at(text: String, name: String) -> String {
+    match json.parse(text) {
+        none => "<invalid>"
+        some root => match json.field(root, name) {
+            none => "<missing>"
+            some value => match json.int(value) {
+                none => "<not int>"
+                some number => int.to-string(number)
+            }
+        }
+    }
+}
+
+test stdlib.json-int-at/min {
+    stdlib.json-int-at("{\"n\": -9223372036854775808}", "n")
+    => value "-9223372036854775808"
+}
+
+test stdlib.json-int-at/overflow {
+    stdlib.json-int-at("{\"n\": 9223372036854775808}", "n")
+    => value "<not int>"
+}
+
+test stdlib.json-int-at/fraction {
+    stdlib.json-int-at("{\"n\": 1.0}", "n")
+    => value "<not int>"
+}
+
+test stdlib.json-int-at/exponent {
+    stdlib.json-int-at("{\"n\": 1e2}", "n")
+    => value "<not int>"
+}
+
+test stdlib.json-int-at/negative-zero {
+    stdlib.json-int-at("{\"n\": -0}", "n")
+    => value "0"
+}
+
+// Walks a container: count, then each key (objects) and the encoded value.
+fn stdlib.json-walk(text: String) -> String {
+    match json.parse(text) {
+        none => "<invalid>"
+        some root => match json.count(root) {
+            none => {
+                let flag = match json.bool(root) {
+                    none => "-"
+                    some value => if value { "T" } else { "F" }
+                }
+                string.concat(json.encode(root), string.concat(" bool=", string.concat(flag, if json.null?(root) { " null" } else { "" })))
+            }
+            some count => {
+                var result = int.to-string(count)
+                for index in 0..count {
+                    let key = match json.key-at(root, index) {
+                        none => "#"
+                        some name => name
+                    }
+                    let value = match json.index(root, index) {
+                        none => "?"
+                        some item => json.encode(item)
+                    }
+                    result = string.concat(result, string.concat("|", string.concat(key, string.concat("=", value))))
+                }
+                result
+            }
+        }
+    }
+}
+
+test stdlib.json-walk/object {
+    stdlib.json-walk(" { \"a\" : [1, 2] , \"b\\u00e9\":{\"c\":null},\"d\":\"\\u003c\" } ")
+    => value "3|a=[1, 2]|bé={\"c\":null}|d=\"\\u003c\""
+}
+
+test stdlib.json-walk/array {
+    stdlib.json-walk("[true, \"x\", {}]")
+    => value "3|#=true|#=\"x\"|#={}"
+}
+
+test stdlib.json-walk/empty-object {
+    stdlib.json-walk("{}")
+    => value "0"
+}
+
+test stdlib.json-walk/true {
+    stdlib.json-walk(" true ")
+    => value "true bool=T"
+}
+
+test stdlib.json-walk/null {
+    stdlib.json-walk("null")
+    => value "null bool=- null"
+}
+
+fn stdlib.json-quote(text: String) -> String {
+    json.quote(text)
+}
+
+test stdlib.json-quote/rails-escapes {
+    stdlib.json-quote("a\"b\\c</d>&é/\n\tz")
+    => value "\"a\\\"b\\\\c\\u003c/d\\u003e\\u0026é/\\n\\tz\""
+}
+
+test stdlib.json-quote/empty {
+    stdlib.json-quote("")
+    => value "\"\""
+}
+
+// ---------------------------------------------------------------- cookies
+
+fn stdlib.cookie-or(header: String, name: String) -> String {
+    match cookie.find(header, name) {
+        none => "<none>"
+        some value => value
+    }
+}
+
+test stdlib.cookie-or/first-wins {
+    stdlib.cookie-or("a=1; b=2; a=3", "a")
+    => value "1"
+}
+
+test stdlib.cookie-or/trimmed {
+    stdlib.cookie-or("x=0;   b=two words  ;c", "b")
+    => value "two words"
+}
+
+test stdlib.cookie-or/value-with-equals {
+    stdlib.cookie-or("t=a=b==", "t")
+    => value "a=b=="
+}
+
+test stdlib.cookie-or/space-before-equals {
+    stdlib.cookie-or("b =2", "b")
+    => value "<none>"
+}
+
+test stdlib.cookie-or/no-equals {
+    stdlib.cookie-or("b", "b")
+    => value "<none>"
+}
+
+test stdlib.cookie-or/empty-value {
+    stdlib.cookie-or("a=; b=1", "a")
+    => value ""
+}
+
+test stdlib.cookie-or/unicode-space {
+    stdlib.cookie-or("　a=1 ;", "a")
+    => value "1"
+}
+
+fn stdlib.cookie-count(header: String, name: String) -> Int {
+    cookie.count(header, name)
+}
+
+test stdlib.cookie-count/duplicates {
+    stdlib.cookie-count("a=1; b=2; a=3", "a")
+    => value 2
+}
+
+test stdlib.cookie-count/none {
+    stdlib.cookie-count("", "a")
+    => value 0
+}
+
+fn stdlib.cookie-escape(text: String) -> String {
+    cookie.escape(text)
+}
+
+test stdlib.cookie-escape/rack {
+    stdlib.cookie-escape("a b+c/é~*_-.")
+    => value "a+b%2Bc%2F%C3%A9%7E*_-."
+}
+
+// Rails' own escaping vectors (tests/AgentLang.Campfire.Cookies.Tests/Fixtures/rails-cookie-vectors.json).
+test stdlib.cookie-escape/rails-separators {
+    stdlib.cookie-escape("a+b/c=d--0f")
+    => value "a%2Bb%2Fc%3Dd--0f"
+}
+
+test stdlib.cookie-escape/rails-reserved {
+    stdlib.cookie-escape("é~*'()!")
+    => value "%C3%A9%7E*%27%28%29%21"
+}
+
+test stdlib.cookie-escape/rails-percent {
+    stdlib.cookie-escape("a%20b")
+    => value "a%2520b"
+}
+
+fn stdlib.cookie-unescape(text: String) -> String {
+    cookie.unescape(text)
+}
+
+test stdlib.cookie-unescape/rails-reserved {
+    stdlib.cookie-unescape("%C3%A9%7E*%27%28%29%21")
+    => value "é~*'()!"
+}
+
+test stdlib.cookie-unescape/rails-percent {
+    stdlib.cookie-unescape("a%2520b")
+    => value "a%20b"
+}
+
+test stdlib.cookie-unescape/rails-bad-escape {
+    stdlib.cookie-unescape("bad%zzescape")
+    => value "bad%zzescape"
+}
+
+fn stdlib.cookie-unescape-hex(text: String) -> String {
+    hex.encode(bytes.from-utf8(cookie.unescape(text)))
+}
+
+test stdlib.cookie-unescape-hex/plus-and-percent {
+    stdlib.cookie-unescape-hex("a+b%2Bc%2f%C3%A9")
+    => value "6120622b632fc3a9"
+}
+
+test stdlib.cookie-unescape-hex/malformed-keeps-value {
+    stdlib.cookie-unescape-hex("a+b%zz")
+    => value "612b62257a7a"
+}
+
+test stdlib.cookie-unescape-hex/truncated-percent {
+    stdlib.cookie-unescape-hex("ab%4")
+    => value "61622534"
+}
+
+test stdlib.cookie-unescape-hex/truncated-utf8 {
+    stdlib.cookie-unescape-hex("%E2%82%41")
+    => value "efbfbd41"
+}
+
+test stdlib.cookie-unescape-hex/overlong {
+    stdlib.cookie-unescape-hex("%C0%80")
+    => value "efbfbdefbfbd"
+}
+
+test stdlib.cookie-unescape-hex/surrogate {
+    stdlib.cookie-unescape-hex("%ED%A0%80")
+    => value "efbfbdefbfbdefbfbd"
+}
+
+test stdlib.cookie-unescape-hex/truncated-four {
+    stdlib.cookie-unescape-hex("%F0%9F%9A")
+    => value "efbfbd"
+}
+
+test stdlib.cookie-unescape-hex/emoji {
+    stdlib.cookie-unescape-hex("%F0%9F%9A%80")
+    => value "f09f9a80"
+}
+
+fn stdlib.set-cookie(name: String, value: String, path: String, expires: String, same-site: String, secure: Bool, http-only: Bool) -> String {
+    match cookie.set-cookie(name, value, path, expires, same-site, secure, http-only) {
+        none => "<invalid>"
+        some header => header
+    }
+}
+
+test stdlib.set-cookie/session {
+    stdlib.set-cookie("_campfire_session", "a+b/c=", "/", "Wed, 14 Oct 2046 12:00:00 GMT", "Lax", false, true)
+    => value "_campfire_session=a%2Bb%2Fc%3D; Path=/; SameSite=Lax; Expires=Wed, 14 Oct 2046 12:00:00 GMT; HttpOnly"
+}
+
+test stdlib.set-cookie/minimal {
+    stdlib.set-cookie("last_room", "4", "", "", "", true, false)
+    => value "last_room=4; Secure"
+}
+
+test stdlib.set-cookie/bad-name {
+    stdlib.set-cookie("a b", "4", "/", "", "", false, false)
+    => value "<invalid>"
+}
+
+test stdlib.set-cookie/attribute-injection {
+    stdlib.set-cookie("a", "4", "/; Domain=evil", "", "", false, false)
+    => value "<invalid>"
+}
+
+// ------------------------------------------------------------------- time
+
+fn stdlib.time-text(micros: Int) -> String {
+    let http = match time.rfc1123(micros) {
+        none => "<none>"
+        some text => text
+    }
+    let iso = match time.iso8601-ms(micros) {
+        none => "<none>"
+        some text => text
+    }
+    string.concat(http, string.concat(" | ", iso))
+}
+
+test stdlib.time-text/now {
+    stdlib.time-text(1791979200000000)
+    => value "Wed, 14 Oct 2026 12:00:00 GMT | 2026-10-14T12:00:00.000Z"
+}
+
+test stdlib.time-text/leap-day-fraction {
+    stdlib.time-text(1709188215123456)
+    => value "Thu, 29 Feb 2024 06:30:15 GMT | 2024-02-29T06:30:15.123Z"
+}
+
+test stdlib.time-text/before-epoch {
+    stdlib.time-text(-1)
+    => value "Wed, 31 Dec 1969 23:59:59 GMT | 1969-12-31T23:59:59.999Z"
+}
+
+test stdlib.time-text/minimum {
+    stdlib.time-text(-62135596800000000)
+    => value "Mon, 01 Jan 0001 00:00:00 GMT | 0001-01-01T00:00:00.000Z"
+}
+
+test stdlib.time-text/maximum {
+    stdlib.time-text(253402300799999999)
+    => value "Fri, 31 Dec 9999 23:59:59 GMT | 9999-12-31T23:59:59.999Z"
+}
+
+test stdlib.time-text/out-of-range {
+    stdlib.time-text(253402300800000000)
+    => value "<none> | <none>"
+}
+
+fn stdlib.add-years-iso(micros: Int, years: Int) -> String {
+    match time.add-years(micros, years) {
+        none => "<none>"
+        some later => match time.iso8601-ms(later) {
+            none => "<none>"
+            some text => text
+        }
+    }
+}
+
+test stdlib.add-years-iso/twenty {
+    stdlib.add-years-iso(1791979200000000, 20)
+    => value "2046-10-14T12:00:00.000Z"
+}
+
+test stdlib.add-years-iso/leap-day-clamps {
+    stdlib.add-years-iso(1709188215123456, 1)
+    => value "2025-02-28T06:30:15.123Z"
+}
+
+test stdlib.add-years-iso/leap-day-keeps {
+    stdlib.add-years-iso(1709188215123456, 4)
+    => value "2028-02-29T06:30:15.123Z"
+}
+
+test stdlib.add-years-iso/negative {
+    stdlib.add-years-iso(1709188215123456, -2024)
+    => value "<none>"
+}
+
+test stdlib.add-years-iso/too-late {
+    stdlib.add-years-iso(1791979200000000, 7974)
+    => value "<none>"
+}
+
+fn stdlib.parse-iso(text: String) -> String {
+    match time.parse-iso8601(text) {
+        none => "<none>"
+        some micros => int.to-string(micros)
+    }
+}
+
+test stdlib.parse-iso/rails-exp {
+    stdlib.parse-iso("2026-10-14T12:00:00.000Z")
+    => value "1791979200000000"
+}
+
+test stdlib.parse-iso/offset {
+    stdlib.parse-iso("2026-10-14T14:00:00+02:00")
+    => value "1791979200000000"
+}
+
+test stdlib.parse-iso/negative-offset-lower-z {
+    stdlib.parse-iso("2026-10-14t11:30:00.5-00:30")
+    => value "1791979200500000"
+}
+
+test stdlib.parse-iso/seven-digits-round-up {
+    stdlib.parse-iso("2026-10-14T12:00:00.0000001Z")
+    => value "1791979200000001"
+}
+
+test stdlib.parse-iso/before-epoch-round-up {
+    stdlib.parse-iso("1969-12-31T23:59:59.9999999Z")
+    => value "0"
+}
+
+test stdlib.parse-iso/bad-day {
+    stdlib.parse-iso("2026-02-29T00:00:00Z")
+    => value "<none>"
+}
+
+test stdlib.parse-iso/space-separator {
+    stdlib.parse-iso("2026-10-14 12:00:00Z")
+    => value "<none>"
+}
+
+test stdlib.parse-iso/no-zone {
+    stdlib.parse-iso("2026-10-14T12:00:00.000")
+    => value "<none>"
+}
+
+test stdlib.parse-iso/offset-range {
+    stdlib.parse-iso("2026-10-14T12:00:00+14:30")
+    => value "<none>"
+}
+
+test stdlib.parse-iso/eight-digits {
+    stdlib.parse-iso("2026-10-14T12:00:00.00000001Z")
+    => value "<none>"
+}
+
+test stdlib.parse-iso/year-zero {
+    stdlib.parse-iso("0000-01-01T00:00:00Z")
+    => value "<none>"
+}
+
+// ------------------------------------------------------- helper tests
+
+test stdlib.b64/decodes {
+    hex.encode(stdlib.b64("AAE="))
+    => value "0001"
+}
+
+test stdlib.rails-key/length {
+    bytes.length(stdlib.rails-key("synthetic", "signed cookie", 64))
+    => value 64
+}
+
+test stdlib.part/second {
+    stdlib.part(string.split("a--b", "--"), 1)
+    => value "b"
+}
+
+test stdlib.json-string-field/text {
+    match json.parse("{\"a\":\"b\"}") {
+        none => "<invalid>"
+        some document => stdlib.json-string-field(document, "a")
+    }
+    => value "b"
+}
+
+test stdlib.rails-envelope-message/null-exp {
+    stdlib.rails-envelope-message("{\"_rails\":{\"message\":\"ImEi\",\"exp\":null,\"pur\":\"p\"}}", "p", 0)
+    => value "\"a\""
+}
+
+test stdlib.rails-envelope-message/wrong-purpose {
+    stdlib.rails-envelope-message("{\"_rails\":{\"message\":\"ImEi\",\"pur\":\"q\"}}", "p", 0)
+    => value "<wrong purpose>"
+}
+
+test stdlib.rails-envelope-message/exp-boundary {
+    stdlib.rails-envelope-message("{\"_rails\":{\"message\":\"ImEi\",\"exp\":\"2026-10-14T12:00:00.000Z\",\"pur\":\"p\"}}", "p", 1791979200000000)
+    => value "<expired>"
+}
+
+test stdlib.rails-envelope-message/bad-exp {
+    stdlib.rails-envelope-message("{\"_rails\":{\"message\":\"ImEi\",\"exp\":\"tomorrow\",\"pur\":\"p\"}}", "p", 0)
+    => value "<expired>"
+}

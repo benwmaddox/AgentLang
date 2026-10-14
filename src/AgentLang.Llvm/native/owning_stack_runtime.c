@@ -4778,8 +4778,14 @@ enum {
   AL_STDLIB_STRING_BYTE_AT = 19,
   AL_STDLIB_INT_PARSE = 20,
   AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
-  AL_STDLIB_RANDOM_BYTES = 22
+  AL_STDLIB_RANDOM_BYTES = 22,
+  /* Slice 2 (report 274): ids 23..45 in owning_stdlib2.h. */
+  AL_STDLIB_LAST = 45
 };
+
+#define AL_STDLIB_MAX_ARGUMENTS 8u
+/* Argument shapes for ids 23..AL_STDLIB_LAST. */
+#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------"
 
 /* The OS random source. Modules that call crypto.random-bytes define
  * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
@@ -5192,19 +5198,22 @@ static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
  * counts. 't' = String or Bytes, 'i' = Int, '-' = unused. */
 static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
                                    const al_stdlib_argument *arguments,
-                                   uint32_t error_id, uint32_t lengths[4]) {
-  static const char *const shapes[23] = {
-      "----", "t---", "t---", "t---", "tt--", "tii-", "tt--", "tt--",
-      "t---", "t---", "t---", "t---", "t---", "t---", "tt--", "ttii",
-      "tt--", "tti-", "tii-", "ti--", "t---", "t---", "i---"};
+                                   uint32_t error_id,
+                                   uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS]) {
+  static const char *const shapes[AL_STDLIB_LAST + 1] = {
+      "--------", "t-------", "t-------", "t-------", "tt------", "tii-----",
+      "tt------", "tt------", "t-------", "t-------", "t-------", "t-------",
+      "t-------", "t-------", "tt------", "ttii----", "tt------", "tti-----",
+      "tii-----", "ti------", "t-------", "t-------", "i-------",
+      AL_STDLIB_SLICE2_SHAPES};
   uint32_t i;
   uint32_t ignored;
-  if (op < 1 || op > 22) {
+  if (op < 1 || op > AL_STDLIB_LAST) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
-                          (uint32_t)op, 22u);
+                          (uint32_t)op, (uint32_t)AL_STDLIB_LAST);
     return 0;
   }
-  for (i = 0u; i < 4u; ++i) {
+  for (i = 0u; i < AL_STDLIB_MAX_ARGUMENTS; ++i) {
     lengths[i] = 0u;
     if (shapes[op][i] == 't') {
       if (!al_owning_string_scan_stack_exact(ctx, arguments[i].offset,
@@ -5223,6 +5232,8 @@ static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
   }
   return 1;
 }
+
+#include "owning_stdlib2.h"
 
 static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
                               const al_stdlib_argument *a, const uint32_t *n,
@@ -5559,6 +5570,8 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
     return 1;
   }
   default:
+    if (op > AL_STDLIB_RANDOM_BYTES && al_stdlib2_emit(ctx, op, a, n, w, error_id))
+      return 1;
     break;
   }
   if (ctx->status == AL_OWNING_STATUS_OK)
@@ -5570,12 +5583,16 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
 int32_t al_owning_stdlib_plan(al_owning_stack_context *ctx, int32_t op,
                               uint32_t o0, uint32_t e0, uint32_t o1,
                               uint32_t e1, uint32_t o2, uint32_t e2,
-                              uint32_t o3, uint32_t e3, uint32_t error_id,
+                              uint32_t o3, uint32_t e3, uint32_t o4,
+                              uint32_t e4, uint32_t o5, uint32_t e5,
+                              uint32_t o6, uint32_t e6, uint32_t o7,
+                              uint32_t e7, uint32_t error_id,
                               uint32_t *out_payload_bytes,
                               uint32_t *out_extent_bytes) {
-  const al_stdlib_argument arguments[4] = {
-      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3}};
-  uint32_t lengths[4];
+  const al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
+      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3},
+      {o4, e4}, {o5, e5}, {o6, e6}, {o7, e7}};
+  uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
   al_stdlib_writer w;
   w.base = 0;
   w.extent = 0u;
@@ -5604,10 +5621,14 @@ int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
                                uint32_t destination_extent_bytes, uint32_t o0,
                                uint32_t e0, uint32_t o1, uint32_t e1,
                                uint32_t o2, uint32_t e2, uint32_t o3,
-                               uint32_t e3, uint32_t error_id) {
-  const al_stdlib_argument arguments[4] = {
-      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3}};
-  uint32_t lengths[4];
+                               uint32_t e3, uint32_t o4, uint32_t e4,
+                               uint32_t o5, uint32_t e5, uint32_t o6,
+                               uint32_t e6, uint32_t o7, uint32_t e7,
+                               uint32_t error_id) {
+  const al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
+      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3},
+      {o4, e4}, {o5, e5}, {o6, e6}, {o7, e7}};
+  uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
   uint32_t i;
   al_stdlib_writer w;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
@@ -5621,7 +5642,7 @@ int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
                             destination_offset, ctx->cursor_bytes);
     return 1;
   }
-  for (i = 0u; i < 4u; ++i) {
+  for (i = 0u; i < AL_STDLIB_MAX_ARGUMENTS; ++i) {
     if (arguments[i].extent != 0u &&
         destination_offset < arguments[i].offset + arguments[i].extent &&
         arguments[i].offset < destination_offset + destination_extent_bytes) {
@@ -5650,19 +5671,31 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
                                 uint32_t o0, uint32_t e0, uint32_t o1,
                                 uint32_t e1, uint32_t error_id,
                                 int64_t *out_value) {
-  const al_stdlib_argument arguments[4] = {
-      {o0, e0}, {o1, e1}, {0u, 0u}, {0u, 0u}};
-  uint32_t lengths[4];
+  /* Field by field: an aggregate initializer with zeros becomes memset. */
+  al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS];
+  uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
+  uint32_t slot;
+  for (slot = 0u; slot < AL_STDLIB_MAX_ARGUMENTS; ++slot) {
+    arguments[slot].offset = 0u;
+    arguments[slot].extent = 0u;
+  }
+  arguments[0].offset = o0;
+  arguments[0].extent = e0;
+  arguments[1].offset = o1;
+  arguments[1].extent = e1;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (out_value == 0 ||
-      (op != AL_STDLIB_BYTES_LENGTH && op != AL_STDLIB_BYTES_EQUAL)) {
+      (op != AL_STDLIB_BYTES_LENGTH && op != AL_STDLIB_BYTES_EQUAL &&
+       op != AL_STDLIB_JSON_NULL && op != AL_STDLIB_COOKIE_COUNT)) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
   if (!al_stdlib_arguments(ctx, op, arguments, error_id, lengths))
     return 1;
-  if (op == AL_STDLIB_BYTES_LENGTH) {
+  if (op == AL_STDLIB_JSON_NULL || op == AL_STDLIB_COOKIE_COUNT) {
+    *out_value = al_stdlib2_scalar(ctx, op, arguments, lengths);
+  } else if (op == AL_STDLIB_BYTES_LENGTH) {
     *out_value = (int64_t)lengths[0];
   } else {
     /* Constant time in the shorter length; unequal lengths are unequal. */

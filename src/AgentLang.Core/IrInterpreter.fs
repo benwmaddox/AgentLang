@@ -60,6 +60,7 @@ type internal IrInterpreterRuntimeValue =
     | RuntimeBool of bool
     | RuntimeString of string
     | RuntimeBytes of byte[]
+    | RuntimeJson of byte[]
     | RuntimeUnit
     | RuntimeList of IrType * IrInterpreterRuntimeValue list
     | RuntimeOption of IrType * IrInterpreterRuntimeValue option
@@ -170,6 +171,7 @@ module IrInterpreter =
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
             "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"
+            "crypto.hmac-sha1"; "crypto.aes-256-gcm-seal"; "crypto.aes-256-gcm-open"; "json.parse"; "json.field"; "json.index"; "json.key-at"; "json.count"; "json.text"; "json.int"; "json.bool"; "json.null?"; "json.encode"; "json.quote"; "cookie.find"; "cookie.count"; "cookie.escape"; "cookie.unescape"; "cookie.set-cookie"; "time.add-years"; "time.rfc1123"; "time.iso8601-ms"; "time.parse-iso8601"
             "<expect>"; "<expect-equal>"
         ]
 
@@ -185,6 +187,7 @@ module IrInterpreter =
         | RuntimeBool _ -> IrBool
         | RuntimeString _ -> IrString
         | RuntimeBytes _ -> IrBytes
+        | RuntimeJson _ -> IrJson
         | RuntimeUnit -> IrUnit
         | RuntimeList(itemType, _) -> IrList itemType
         | RuntimeOption(itemType, _) -> IrOption itemType
@@ -219,6 +222,7 @@ module IrInterpreter =
                 | IrBool -> append "Bool"
                 | IrString -> append "String"
                 | IrBytes -> append "Bytes"
+                | IrJson -> append "Json"
                 | IrUnit -> append "Unit"
                 | IrNominal key -> append (typeName program key)
                 | IrList item ->
@@ -247,6 +251,7 @@ module IrInterpreter =
             | RuntimeBool value -> BoolValue value
             | RuntimeString value -> StringValue value
             | RuntimeBytes value -> BytesValue(Array.copy value)
+            | RuntimeJson value -> JsonTextValue(Text.Encoding.UTF8.GetString value)
             | RuntimeUnit -> UnitValue
             | RuntimeList(itemType, values) -> ListValue(toLangType itemType, List.map fromRuntimeValue values)
             | RuntimeOption(itemType, value) -> OptionValue(toLangType itemType, Option.map fromRuntimeValue value)
@@ -274,6 +279,7 @@ module IrInterpreter =
             | IrBool -> TBool
             | IrString -> TString
             | IrBytes -> TBytes
+            | IrJson -> TJson
             | IrUnit -> TUnit
             | IrList item -> TList(toLangType item)
             | IrOption item -> TOption(toLangType item)
@@ -356,7 +362,7 @@ module IrInterpreter =
             | PatternVariable _ -> false
             | PatternList item | PatternOption item -> isClosed item
             | PatternResult(okType, errorType) -> isClosed okType && isClosed errorType
-            | PatternInt | PatternFloat | PatternBool | PatternString | PatternBytes | PatternUnit -> true
+            | PatternInt | PatternFloat | PatternBool | PatternString | PatternBytes | PatternJson | PatternUnit -> true
         List.forall isClosed (inputPatterns @ outputPatterns)
 
     let private validateTestDispatch (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) (dispatch: Map<IrCallTarget, IrCallTarget>) =
@@ -521,6 +527,8 @@ module IrInterpreter =
         | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
         | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
             [ RuntimeBytes(Security.Cryptography.HMACSHA256.HashData(key, message)) ]
+        | "crypto.hmac-sha1", [ RuntimeBytes key; RuntimeBytes message ] ->
+            [ RuntimeBytes(Security.Cryptography.HMACSHA1.HashData(key, message)) ]
         | "crypto.pbkdf2-sha256", [ RuntimeBytes password; RuntimeBytes salt; RuntimeInt iterations; RuntimeInt length ] ->
             if iterations < 1L || iterations > 1000000L || length < 1L || length > 1024L then [ none IrBytes ]
             else
@@ -576,6 +584,39 @@ module IrInterpreter =
                || not (Int64.TryParse(text, Globalization.NumberStyles.AllowLeadingSign, Globalization.CultureInfo.InvariantCulture, &parsed))
                || text.StartsWith "+" then [ none IrInt ]
             else [ some IrInt (RuntimeInt parsed) ]
+        | _ -> []
+
+    /// Standard library slice 2 (report 274): StdlibSlice2 holds the algorithms.
+    /// Kept out of executePrimitive (Debug frame size); empty means unsupported arguments.
+    let private stdlibSlice2Primitive (operation: string) (arguments: RuntimeValue list) : RuntimeValue list =
+        let option itemType (value: RuntimeValue option) = [ RuntimeOption(itemType, value) ]
+        let utf8 = Text.Encoding.UTF8
+        match operation, arguments with
+        | "crypto.aes-256-gcm-seal", [ RuntimeBytes key; RuntimeBytes nonce; RuntimeBytes plaintext; RuntimeBytes aad ] ->
+            option IrBytes (StdlibSlice2.aesGcmSeal key nonce plaintext aad |> Option.map RuntimeBytes)
+        | "crypto.aes-256-gcm-open", [ RuntimeBytes key; RuntimeBytes nonce; RuntimeBytes ciphertext; RuntimeBytes tag; RuntimeBytes aad ] ->
+            option IrBytes (StdlibSlice2.aesGcmOpen key nonce ciphertext tag aad |> Option.map RuntimeBytes)
+        | "json.parse", [ RuntimeString text ] -> option IrJson (StdlibSlice2.jsonParse (utf8.GetBytes text) |> Option.map RuntimeJson)
+        | "json.field", [ RuntimeJson json; RuntimeString name ] -> option IrJson (StdlibSlice2.jsonField json name |> Option.map RuntimeJson)
+        | "json.index", [ RuntimeJson json; RuntimeInt index ] -> option IrJson (StdlibSlice2.jsonIndex json index |> Option.map RuntimeJson)
+        | "json.key-at", [ RuntimeJson json; RuntimeInt index ] -> option IrString (StdlibSlice2.jsonKeyAt json index |> Option.map RuntimeString)
+        | "json.count", [ RuntimeJson json ] -> option IrInt (StdlibSlice2.jsonCount json |> Option.map RuntimeInt)
+        | "json.text", [ RuntimeJson json ] -> option IrString (StdlibSlice2.jsonText json |> Option.map RuntimeString)
+        | "json.int", [ RuntimeJson json ] -> option IrInt (StdlibSlice2.jsonInt json |> Option.map RuntimeInt)
+        | "json.bool", [ RuntimeJson json ] -> option IrBool (StdlibSlice2.jsonBool json |> Option.map RuntimeBool)
+        | "json.null?", [ RuntimeJson json ] -> [ RuntimeBool(StdlibSlice2.jsonIsNull json) ]
+        | "json.encode", [ RuntimeJson json ] -> [ RuntimeString(utf8.GetString json) ]
+        | "json.quote", [ RuntimeString text ] -> [ RuntimeString(StdlibSlice2.jsonQuote text) ]
+        | "cookie.find", [ RuntimeString header; RuntimeString name ] -> option IrString (StdlibSlice2.cookieFind header name |> Option.map RuntimeString)
+        | "cookie.count", [ RuntimeString header; RuntimeString name ] -> [ RuntimeInt(StdlibSlice2.cookieCount header name) ]
+        | "cookie.escape", [ RuntimeString text ] -> [ RuntimeString(StdlibSlice2.cookieEscape text) ]
+        | "cookie.unescape", [ RuntimeString text ] -> [ RuntimeString(StdlibSlice2.cookieUnescape text) ]
+        | "cookie.set-cookie", [ RuntimeString name; RuntimeString value; RuntimeString path; RuntimeString expires; RuntimeString sameSite; RuntimeBool secure; RuntimeBool httpOnly ] ->
+            option IrString (StdlibSlice2.setCookie name value path expires sameSite secure httpOnly |> Option.map RuntimeString)
+        | "time.add-years", [ RuntimeInt micros; RuntimeInt years ] -> option IrInt (StdlibSlice2.addYears micros years |> Option.map RuntimeInt)
+        | "time.rfc1123", [ RuntimeInt micros ] -> option IrString (StdlibSlice2.rfc1123 micros |> Option.map RuntimeString)
+        | "time.iso8601-ms", [ RuntimeInt micros ] -> option IrString (StdlibSlice2.iso8601Milliseconds micros |> Option.map RuntimeString)
+        | "time.parse-iso8601", [ RuntimeString text ] -> option IrInt (StdlibSlice2.parseIso8601 text |> Option.map RuntimeInt)
         | _ -> []
 
     let private sourceAt (sourceMap: Map<SourceSiteId, IrSourceSite>) site =
@@ -699,7 +740,7 @@ module IrInterpreter =
                 | IrNominal key ->
                     let name = typeName program key
                     outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes (int64 name.Length * 6L)
-                | IrInt | IrFloat | IrBool | IrString | IrBytes | IrUnit -> ()
+                | IrInt | IrFloat | IrBool | IrString | IrBytes | IrJson | IrUnit -> ()
                 if outputBytes > maxRuntimeValueOutputBytes then
                     failValueLimit currentWord site "type-description output" $"estimated UTF-8 output bytes <= {maxRuntimeValueOutputBytes}" (string outputBytes)
             depth, outputBytes
@@ -715,7 +756,7 @@ module IrInterpreter =
             | RuntimeOption(_, Some value) -> [ value ]
             | RuntimeResult(_, _, Ok value) | RuntimeResult(_, _, Error value) -> [ value ]
             | RuntimeScalar(_, value) -> [ value ]
-            | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeBytes _ | RuntimeUnit
+            | RuntimeInt _ | RuntimeFloat _ | RuntimeBool _ | RuntimeString _ | RuntimeBytes _ | RuntimeJson _ | RuntimeUnit
             | RuntimeOption(_, None) | RuntimeEnum _ -> []
 
         let runtimeValueOwnOutputBytes currentWord site value =
@@ -724,6 +765,7 @@ module IrInterpreter =
                 match value with
                 | RuntimeString text -> 64L + int64 text.Length * 6L
                 | RuntimeBytes data -> 64L + int64 data.Length * 2L
+                | RuntimeJson data -> 64L + int64 data.Length * 2L
                 | RuntimeList(_, values) -> 64L + int64 values.Length * 2L
                 | RuntimeRecord(key, _) ->
                     match program.NominalTypesByKey.TryFind key with
@@ -835,7 +877,7 @@ module IrInterpreter =
                 | TResult(okType, errorType) -> pending.Push((errorType, depth + 1)); pending.Push((okType, depth + 1))
                 | TNamed name when String.IsNullOrWhiteSpace name ->
                     fail "HOST_OPERATION_VALUE_INVALID" "Host value contains an empty nominal type name." (Some currentWord) (site |> Option.bind sourceSpan) [ "declared type name" ] [ "empty" ]
-                | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ | TVar _ -> ()
+                | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TNamed _ | TVar _ -> ()
 
         let validateHostValueBudget currentWord site (roots: Value list) =
             let invalid actual =
@@ -867,6 +909,9 @@ module IrInterpreter =
                     if isNull text then invalid "null string"
                     if not (TrustedValues.isWellFormedUtf16 text) then
                         fail "STRING_INVALID_UTF16" "A String contains an unpaired surrogate and has no UTF-8 form." (Some currentWord) (site |> Option.bind sourceSpan) [ "well-formed Unicode text" ] [ "unpaired surrogate" ]
+                    addBytes (int64 text.Length * 6L)
+                | JsonTextValue text ->
+                    if isNull text then invalid "null json"
                     addBytes (int64 text.Length * 6L)
                 | BytesValue data ->
                     if isNull data then invalid "null bytes"
@@ -1049,6 +1094,7 @@ module IrInterpreter =
                 | IrBool -> TBool
                 | IrString -> TString
                 | IrBytes -> TBytes
+                | IrJson -> TJson
                 | IrUnit -> TUnit
                 | IrList item -> TList(toLangType item)
                 | IrOption item -> TOption(toLangType item)
@@ -1071,6 +1117,9 @@ module IrInterpreter =
             | IrBool, BoolValue flag -> RuntimeBool flag
             | IrString, StringValue text when not (isNull text) && TrustedValues.isWellFormedUtf16 text -> RuntimeString text
             | IrBytes, BytesValue data when not (isNull data) -> RuntimeBytes(Array.copy data)
+            | IrJson, JsonTextValue text when not (isNull text) && TrustedValues.isWellFormedUtf16 text
+                                              && StdlibSlice2.jsonParse (Text.Encoding.UTF8.GetBytes text) = Some(Text.Encoding.UTF8.GetBytes text) ->
+                RuntimeJson(Text.Encoding.UTF8.GetBytes text)
             | IrUnit, UnitValue -> RuntimeUnit
             | IrList itemType, ListValue(actualType, values) ->
                 requireContainerType (TList actualType)
@@ -1271,8 +1320,12 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
-            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii"), _ ->
+            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii" | "crypto.hmac-sha1"), _ ->
                 match stdlibPrimitive operation arguments with
+                | [] -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
+                | results -> results
+            | ("crypto.aes-256-gcm-seal" | "crypto.aes-256-gcm-open" | "json.parse" | "json.field" | "json.index" | "json.key-at" | "json.count" | "json.text" | "json.int" | "json.bool" | "json.null?" | "json.encode" | "json.quote" | "cookie.find" | "cookie.count" | "cookie.escape" | "cookie.unescape" | "cookie.set-cookie" | "time.add-years" | "time.rfc1123" | "time.iso8601-ms" | "time.parse-iso8601"), _ ->
+                match stdlibSlice2Primitive operation arguments with
                 | [] -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
                 | results -> results
             | "crypto.random-bytes", [ RuntimeInt count ] ->

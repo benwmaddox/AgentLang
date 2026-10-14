@@ -13,7 +13,7 @@ module Parser =
               "match-option"; "match-result"; "some"; "none"; "ok"; "error"
               "list.empty"; "list.singleton"; "option.none"; "option.some"; "result.ok"; "result.error"
               "list.map"; "list.filter"; "list.each"; "list.fold" ]
-    let private reservedTypeNames = set [ "Int"; "Float"; "Bool"; "String"; "Bytes"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
+    let private reservedTypeNames = set [ "Int"; "Float"; "Bool"; "String"; "Bytes"; "Json"; "Unit"; "List"; "Option"; "Result"; "a"; "b"; "c" ]
 
     let private validWordName (name: string) =
         not (String.IsNullOrWhiteSpace name)
@@ -148,13 +148,14 @@ module Parser =
             | "Bool", None -> TBool
             | "String", None -> TString
             | "Bytes", None -> TBytes
+            | "Json", None -> TJson
             | "Unit", None -> TUnit
             | "List", Some [ item ] -> TList item
             | "Option", Some [ item ] -> TOption item
             | "Result", Some [ ok; error ] -> TResult(ok, error)
             | ("List" | "Option" | "Result"), _ -> fail file line 1 "PARSE_INVALID_TYPE_ARITY" $"Type '{name}' has the wrong number of type arguments."
             | _, Some _ -> fail file line 1 "PARSE_UNSUPPORTED_TYPE" $"Parameterized type '{name}' is not part of the closed built-in type set."
-            | _, None when name = "Int" || name = "Float" || name = "Bool" || name = "String" || name = "Bytes" || name = "Unit" -> fail file line 1 "PARSE_INVALID_TYPE" $"Type '{name}' cannot have type arguments."
+            | _, None when name = "Int" || name = "Float" || name = "Bool" || name = "String" || name = "Bytes" || name = "Json" || name = "Unit" -> fail file line 1 "PARSE_INVALID_TYPE" $"Type '{name}' cannot have type arguments."
             | _, None -> TNamed name
         let result = parse 0
         skipWhitespace ()
@@ -170,7 +171,7 @@ module Parser =
             | TNamed name when reservedTypeNames.Contains name -> Some name
             | TList item | TOption item -> openVariable item
             | TResult(ok, error) -> openVariable ok |> Option.orElseWith (fun () -> openVariable error)
-            | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ -> None
+            | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TNamed _ -> None
 
         try
             let parsed = parseType "<type-query>" 1 source

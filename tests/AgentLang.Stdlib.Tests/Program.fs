@@ -17,6 +17,7 @@ open AgentLang.Llvm
 
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "stdlib.flow")
+let private slice2Path = Path.Combine(__SOURCE_DIRECTORY__, "stdlib2.flow")
 let private assertionCount = ref 0
 
 let private check label condition =
@@ -30,6 +31,8 @@ let private typeOf (text: string) =
     | "String" -> TString
     | "Int" -> TInt
     | "Bool" -> TBool
+    | "Bytes" -> TBytes
+    | "Json" -> TJson
     | "List<String>" -> TList TString
     | other -> failwith $"stdlib.flow boundary type {other} is not covered by the parity harness."
 
@@ -57,6 +60,12 @@ let private parseArguments (text: string) : Value list option =
                     index <- index + 1
             index <- index + 1
             values.Add(StringValue(builder.ToString()))
+        elif text.Substring(index).StartsWith "true" then
+            values.Add(BoolValue true)
+            index <- index + 4
+        elif text.Substring(index).StartsWith "false" then
+            values.Add(BoolValue false)
+            index <- index + 5
         else
             let digits = Regex.Match(text.Substring index, @"^-?\d+")
             if digits.Success then
@@ -67,7 +76,7 @@ let private parseArguments (text: string) : Value list option =
     if ok then Some(List.ofSeq values) else None
 
 let private run () =
-    let source = File.ReadAllText sourcePath
+    let source = File.ReadAllText sourcePath + Environment.NewLine + File.ReadAllText slice2Path
     let runBase =
         match Environment.GetEnvironmentVariable "AGENTLANG_STDLIB_RUN_ROOT" with
         | null | "" -> Path.Combine(repo, ".agentlang", "stdlib-272", "runs")
@@ -95,7 +104,9 @@ let private run () =
         let wordArgs = JsonObject()
         wordArgs["word"] <- JsonValue.Create(name)
         let response = engine.Dispatch("commit", wordArgs)
-        check $"{name} commits with its tests: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
+        // A word committed earlier as a dependency of another word is no longer a candidate.
+        let committedAsDependency = not (response["ok"].GetValue<bool>()) && response.ToJsonString().Contains "COMMIT_NOT_CANDIDATE"
+        check $"{name} commits with its tests: {response.ToJsonString()}" (response["ok"].GetValue<bool>() || committedAsDependency)
 
     // Replay literal test calls natively.
     let cases =
@@ -120,7 +131,10 @@ let private run () =
             for word, (inputs, outputs), values in cases do
                 if not (natives.ContainsKey word) then
                     let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
-                    natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, optimization, string natives.Count)) body
+                    let directory = Path.Combine(runRoot, optimization, string natives.Count)
+                    natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile directory body
+                    // Names the build directory, so a word can be rebuilt elsewhere (the Linux probe).
+                    File.WriteAllText(Path.Combine(directory, "word.txt"), word)
                 let interpreted =
                     match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
                     | Ok value -> value.Values
@@ -136,7 +150,7 @@ let private run () =
     receipt["assertionCount"] <- JsonValue.Create(assertionCount.Value)
     receipt["nativeCases"] <- JsonValue.Create(cases.Length)
     let pins = JsonArray()
-    for path in [ sourcePath; Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
+    for path in [ sourcePath; slice2Path; Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stdlib2.h"); Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
         let pin = JsonObject()
         pin["path"] <- JsonValue.Create(Path.GetRelativePath(repo, path).Replace('\\', '/'))
         pin["sha256"] <- JsonValue.Create(hash path)

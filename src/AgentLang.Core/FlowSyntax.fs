@@ -483,7 +483,7 @@ module FlowStructure =
                 | TResult(okType, errorType) ->
                     scheduleType (depth + 1) okType source
                     scheduleType (depth + 1) errorType source
-                | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ | TVar _ -> ()
+                | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TNamed _ | TVar _ -> ()
             | ExpressionNode(expression, depth) ->
                 if depth > maxExpressionDepth then
                     let source = expressionSpan expression
@@ -1068,7 +1068,7 @@ module FlowSource =
             | TVar variable when requireClosed ->
                 Diagnostics.raiseError "FLOW_TYPE_OPEN" "Flow project declarations require closed types; free type variables are not supported." (Some name) (Some span) [] [ variable ]
             | TVar _ -> ()
-            | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TJson | TUnit | TNamed _ -> ()
 
     let private validateClosedType name span typeValue =
         validateTypeShape name span true typeValue
