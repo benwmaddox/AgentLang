@@ -29,6 +29,10 @@ typedef struct al_campfire_pure_context {
   ULONG hmac_object_bytes;
   uint8_t signing_key[AL_CAMPFIRE_SIGNING_KEY_BYTES];
   uint8_t hmac_object[AL_CAMPFIRE_HMAC_OBJECT_CAPACITY];
+  BCRYPT_ALG_HANDLE hmac_sha256_algorithm;
+  ULONG hmac256_object_bytes;
+  uint8_t avatar_key[AL_CAMPFIRE_SIGNING_KEY_BYTES];
+  uint8_t hmac256_object[AL_CAMPFIRE_HMAC_OBJECT_CAPACITY];
   uint8_t raw_ascii[AL_CAMPFIRE_SCRATCH_BYTES];
   uint8_t payload[AL_CAMPFIRE_SCRATCH_BYTES];
   uint8_t message[AL_CAMPFIRE_SCRATCH_BYTES];
@@ -1331,6 +1335,7 @@ int32_t al_campfire_pure_context_init_v1(void *storage,
                                         const uint8_t *secret_utf8,
                                         uint32_t secret_length) {
   static const uint8_t signed_cookie_salt[] = "signed cookie";
+  static const uint8_t signed_id_salt[] = "active_record/signed_id";
   al_campfire_pure_context *context;
   BCRYPT_ALG_HANDLE sha256_algorithm = NULL;
   ULONG result_bytes = 0u;
@@ -1355,6 +1360,21 @@ int32_t al_campfire_pure_context_init_v1(void *storage,
       context->signing_key, AL_CAMPFIRE_SIGNING_KEY_BYTES, 0u);
   if (!BCRYPT_SUCCESS(status))
     goto initialization_failure;
+  status = BCryptDeriveKeyPBKDF2(
+      sha256_algorithm, (PUCHAR)secret_utf8, secret_length,
+      (PUCHAR)signed_id_salt, (ULONG)(sizeof(signed_id_salt) - 1u), 1000u,
+      context->avatar_key, AL_CAMPFIRE_SIGNING_KEY_BYTES, 0u);
+  if (!BCRYPT_SUCCESS(status))
+    goto initialization_failure;
+  status = BCryptGetProperty(sha256_algorithm, BCRYPT_OBJECT_LENGTH,
+                             (PUCHAR)&object_bytes, sizeof(object_bytes),
+                             &result_bytes, 0u);
+  if (!BCRYPT_SUCCESS(status) || result_bytes != sizeof(object_bytes) ||
+      object_bytes == 0u || object_bytes > sizeof(context->hmac256_object))
+    goto initialization_failure;
+  context->hmac256_object_bytes = object_bytes;
+  context->hmac_sha256_algorithm = sha256_algorithm;
+  sha256_algorithm = NULL;
   status = BCryptOpenAlgorithmProvider(
       &context->hmac_sha1_algorithm, BCRYPT_SHA1_ALGORITHM, NULL,
       BCRYPT_ALG_HANDLE_HMAC_FLAG);
@@ -1368,12 +1388,15 @@ int32_t al_campfire_pure_context_init_v1(void *storage,
     goto initialization_failure;
   context->hmac_object_bytes = object_bytes;
   context->magic = AL_CAMPFIRE_PURE_CONTEXT_MAGIC;
-  BCryptCloseAlgorithmProvider(sha256_algorithm, 0u);
   return 0;
 
 initialization_failure:
   if (sha256_algorithm != NULL)
     BCryptCloseAlgorithmProvider(sha256_algorithm, 0u);
+  if (context->hmac_sha256_algorithm != NULL) {
+    BCryptCloseAlgorithmProvider(context->hmac_sha256_algorithm, 0u);
+    context->hmac_sha256_algorithm = NULL;
+  }
   if (context->hmac_sha1_algorithm != NULL) {
     BCryptCloseAlgorithmProvider(context->hmac_sha1_algorithm, 0u);
     context->hmac_sha1_algorithm = NULL;
@@ -1393,8 +1416,13 @@ void al_campfire_pure_context_destroy_v1(void *pure_context) {
     BCryptCloseAlgorithmProvider(context->hmac_sha1_algorithm, 0u);
     context->hmac_sha1_algorithm = NULL;
   }
+  if (context->hmac_sha256_algorithm != NULL) {
+    BCryptCloseAlgorithmProvider(context->hmac_sha256_algorithm, 0u);
+    context->hmac_sha256_algorithm = NULL;
+  }
   al_campfire_clear_scratch(context);
   SecureZeroMemory(context->signing_key, sizeof(context->signing_key));
+  SecureZeroMemory(context->avatar_key, sizeof(context->avatar_key));
   ReleaseSRWLockExclusive(&context->lock);
   SecureZeroMemory(context, sizeof(*context));
 }
@@ -1766,4 +1794,103 @@ int32_t al_campfire_browser_version_v1(
   al_campfire_write_u64_le(output, result);
   *output_extent_bytes = 8u;
   return 0;
+}
+
+/* The signed_id JSON envelope: {"_rails":{"data":<id>,"pur":"user/avatar"}}. */
+static uint32_t al_campfire_avatar_json(int64_t user_id, uint8_t *json) {
+  static const char prefix[] = "{\"_rails\":{\"data\":";
+  static const char suffix[] = ",\"pur\":\"user/avatar\"}}";
+  uint8_t digits[24];
+  uint32_t digit_count = 0u;
+  uint32_t length = 0u;
+  uint64_t magnitude = user_id < 0 ? (uint64_t)0 - (uint64_t)user_id
+                                   : (uint64_t)user_id;
+  uint32_t index;
+  do {
+    digits[digit_count++] = (uint8_t)('0' + (magnitude % 10u));
+    magnitude /= 10u;
+  } while (magnitude != 0u);
+  for (index = 0u; index < sizeof(prefix) - 1u; ++index)
+    json[length++] = (uint8_t)prefix[index];
+  if (user_id < 0)
+    json[length++] = '-';
+  while (digit_count > 0u)
+    json[length++] = digits[--digit_count];
+  for (index = 0u; index < sizeof(suffix) - 1u; ++index)
+    json[length++] = (uint8_t)suffix[index];
+  return length;
+}
+
+uint32_t al_campfire_avatar_token_length_v1(int64_t user_id) {
+  uint8_t json[64];
+  const uint32_t json_length = al_campfire_avatar_json(user_id, json);
+  /* Unpadded base64url, "--", 64 hex digits. */
+  return (json_length * 4u + 2u) / 3u + 2u + 64u;
+}
+
+int32_t al_campfire_avatar_token_v1(void *pure_context, int64_t user_id,
+                                    uint8_t *output, uint32_t output_capacity,
+                                    uint32_t *output_length) {
+  static const uint8_t alphabet[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  static const uint8_t hex[] = "0123456789abcdef";
+  al_campfire_pure_context *context = (al_campfire_pure_context *)pure_context;
+  BCRYPT_HASH_HANDLE hash = NULL;
+  uint8_t json[64];
+  uint8_t digest[32];
+  uint32_t json_length;
+  uint32_t encoded = 0u;
+  uint32_t index;
+  NTSTATUS status;
+  int32_t result = 1;
+  if (context == NULL || context->magic != AL_CAMPFIRE_PURE_CONTEXT_MAGIC ||
+      output == NULL || output_length == NULL ||
+      output_capacity < al_campfire_avatar_token_length_v1(user_id))
+    return 1;
+  json_length = al_campfire_avatar_json(user_id, json);
+  for (index = 0u; index + 2u < json_length; index += 3u) {
+    const uint32_t triple = ((uint32_t)json[index] << 16u) |
+                            ((uint32_t)json[index + 1u] << 8u) |
+                            json[index + 2u];
+    output[encoded++] = alphabet[(triple >> 18u) & 63u];
+    output[encoded++] = alphabet[(triple >> 12u) & 63u];
+    output[encoded++] = alphabet[(triple >> 6u) & 63u];
+    output[encoded++] = alphabet[triple & 63u];
+  }
+  if (json_length - index == 1u) {
+    const uint32_t triple = (uint32_t)json[index] << 16u;
+    output[encoded++] = alphabet[(triple >> 18u) & 63u];
+    output[encoded++] = alphabet[(triple >> 12u) & 63u];
+  } else if (json_length - index == 2u) {
+    const uint32_t triple = ((uint32_t)json[index] << 16u) |
+                            ((uint32_t)json[index + 1u] << 8u);
+    output[encoded++] = alphabet[(triple >> 18u) & 63u];
+    output[encoded++] = alphabet[(triple >> 12u) & 63u];
+    output[encoded++] = alphabet[(triple >> 6u) & 63u];
+  }
+  AcquireSRWLockExclusive(&context->lock);
+  status = BCryptCreateHash(context->hmac_sha256_algorithm, &hash,
+                            context->hmac256_object,
+                            context->hmac256_object_bytes, context->avatar_key,
+                            AL_CAMPFIRE_SIGNING_KEY_BYTES, 0u);
+  if (BCRYPT_SUCCESS(status))
+    status = BCryptHashData(hash, (PUCHAR)output, encoded, 0u);
+  if (BCRYPT_SUCCESS(status))
+    status = BCryptFinishHash(hash, digest, sizeof(digest), 0u);
+  if (hash != NULL)
+    BCryptDestroyHash(hash);
+  SecureZeroMemory(context->hmac256_object, context->hmac256_object_bytes);
+  ReleaseSRWLockExclusive(&context->lock);
+  if (BCRYPT_SUCCESS(status)) {
+    output[encoded++] = '-';
+    output[encoded++] = '-';
+    for (index = 0u; index < sizeof(digest); ++index) {
+      output[encoded++] = hex[digest[index] >> 4u];
+      output[encoded++] = hex[digest[index] & 0x0fu];
+    }
+    *output_length = encoded;
+    result = 0;
+  }
+  SecureZeroMemory(digest, sizeof(digest));
+  return result;
 }

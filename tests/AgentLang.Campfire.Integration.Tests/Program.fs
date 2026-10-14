@@ -46,6 +46,9 @@ type private ProviderProbe(path: string, clock: FixedClock, provider: HostOperat
 module Program =
     let mutable private assertions = 0
 
+    /// Synthetic secret_key_base for avatar-token signing in these fixtures (not a real secret).
+    let private integrationSecret = String.replicate 64 "i"
+
     let private check condition message =
         assertions <- assertions + 1
         if not condition then failwith message
@@ -194,9 +197,9 @@ module Program =
         defineFlow engine source |> ignore
 
         let firstRun = dispatch engine "test-all" [] |> expectAllPassed "scoped test suite"
-        equal 54 firstRun.Count "scoped suite includes policy, page, list, and create cases"
+        equal 64 firstRun.Count "scoped suite includes policy, page, list, and create cases"
         let scopedEffects = firstRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
-        equal 30 scopedEffects.Length "all operation-backed scoped cases carry effect assertions"
+        equal 40 scopedEffects.Length "all operation-backed scoped cases carry effect assertions"
         for result in scopedEffects do assertEffectCounts result 0 0 0 0
         equal 0 productionCalls.Value "scoped test suite never invokes the production provider"
         equal 0 testFactoryCalls "scoped replacements never construct a real provider"
@@ -206,6 +209,7 @@ module Program =
               "message.can-administer?"
               "campfire.rooms.list-for-user"
               "campfire.messages.list-for-member"
+              "campfire.messages.page-for-member"
               "campfire.messages.create-for-member" ] do
             dispatch engine "commit" [ "word", jstr word; "library", jbool true ]
             |> expectOk $"qualify {word} as a library word"
@@ -229,9 +233,9 @@ module Program =
             check (names.Contains word) $"fresh runtime loads qualified library word {word}"
 
         let reloadedRun = dispatch reloaded "test-all" [] |> expectAllPassed "fresh-runtime scoped suite"
-        equal 54 reloadedRun.Count "fresh-runtime suite retains all scoped cases"
+        equal 64 reloadedRun.Count "fresh-runtime suite retains all scoped cases"
         let reloadedEffects = reloadedRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
-        equal 30 reloadedEffects.Length "reloaded scoped cases retain all effect assertions"
+        equal 40 reloadedEffects.Length "reloaded scoped cases retain all effect assertions"
         for result in reloadedEffects do assertEffectCounts result 0 0 0 0
         equal 0 productionCalls.Value "fresh-runtime library qualification does not use production provider"
         equal 0 testFactoryCalls "fresh-runtime library qualification does not construct providers"
@@ -263,7 +267,7 @@ module Program =
         connection.Open()
         use command = connection.CreateCommand()
         command.CommandText <-
-            "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT); " +
+            "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT 'User', bio TEXT, updated_at TEXT NOT NULL DEFAULT '2026-01-01 00:00:00'); " +
             "CREATE TABLE rooms (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at datetime NOT NULL, creator_id bigint NOT NULL, name varchar, type varchar NOT NULL, updated_at datetime NOT NULL); " +
             "CREATE TABLE memberships (id INTEGER PRIMARY KEY AUTOINCREMENT, connected_at datetime, connections integer NOT NULL DEFAULT 0, created_at datetime NOT NULL, involvement varchar DEFAULT 'mentions', room_id integer NOT NULL, unread_at datetime, updated_at datetime NOT NULL, user_id integer NOT NULL); " +
             "CREATE UNIQUE INDEX index_memberships_on_room_id_and_user_id ON memberships(room_id, user_id); " +
@@ -334,7 +338,7 @@ module Program =
             let guidSource () =
                 guidSourceCalls <- guidSourceCalls + 1
                 Guid.Parse("12345678-90ab-cdef-1234-567890abcdef")
-            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource with
+            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource integrationSecret with
             | Error _ -> Error HostOperationFailure.InvocationFailed
             | Ok provider ->
                 let probe = ProviderProbe(path, clock, provider, fun () -> guidSourceCalls)
@@ -343,7 +347,7 @@ module Program =
         probes, (fun () -> factoryCalls), factory
 
     let private adapterContract () =
-        equal 4 CampfireHost.manifest.Count "host publishes exactly four fixed operation contracts"
+        equal 5 CampfireHost.manifest.Count "host publishes exactly five fixed operation contracts"
         equal
             CampfireHost.operationIds
             (CampfireHost.manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
@@ -360,7 +364,7 @@ module Program =
         seedFixture path
         let clock = FixedClock(DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero))
         let provider =
-            match CampfireHost.createProvider path (clock :> IClock) with
+            match CampfireHost.createProvider path (clock :> IClock) integrationSecret with
             | Ok value -> value
             | Error error -> failwith $"open adapter contract fixture: {error}"
 
@@ -444,8 +448,8 @@ module Program =
         defineFlow engine (readApplicationSource true) |> ignore
 
         let results = dispatch engine "test-all" [] |> expectAllPassed "real SQLite integration suite"
-        equal 65 results.Count "integration suite includes scoped, policy, and eleven real SQLite cases"
-        equal 11 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
+        equal 78 results.Count "integration suite includes scoped, policy, and fourteen real SQLite cases"
+        equal 14 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
         equal 0 productionCalls.Value "attached tests use only the disposable test-provider path"
 
         let expectedRealEffects =
@@ -465,8 +469,8 @@ module Program =
             resultByName results word caseName |> fun result -> assertEffectCounts result reads writes clocks randoms
 
         let allProbes = probes |> Seq.toList
-        equal 11 allProbes.Length "all real tests got distinct provider probes"
-        equal 11 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each test used a distinct fixture database"
+        equal 14 allProbes.Length "all real tests got distinct provider probes"
+        equal 14 (allProbes |> List.map (fun probe -> probe.Path) |> Set.ofList |> Set.count) "each test used a distinct fixture database"
         for probe in allProbes do
             let providerName = Path.GetFileName(probe.Path)
             equal 1 probe.DisposeCalls $"provider from {providerName} is disposed once"
@@ -477,10 +481,11 @@ module Program =
             |> List.countBy fst
             |> Map.ofList
         equal 3 (aggregatedCalls.["campfire.rooms.page-for-user"]) "real room pages use the bounded page operation"
-        equal 8 (aggregatedCalls.["campfire.membership.exists?"]) "each member-scoped operation checks exact membership"
+        equal 11 (aggregatedCalls.["campfire.membership.exists?"]) "each member-scoped operation checks exact membership"
         equal 2 (aggregatedCalls.["campfire.messages.last-page"]) "only two authorized message reads reach last-page"
+        equal 2 (aggregatedCalls.["campfire.messages.last-page-with-creators"]) "only two authorized creator-page reads reach last-page-with-creators"
         equal 4 (aggregatedCalls.["campfire.messages.create"]) "only four authorized message creates reach persistence"
-        equal 17 (aggregatedCalls |> Map.toSeq |> Seq.sumBy snd) "real suite makes only the four registered fixed operations"
+        equal 22 (aggregatedCalls |> Map.toSeq |> Seq.sumBy snd) "real suite makes only the five registered fixed operations"
         equal 4 (allProbes |> List.sumBy (fun probe -> probe.Clock.Calls)) "clock is read only by actual message-create attempts"
         equal 1 (allProbes |> List.sumBy (fun probe -> probe.GuidSourceCalls)) "only a missing client ID invokes the injected GUID source"
         let createProbes = allProbes |> List.filter (fun probe -> createMessageClientId probe |> Option.isSome)
@@ -491,7 +496,7 @@ module Program =
             equal expectedGuidCalls probe.GuidSourceCalls "only a missing ID invokes the GUID source for this create"
 
         let deniedProbes = allProbes |> List.filter (fun probe -> userIdsInMembershipCalls probe = [ 2L ])
-        equal 2 deniedProbes.Length "the two denied cases still perform their membership lookup"
+        equal 3 deniedProbes.Length "the three denied cases still perform their membership lookup"
         for probe in deniedProbes do
             let names = probe.Calls |> List.map fst
             equal [ "campfire.membership.exists?" ] names "denied calls stop before last-page or message-create"
@@ -525,7 +530,7 @@ module Program =
 
         let clock = FixedClock(DateTimeOffset(2025, 1, 2, 0, 0, 0, TimeSpan.Zero))
         let underlying =
-            match CampfireHost.createProvider databasePath (clock :> IClock) with
+            match CampfireHost.createProvider databasePath (clock :> IClock) integrationSecret with
             | Ok provider -> provider
             | Error error -> failwith $"reopen attached-test database through host adapter: {error}"
         let probe = ProviderProbe(databasePath, clock, underlying, fun () -> 0)
@@ -584,7 +589,7 @@ module Program =
         seedFixture path
         let clock = FixedClock(DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero))
         let underlying =
-            match CampfireHost.createProvider path (clock :> IClock) with
+            match CampfireHost.createProvider path (clock :> IClock) integrationSecret with
             | Ok provider -> provider
             | Error error -> failwith $"create explicit production provider: {error}"
         let productionProbe = ProviderProbe(path, clock, underlying, fun () -> -1)
@@ -643,7 +648,7 @@ module Program =
             guidSourceCalls <- guidSourceCalls + 1
             failwith "test-only GUID source failure"
         let underlying =
-            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource with
+            match CampfireHost.createProviderWithGuidSource path (clock :> IClock) guidSource integrationSecret with
             | Ok provider -> provider
             | Error error -> failwith $"open GUID-failure provider: {error}"
         let probe = ProviderProbe(path, clock, underlying, fun () -> guidSourceCalls)

@@ -57,7 +57,6 @@ type MessageWithCreator =
       CreatorName: string
       CreatorBio: string
       CreatorUpdatedAt: string
-      CreatorAvatarToken: string
       Body: string option }
 
 type NewMessage =
@@ -239,11 +238,11 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
             command.CommandText <-
                 "SELECT messages.id, messages.room_id, messages.creator_id, " +
                 "CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + " +
-                "CAST(CASE WHEN length(messages.created_at) > 19 THEN substr(messages.created_at, 21, 3) ELSE '0' END AS INTEGER), " +
+                "CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), " +
                 "CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + " +
-                "CAST(CASE WHEN length(messages.updated_at) > 19 THEN substr(messages.updated_at, 21, 3) ELSE '0' END AS INTEGER), " +
+                "CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), " +
                 "messages.client_message_id, rich_text.body, messages.created_at, " +
-                "users.name, users.bio, users.updated_at, users.avatar_token_seed " +
+                "users.name, COALESCE(users.bio, ''), users.updated_at " +
                 "FROM messages " +
                 "INNER JOIN users ON users.id = messages.creator_id " +
                 "LEFT JOIN action_text_rich_texts AS rich_text " +
@@ -265,8 +264,7 @@ type SqliteProvider private (path: string, clock: IClock, guidSource: unit -> Gu
                       CreatedAt = reader.GetString(7)
                       CreatorName = reader.GetString(8)
                       CreatorBio = reader.GetString(9)
-                      CreatorUpdatedAt = reader.GetString(10)
-                      CreatorAvatarToken = reader.GetString(11) }
+                      CreatorUpdatedAt = reader.GetString(10) }
             rows |> Seq.toList |> List.rev)
 
     member _.CreateMessage(message: NewMessage) =

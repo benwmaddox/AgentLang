@@ -76,11 +76,11 @@ module private Host =
             let store = Path.Combine(options.ProjectPath, ".agentlang", "store", "CURRENT")
             if not (File.Exists store) then invalidArg "--project" "Use a new empty project directory or a complete existing dictionary."
 
-    let private createEnvironment databasePath clock cookies =
+    let private createEnvironment databasePath clock cookies secretKeyBase =
         let expectProvider label = function
             | Ok provider -> provider
             | Error _ -> invalidOp ($"REFERENCE_PROVIDER_UNAVAILABLE:{label}")
-        let campfire = CampfireHost.createProvider databasePath clock |> expectProvider "campfire"
+        let campfire = CampfireHost.createProvider databasePath clock secretKeyBase |> expectProvider "campfire"
         let authentication = CampfireAuthenticationHost.createProvider databasePath |> expectProvider "authentication"
         let cookieProvider = CookieHost.createProvider cookies
         let browser = BrowserHost.createProvider()
@@ -115,7 +115,7 @@ module private Host =
                     | Ok service -> service
                     | Error _ -> invalidOp "REFERENCE_COOKIE_SERVICE_INIT_FAILED"
                 let clock = SystemClock()
-                let environment, provider = createEnvironment options.DatabasePath (clock :> IClock) cookies
+                let environment, provider = createEnvironment options.DatabasePath (clock :> IClock) cookies secret
                 try
                     let application = Application.create options.ProjectPath options.SourcePath environment
                     let authority = Uri($"http://127.0.0.1:{options.Port}/", UriKind.Absolute)

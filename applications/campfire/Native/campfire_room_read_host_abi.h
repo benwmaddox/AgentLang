@@ -16,7 +16,8 @@ enum al_campfire_room_read_operation {
   AL_CAMPFIRE_BROWSER_VERSION = 6,
   AL_CAMPFIRE_ROOM_FIND = 7,
   AL_CAMPFIRE_MEMBERSHIP_EXISTS = 8,
-  AL_CAMPFIRE_MESSAGES_LAST_PAGE = 9
+  /* 9 (messages.last-page) is retired; tags are never reused. */
+  AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS = 10
 };
 
 /* Borrowed owning-layout ABI5 root encoding, valid for this callback only.

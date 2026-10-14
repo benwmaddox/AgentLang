@@ -184,32 +184,27 @@ test-file campfire-message-pages {
         }
     }
 
-    override fn campfire.messages.last-page-with-creators(room-id: RoomId) -> Result<List<MessageWithCreator>, DbError> {
+    override fn campfire.messages.last-page(room-id: RoomId) -> Result<List<MessageRow>, DbError> {
         if room-id == RoomId.new(4) {
-            result.error<List<MessageWithCreator>, DbError>(DbError.unavailable())
+            result.error<List<MessageRow>, DbError>(DbError.unavailable())
         } else {
             if room-id == RoomId.new(5) {
-                result.error<List<MessageWithCreator>, DbError>(DbError.not-found())
+                result.error<List<MessageRow>, DbError>(DbError.not-found())
             } else {
                 if room-id == RoomId.new(6) {
-                    result.error<List<MessageWithCreator>, DbError>(DbError.constraint-conflict())
+                    result.error<List<MessageRow>, DbError>(DbError.constraint-conflict())
                 } else {
                     if room-id == RoomId.new(7) {
-                        result.error<List<MessageWithCreator>, DbError>(DbError.invalid-input())
+                        result.error<List<MessageRow>, DbError>(DbError.invalid-input())
                     } else {
-                        result.ok<List<MessageWithCreator>, DbError>(list.singleton<MessageWithCreator>(messageWithCreator.new(
+                        result.ok<List<MessageRow>, DbError>(list.singleton<MessageRow>(messageRow.new(
                             id = MessageId.new(100),
                             room-id = room-id,
                             creator-id = UserId.new(11),
                             client-message-id = "fixture-message",
                             body = option.some<String>("<p>stored body</p>"),
-                            created-at-ms = 1760184060000,
-                            updated-at-ms = 1760184060000,
                             created-at = "2026-10-11 12:01:00",
-                            creator-name = "Fixture Creator",
-                            creator-bio = "",
-                            creator-updated-at = "2026-10-11 12:00:00",
-                            creator-avatar-token = ""
+                            updated-at = "2026-10-11 12:01:00"
                         )))
                     }
                 }
@@ -217,21 +212,16 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/member-can-read {
-        campfire.messages.page-for-member(UserId.new(11), RoomId.new(1))
-        => value result.ok<List<MessageWithCreator>, RoomMessageError>(list.singleton<MessageWithCreator>(messageWithCreator.new(
+    test campfire.messages.list-for-member/member-can-read {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(1))
+        => value result.ok<List<MessageRow>, RoomMessageError>(list.singleton<MessageRow>(messageRow.new(
             id = MessageId.new(100),
             room-id = RoomId.new(1),
             creator-id = UserId.new(11),
             client-message-id = "fixture-message",
             body = option.some<String>("<p>stored body</p>"),
-            created-at-ms = 1760184060000,
-            updated-at-ms = 1760184060000,
             created-at = "2026-10-11 12:01:00",
-            creator-name = "Fixture Creator",
-            creator-bio = "",
-            creator-updated-at = "2026-10-11 12:00:00",
-            creator-avatar-token = ""
+            updated-at = "2026-10-11 12:01:00"
         ))) effects {
             db.read: 0
             db.write: 0
@@ -240,9 +230,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/non-member-denied {
-        campfire.messages.page-for-member(UserId.new(22), RoomId.new(20))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied()) effects {
+    test campfire.messages.list-for-member/non-member-denied {
+        campfire.messages.list-for-member(UserId.new(22), RoomId.new(20))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.access-denied()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -250,9 +240,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/membership-unavailable {
-        campfire.messages.page-for-member(UserId.new(71), RoomId.new(1))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+    test campfire.messages.list-for-member/membership-unavailable {
+        campfire.messages.list-for-member(UserId.new(71), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -260,9 +250,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/membership-not-found {
-        campfire.messages.page-for-member(UserId.new(72), RoomId.new(1))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+    test campfire.messages.list-for-member/membership-not-found {
+        campfire.messages.list-for-member(UserId.new(72), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -270,9 +260,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/membership-constraint-error {
-        campfire.messages.page-for-member(UserId.new(73), RoomId.new(1))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+    test campfire.messages.list-for-member/membership-constraint-error {
+        campfire.messages.list-for-member(UserId.new(73), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -280,9 +270,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/membership-invalid-input {
-        campfire.messages.page-for-member(UserId.new(74), RoomId.new(1))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+    test campfire.messages.list-for-member/membership-invalid-input {
+        campfire.messages.list-for-member(UserId.new(74), RoomId.new(1))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -290,9 +280,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/page-unavailable {
-        campfire.messages.page-for-member(UserId.new(11), RoomId.new(4))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+    test campfire.messages.list-for-member/page-unavailable {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(4))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -300,9 +290,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/page-not-found {
-        campfire.messages.page-for-member(UserId.new(11), RoomId.new(5))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+    test campfire.messages.list-for-member/page-not-found {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(5))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -310,9 +300,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/page-constraint-error {
-        campfire.messages.page-for-member(UserId.new(11), RoomId.new(6))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+    test campfire.messages.list-for-member/page-constraint-error {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(6))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -320,9 +310,9 @@ test-file campfire-message-pages {
         }
     }
 
-    test campfire.messages.page-for-member/page-invalid-input {
-        campfire.messages.page-for-member(UserId.new(11), RoomId.new(7))
-        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+    test campfire.messages.list-for-member/page-invalid-input {
+        campfire.messages.list-for-member(UserId.new(11), RoomId.new(7))
+        => value result.error<List<MessageRow>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0
@@ -551,6 +541,178 @@ test-file campfire-message-create {
     test campfire.messages.create-for-member/create-invalid-input {
         campfire.messages.create-for-member(UserId.new(42), RoomId.new(1), option.some<String>("db-invalid"), option.none<String>())
         => value result.error<MessageRow, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+}
+
+test-file campfire-creator-message-pages {
+    override fn campfire.membership.exists?(key: MembershipKey) -> Result<Bool, DbError> {
+        if key.user-id == UserId.new(71) {
+            result.error<Bool, DbError>(DbError.unavailable())
+        } else {
+            if key.user-id == UserId.new(72) {
+                result.error<Bool, DbError>(DbError.not-found())
+            } else {
+                if key.user-id == UserId.new(73) {
+                    result.error<Bool, DbError>(DbError.constraint-conflict())
+                } else {
+                    if key.user-id == UserId.new(74) {
+                        result.error<Bool, DbError>(DbError.invalid-input())
+                    } else {
+                        if key.room-id == RoomId.new(20) {
+                            result.ok<Bool, DbError>(false)
+                        } else {
+                            result.ok<Bool, DbError>(true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fn campfire.messages.last-page-with-creators(room-id: RoomId) -> Result<List<MessageWithCreator>, DbError> {
+        if room-id == RoomId.new(4) {
+            result.error<List<MessageWithCreator>, DbError>(DbError.unavailable())
+        } else {
+            if room-id == RoomId.new(5) {
+                result.error<List<MessageWithCreator>, DbError>(DbError.not-found())
+            } else {
+                if room-id == RoomId.new(6) {
+                    result.error<List<MessageWithCreator>, DbError>(DbError.constraint-conflict())
+                } else {
+                    if room-id == RoomId.new(7) {
+                        result.error<List<MessageWithCreator>, DbError>(DbError.invalid-input())
+                    } else {
+                        result.ok<List<MessageWithCreator>, DbError>(list.singleton<MessageWithCreator>(messageWithCreator.new(
+                            id = MessageId.new(100),
+                            room-id = room-id,
+                            creator-id = UserId.new(11),
+                            client-message-id = "fixture-message",
+                            body = option.some<String>("<p>stored body</p>"),
+                            created-at-ms = 1760184060000,
+                            updated-at-ms = 1760184060000,
+                            created-at = "2026-10-11 12:01:00",
+                            creator-name = "Fixture Creator",
+                            creator-bio = "",
+                            creator-updated-at = "2026-10-11 12:00:00",
+                            creator-avatar-token = ""
+                        )))
+                    }
+                }
+            }
+        }
+    }
+
+    test campfire.messages.page-for-member/member-can-read {
+        campfire.messages.page-for-member(UserId.new(11), RoomId.new(1))
+        => value result.ok<List<MessageWithCreator>, RoomMessageError>(list.singleton<MessageWithCreator>(messageWithCreator.new(
+            id = MessageId.new(100),
+            room-id = RoomId.new(1),
+            creator-id = UserId.new(11),
+            client-message-id = "fixture-message",
+            body = option.some<String>("<p>stored body</p>"),
+            created-at-ms = 1760184060000,
+            updated-at-ms = 1760184060000,
+            created-at = "2026-10-11 12:01:00",
+            creator-name = "Fixture Creator",
+            creator-bio = "",
+            creator-updated-at = "2026-10-11 12:00:00",
+            creator-avatar-token = ""
+        ))) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/non-member-denied {
+        campfire.messages.page-for-member(UserId.new(22), RoomId.new(20))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/membership-unavailable {
+        campfire.messages.page-for-member(UserId.new(71), RoomId.new(1))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/membership-not-found {
+        campfire.messages.page-for-member(UserId.new(72), RoomId.new(1))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/membership-constraint-error {
+        campfire.messages.page-for-member(UserId.new(73), RoomId.new(1))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/membership-invalid-input {
+        campfire.messages.page-for-member(UserId.new(74), RoomId.new(1))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/page-unavailable {
+        campfire.messages.page-for-member(UserId.new(11), RoomId.new(4))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-unavailable()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/page-not-found {
+        campfire.messages.page-for-member(UserId.new(11), RoomId.new(5))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-not-found()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/page-constraint-error {
+        campfire.messages.page-for-member(UserId.new(11), RoomId.new(6))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-constraint-conflict()) effects {
+            db.read: 0
+            db.write: 0
+            clock.read: 0
+            random.read: 0
+        }
+    }
+
+    test campfire.messages.page-for-member/page-invalid-input {
+        campfire.messages.page-for-member(UserId.new(11), RoomId.new(7))
+        => value result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.database-invalid-input()) effects {
             db.read: 0
             db.write: 0
             clock.read: 0

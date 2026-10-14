@@ -39,6 +39,15 @@ AL_CAMPFIRE_PURE_API int32_t al_campfire_browser_version_v1(
     uint32_t output_type_index, uint8_t *output,
     uint32_t output_capacity_bytes, uint32_t *output_extent_bytes);
 
+/* Rails `user.signed_id(purpose: :avatar)`: base64url(JSON) + "--" + hex
+ * HMAC-SHA256, keyed by PBKDF2(secret_key_base, "active_record/signed_id",
+ * 1000, 64). The key is derived once at context init. */
+#define AL_CAMPFIRE_AVATAR_TOKEN_MAX_BYTES 160u
+AL_CAMPFIRE_PURE_API uint32_t al_campfire_avatar_token_length_v1(int64_t user_id);
+AL_CAMPFIRE_PURE_API int32_t al_campfire_avatar_token_v1(
+    void *pure_context, int64_t user_id, uint8_t *output,
+    uint32_t output_capacity, uint32_t *output_length);
+
 #ifdef __cplusplus
 }
 #endif

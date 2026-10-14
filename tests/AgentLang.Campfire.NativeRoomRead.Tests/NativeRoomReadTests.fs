@@ -340,7 +340,7 @@ module NativeRoomReadTests =
         use connection = openDatabase path SqliteOpenMode.ReadWriteCreate
         execute connection "PRAGMA foreign_keys = OFF" [] |> ignore
         execute connection
-            ("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            ("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, bio TEXT, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
              "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
              "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
              "CREATE INDEX sessions_token_index ON sessions(token); " +
@@ -490,7 +490,7 @@ module NativeRoomReadTests =
     let private makeEnvironment databasePath (cookies: CookieService) : HostOperationEnvironment =
         let clock = FixedClock(fixedNow) :> IClock
         let campfire =
-            CampfireHost.createProviderWithGuidSource databasePath clock (fun () -> Guid.Parse "11111111-1111-1111-1111-111111111111")
+            CampfireHost.createProviderWithGuidSource databasePath clock (fun () -> Guid.Parse "11111111-1111-1111-1111-111111111111") secret
             |> function Ok provider -> provider | Error _ -> failwith "Campfire fixture database did not open"
         let authentication =
             CampfireAuthenticationHost.createProvider databasePath

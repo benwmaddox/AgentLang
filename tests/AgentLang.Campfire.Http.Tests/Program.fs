@@ -228,7 +228,7 @@ module Program =
         use connection = openConnection path SqliteOpenMode.ReadWriteCreate
         use command = connection.CreateCommand()
         command.CommandText <-
-            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
+            "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, bio TEXT, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, email_address TEXT, password_digest TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE UNIQUE INDEX users_bot_token_unique ON users(bot_token); " +
             "CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
             "CREATE TABLE push_subscriptions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), endpoint TEXT NOT NULL, p256dh_key TEXT NOT NULL, auth_key TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL); " +
@@ -383,7 +383,7 @@ module Program =
 
     let private createEnvironment databasePath (clock: IClock) cookies =
         let campfire =
-            CampfireHost.createProviderWithGuidSource databasePath clock (fun () -> Guid.NewGuid())
+            CampfireHost.createProviderWithGuidSource databasePath clock (fun () -> Guid.NewGuid()) (readCookieSecret ())
             |> expectOk "open existing message/room SQLite provider"
         let authentication =
             CampfireAuthenticationHost.createProvider databasePath
@@ -581,7 +581,7 @@ module Program =
         check (not (room.Body.Contains("<script>", StringComparison.Ordinal))) "stored markup is not emitted as executable markup"
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page" ]
+              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
         check (room.SetCookies |> List.exists (fun value -> value.StartsWith("last_room=", StringComparison.Ordinal))) "first successful room visit writes the last-room cookie"
 
         currentCheck <- "unauthenticated room redirect preserves encrypted existing state and return URL"
@@ -1513,7 +1513,7 @@ module Program =
         expectStatus 200 getWhileBanned
         expectTrace probe
             [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
-              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page" ]
+              "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
 
     let private checkEmptyUsersHttpBehavior (sourceDirectory: string) (clock: FixedClock) (cookies: CookieService) =
         currentCheck <- "empty users login redirects to first run"
@@ -1666,7 +1666,7 @@ module Program =
                     expectTrace restartedProbe
                         [ "campfire.cookies.verify-session-token"; "campfire.sessions.find-by-token"; "campfire.users.find-by-id"
                           "campfire.browser.version-at-least?"; "campfire.rooms.find-for-user"; "campfire.membership.exists?"
-                          "campfire.messages.last-page" ]
+                          "campfire.messages.last-page-with-creators" ]
 
                     currentCheck <- "revoked signed logout token stays rejected after application restart"
                     restartedProbe.Clear()

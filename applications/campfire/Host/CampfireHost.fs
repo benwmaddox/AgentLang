@@ -1,6 +1,8 @@
 namespace AgentLang.Campfire.Host
 
 open System
+open System.Security.Cryptography
+open System.Text
 open AgentLang
 open AgentLang.Campfire.Persistence
 
@@ -10,10 +12,11 @@ module CampfireHost =
     let private roomsPageId = HostOperationId "campfire.rooms.page-for-user"
     let private membershipExistsId = HostOperationId "campfire.membership.exists?"
     let private messagesLastPageId = HostOperationId "campfire.messages.last-page"
+    let private messagesLastPageWithCreatorsId = HostOperationId "campfire.messages.last-page-with-creators"
     let private messagesCreateId = HostOperationId "campfire.messages.create"
 
     let operationIds =
-        Set.ofList [ roomsPageId; membershipExistsId; messagesLastPageId; messagesCreateId ]
+        Set.ofList [ roomsPageId; membershipExistsId; messagesLastPageId; messagesLastPageWithCreatorsId; messagesCreateId ]
 
     let manifest =
         [ roomsPageId,
@@ -37,6 +40,13 @@ module CampfireHost =
             Outputs = [ TResult(TList(TNamed "MessageRow"), TNamed "DbError") ]
             Effects = Set.singleton "db.read"
             Documentation = "Returns the room's last bounded message page in oldest-first order." }
+          messagesLastPageWithCreatorsId,
+          { Id = messagesLastPageWithCreatorsId
+            WordName = "campfire.messages.last-page-with-creators"
+            Inputs = [ TNamed "RoomId" ]
+            Outputs = [ TResult(TList(TNamed "MessageWithCreator"), TNamed "DbError") ]
+            Effects = Set.singleton "db.read"
+            Documentation = "Returns the room's last bounded message page, oldest first, with each creator's name, bio, update time and signed avatar token." }
           messagesCreateId,
           { Id = messagesCreateId
             WordName = "campfire.messages.create"
@@ -129,10 +139,40 @@ module CampfireHost =
                   "created-at", StringValue row.CreatedAt
                   "updated-at", StringValue row.UpdatedAt ])
 
+    /// Rails `user.signed_id(purpose: :avatar)`: unpadded base64url of the
+    /// signed_id JSON envelope, "--", and its hex HMAC-SHA256 under
+    /// PBKDF2(secret_key_base, "active_record/signed_id", 1000, 64).
+    let avatarSigningKey (secretKeyBase: string) =
+        Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes secretKeyBase, Encoding.UTF8.GetBytes "active_record/signed_id", 1000, HashAlgorithmName.SHA256, 64)
+
+    let avatarToken (key: byte array) (userId: int64) =
+        let json = "{\"_rails\":{\"data\":" + string userId + ",\"pur\":\"user/avatar\"}}"
+        let encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes json).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+        let digest = HMACSHA256.HashData(key, Encoding.ASCII.GetBytes encoded)
+        encoded + "--" + Convert.ToHexString(digest).ToLowerInvariant()
+
+    let private messageWithCreatorValue (key: byte array) (row: AgentLang.Campfire.Persistence.MessageWithCreator) =
+        let (UserId creator) = row.CreatorId
+        RecordValue(
+            "MessageWithCreator",
+            Map.ofList
+                [ "id", (let (MessageId value) = row.Id in NamedValue("MessageId", IntValue value))
+                  "room-id", (let (RoomId value) = row.RoomId in NamedValue("RoomId", IntValue value))
+                  "creator-id", NamedValue("UserId", IntValue creator)
+                  "created-at-ms", IntValue row.CreatedAtMs
+                  "updated-at-ms", IntValue row.UpdatedAtMs
+                  "client-message-id", StringValue row.ClientMessageId
+                  "created-at", StringValue row.CreatedAt
+                  "creator-name", StringValue row.CreatorName
+                  "creator-bio", StringValue row.CreatorBio
+                  "creator-updated-at", StringValue row.CreatorUpdatedAt
+                  "creator-avatar-token", StringValue(avatarToken key creator)
+                  "body", OptionValue(TString, Option.map StringValue row.Body) ])
+
     let private resultValue okType (result: Result<'T, DbError>) mapOk =
         ResultValue(okType, TNamed "DbError", result |> Result.map mapOk |> Result.mapError dbErrorValue)
 
-    let private invoke (store: SqliteProvider) operationId values =
+    let private invoke (store: SqliteProvider) (avatarKey: byte array) operationId values =
         try
             match operationId, values with
             | id, [ userIdValue; afterRoomIdValue; pageSizeValue ] when id = roomsPageId ->
@@ -147,6 +187,9 @@ module CampfireHost =
             | id, [ roomIdValue ] when id = messagesLastPageId ->
                 let result = store.LastPage(asRoomId roomIdValue) |> Result.map (List.map messageRowValue)
                 Ok [ resultValue (TList(TNamed "MessageRow")) result (fun rows -> ListValue(TNamed "MessageRow", rows)) ]
+            | id, [ roomIdValue ] when id = messagesLastPageWithCreatorsId ->
+                let result = store.LastPageWithCreators(asRoomId roomIdValue) |> Result.map (List.map (messageWithCreatorValue avatarKey))
+                Ok [ resultValue (TList(TNamed "MessageWithCreator")) result (fun rows -> ListValue(TNamed "MessageWithCreator", rows)) ]
             | id, [ messageValue ] when id = messagesCreateId ->
                 let result = store.CreateMessage(asNewMessage messageValue)
                 Ok [ resultValue (TNamed "MessageRow") result messageRowValue ]
@@ -156,15 +199,17 @@ module CampfireHost =
         | AdapterContractMismatch -> Error HostOperationFailure.ProviderContractMismatch
         | _ -> Error HostOperationFailure.InvocationFailed
 
-    let createProviderWithGuidSource databasePath (clock: IClock) (guidSource: unit -> Guid) =
+    /// The secret signs avatar tokens; its key is derived once per provider.
+    let createProviderWithGuidSource databasePath (clock: IClock) (guidSource: unit -> Guid) (secretKeyBase: string) =
+        let avatarKey = avatarSigningKey secretKeyBase
         SqliteProvider.OpenExisting(databasePath, clock, guidSource)
         |> Result.map (fun store ->
             { OperationIds = operationIds
-              Invoke = invoke store
+              Invoke = invoke store avatarKey
               Dispose = ignore })
 
-    let createProvider databasePath (clock: IClock) =
-        createProviderWithGuidSource databasePath clock (fun () -> Guid.NewGuid())
+    let createProvider databasePath (clock: IClock) (secretKeyBase: string) =
+        createProviderWithGuidSource databasePath clock (fun () -> Guid.NewGuid()) secretKeyBase
 
     let createEnvironment productionProvider createTestProvider : HostOperationEnvironment =
         { Manifest = manifest

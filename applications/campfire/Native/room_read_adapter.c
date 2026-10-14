@@ -96,7 +96,7 @@ static uint32_t room_profile_category_for_operation(uint32_t operation) {
     return AL_OWNING_PROFILE_ROOM_FIND_FOR_USER;
   case AL_CAMPFIRE_MEMBERSHIP_EXISTS:
     return AL_OWNING_PROFILE_MEMBERSHIP_EXISTS;
-  case AL_CAMPFIRE_MESSAGES_LAST_PAGE:
+  case AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS:
     return AL_OWNING_PROFILE_MESSAGE_LAST_PAGE;
   default:
     return UINT32_MAX;
@@ -137,8 +137,14 @@ static const char *const room_read_queries[AL_CAMPFIRE_ROOM_READ_SQLITE_STATEMEN
     "WHERE \"user_id\" = $userId AND \"room_id\" = $roomId)",
     "SELECT EXISTS (SELECT 1 FROM \"rooms\" WHERE \"id\" = $roomId)",
     "SELECT messages.id, messages.room_id, messages.creator_id, "
-    "messages.client_message_id, rich_text.body, messages.created_at, "
-    "messages.updated_at FROM messages LEFT JOIN action_text_rich_texts "
+    "CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + "
+    "CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), "
+    "CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + "
+    "CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), "
+    "messages.client_message_id, messages.created_at, users.name, "
+    "COALESCE(users.bio, ''), users.updated_at, rich_text.body "
+    "FROM messages INNER JOIN users ON users.id = messages.creator_id "
+    "LEFT JOIN action_text_rich_texts "
     "AS rich_text ON rich_text.record_id = messages.id AND "
     "rich_text.record_type = 'Message' AND rich_text.name = 'body' "
     "WHERE messages.room_id = $roomId "
@@ -188,15 +194,21 @@ typedef struct al_room_read_room_row {
   al_room_read_text updated_at;
 } al_room_read_room_row;
 
+/* One MessageWithCreator row, in record field order. The avatar token is
+ * signed only when the row is written; measuring needs only its length. */
 typedef struct al_room_read_message_row {
   int64_t id;
   int64_t room_id;
   int64_t creator_id;
+  int64_t created_at_ms;
+  int64_t updated_at_ms;
   al_room_read_text client_message_id;
+  al_room_read_text created_at;
+  al_room_read_text creator_name;
+  al_room_read_text creator_bio;
+  al_room_read_text creator_updated_at;
   int body_state;
   al_room_read_text body;
-  al_room_read_text created_at;
-  al_room_read_text updated_at;
 } al_room_read_message_row;
 
 typedef struct al_room_read_refresh_input {
@@ -616,15 +628,16 @@ static int validate_sql_output_type(const al_owning_layout *layout,
       AL_OWNING_TYPE_I64, AL_OWNING_TYPE_OPTION, (uint32_t)-1,
       AL_OWNING_TYPE_I64, AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_STRING};
   static const uint32_t message_fields[] = {
-      AL_OWNING_TYPE_I64, AL_OWNING_TYPE_I64, AL_OWNING_TYPE_I64,
-      AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_OPTION,
-      AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_STRING};
+      AL_OWNING_TYPE_I64,    AL_OWNING_TYPE_I64,    AL_OWNING_TYPE_I64,
+      AL_OWNING_TYPE_I64,    AL_OWNING_TYPE_I64,    AL_OWNING_TYPE_STRING,
+      AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_STRING,
+      AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_STRING, AL_OWNING_TYPE_OPTION};
   uint32_t option_payload;
 
   if (operation == AL_CAMPFIRE_MEMBERSHIP_EXISTS)
     return result_success_type(layout, output_type_index, AL_OWNING_TYPE_BOOL,
                                 &success_index);
-  if (operation == AL_CAMPFIRE_MESSAGES_LAST_PAGE) {
+  if (operation == AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS) {
     const al_owning_type_descriptor *list_type;
     const al_owning_field_descriptor *element_field;
     if (!result_success_type(layout, output_type_index, AL_OWNING_TYPE_LIST,
@@ -635,7 +648,7 @@ static int validate_sql_output_type(const al_owning_layout *layout,
         element_field->fixed_offset_bytes != 8u ||
         element_field->child_type_index >= layout->type_count ||
         !record_has_kinds(layout, element_field->child_type_index,
-                          message_fields, 7u))
+                          message_fields, 12u))
       return 0;
     return 1;
   }
@@ -1294,23 +1307,23 @@ static void write_room_row(uint8_t *output, uint32_t offset,
 
 static int load_message_row(sqlite3 *database, sqlite3_stmt *statement,
                             al_room_read_message_row *row) {
-  int client_state;
+  int64_t parsed_ticks;
   int body_state;
-  int created_state;
-  int updated_state;
   if (!read_column_int64(statement, 0, &row->id) ||
       !read_column_int64(statement, 1, &row->room_id) ||
-      !read_column_int64(statement, 2, &row->creator_id))
+      !read_column_int64(statement, 2, &row->creator_id) ||
+      !read_column_int64(statement, 3, &row->created_at_ms) ||
+      !read_column_int64(statement, 4, &row->updated_at_ms) ||
+      read_column_text(database, statement, 5, 0, &row->client_message_id) != 1 ||
+      read_column_text(database, statement, 6, 0, &row->created_at) != 1 ||
+      read_column_text(database, statement, 7, 0, &row->creator_name) != 1 ||
+      read_column_text(database, statement, 8, 0, &row->creator_bio) != 1 ||
+      read_column_text(database, statement, 9, 0, &row->creator_updated_at) != 1 ||
+      !try_parse_timestamp(&row->created_at, &parsed_ticks) ||
+      !try_parse_timestamp(&row->creator_updated_at, &parsed_ticks))
     return 0;
-  client_state =
-      read_column_text(database, statement, 3, 0, &row->client_message_id);
-  body_state = read_column_text(database, statement, 4, 1, &row->body);
-  created_state =
-      read_column_text(database, statement, 5, 0, &row->created_at);
-  updated_state =
-      read_column_text(database, statement, 6, 0, &row->updated_at);
-  if (client_state != 1 || body_state < 0 || created_state != 1 ||
-      updated_state != 1)
+  body_state = read_column_text(database, statement, 10, 1, &row->body);
+  if (body_state < 0)
     return 0;
   row->body_state = body_state;
   return 1;
@@ -1319,43 +1332,75 @@ static int load_message_row(sqlite3 *database, sqlite3_stmt *statement,
 static int message_output_extent(const al_room_read_message_row *row,
                                  uint32_t *out_extent) {
   uint32_t client_extent;
-  uint32_t body_extent;
   uint32_t created_extent;
-  uint32_t updated_extent;
+  uint32_t name_extent;
+  uint32_t bio_extent;
+  uint32_t creator_updated_extent;
+  uint32_t body_extent;
   uint64_t total;
   if (!text_output_extent(&row->client_message_id, &client_extent) ||
-      !option_text_output_extent(row->body_state, &row->body, &body_extent) ||
       !text_output_extent(&row->created_at, &created_extent) ||
-      !text_output_extent(&row->updated_at, &updated_extent))
+      !text_output_extent(&row->creator_name, &name_extent) ||
+      !text_output_extent(&row->creator_bio, &bio_extent) ||
+      !text_output_extent(&row->creator_updated_at, &creator_updated_extent) ||
+      !option_text_output_extent(row->body_state, &row->body, &body_extent))
     return 0;
-  total = UINT64_C(24) + client_extent + body_extent + created_extent +
-          updated_extent;
+  total = UINT64_C(40) + client_extent + created_extent + name_extent +
+          bio_extent + creator_updated_extent +
+          padded_string_extent(
+              al_campfire_avatar_token_length_v1(row->creator_id)) +
+          body_extent;
   if (total > UINT32_MAX)
     return 0;
   *out_extent = (uint32_t)total;
   return 1;
 }
 
-static void write_message_row(uint8_t *output, uint32_t offset,
-                              const al_room_read_message_row *row) {
-  uint32_t client_extent =
-      padded_string_extent(row->client_message_id.byte_count_utf8);
+/* Writes the row; the creator's avatar token is signed into `token` (the
+ * caller's scratch, reused for consecutive rows by the same creator). */
+static int write_message_row(void *pure_context, uint8_t *output,
+                             uint32_t offset,
+                             const al_room_read_message_row *row,
+                             uint8_t *token, int64_t *token_user,
+                             uint32_t *token_length) {
+  al_room_read_text token_text;
   uint32_t body_extent = row->body_state == 1
                              ? padded_string_extent(row->body.byte_count_utf8)
                              : 0u;
+  if (*token_length == 0u || *token_user != row->creator_id) {
+    if (al_campfire_avatar_token_v1(pure_context, row->creator_id, token,
+                                    AL_CAMPFIRE_AVATAR_TOKEN_MAX_BYTES,
+                                    token_length) != 0)
+      return 0;
+    *token_user = row->creator_id;
+  }
+  token_text.bytes = token;
+  token_text.byte_count_utf8 = *token_length;
   store_u64_le(output, offset, (uint64_t)row->id);
   offset += 8u;
   store_u64_le(output, offset, (uint64_t)row->room_id);
   offset += 8u;
   store_u64_le(output, offset, (uint64_t)row->creator_id);
   offset += 8u;
+  store_u64_le(output, offset, (uint64_t)row->created_at_ms);
+  offset += 8u;
+  store_u64_le(output, offset, (uint64_t)row->updated_at_ms);
+  offset += 8u;
   write_string(output, offset, &row->client_message_id);
-  offset += client_extent;
-  write_text_option(output, offset, row->body_state, &row->body);
-  offset += 8u + body_extent;
+  offset += padded_string_extent(row->client_message_id.byte_count_utf8);
   write_string(output, offset, &row->created_at);
   offset += padded_string_extent(row->created_at.byte_count_utf8);
-  write_string(output, offset, &row->updated_at);
+  write_string(output, offset, &row->creator_name);
+  offset += padded_string_extent(row->creator_name.byte_count_utf8);
+  write_string(output, offset, &row->creator_bio);
+  offset += padded_string_extent(row->creator_bio.byte_count_utf8);
+  write_string(output, offset, &row->creator_updated_at);
+  offset += padded_string_extent(row->creator_updated_at.byte_count_utf8);
+  write_string(output, offset, &token_text);
+  offset += padded_string_extent(token_text.byte_count_utf8);
+  write_text_option(output, offset, row->body_state, &row->body);
+  (void)body_extent;
+  return 1;
 }
 
 static void format_timestamp(int64_t unix_micros, uint8_t output[26],
@@ -1931,6 +1976,9 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
   sqlite3_stmt *statement = (sqlite3_stmt *)ctx->opaque_statements[
       AL_CAMPFIRE_READ_STMT_MESSAGES_LAST_PAGE];
   al_room_read_message_extent rows[MAX_LAST_PAGE_ROWS];
+  uint8_t token[AL_CAMPFIRE_AVATAR_TOKEN_MAX_BYTES];
+  int64_t token_user = 0;
+  uint32_t token_length = 0u;
   uint32_t count = 0u;
   uint32_t total_extent = 16u;
   uint32_t error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
@@ -2015,7 +2063,12 @@ static int messages_last_page(al_campfire_room_read_context_v1 *ctx,
       error_tag = AL_CAMPFIRE_DB_ERROR_UNAVAILABLE;
       goto last_page_error;
     }
-    write_message_row(output, rows[index].output_offset, &row);
+    if (!write_message_row(ctx->pure_context, output,
+                           rows[index].output_offset, &row, token,
+                           &token_user, &token_length)) {
+      (void)reset_statement(statement);
+      goto last_page_boundary;
+    }
   }
   rc = room_read_sqlite_step(statement);
   if (rc != SQLITE_DONE) {
@@ -2482,7 +2535,7 @@ AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
     expected_count = 1u;
     expected_input_kind = AL_OWNING_TYPE_RECORD;
     break;
-  case AL_CAMPFIRE_MESSAGES_LAST_PAGE:
+  case AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS:
     expected_count = 1u;
     break;
   default:
@@ -2522,7 +2575,7 @@ AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
       goto callback_complete;
     }
   } else if (operation == AL_CAMPFIRE_USER_FIND ||
-             operation == AL_CAMPFIRE_MESSAGES_LAST_PAGE) {
+             operation == AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS) {
     if (!input_matches(layout, &inputs[0], AL_OWNING_TYPE_I64)) {
       result = HOST_BOUNDARY_FAILURE;
       goto callback_complete;
@@ -2556,7 +2609,7 @@ AL_CAMPFIRE_EXPORT int32_t al_host_campfire_room_read_v1(
                                 output, effective_capacity,
                                 output_extent_bytes);
     break;
-  case AL_CAMPFIRE_MESSAGES_LAST_PAGE:
+  case AL_CAMPFIRE_MESSAGES_LAST_PAGE_WITH_CREATORS:
     result = messages_last_page(ctx, (int64_t)load_u64_le(inputs[0].data),
                                 output, effective_capacity,
                                 output_extent_bytes);
