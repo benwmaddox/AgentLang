@@ -242,6 +242,8 @@ module IrFormatting =
             { Kind = "bool"; Display = "Bool"; Name = "Bool"; HasName = true; NominalKey = 0; HasNominalKey = false; Arguments = [] }
         | IrString ->
             { Kind = "string"; Display = "String"; Name = "String"; HasName = true; NominalKey = 0; HasNominalKey = false; Arguments = [] }
+        | IrBytes ->
+            { Kind = "bytes"; Display = "Bytes"; Name = "Bytes"; HasName = true; NominalKey = 0; HasNominalKey = false; Arguments = [] }
         | IrUnit ->
             { Kind = "unit"; Display = "Unit"; Name = "Unit"; HasName = true; NominalKey = 0; HasNominalKey = false; Arguments = [] }
         | IrList item ->
@@ -583,7 +585,7 @@ module IrFormatting =
             | IrEnumDefinition _ -> [])
 
     let rec private irTypeDepth = function
-        | IrInt | IrFloat | IrBool | IrString | IrUnit | IrNominal _ -> 1
+        | IrInt | IrFloat | IrBool | IrString | IrBytes | IrUnit | IrNominal _ -> 1
         | IrList item | IrOption item -> 2 + irTypeDepth item
         | IrResult(ok, error) -> 2 + max (irTypeDepth ok) (irTypeDepth error)
 
@@ -611,7 +613,7 @@ module IrFormatting =
         ensureProjectedDepth requested typeDepth branchDepth
 
     let rec private patternDepth = function
-        | PatternInt | PatternFloat | PatternBool | PatternString | PatternUnit | PatternVariable _ -> 1
+        | PatternInt | PatternFloat | PatternBool | PatternString | PatternBytes | PatternUnit | PatternVariable _ -> 1
         | PatternList item | PatternOption item -> 2 + patternDepth item
         | PatternResult(ok, error) -> 2 + max (patternDepth ok) (patternDepth error)
 
@@ -785,6 +787,7 @@ module IrFormatting =
         | PatternFloat -> { Kind = "float"; VariableIndex = 0; HasVariableIndex = false; Arguments = [] }
         | PatternBool -> { Kind = "bool"; VariableIndex = 0; HasVariableIndex = false; Arguments = [] }
         | PatternString -> { Kind = "string"; VariableIndex = 0; HasVariableIndex = false; Arguments = [] }
+        | PatternBytes -> { Kind = "bytes"; VariableIndex = 0; HasVariableIndex = false; Arguments = [] }
         | PatternUnit -> { Kind = "unit"; VariableIndex = 0; HasVariableIndex = false; Arguments = [] }
         | PatternList item -> { Kind = "list"; VariableIndex = 0; HasVariableIndex = false; Arguments = [ patternDto item ] }
         | PatternOption item -> { Kind = "option"; VariableIndex = 0; HasVariableIndex = false; Arguments = [ patternDto item ] }

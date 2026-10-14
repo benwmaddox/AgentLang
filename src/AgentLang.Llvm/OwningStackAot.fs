@@ -814,6 +814,33 @@ type OwningStackCompiledProgram internal
         member _.Dispose() = this.DisposeCore()
 
 [<RequireQualifiedAccess>]
+/// Standard library slice 1 (report 272): canonical primitives the owning
+/// runtime implements through al_owning_stdlib_* (ids match the C enum).
+module OwningStdlib =
+    let operations : Map<string, int * IrType list * IrType list> =
+        Map.ofList
+            [ "bytes.from-utf8", (1, [ IrString ], [ IrBytes ])
+              "bytes.to-utf8", (2, [ IrBytes ], [ IrOption IrString ])
+              "bytes.length", (3, [ IrBytes ], [ IrInt ])
+              "bytes.concat", (4, [ IrBytes; IrBytes ], [ IrBytes ])
+              "bytes.slice", (5, [ IrBytes; IrInt; IrInt ], [ IrOption IrBytes ])
+              "bytes.xor", (6, [ IrBytes; IrBytes ], [ IrOption IrBytes ])
+              "bytes.equal-constant-time?", (7, [ IrBytes; IrBytes ], [ IrBool ])
+              "base64.encode", (8, [ IrBytes ], [ IrString ])
+              "base64.decode", (9, [ IrString ], [ IrOption IrBytes ])
+              "base64.url-encode", (10, [ IrBytes ], [ IrString ])
+              "base64.url-decode", (11, [ IrString ], [ IrOption IrBytes ])
+              "hex.encode", (12, [ IrBytes ], [ IrString ])
+              "crypto.sha256", (13, [ IrBytes ], [ IrBytes ])
+              "crypto.hmac-sha256", (14, [ IrBytes; IrBytes ], [ IrBytes ])
+              "crypto.pbkdf2-sha256", (15, [ IrBytes; IrBytes; IrInt; IrInt ], [ IrOption IrBytes ])
+              "string.split", (16, [ IrString; IrString ], [ IrList IrString ])
+              "string.index-of", (17, [ IrString; IrString; IrInt ], [ IrOption IrInt ])
+              "string.slice", (18, [ IrString; IrInt; IrInt ], [ IrOption IrString ])
+              "string.byte-at", (19, [ IrString; IrInt ], [ IrOption IrInt ])
+              "int.parse", (20, [ IrString ], [ IrOption IrInt ])
+              "string.to-lower-ascii", (21, [ IrString ], [ IrString ]) ]
+
 module OwningStackAot =
     let private unsupported code message owner actual =
         Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | List<T> | Option<T> | Result<T, E>" ] [ actual ]
@@ -857,6 +884,7 @@ module OwningStackAot =
         | IrUnit -> "Unit"
         | IrFloat -> "Float"
         | IrString -> "String"
+        | IrBytes -> "Bytes"
         | IrList item -> $"List<{typeName program item}>"
         | IrOption item -> $"Option<{typeName program item}>"
         | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
@@ -933,6 +961,7 @@ module OwningStackAot =
         | IrUnit -> TUnit
         | IrFloat -> TFloat
         | IrString -> TString
+        | IrBytes -> TBytes
         | IrList item -> TList(langTypeFor program item)
         | IrOption item -> TOption(langTypeFor program item)
         | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
@@ -1160,11 +1189,14 @@ module OwningStackAot =
                           Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
-                | IrString ->
+                | IrString | IrBytes ->
+                    // Bytes take a compound id on first use, so programs without
+                    // Bytes keep their existing type ids.
+                    if ty = IrBytes then ensureCompoundTypeId ty |> ignore
                     let value =
                         { Type = ty
                           TypeId = typeIdFor typeIds ty
-                          Name = "String"
+                          Name = IrTypes.format ty
                           PayloadBytes = -1
                           ExtentBytes = -1
                           IsDynamic = true
@@ -1381,7 +1413,8 @@ module OwningStackAot =
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
-                  "list.append"; "list.concat" ]
+                  "list.append"; "list.concat"
+                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii" ]
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             requireEffectFree owner call.ResolvedDeclaredEffects
@@ -1417,6 +1450,9 @@ module OwningStackAot =
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
                 | "list.append", [ IrList item; value ], [ IrList result ] -> item = value && item = result
                 | "list.concat", [ IrList left; IrList right ], [ IrList result ] -> left = right && left = result
+                | _ when OwningStdlib.operations.ContainsKey operation ->
+                    let _, inputs, outputs = OwningStdlib.operations[operation]
+                    call.InputTypes = inputs && call.OutputTypes = outputs
                 | _ -> false
             if not valid then
                 Diagnostics.raiseError "IR_OWNING_STACK_PRIMITIVE_SIGNATURE"
@@ -1839,6 +1875,12 @@ module OwningStackAot =
             | IrUnit, UnitValue -> 8, 8
             | IrFloat, FloatValue number when Double.IsFinite number -> 8, 8
             | IrFloat, FloatValue _ -> invalidArg (nameof values) "Owning-stack Float inputs must be finite."
+            | IrBytes, BytesValue data when not (isNull data) ->
+                let payload64 = 8L + int64 data.Length
+                if payload64 > int64 Int32.MaxValue then
+                    invalidArg (nameof values) "Owning-stack Bytes payload exceeds the bounded 32-bit runtime range."
+                let payload = int payload64
+                payload, alignedExtent payload
             | IrString, StringValue text when not (isNull text) ->
                 let payload64 = 8L + int64 (utf8Bytes text).Length
                 if payload64 > int64 Int32.MaxValue then
@@ -1975,6 +2017,12 @@ module OwningStackAot =
                 if not (Double.IsFinite number) then invalidArg (nameof values) "Owning-stack Float inputs must be finite."
                 writeInt64 bytes offset (BitConverter.DoubleToInt64Bits number)
                 8
+            | IrBytes, BytesValue data ->
+                if isNull data then invalidArg (nameof values) "Owning-stack Bytes inputs cannot be null."
+                writeUInt32 offset (uint32 data.Length)
+                writeUInt32 (offset + 4) 0u
+                Array.blit data 0 bytes (offset + 8) data.Length
+                alignedExtent (8 + data.Length)
             | IrString, StringValue text ->
                 if isNull text then invalidArg (nameof values) "Owning-stack String inputs cannot be null."
                 let encoded = utf8Bytes text
@@ -2117,6 +2165,18 @@ module OwningStackAot =
                     try strictUtf8.GetString(bytes, offset + 8, int count)
                     with :? DecoderFallbackException -> raise (InvalidDataException("Owning-stack String is not well-formed UTF-8."))
                 StringValue text, extentBytes, payload
+            | IrBytes ->
+                if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Bytes header is truncated."))
+                let count = readUInt32 offset
+                if readUInt32 (offset + 4) <> 0u then raise (InvalidDataException("Owning-stack Bytes reserved header is nonzero."))
+                let payload64 = 8L + int64 count
+                if payload64 > int64 Int32.MaxValue then raise (InvalidDataException("Owning-stack Bytes payload exceeds the bounded range."))
+                let payload = int payload64
+                let extentBytes = alignedDecodedExtent payload "Bytes extent"
+                if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Bytes extent is truncated."))
+                for pad in payload .. extentBytes - 1 do
+                    if bytes[offset + pad] <> 0uy then raise (InvalidDataException("Owning-stack Bytes padding is nonzero."))
+                BytesValue(Array.sub bytes (offset + 8) (int count)), extentBytes, payload
             | IrList itemType ->
                 ensureRange offset 8 "List header"
                 let count = readUInt32 offset
@@ -2632,6 +2692,7 @@ module OwningStackAot =
             | IrUnit -> 3u
             | IrFloat -> 9u
             | IrString -> 5u
+            | IrBytes -> 11u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -3640,6 +3701,7 @@ module OwningStackAot =
             | IrUnit -> 3u
             | IrFloat -> 9u
             | IrString -> 5u
+            | IrBytes -> 11u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -3795,6 +3857,9 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_plan(ptr, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
@@ -5621,6 +5686,47 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | operation, arguments when OwningStdlib.operations.ContainsKey operation ->
+                                // Standard library slice 1: one runtime dispatcher sizes then writes
+                                // each result (String, Bytes, Option or List) at the cursor.
+                                let opId, _, outputs = OwningStdlib.operations[operation]
+                                let resultType = List.exactlyOne outputs
+                                let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
+                                let slots = slots @ List.replicate (8 - slots.Length) "0"
+                                let slotArgs = slots |> List.map (fun value -> $"i32 {value}") |> String.concat ", "
+                                let errorId = addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
+                                match resultType with
+                                | IrInt | IrBool ->
+                                    let result = w.Fresh "stdlib.scalar"
+                                    w.Inst($"{result} = alloca i64, align 8")
+                                    let status = w.Fresh "stdlib.scalar.status"
+                                    let scalarArgs = slots |> List.take 4 |> List.map (fun value -> $"i32 {value}") |> String.concat ", "
+                                    w.Inst($"{status} = call i32 @al_owning_stdlib_scalar(ptr %%ctx, i32 {opId}, {scalarArgs}, i32 {errorId}, ptr {result})")
+                                    emitStatusResult w status failBody
+                                    let loaded = w.Fresh "stdlib.scalar.value"
+                                    w.Inst($"{loaded} = load i64, ptr {result}, align 8")
+                                    emitScalarResult resultType loaded
+                                | _ ->
+                                    let cursor = emitContextLoad w "%ctx" 2
+                                    let payloadPointer = w.Fresh "stdlib.payload.pointer"
+                                    let extentPointer = w.Fresh "stdlib.extent.pointer"
+                                    w.Inst($"{payloadPointer} = alloca i32, align 4")
+                                    w.Inst($"{extentPointer} = alloca i32, align 4")
+                                    let planStatus = w.Fresh "stdlib.plan.status"
+                                    w.Inst($"{planStatus} = call i32 @al_owning_stdlib_plan(ptr %%ctx, i32 {opId}, {slotArgs}, i32 {errorId}, ptr {payloadPointer}, ptr {extentPointer})")
+                                    emitStatusResult w planStatus failBody
+                                    let resultPayload = w.Fresh "stdlib.payload"
+                                    let resultExtent = w.Fresh "stdlib.extent"
+                                    w.Inst($"{resultPayload} = load i32, ptr {payloadPointer}, align 4")
+                                    w.Inst($"{resultExtent} = load i32, ptr {extentPointer}, align 4")
+                                    let resultEnd = emitOffset w cursor resultExtent
+                                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve exact {operation} output." currentOwner instructionSpan [] []
+                                    emitReserve w resultEnd reserveError failBody
+                                    let writeStatus = w.Fresh "stdlib.write.status"
+                                    w.Inst($"{writeStatus} = call i32 @al_owning_stdlib_write(ptr %%ctx, i32 {opId}, i32 {cursor}, i32 {resultExtent}, {slotArgs}, i32 {errorId})")
+                                    emitStatusResult w writeStatus failBody
+                                    emitUpdateLive w resultPayload "0" failBody
+                                    stack <- push prefix resultType cursor resultExtent resultPayload resultEnd
                             | ("list.append" | "list.concat") as operation, [ left; right ] ->
                                 // A sized result list. Unaliased lists are extended in place when
                                 // the runtime layout allows it; otherwise the left elements and the
@@ -7882,6 +7988,7 @@ module OwningStackAot =
                      | IrUnit -> "Unit"
                      | IrFloat -> "Float"
                      | IrString -> "String"
+                     | IrBytes -> "Bytes"
                      | IrList _ -> "List"
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"

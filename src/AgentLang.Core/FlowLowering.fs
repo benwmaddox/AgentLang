@@ -469,7 +469,7 @@ module FlowLowering =
         let known = knownTypes context
         let rec validate typeValue =
             match typeValue with
-            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
             | TList item | TOption item -> validate item
             | TResult(okType, errorType) -> validate okType; validate errorType
             | TNamed name when known.Contains name -> ()
@@ -2276,7 +2276,7 @@ module FlowLowering =
             | _ when depth > FlowStructure.maxExpressionDepth ->
                 fail "FLOW_NESTING_LIMIT" "Batch signature type nesting exceeds the Flow structural limit." (Some word) (Some span)
                     [ string FlowStructure.maxExpressionDepth ] [ string depth ]
-            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
             | TList item | TOption item -> visit (depth + 1) item
             | TResult(okType, errorType) -> visit (depth + 1) okType; visit (depth + 1) errorType
             | TNamed name when knownTypes.Contains name -> ()
@@ -2970,7 +2970,7 @@ module FlowLowering =
                         | PatternVariable _ -> false
                         | PatternList item | PatternOption item -> isClosed item
                         | PatternResult(okType, errorType) -> isClosed okType && isClosed errorType
-                        | PatternInt | PatternFloat | PatternBool | PatternString | PatternUnit -> true
+                        | PatternInt | PatternFloat | PatternBool | PatternString | PatternBytes | PatternUnit -> true
                     isClosed
                 if not (List.forall isClosedPattern (primitiveContract.InputPatterns @ primitiveContract.OutputPatterns)) then
                     fail "FLOW_TEST_OVERRIDE_POLYMORPHIC_TARGET" "This test-file overlay supports only primitives with one closed signature; polymorphic targets could resolve to incompatible specializations at different call sites." (Some settings.ScopeName) span
@@ -3028,6 +3028,7 @@ module FlowLowering =
                 | TFloat -> IrFloat
                 | TBool -> IrBool
                 | TString -> IrString
+                | TBytes -> IrBytes
                 | TUnit -> IrUnit
                 | TList item -> IrList(lowerType item)
                 | TOption item -> IrOption(lowerType item)

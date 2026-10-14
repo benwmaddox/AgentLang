@@ -43,7 +43,7 @@ module VocabularyAnalysis =
             | TNamed name -> Set.singleton name
             | TList item | TOption item -> collect item
             | TResult(okType, errorType) -> Set.union (collect okType) (collect errorType)
-            | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
+            | TInt | TFloat | TBool | TString | TBytes | TUnit | TVar _ -> Set.empty
         collect typeValue
 
     let private dependenciesFor (records: Map<string, RecordEntry>) (scalars: Map<string, ScalarEntry>) (entry: WordEntry) =
@@ -103,6 +103,7 @@ module VocabularyAnalysis =
             | TFloat -> writer.Write 2uy
             | TBool -> writer.Write 3uy
             | TString -> writer.Write 4uy
+            | TBytes -> writer.Write 11uy
             | TUnit -> writer.Write 5uy
             | TList item -> writer.Write 6uy; encode item
             | TOption item -> writer.Write 7uy; encode item
