@@ -1343,7 +1343,7 @@ module NativeRoomReadTests =
             progress "checking pre-emission rejection when the app manifest omits a reachable host operation"
             let narrowedProfile =
                 OwningNativeHostProfile.AppHost
-                    { hostManifest with Operations = hostManifest.Operations |> List.filter (fun operation -> operation.Name <> "campfire.messages.last-page") }
+                    { hostManifest with Operations = hostManifest.Operations |> List.filter (fun operation -> operation.Name <> "campfire.messages.last-page-with-creators") }
             let narrowedDiagnostic =
                 try
                     OwningStackAot.compileWithNativeHostDependencies toolchain LlvmOptimization.O0 narrowedProfile aggregator dependencies mismatchDirectory body |> ignore
