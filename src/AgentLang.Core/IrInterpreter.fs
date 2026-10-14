@@ -170,6 +170,7 @@ module IrInterpreter =
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
             "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"
+            "crypto.hmac-sha1"
             "<expect>"; "<expect-equal>"
         ]
 
@@ -1149,7 +1150,7 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
-            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii"), _ ->
+            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii" | "crypto.hmac-sha1"), _ ->
                 // Standard library slice 1 (report 272): pure byte, text and crypto primitives.
                 let some itemType value = RuntimeOption(itemType, Some value)
                 let none itemType = RuntimeOption(itemType, None)
@@ -1210,6 +1211,8 @@ module IrInterpreter =
                     [ (match strictBase64 true false text with Some data -> some IrBytes (RuntimeBytes data) | None -> none IrBytes) ]
                 | "hex.encode", [ RuntimeBytes data ] -> [ RuntimeString(Convert.ToHexString(data).ToLowerInvariant()) ]
                 | "crypto.sha256", [ RuntimeBytes data ] -> [ RuntimeBytes(Security.Cryptography.SHA256.HashData data) ]
+                | "crypto.hmac-sha1", [ RuntimeBytes key; RuntimeBytes message ] ->
+                    [ RuntimeBytes(Security.Cryptography.HMACSHA1.HashData(key, message)) ]
                 | "crypto.hmac-sha256", [ RuntimeBytes key; RuntimeBytes message ] ->
                     [ RuntimeBytes(Security.Cryptography.HMACSHA256.HashData(key, message)) ]
                 | "crypto.pbkdf2-sha256", [ RuntimeBytes password; RuntimeBytes salt; RuntimeInt iterations; RuntimeInt length ] ->

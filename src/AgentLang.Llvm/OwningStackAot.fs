@@ -840,7 +840,9 @@ module OwningStdlib =
               "string.byte-at", (19, [ IrString; IrInt ], [ IrOption IrInt ])
               "int.parse", (20, [ IrString ], [ IrOption IrInt ])
               "string.to-lower-ascii", (21, [ IrString ], [ IrString ])
-              "crypto.random-bytes", (22, [ IrInt ], [ IrBytes ]) ]
+              "crypto.random-bytes", (22, [ IrInt ], [ IrBytes ])
+              // Slice 2 (report 274).
+              "crypto.hmac-sha1", (23, [ IrBytes; IrBytes ], [ IrBytes ]) ]
 
     /// Effectful stdlib primitives the owning backend admits, with the exact
     /// effect set each one must declare.
@@ -1427,6 +1429,7 @@ module OwningStackAot =
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
                   "list.append"; "list.concat"
                   "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
+                |> Set.union (OwningStdlib.operations |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             match OwningStdlib.effectful.TryFind operation with
@@ -3912,8 +3915,8 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_string_concat_plan(ptr, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_concat_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_plan(ptr, i32, i32, i32, i32, i32, i32, i32, ptr, ptr, ptr)")
-        writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
-        writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
+        writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
@@ -6005,7 +6008,7 @@ module OwningStackAot =
                                 if operation = "crypto.random-bytes" then usesOsRandom.Value <- true
                                 let resultType = List.exactlyOne outputs
                                 let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
-                                let slots = slots @ List.replicate (8 - slots.Length) "0"
+                                let slots = slots @ List.replicate (16 - slots.Length) "0"
                                 let slotArgs = slots |> List.map (fun value -> $"i32 {value}") |> String.concat ", "
                                 let errorId =
                                     if operation = "crypto.random-bytes" then
@@ -7935,6 +7938,7 @@ module OwningStackAot =
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stdlib2.h" (Path.Combine(runtimeDirectory, "owning_stdlib2.h"))
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         let compiledPath =
@@ -7999,6 +8003,7 @@ module OwningStackAot =
         let adapterCopyPath = Path.Combine(runtimeDirectory, adapterCopyName)
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stdlib2.h" (Path.Combine(runtimeDirectory, "owning_stdlib2.h"))
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         File.WriteAllBytes(hostAbiHeaderPath, File.ReadAllBytes manifest.HeaderPath)
@@ -8006,7 +8011,7 @@ module OwningStackAot =
 
         let dependencyDirectory = Path.Combine(fullDirectory, "native-dependencies")
         let usedNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "owning_stack_profile.h"; "float_format.h"; hostAbiHeaderName; adapterCopyName; "owning-stack-native-host.dll" ] do
+        for name in [ "owning_stack_runtime.h"; "owning_stack_runtime.c"; "owning_stack_profile.h"; "float_format.h"; "owning_stdlib2.h"; hostAbiHeaderName; adapterCopyName; "owning-stack-native-host.dll" ] do
             usedNames.Add name |> ignore
         let copyInputs extension targetDirectory paths =
             paths |> List.map (fun path ->
@@ -8289,6 +8294,7 @@ module OwningStackAot =
         let mailboxAbiHeaderPath = Path.Combine(runtimeDirectory, "owning_mailbox_abi.h")
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
+        writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stdlib2.h" (Path.Combine(runtimeDirectory, "owning_stdlib2.h"))
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_mailbox_abi.h" mailboxAbiHeaderPath

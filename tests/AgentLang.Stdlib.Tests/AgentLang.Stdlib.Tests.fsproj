@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <Content Include="stdlib.flow" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="stdlib2.flow" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

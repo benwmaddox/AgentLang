@@ -17,6 +17,7 @@ open AgentLang.Llvm
 
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "stdlib.flow")
+let private slice2Path = Path.Combine(__SOURCE_DIRECTORY__, "stdlib2.flow")
 let private assertionCount = ref 0
 
 let private check label condition =
@@ -67,7 +68,7 @@ let private parseArguments (text: string) : Value list option =
     if ok then Some(List.ofSeq values) else None
 
 let private run () =
-    let source = File.ReadAllText sourcePath
+    let source = File.ReadAllText sourcePath + Environment.NewLine + File.ReadAllText slice2Path
     let runBase =
         match Environment.GetEnvironmentVariable "AGENTLANG_STDLIB_RUN_ROOT" with
         | null | "" -> Path.Combine(repo, ".agentlang", "stdlib-272", "runs")
@@ -136,7 +137,7 @@ let private run () =
     receipt["assertionCount"] <- JsonValue.Create(assertionCount.Value)
     receipt["nativeCases"] <- JsonValue.Create(cases.Length)
     let pins = JsonArray()
-    for path in [ sourcePath; Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
+    for path in [ sourcePath; slice2Path; Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stdlib2.h"); Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
         let pin = JsonObject()
         pin["path"] <- JsonValue.Create(Path.GetRelativePath(repo, path).Replace('\\', '/'))
         pin["sha256"] <- JsonValue.Create(hash path)
