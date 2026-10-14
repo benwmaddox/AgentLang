@@ -67,7 +67,8 @@ module Application =
                                     hostOperations = environment)
         if isNew then
             define engine (readMany
-                [ "message-policy.flow"; "room-message.flow"; "room-message-tests.flow"
+                [ "csrf.flow"; "csrf-tests.flow"
+                  "message-policy.flow"; "room-message.flow"; "room-message-tests.flow"
                   "authentication.flow"; "authentication-tests.flow"
                   "sign-in.flow"; "sign-in-tests.flow"
                   "sign-out.flow"; "sign-out-tests.flow"

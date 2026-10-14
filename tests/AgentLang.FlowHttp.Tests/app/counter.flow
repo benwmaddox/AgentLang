@@ -1,0 +1,234 @@
+// Example Flow HTTP app for the portable host tests: echo, a db-backed item
+// list, and a per-worker context derived once in worker-init.
+
+record CounterContext {
+    greeting: String
+    key: Bytes
+    items-at-start: Int
+}
+
+fn counter.worker-init(config: List<HttpHeader>) -> CounterContext {
+    effects db.read
+    let secret = http.config(config, "secret")
+    let start = match db.query("select count(*) from items", list.empty<DbValue>()) {
+        error failure => -1
+        ok rows => match db.first-row(rows) {
+            none => -1
+            some row => db.int(row, 0)
+        }
+    }
+    counterContext.new(
+        greeting = http.config(config, "greeting"),
+        key = crypto.hmac-sha256(bytes.from-utf8(secret), bytes.from-utf8("counter-key")),
+        items-at-start = start)
+}
+
+fn counter.text(status: Int, body: String) -> HttpResponse {
+    http.response(status, "text/plain; charset=utf-8", body)
+}
+
+fn counter.count(headers: List<HttpHeader>) -> Int {
+    var count = 0
+    for header in headers {
+        count = count + 1
+    }
+    count
+}
+
+test counter.count/two {
+    expect counter.count([httpHeader.new(name = "a", value = "1"), httpHeader.new(name = "b", value = "2")]) == 2
+}
+
+fn counter.echo(request: HttpRequest) -> HttpResponse {
+    let probe = match http.header(request.headers, "x-probe") {
+        none => "-"
+        some value => value
+    }
+    let body = match bytes.to-utf8(request.body) {
+        none => "<binary>"
+        some text => text
+    }
+    let lines = [
+        string.concat("method=", string.concat(request.method, ";")),
+        string.concat("target=", string.concat(request.target, ";")),
+        string.concat("path=", string.concat(http.path(request.target), ";")),
+        string.concat("query=", string.concat(http.query(request.target), ";")),
+        string.concat("probe=", string.concat(probe, ";")),
+        string.concat("headers=", string.concat(int.to-string(counter.count(request.headers)), ";")),
+        string.concat("body-bytes=", string.concat(int.to-string(bytes.length(request.body)), ";")),
+        string.concat("body=", string.concat(body, ";")),
+        string.concat("remote=", string.concat(request.remote-ip, ";"))
+    ]
+    httpResponse.new(
+        status = 200,
+        headers = [httpHeader.new(name = "content-type", value = "text/plain"), httpHeader.new(name = "x-echo", value = probe)],
+        body = string.replace(string.join(lines), ";", "\n"))
+}
+
+fn counter.line(row: DbRow) -> String {
+    string.concat(string.concat(db.text(row, 0), ":"), db.text(row, 1))
+}
+
+fn counter.list-items() -> HttpResponse {
+    effects db.read
+    match db.query("select id, name, note from items order by id", list.empty<DbValue>()) {
+        error failure => counter.text(500, string.concat("db error ", int.to-string(failure.code)))
+        ok rows => {
+            var text = ""
+            for row in rows {
+                text = string.concat(text, string.concat(counter.line(row), "\n"))
+            }
+            counter.text(200, text)
+        }
+    }
+}
+
+fn counter.find-item(target: String) -> HttpResponse {
+    effects db.read
+    let wanted = match string.index-of(target, "id=", 0) {
+        none => -1
+        some at => match string.slice(target, at + 3, string.byte-length(target) - at - 3) {
+            none => -1
+            some digits => match int.parse(digits) {
+                none => -1
+                some id => id
+            }
+        }
+    }
+    match db.query("select name, note from items where id = ?1", [db.int-param(wanted)]) {
+        error failure => counter.text(500, failure.message)
+        ok rows => match db.first-row(rows) {
+            none => counter.text(404, "no such item")
+            some row => {
+                let note = match db.optional-text(row, 1) {
+                    none => "(none)"
+                    some value => value
+                }
+                counter.text(200, string.concat(string.concat(db.text(row, 0), " / "), note))
+            }
+        }
+    }
+}
+
+fn counter.add-item(request: HttpRequest) -> HttpResponse {
+    effects db.write
+    match bytes.to-utf8(request.body) {
+        none => counter.text(400, "body must be UTF-8")
+        some name => {
+            let note = match http.header(request.headers, "x-note") {
+                none => db.null-param()
+                some value => db.text-param(value)
+            }
+            match db.execute("insert into items(name, note) values (?1, ?2)", [db.text-param(name), note]) {
+                error failure => counter.text(409, string.concat("db error ", int.to-string(failure.code)))
+                ok changed => counter.text(201, string.concat("created ", int.to-string(changed)))
+            }
+        }
+    }
+}
+
+fn counter.context-text(context: CounterContext) -> HttpResponse {
+    let key = match bytes.slice(context.key, 0, 4) {
+        none => ""
+        some prefix => hex.encode(prefix)
+    }
+    counter.text(200, string.join([context.greeting, ",", key, ",", int.to-string(context.items-at-start)]))
+}
+
+fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse {
+    effects db.read, db.write
+    let path = http.path(request.target)
+    if path == "/hello" {
+        counter.text(200, string.concat("hello ", context.greeting))
+    } else if path == "/echo" {
+        counter.echo(request)
+    } else if path == "/context" {
+        counter.context-text(context)
+    } else if path == "/items" && request.method == "GET" {
+        counter.list-items()
+    } else if path == "/items" && request.method == "POST" {
+        counter.add-item(request)
+    } else if path == "/item" {
+        counter.find-item(request.target)
+    } else if path == "/bad-sql" {
+        match db.execute("insert into missing_table values (?1)", [db.int-param(1)]) {
+            error failure => counter.text(500, string.concat("db error ", int.to-string(failure.code)))
+            ok changed => counter.text(200, "unexpected")
+        }
+    } else {
+        counter.text(404, string.concat("not found: ", path))
+    }
+}
+
+// Attached tests run against a fresh in-memory database without the items
+// table, so db calls take their error paths here; the HTTP tests cover the rest.
+
+fn counter.test-request(method: String, target: String, body: String) -> HttpRequest {
+    httpRequest.new(
+        method = method,
+        target = target,
+        headers = [httpHeader.new(name = "x-probe", value = "p")],
+        body = bytes.from-utf8(body),
+        remote-ip = "127.0.0.1",
+        now-microseconds = 0)
+}
+
+fn counter.test-context() -> CounterContext {
+    counterContext.new(greeting = "hi", key = crypto.sha256(bytes.from-utf8("k")), items-at-start = 2)
+}
+
+test counter.test-request/fields {
+    expect counter.test-request("GET", "/a", "b").method == "GET"
+}
+
+test counter.test-context/fields {
+    expect counter.test-context().greeting == "hi"
+}
+
+test counter.worker-init/no-table {
+    let context = counter.worker-init([httpHeader.new(name = "greeting", value = "g"), httpHeader.new(name = "secret", value = "s")])
+    expect context.greeting == "g"
+    expect context.items-at-start == -1
+    expect bytes.length(context.key) == 32
+}
+
+test counter.text/status {
+    expect counter.text(201, "x").status == 201
+}
+
+test counter.echo/body {
+    let response = counter.echo(counter.test-request("POST", "/echo?q=1", "hello"))
+    expect response.status == 200
+    expect string.contains(response.body, "query=q=1")
+    expect string.contains(response.body, "body=hello")
+}
+
+test counter.line/format {
+    expect counter.line(dbRow.new(values = [db.int-param(3), db.text-param("x")])) == "3:x"
+}
+
+test counter.list-items/no-table {
+    expect counter.list-items().status == 500
+}
+
+test counter.find-item/no-table {
+    expect counter.find-item("/item?id=1").status == 500
+}
+
+test counter.add-item/no-table {
+    expect counter.add-item(counter.test-request("POST", "/items", "a")).status == 409
+}
+
+test counter.context-text/format {
+    let body = counter.context-text(counter.test-context()).body
+    expect string.starts-with(body, "hi,")
+    expect string.ends-with(body, ",2")
+    expect string.byte-length(body) == 13
+}
+
+test counter.handle/routes {
+    let context = counter.test-context()
+    expect counter.handle(counter.test-request("GET", "/hello", ""), context).body == "hello hi"
+    expect counter.handle(counter.test-request("GET", "/nope", ""), context).status == 404
+    expect counter.handle(counter.test-request("GET", "/bad-sql", ""), context).status == 500
+}

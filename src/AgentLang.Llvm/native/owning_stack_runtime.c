@@ -4790,8 +4790,29 @@ int32_t al_owning_os_random_unavailable(uint8_t *buffer, uint32_t length) {
   (void)length;
   return -1;
 }
+#if defined(_WIN32)
 int32_t al_owning_os_random_fill(uint8_t *buffer, uint32_t length);
 #pragma comment(linker, "/alternatename:al_owning_os_random_fill=al_owning_os_random_unavailable")
+#else
+/* Linux: the runtime itself reads the kernel CSPRNG (getrandom, blocking
+ * until the pool is initialized), retrying short reads and EINTR. */
+long syscall(long number, ...);
+#define AL_OWNING_SYS_GETRANDOM 318L
+static int32_t al_owning_os_random_fill(uint8_t *buffer, uint32_t length) {
+  uint32_t filled = 0u;
+  while (filled < length) {
+    const long got = syscall(AL_OWNING_SYS_GETRANDOM, buffer + filled,
+                             (unsigned long)(length - filled), 0u);
+    if (got < 0)
+      continue; /* EINTR; other errors cannot occur with these arguments */
+    if (got == 0)
+      return -1;
+    filled += (uint32_t)got;
+  }
+  (void)al_owning_os_random_unavailable;
+  return 0;
+}
+#endif
 
 typedef struct {
   uint32_t h[8];

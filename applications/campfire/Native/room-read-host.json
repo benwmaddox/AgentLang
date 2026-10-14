@@ -25,9 +25,6 @@
     { "tag": 5, "name": "campfire.users.authenticate-bot-key", "inputTypes": [ "BotKey" ], "outputTypes": [ "Result<Option<AuthUser>, DbError>" ], "effects": [ "db.read" ] },
     { "tag": 7, "name": "campfire.rooms.find-for-user", "inputTypes": [ "UserId", "RoomId" ], "outputTypes": [ "Result<Option<RoomRow>, DbError>" ], "effects": [ "db.read" ] },
     { "tag": 8, "name": "campfire.membership.exists?", "inputTypes": [ "MembershipKey" ], "outputTypes": [ "Result<Bool, DbError>" ], "effects": [ "db.read" ] },
-    { "tag": 10, "name": "campfire.messages.last-page-with-creators", "inputTypes": [ "RoomId" ], "outputTypes": [ "Result<List<MessageWithCreator>, DbError>" ], "effects": [ "db.read" ] },
-    { "tag": 11, "name": "campfire.csrf.session-secret", "inputTypes": [ "Option<String>" ], "outputTypes": [ "CsrfSecret" ], "effects": [ "random.read" ] },
-    { "tag": 12, "name": "campfire.csrf.form-token", "inputTypes": [ "String", "String" ], "outputTypes": [ "String" ], "effects": [ "random.read" ] },
-    { "tag": 13, "name": "campfire.csrf.boost-tokens", "inputTypes": [ "String", "MessageId" ], "outputTypes": [ "BoostTokens" ], "effects": [ "random.read" ] }
+    { "tag": 10, "name": "campfire.messages.last-page-with-creators", "inputTypes": [ "RoomId" ], "outputTypes": [ "Result<List<MessageWithCreator>, DbError>" ], "effects": [ "db.read" ] }
   ]
 }

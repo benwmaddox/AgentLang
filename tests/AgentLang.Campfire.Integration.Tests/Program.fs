@@ -109,7 +109,9 @@ module Program =
     let private readApplicationSource includeRealSqliteTests =
         let app = Path.Combine(repositoryRoot, "applications", "campfire")
         let baseFiles =
-            [ Path.Combine(app, "message-policy.flow")
+            [ Path.Combine(app, "csrf.flow")
+              Path.Combine(app, "csrf-tests.flow")
+              Path.Combine(app, "message-policy.flow")
               Path.Combine(app, "room-message.flow")
               Path.Combine(app, "room-message-tests.flow") ]
         let files =
@@ -197,7 +199,7 @@ module Program =
         defineFlow engine source |> ignore
 
         let firstRun = dispatch engine "test-all" [] |> expectAllPassed "scoped test suite"
-        equal 65 firstRun.Count "scoped suite includes policy, page, list, and create cases"
+        equal 86 firstRun.Count "scoped suite includes CSRF, policy, page, list, and create cases"
         let scopedEffects = firstRun |> Seq.filter (fun result -> not (isNull result.["effectAssertion"])) |> Seq.toList
         equal 40 scopedEffects.Length "all operation-backed scoped cases carry effect assertions"
         for result in scopedEffects do assertEffectCounts result 0 0 0 0
@@ -347,7 +349,7 @@ module Program =
         probes, (fun () -> factoryCalls), factory
 
     let private adapterContract () =
-        equal 8 CampfireHost.manifest.Count "host publishes exactly eight fixed operation contracts"
+        equal 5 CampfireHost.manifest.Count "host publishes exactly five fixed operation contracts"
         equal
             CampfireHost.operationIds
             (CampfireHost.manifest |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
@@ -448,7 +450,7 @@ module Program =
         defineFlow engine (readApplicationSource true) |> ignore
 
         let results = dispatch engine "test-all" [] |> expectAllPassed "real SQLite integration suite"
-        equal 79 results.Count "integration suite includes scoped, policy, and fourteen real SQLite cases"
+        equal 100 results.Count "integration suite includes CSRF, scoped, policy, and fourteen real SQLite cases"
         equal 14 (factoryCalls ()) "one lazy test-provider factory call per real attached test"
         equal 0 productionCalls.Value "attached tests use only the disposable test-provider path"
 

@@ -165,6 +165,33 @@ type OwningAppHostManifest =
 type OwningNativeHostProfile =
     | AppHost of OwningAppHostManifest
 
+/// The native target an owning module is emitted for. Windows x64 (the
+/// default) exports entries with dllexport and imports BCryptGenRandom when
+/// crypto.random-bytes is used; Linux x64 (ELF) has no dllexport/dllimport and
+/// takes randomness from the runtime's getrandom source.
+[<RequireQualifiedAccess>]
+type OwningTarget =
+    | WindowsX64
+    | LinuxX64
+
+    member this.Triple =
+        match this with
+        | WindowsX64 -> "x86_64-pc-windows-msvc"
+        | LinuxX64 -> "x86_64-pc-linux-gnu"
+
+    static member Parse(text: string) =
+        match text.Trim().ToLowerInvariant() with
+        | "windows" | "windows-x64" | "win-x64" | "x86_64-pc-windows-msvc" -> WindowsX64
+        | "linux" | "linux-x64" | "x86_64-pc-linux-gnu" | "x86_64-unknown-linux-gnu" -> LinuxX64
+        | other -> invalidArg (nameof text) $"Unknown owning target '{other}' (expected windows-x64 or linux-x64)."
+
+/// One exported entry of a multi-entry native host module: the C symbol, the
+/// app word the compiler-minted shim calls, and its verified shim body.
+type OwningHostEntry =
+    { ExportName: string
+      EntryWord: string
+      Body: VerifiedIrBody }
+
 /// Trusted build inputs, never selected by language code or request data.
 type OwningNativeHostDependencies =
     { HeaderPaths: string list
@@ -390,7 +417,12 @@ type private OwningDynamicStackEntry =
       Offset: string
       Extent: string
       Payload: string
-      OwnerEnd: string }
+      OwnerEnd: string
+      // An Int/Bool/Float/Unit held as an i64 SSA value (Float as its bits)
+      // instead of arena bytes (report 273). Such an entry has no address:
+      // its descriptor fields are a poison name, so any consumer that reads
+      // them without first materializing fails LLVM parsing loudly.
+      Register: string option }
 
 type private OwningDynamicLocalSlotPlan =
     { FlagId: int }
@@ -3697,11 +3729,18 @@ module OwningStackAot =
         (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>)
         (mailboxMode: bool)
         (nativeHostProfile: OwningNativeHostProfile option)
-        (runtimeProfile: OwningRuntimeProfile) =
+        (runtimeProfile: OwningRuntimeProfile)
+        (target: OwningTarget)
+        (hostExportNames: string list option) =
         let body = info.Body
         let bodies = info.Bodies
         if bodies.Length <> entryAnalyses.Length then
             invalidOp "Owning module entry bodies and lifetime analyses have different lengths."
+        match hostExportNames with
+        | Some names when names.Length <> bodies.Length || nativeHostProfile.IsNone || mailboxMode ->
+            invalidOp "A multi-entry host module needs one export name per entry body and a native host profile."
+        | _ -> ()
+        let dllExport = match target with OwningTarget.WindowsX64 -> "dllexport " | OwningTarget.LinuxX64 -> ""
         if mailboxMode && bodies.Length <> 3 then
             invalidOp "An owning mailbox module must contain exactly three entry bodies."
         if mailboxMode && nativeHostProfile.IsSome then
@@ -3781,7 +3820,7 @@ module OwningStackAot =
         let entryRoles = [ "initialize"; "begin"; "resume" ]
         let entryFrameSymbols =
             if mailboxMode then entryRoles |> List.map (fun role -> $"@agentlang_mailbox_{role}_frame")
-            else [ "@agentlang_entry_frame" ]
+            else bodies |> List.mapi (fun index _ -> if index = 0 then "@agentlang_entry_frame" else $"@agentlang_entry_frame_{index}")
         let layoutSymbol = if mailboxMode then "@agentlang_owning_mailbox_layout" else "@al_owning_layout"
 
         let allBlocks = ResizeArray<string * IrBlock>()
@@ -4043,7 +4082,7 @@ module OwningStackAot =
                   Offset = values[1]
                   Extent = values[2]
                   Payload = values[3]
-                  OwnerEnd = values[4] }
+                  OwnerEnd = values[4]; Register = None }
             entry, values[0]
 
         let emitDescriptorTransfer (w: OwningLlvmWriter) (entry: OwningDynamicStackEntry) failureLabel =
@@ -4307,7 +4346,7 @@ module OwningStackAot =
                                       Offset = loadField 0 "offset"
                                       Payload = loadField 1 "payload"
                                       Extent = loadField 2 "extent"
-                                      OwnerEnd = entry.OwnerEnd }
+                                      OwnerEnd = entry.OwnerEnd; Register = None }
                                 emitValidateEntryValue w owner child fieldType failureLabel
                     | None -> ()
                 | IrOption itemType when hasValidatedScalar itemType ->
@@ -4338,7 +4377,7 @@ module OwningStackAot =
                           Offset = loadCase 0 "offset"
                           Payload = loadCase 1 "payload"
                           Extent = loadCase 2 "extent"
-                          OwnerEnd = entry.OwnerEnd }
+                          OwnerEnd = entry.OwnerEnd; Register = None }
                     emitValidateEntryValue w owner child itemType failureLabel
                     w.Inst($"br label %%{join}")
                     w.Line($"{join}:")
@@ -4372,7 +4411,7 @@ module OwningStackAot =
                               Offset = loadCase 0 "offset"
                               Payload = loadCase 1 "payload"
                               Extent = loadCase 2 "extent"
-                              OwnerEnd = entry.OwnerEnd }
+                              OwnerEnd = entry.OwnerEnd; Register = None }
                         emitValidateEntryValue w owner child okType failureLabel
                         w.Inst($"br label %%{join}")
                     else
@@ -4385,7 +4424,7 @@ module OwningStackAot =
                               Offset = loadCase 0 "offset"
                               Payload = loadCase 1 "payload"
                               Extent = loadCase 2 "extent"
-                              OwnerEnd = entry.OwnerEnd }
+                              OwnerEnd = entry.OwnerEnd; Register = None }
                         emitValidateEntryValue w owner child errorType failureLabel
                         w.Inst($"br label %%{join}")
                     else
@@ -4410,7 +4449,13 @@ module OwningStackAot =
             let payloadPointers = Dictionary<int, string>()
             let ownerEndPointers = Dictionary<int, string>()
             let typePointers = Dictionary<int, string>()
+            // Int/Bool/Float/Unit locals hold their i64 value here, not in the arena.
+            let valuePointers = Dictionary<int, string>()
             for flagId in plan.Flags do
+                let scalarValuePointer = w.Fresh "local.scalar"
+                valuePointers.Add(flagId, scalarValuePointer)
+                w.Inst($"{scalarValuePointer} = alloca i64, align 8")
+                w.Inst($"store i64 0, ptr {scalarValuePointer}, align 8")
                 let active = w.Fresh "local.active"
                 let offset = w.Fresh "local.offset"
                 let extent = w.Fresh "local.extent"
@@ -4483,7 +4528,8 @@ module OwningStackAot =
                 value
             let emitCursorCheck (entries: OwningDynamicStackEntry list) failureLabel =
                 for entry in entries do
-                    emitDescriptorBounds w entry (Some(string (typeId entry.Type))) failureLabel
+                    if entry.Register.IsNone then
+                        emitDescriptorBounds w entry (Some(string (typeId entry.Type))) failureLabel
                 for flagId in plan.Flags do
                     let active = emitActive flagId
                     let activeLabel = w.Label "local.descriptor.active"
@@ -4496,7 +4542,7 @@ module OwningStackAot =
                           Offset = emitLoadI32 offsetPointers "local.check.offset" flagId
                           Extent = emitLoadI32 extentPointers "local.check.extent" flagId
                           Payload = emitLoadI32 payloadPointers "local.check.payload" flagId
-                          OwnerEnd = emitLoadI32 ownerEndPointers "local.check.owner.end" flagId }
+                          OwnerEnd = emitLoadI32 ownerEndPointers "local.check.owner.end" flagId; Register = None }
                     emitDescriptorBounds w entry None failureLabel
                     w.Inst($"br label %%{joinLabel}")
                     w.Line($"{inactiveLabel}:")
@@ -4525,7 +4571,7 @@ module OwningStackAot =
                   Offset = resolveLocalField binding offsetPointers "local.resolved.offset"
                   Extent = resolveLocalField binding extentPointers "local.resolved.extent"
                   Payload = resolveLocalField binding payloadPointers "local.resolved.payload"
-                  OwnerEnd = resolveLocalField binding ownerEndPointers "local.resolved.owner.end" }
+                  OwnerEnd = resolveLocalField binding ownerEndPointers "local.resolved.owner.end"; Register = None }
             let localBinding (slot: LocalSlot) (locals: Map<LocalSlot, OwningDynamicLocalBinding>) =
                 let binding = locals.TryFind slot |> Option.defaultWith (fun () -> invalidOp $"Verified dynamic local slot {slotValue slot} has no descriptor slot.")
                 binding
@@ -4541,7 +4587,94 @@ module OwningStackAot =
                 for _, slotPlan in env.Slots |> Map.toList |> List.sortByDescending (fun (_, value) -> value.FlagId) do
                     removeLocal slotPlan.FlagId
 
-            let emitStoreLocal (binding: OwningDynamicLocalBinding) (source: OwningDynamicStackEntry) =
+            let poisonField = "%__unmaterialized.scalar"
+            let isRegisterType ty = ty = IrInt || ty = IrBool || ty = IrFloat || ty = IrUnit
+            let registerEntry ty value =
+                { Type = ty; Offset = poisonField; Extent = poisonField; Payload = poisonField; OwnerEnd = poisonField; Register = Some value }
+            /// The i64 value of an Int/Bool/Float/Unit entry (Float as bits).
+            let scalarValue (entry: OwningDynamicStackEntry) =
+                match entry.Register with
+                | Some value -> value
+                | None ->
+                    let value = w.Fresh "scalar.loaded"
+                    w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {entry.Offset})")
+                    emitRuntimeStatus w "%ctx" failBody
+                    value
+            /// Bind `target` to an entry's i64 value (a no-op add for registers, folded by LLVM).
+            let emitScalarInto (target: string) (entry: OwningDynamicStackEntry) =
+                match entry.Register with
+                | Some value -> w.Inst($"{target} = add i64 {value}, 0")
+                | None ->
+                    w.Inst($"{target} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {entry.Offset})")
+                    emitRuntimeStatus w "%ctx" failBody
+            /// Primitives whose operands are read only as i64 values (report 273).
+            let primitiveRegisterAware (operation: string) (inputTypes: IrType list) =
+                match operation with
+                | "drop" | "dup" | "swap"
+                | "bool.not" | "bool.and" | "bool.or"
+                | "float.add" | "float.subtract" | "float.multiply" | "float.divide"
+                | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"
+                | "int.to-float" | "float.to-int" | "float.round" | "int.to-string" | "float.to-string"
+                | "add" | "subtract" | "multiply" | "divide" | "int.remainder"
+                | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
+                | "string.byte-at-or" -> true
+                | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
+                | _ -> false
+            /// Instructions that accept register entries anywhere on the stack.
+            /// Every other instruction sees the stack materialized first.
+            let registerAware (operation: IrOperation) =
+                match operation with
+                | IrOperation.Constant _ | IrOperation.LoadLocal _ | IrOperation.StoreLocal _ | IrOperation.AssignLocal _
+                | IrOperation.Break | IrOperation.Continue | IrOperation.If _ | IrOperation.ForRange _ -> true
+                | IrOperation.Call call ->
+                    match call.ResolvedTarget with
+                    | PrimitiveTarget(PrimitiveId operation) -> primitiveRegisterAware operation call.InputTypes
+                    | _ -> false
+                | _ -> false
+            /// Give a register entry arena bytes, for consumers that need an address.
+            let materializeEntry owner span (entry: OwningDynamicStackEntry) =
+                match entry.Register with
+                | None -> entry
+                | Some value ->
+                    let cursor = emitContextLoad w "%ctx" 2
+                    let next = emitOffset w cursor "8"
+                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a scalar value." owner span [] []
+                    emitReserve w next reserveError failBody
+                    w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {value}, i32 {typeId entry.Type})")
+                    emitRuntimeStatus w "%ctx" failBody
+                    emitUpdateLive w "8" "0" failBody
+                    { Type = entry.Type; Offset = cursor; Extent = "8"; Payload = "8"; OwnerEnd = next; Register = None }
+            let materializeAll owner span (entries: OwningDynamicStackEntry list) =
+                entries |> List.map (materializeEntry owner span)
+            /// Scalars leave a branch as registers so every join can phi an i64.
+            let normalizeBranch (entries: OwningDynamicStackEntry list) =
+                entries |> List.map (fun entry -> if isRegisterType entry.Type then registerEntry entry.Type (scalarValue entry) else entry)
+            /// Merge normalized branch stacks at a join label.
+            let joinBranches (branches: (OwningDynamicStackEntry list * string) list) (prefixName: string) =
+                let firstStack = branches |> List.head |> fst
+                [ for index in 0 .. firstStack.Length - 1 do
+                    let values = branches |> List.map (fun (output: OwningDynamicStackEntry list, predecessor) -> output[index], predecessor)
+                    let first = values |> List.head |> fst
+                    let phi (llvmType: string) (field: OwningDynamicStackEntry -> string) suffix =
+                        let merged = w.Fresh $"{prefixName}.{suffix}"
+                        let incoming =
+                            values
+                            |> List.map (fun (entry, predecessor) -> $"[ {field entry}, %%{predecessor} ]")
+                            |> String.concat ", "
+                        w.Inst($"{merged} = phi {llvmType} {incoming}")
+                        merged
+                    if isRegisterType first.Type then
+                        yield registerEntry first.Type (phi "i64" (fun item -> item.Register.Value) "scalar")
+                    else
+                        yield
+                            { Type = first.Type
+                              Offset = phi "i32" (fun item -> item.Offset) "offset"
+                              Extent = phi "i32" (fun item -> item.Extent) "extent"
+                              Payload = phi "i32" (fun item -> item.Payload) "payload"
+                              OwnerEnd = phi "i32" (fun item -> item.OwnerEnd) "owner.end"
+                              Register = None } ]
+
+            let emitStoreArenaLocal (binding: OwningDynamicLocalBinding) (source: OwningDynamicStackEntry) =
                 let flagId = binding.FlagId
                 w.Inst($"store i1 true, ptr {pointerFor activePointers flagId}, align 1")
                 w.Inst($"store i32 {source.Offset}, ptr {pointerFor offsetPointers flagId}, align 4")
@@ -4550,6 +4683,29 @@ module OwningStackAot =
                 w.Inst($"store i32 {source.OwnerEnd}, ptr {pointerFor ownerEndPointers flagId}, align 4")
                 w.Inst($"store i32 {typeId source.Type}, ptr {pointerFor typePointers flagId}, align 4")
                 emitDescriptorTransfer w source failBody
+            let emitStoreLocal (binding: OwningDynamicLocalBinding) (source: OwningDynamicStackEntry) =
+                if isRegisterType source.Type then
+                    let flagId = binding.FlagId
+                    let value = scalarValue source
+                    w.Inst($"store i64 {value}, ptr {pointerFor valuePointers flagId}, align 8")
+                    w.Inst($"store i1 true, ptr {pointerFor activePointers flagId}, align 1")
+                    for table in [ offsetPointers; extentPointers; payloadPointers; ownerEndPointers ] do
+                        w.Inst($"store i32 0, ptr {pointerFor table flagId}, align 4")
+                    w.Inst($"store i32 {typeId source.Type}, ptr {pointerFor typePointers flagId}, align 4")
+                else
+                    emitStoreArenaLocal binding source
+            /// A scalar local's value: the innermost active binding's i64 slot.
+            let rec resolveLocalScalar (binding: OwningDynamicLocalBinding) =
+                let own = w.Fresh "local.scalar.value"
+                w.Inst($"{own} = load i64, ptr {pointerFor valuePointers binding.FlagId}, align 8")
+                match binding.Fallback with
+                | None -> own
+                | Some fallback ->
+                    let active = emitActive binding.FlagId
+                    let fallbackValue = resolveLocalScalar fallback
+                    let selected = w.Fresh "local.scalar.resolved"
+                    w.Inst($"{selected} = select i1 {active}, i64 {own}, i64 {fallbackValue}")
+                    selected
 
             // (latch, exit) labels of the enclosing loops, innermost on top.
             let loopTargets = Stack<string * string>()
@@ -4576,12 +4732,13 @@ module OwningStackAot =
                         let split = stack.Length - count
                         stack |> List.skip split, stack |> List.take split
                 let push (prefix: OwningDynamicStackEntry list) ty valueOffset valueExtent valuePayload valueOwnerEnd =
-                    prefix @ [ { Type = ty; Offset = valueOffset; Extent = valueExtent; Payload = valuePayload; OwnerEnd = valueOwnerEnd } ]
+                    prefix @ [ { Type = ty; Offset = valueOffset; Extent = valueExtent; Payload = valuePayload; OwnerEnd = valueOwnerEnd; Register = None } ]
                 let emitDropEntry (entries: OwningDynamicStackEntry list) index =
                     // Dropping a descriptor only removes a logical operand. Its payload
                     // remains in the arena until a compiler-proved enclosing rewind.
                     let entry = entries[index]
-                    emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 3, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 0, i32 0)" failBody
+                    if entry.Register.IsNone then
+                      emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 3, i32 {typeId entry.Type}, i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 0, i32 0)" failBody
                 let emitSumPayloadConstruction sumType caseTag prefix (child: OwningDynamicStackEntry) instructionSpan =
                     let cursor = emitContextLoad w "%ctx" 2
                     let sumExtent = emitOffset w "8" child.Extent
@@ -4623,6 +4780,8 @@ module OwningStackAot =
                     | OwningRuntimeProfile.TrustedGenerated -> ()
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
+                    if not (registerAware instruction.Operation) then
+                        stack <- materializeAll currentOwner instructionSpan stack
                     match instruction.Operation with
                     | IrOperation.Constant(literal, ty) when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
                         let bits =
@@ -4632,15 +4791,7 @@ module OwningStackAot =
                             | LUnit, IrUnit -> 0L
                             | LFloat value, IrFloat -> BitConverter.DoubleToInt64Bits value
                             | _ -> invalidOp "Verified dynamic scalar constant had an inconsistent literal."
-                        let cursor = emitContextLoad w "%ctx" 2
-                        let destination = cursor
-                        let next = emitOffset w destination "8"
-                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a scalar value." currentOwner instructionSpan [] []
-                        emitReserve w next reserveError failBody
-                        w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {destination}, i64 {bits}, i32 {typeId ty})")
-                        emitRuntimeStatus w "%ctx" failBody
-                        emitUpdateLive w "8" "0" failBody
-                        stack <- push stack ty destination "8" "8" next
+                        stack <- stack @ [ registerEntry ty (string bits) ]
                     | IrOperation.Constant(LString value, IrString) ->
                         let bytes, literalPayload, literalExtent = encodeLiteral value
                         let cursor = emitContextLoad w "%ctx" 2
@@ -4915,7 +5066,7 @@ module OwningStackAot =
                             w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
                             w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
                             storeI32 elementCursor (emitOffset w offset extent)
-                            { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd }
+                            { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd; Register = None }
                         let callbackError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." callback.ResolvedName instructionSpan [] []
                         // Call the callback with the given argument descriptors and return its result descriptor.
                         let callCallback (arguments: OwningDynamicStackEntry list) =
@@ -5170,10 +5321,13 @@ module OwningStackAot =
                             let entryTypes = describe current.EntryShape.LocalTypes
                             let exitTypes = describe current.ExitShape.LocalTypes
                             invalidOp $"Verified dynamic local type is missing for {slotValue slot} in '{currentOwner}'. Active=[{activeTypes}]; entry=[{entryTypes}]; exit=[{exitTypes}].")
-                        let descriptor = resolveLocalEntry binding ty
-                        emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
-                        emitDescriptorTransfer w descriptor failBody
-                        stack <- push stack ty descriptor.Offset descriptor.Extent descriptor.Payload descriptor.OwnerEnd
+                        if isRegisterType ty then
+                            stack <- stack @ [ registerEntry ty (resolveLocalScalar binding) ]
+                        else
+                            let descriptor = resolveLocalEntry binding ty
+                            emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
+                            emitDescriptorTransfer w descriptor failBody
+                            stack <- push stack ty descriptor.Offset descriptor.Extent descriptor.Payload descriptor.OwnerEnd
                     | IrOperation.Scope inner ->
                         let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified descriptor Scope has no local plan.")
                         let localsBeforeScope = locals
@@ -5215,32 +5369,37 @@ module OwningStackAot =
                                 (Some currentOwner) instructionSpan [ "only the result survives the block" ] [ reason ]
                         let result = List.last innerStack
                         let prefix = List.take (innerStack.Length - 1) innerStack
-                        // A result allocated inside the block (offset >= mark) moves down to
-                        // the mark; an older value is left in place. Either way the block's
-                        // temporaries above are released.
-                        let isFresh = w.Fresh "compact.fresh"
-                        w.Inst($"{isFresh} = icmp uge i32 {result.Offset}, {mark}")
-                        let moveLabel = w.Label "compact.move"
-                        let keepLabel = w.Label "compact.keep"
-                        let joinLabel = w.Label "compact.join"
-                        w.Inst($"br i1 {isFresh}, label %%{moveLabel}, label %%{keepLabel}")
-                        w.Line($"{moveLabel}:")
-                        w.Inst($"call void @al_owning_move_range(ptr %%ctx, i32 {mark}, i32 {result.Offset}, i32 {result.Extent}, i32 {result.Payload}, i32 {typeId result.Type}, i32 9)")
-                        emitRuntimeStatus w "%ctx" failBody
-                        let movedEnd = emitOffset w mark result.Extent
-                        w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {movedEnd}, i32 0, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
-                        w.Inst($"br label %%{joinLabel}")
-                        w.Line($"{keepLabel}:")
-                        w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {mark}, i32 0, i32 0, i32 0)")
-                        emitRuntimeStatus w "%ctx" failBody
-                        w.Inst($"br label %%{joinLabel}")
-                        w.Line($"{joinLabel}:")
-                        let offset = w.Fresh "compact.offset"
-                        w.Inst($"{offset} = select i1 {isFresh}, i32 {mark}, i32 {result.Offset}")
-                        let ownerEnd = w.Fresh "compact.owner.end"
-                        w.Inst($"{ownerEnd} = select i1 {isFresh}, i32 {movedEnd}, i32 {result.OwnerEnd}")
-                        stack <- prefix @ [ { result with Offset = offset; OwnerEnd = ownerEnd } ]
+                        if result.Register.IsSome then
+                            w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {mark}, i32 0, i32 0, i32 0)")
+                            emitRuntimeStatus w "%ctx" failBody
+                            stack <- innerStack
+                        else
+                            // A result allocated inside the block (offset >= mark) moves down to
+                            // the mark; an older value is left in place. Either way the block's
+                            // temporaries above are released.
+                            let isFresh = w.Fresh "compact.fresh"
+                            w.Inst($"{isFresh} = icmp uge i32 {result.Offset}, {mark}")
+                            let moveLabel = w.Label "compact.move"
+                            let keepLabel = w.Label "compact.keep"
+                            let joinLabel = w.Label "compact.join"
+                            w.Inst($"br i1 {isFresh}, label %%{moveLabel}, label %%{keepLabel}")
+                            w.Line($"{moveLabel}:")
+                            w.Inst($"call void @al_owning_move_range(ptr %%ctx, i32 {mark}, i32 {result.Offset}, i32 {result.Extent}, i32 {result.Payload}, i32 {typeId result.Type}, i32 9)")
+                            emitRuntimeStatus w "%ctx" failBody
+                            let movedEnd = emitOffset w mark result.Extent
+                            w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {movedEnd}, i32 0, i32 0, i32 0)")
+                            emitRuntimeStatus w "%ctx" failBody
+                            w.Inst($"br label %%{joinLabel}")
+                            w.Line($"{keepLabel}:")
+                            w.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {mark}, i32 0, i32 0, i32 0)")
+                            emitRuntimeStatus w "%ctx" failBody
+                            w.Inst($"br label %%{joinLabel}")
+                            w.Line($"{joinLabel}:")
+                            let offset = w.Fresh "compact.offset"
+                            w.Inst($"{offset} = select i1 {isFresh}, i32 {mark}, i32 {result.Offset}")
+                            let ownerEnd = w.Fresh "compact.owner.end"
+                            w.Inst($"{ownerEnd} = select i1 {isFresh}, i32 {movedEnd}, i32 {result.OwnerEnd}")
+                            stack <- prefix @ [ { result with Offset = offset; OwnerEnd = ownerEnd } ]
                         locals <- localsBeforeScope
                         localTypes <- localTypesBeforeScope
                     | IrOperation.AssignLocal slot ->
@@ -5288,11 +5447,12 @@ module OwningStackAot =
                             match instruction.Operation with
                             | IrOperation.ForRange _ ->
                                 let values, prefix = pop 2
-                                let start = loadI64 values[0].Offset
-                                let finish = loadI64 values[1].Offset
+                                let start = scalarValue values[0]
+                                let finish = scalarValue values[1]
                                 emitDropEntry stack (stack.Length - 1)
                                 emitDropEntry stack (stack.Length - 2)
-                                stack <- prefix
+                                // The loop-invariant stack lives below the iteration mark.
+                                stack <- materializeAll currentOwner instructionSpan prefix
                                 Choice1Of2(newSlot "i64" "loop.counter" start, finish)
                             | IrOperation.ForList(itemType, _, _, _) ->
                                 let values, prefix = pop 1
@@ -5313,9 +5473,11 @@ module OwningStackAot =
                             match analysis.ScopeExits.TryFind instruction.Site with
                             | Some decision -> decision.AllowRewind
                             | None -> false
+                        // Scalar vars live in i64 slots: nothing in the arena to relocate.
                         let carried =
                             IrLoops.assignedSlots body
                             |> Set.filter localTypesBeforeLoop.ContainsKey
+                            |> Set.filter (fun slot -> not (isRegisterType localTypesBeforeLoop[slot]))
                             |> Set.toList
                         let bodyFlags = dynamicEnvFlags childEnv
                         for flagId in bodyFlags do removeLocal flagId
@@ -5355,15 +5517,6 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {budgetError}, i32 {nextSteps}, i32 {IrLoops.DefaultIterationBudget})")
                         w.Inst($"br label %%{failBody}")
                         w.Line($"{readyLabel}:")
-                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a loop index." currentOwner instructionSpan [] []
-                        let materializeInt (value: string) =
-                            let cursor = emitContextLoad w "%ctx" 2
-                            let next = emitOffset w cursor "8"
-                            emitReserve w next reserveError failBody
-                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {value}, i32 {typeId IrInt})")
-                            emitRuntimeStatus w "%ctx" failBody
-                            emitUpdateLive w "8" "0" failBody
-                            { Type = IrInt; Offset = cursor; Extent = "8"; Payload = "8"; OwnerEnd = next }
                         match header, boundSlots with
                         | Choice1Of2(counter, _), [ indexLocal ] ->
                             let current = loadSlot "i64" counter
@@ -5371,7 +5524,7 @@ module OwningStackAot =
                             // current < end <= Int64.MaxValue, so this cannot overflow.
                             w.Inst($"{advanced} = add i64 {current}, 1")
                             w.Inst($"store i64 {advanced}, ptr {counter}, align 8")
-                            emitStoreLocal (localBinding indexLocal childLocals) (materializeInt current)
+                            emitStoreLocal (localBinding indexLocal childLocals) (registerEntry IrInt current)
                         | Choice2Of2(index, _, listEnd, elementCursor, itemType, listEntry), itemLocal :: indexLocal ->
                             let current = loadSlot "i32" index
                             let advanced = w.Fresh "loop.list.index.next"
@@ -5395,12 +5548,12 @@ module OwningStackAot =
                             w.Inst($"store i32 {emitOffset w offset extent}, ptr {elementCursor}, align 8")
                             // The item is a view into the list, which predates the loop mark.
                             emitStoreLocal (localBinding itemLocal childLocals)
-                                { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd }
+                                { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd; Register = None }
                             match indexLocal with
                             | [ slot ] ->
                                 let wide = w.Fresh "loop.list.index.wide"
                                 w.Inst($"{wide} = zext i32 {current} to i64")
-                                emitStoreLocal (localBinding slot childLocals) (materializeInt wide)
+                                emitStoreLocal (localBinding slot childLocals) (registerEntry IrInt wide)
                             | _ -> ()
                         | _ -> invalidOp "Loop header and bound slots disagree."
                         loopTargets.Push((latchLabel, exitLabel))
@@ -5417,7 +5570,20 @@ module OwningStackAot =
                             // Move the vars the body assigned down to the mark (when they
                             // were allocated this iteration), then release the iteration.
                             if carried.IsEmpty then
-                                emitArenaRewind w mark failBody
+                                match runtimeProfile with
+                                | OwningRuntimeProfile.TrustedGenerated ->
+                                    // Scalar-only iterations allocate nothing: skip the release call.
+                                    let cursorNow = emitContextLoad w "%ctx" 2
+                                    let allocated = w.Fresh "loop.allocated"
+                                    let releaseLabel = w.Label "loop.release"
+                                    let releasedLabel = w.Label "loop.released"
+                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {mark}")
+                                    w.Inst($"br i1 {allocated}, label %%{releaseLabel}, label %%{releasedLabel}")
+                                    w.Line($"{releaseLabel}:")
+                                    emitArenaRewind w mark failBody
+                                    w.Inst($"br label %%{releasedLabel}")
+                                    w.Line($"{releasedLabel}:")
+                                | OwningRuntimeProfile.Diagnostic -> emitArenaRewind w mark failBody
                             else
                                 let quads = w.Fresh "loop.carried"
                                 w.Inst($"{quads} = alloca [{4 * carried.Length} x i32], align 4")
@@ -5452,41 +5618,31 @@ module OwningStackAot =
                     | IrOperation.If(thenBlock, elseBlock) ->
                         let values, prefix = pop 1
                         let condition = List.head values
-                        let rawCondition = w.Fresh "if.condition.raw"
-                        w.Inst($"{rawCondition} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {condition.Offset})")
-                        emitRuntimeStatus w "%ctx" failBody
+                        let rawCondition = scalarValue condition
                         let truth = w.Fresh "if.condition"
                         w.Inst($"{truth} = icmp ne i64 {rawCondition}, 0")
                         emitDropEntry stack (stack.Length - 1)
+                        // Branches start from arena-backed values (rewinds inside them
+                        // must never release an outer value materialized late).
+                        let prefix = materializeAll currentOwner instructionSpan prefix
                         stack <- prefix
                         let thenLabel = w.Label "if.then"
                         let elseLabel = w.Label "if.else"
                         let joinLabel = w.Label "if.join"
                         w.Inst($"br i1 {truth}, label %%{thenLabel}, label %%{elseLabel}")
                         w.Line($"{thenLabel}:")
-                        let thenStack = emitBlock currentOwner env prefix locals thenBlock
+                        let thenStack = emitBlock currentOwner env prefix locals thenBlock |> normalizeBranch
                         let thenPredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
                         w.Line($"{elseLabel}:")
-                        let elseStack = emitBlock currentOwner env prefix locals elseBlock
+                        let elseStack = emitBlock currentOwner env prefix locals elseBlock |> normalizeBranch
                         let elsePredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
                         w.Line($"{joinLabel}:")
                         if thenBlock.ExitShape.LocalTypes <> elseBlock.ExitShape.LocalTypes ||
                            (thenStack |> List.map (fun item -> item.Type)) <> (elseStack |> List.map (fun item -> item.Type)) then
                             invalidOp "Verified dynamic If branches diverged."
-                        stack <-
-                            List.zip thenStack elseStack
-                            |> List.map (fun (left, right) ->
-                                let phi field prefix =
-                                    let merged = w.Fresh prefix
-                                    w.Inst($"{merged} = phi i32 [ {field left}, %%{thenPredecessor} ], [ {field right}, %%{elsePredecessor} ]")
-                                    merged
-                                { Type = left.Type
-                                  Offset = phi (fun value -> value.Offset) "if.value.offset"
-                                  Extent = phi (fun value -> value.Extent) "if.value.extent"
-                                  Payload = phi (fun value -> value.Payload) "if.value.payload"
-                                  OwnerEnd = phi (fun value -> value.OwnerEnd) "if.value.owner.end" })
+                        stack <- joinBranches [ thenStack, thenPredecessor; elseStack, elsePredecessor ] "if.value"
                         locals <- currentLocals
                         localTypes <- thenBlock.ExitShape.LocalTypes
                     | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -5533,16 +5689,16 @@ module OwningStackAot =
                               Offset = payloadOffset
                               Extent = payloadExtent
                               Payload = payloadBytes
-                              OwnerEnd = scrutinee.OwnerEnd }
+                              OwnerEnd = scrutinee.OwnerEnd; Register = None }
                         emitDescriptorBounds w somePayload (Some(string (typeId itemType))) failBody
                         emitStoreLocal someBinding somePayload
-                        let someStack = emitBlock currentOwner env prefix locals someBlock
+                        let someStack = emitBlock currentOwner env prefix locals someBlock |> normalizeBranch
                         removeLocal someBinding.FlagId
                         let somePredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
                         w.Line($"{noneLabel}:")
                         removeLocal someBinding.FlagId
-                        let noneStack = emitBlock currentOwner env prefix locals noneBlock
+                        let noneStack = emitBlock currentOwner env prefix locals noneBlock |> normalizeBranch
                         let nonePredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
                         w.Line($"{joinLabel}:")
@@ -5550,18 +5706,7 @@ module OwningStackAot =
                         if someLocals <> noneBlock.ExitShape.LocalTypes ||
                            (someStack |> List.map (fun item -> item.Type)) <> (noneStack |> List.map (fun item -> item.Type)) then
                             invalidOp "Verified dynamic Option-match branches diverged."
-                        stack <-
-                            List.zip someStack noneStack
-                            |> List.map (fun (left, right) ->
-                                let phi field prefix =
-                                    let merged = w.Fresh prefix
-                                    w.Inst($"{merged} = phi i32 [ {field left}, %%{somePredecessor} ], [ {field right}, %%{nonePredecessor} ]")
-                                    merged
-                                { Type = left.Type
-                                  Offset = phi (fun value -> value.Offset) "option.value.offset"
-                                  Extent = phi (fun value -> value.Extent) "option.value.extent"
-                                  Payload = phi (fun value -> value.Payload) "option.value.payload"
-                                  OwnerEnd = phi (fun value -> value.OwnerEnd) "option.value.owner.end" })
+                        stack <- joinBranches [ someStack, somePredecessor; noneStack, nonePredecessor ] "option.value"
                         locals <- currentLocals
                         localTypes <- someLocals
                     | IrOperation.MatchResult(okLocal, errorLocal, okBlock, errorBlock) ->
@@ -5610,10 +5755,10 @@ module OwningStackAot =
                               Offset = payloadOffset
                               Extent = payloadExtent
                               Payload = payloadBytes
-                              OwnerEnd = scrutinee.OwnerEnd }
+                              OwnerEnd = scrutinee.OwnerEnd; Register = None }
                         emitDescriptorBounds w okPayload (Some(string (typeId okType))) failBody
                         emitStoreLocal okBinding okPayload
-                        let okStack = emitBlock currentOwner env prefix locals okBlock
+                        let okStack = emitBlock currentOwner env prefix locals okBlock |> normalizeBranch
                         removeLocal okBinding.FlagId
                         let okPredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
@@ -5625,10 +5770,10 @@ module OwningStackAot =
                               Offset = payloadOffset
                               Extent = payloadExtent
                               Payload = payloadBytes
-                              OwnerEnd = scrutinee.OwnerEnd }
+                              OwnerEnd = scrutinee.OwnerEnd; Register = None }
                         emitDescriptorBounds w errorPayload (Some(string (typeId errorType))) failBody
                         emitStoreLocal errorBinding errorPayload
-                        let errorStack = emitBlock currentOwner env prefix locals errorBlock
+                        let errorStack = emitBlock currentOwner env prefix locals errorBlock |> normalizeBranch
                         removeLocal errorBinding.FlagId
                         let errorPredecessor = w.CurrentBlock
                         w.Inst($"br label %%{joinLabel}")
@@ -5638,18 +5783,7 @@ module OwningStackAot =
                         if okLocals <> errorLocals ||
                            (okStack |> List.map (fun item -> item.Type)) <> (errorStack |> List.map (fun item -> item.Type)) then
                             invalidOp "Verified dynamic Result-match branches diverged."
-                        stack <-
-                            List.zip okStack errorStack
-                            |> List.map (fun (left, right) ->
-                                let phi field prefix =
-                                    let merged = w.Fresh prefix
-                                    w.Inst($"{merged} = phi i32 [ {field left}, %%{okPredecessor} ], [ {field right}, %%{errorPredecessor} ]")
-                                    merged
-                                { Type = left.Type
-                                  Offset = phi (fun value -> value.Offset) "result.value.offset"
-                                  Extent = phi (fun value -> value.Extent) "result.value.extent"
-                                  Payload = phi (fun value -> value.Payload) "result.value.payload"
-                                  OwnerEnd = phi (fun value -> value.OwnerEnd) "result.value.owner.end" })
+                        stack <- joinBranches [ okStack, okPredecessor; errorStack, errorPredecessor ] "result.value"
                         locals <- currentLocals
                         localTypes <- okLocals
                     | IrOperation.MatchEnum(key, caseBlocks) ->
@@ -5675,7 +5809,7 @@ module OwningStackAot =
                         for caseIndex, caseBlock in caseBlocks do
                             let caseLabel = caseLabels |> List.find (fun (index, _) -> index = caseIndex) |> snd
                             w.Line($"{caseLabel}:")
-                            let branchStack = emitBlock currentOwner env prefix locals caseBlock
+                            let branchStack = emitBlock currentOwner env prefix locals caseBlock |> normalizeBranch
                             let predecessor = w.CurrentBlock
                             w.Inst($"br label %%{joinLabel}")
                             branches.Add((caseBlock, branchStack, predecessor))
@@ -5685,24 +5819,7 @@ module OwningStackAot =
                             branch.ExitShape.LocalTypes <> firstBlock.ExitShape.LocalTypes ||
                             (output |> List.map (fun item -> item.Type)) <> (firstStack |> List.map (fun item -> item.Type))) then
                             invalidOp "Verified dynamic enum-match branches diverged."
-                        stack <-
-                            [ for index in 0 .. firstStack.Length - 1 do
-                                let values = branches |> Seq.map (fun (_, output, predecessor) -> output[index], predecessor) |> Seq.toList
-                                let first = values |> List.head |> fst
-                                let phi field prefix =
-                                    let merged = w.Fresh prefix
-                                    let incoming =
-                                        values
-                                        |> List.map (fun (entry, predecessor) -> $"[ {field entry}, %%{predecessor} ]")
-                                        |> String.concat ", "
-                                    w.Inst($"{merged} = phi i32 {incoming}")
-                                    merged
-                                yield
-                                    { Type = first.Type
-                                      Offset = phi (fun item -> item.Offset) "enum.value.offset"
-                                      Extent = phi (fun item -> item.Extent) "enum.value.extent"
-                                      Payload = phi (fun item -> item.Payload) "enum.value.payload"
-                                      OwnerEnd = phi (fun item -> item.OwnerEnd) "enum.value.owner.end" } ]
+                        stack <- joinBranches [ for _, output, predecessor in branches -> output, predecessor ] "enum.value"
                         locals <- currentLocals
                         localTypes <- firstBlock.ExitShape.LocalTypes
                     | IrOperation.MakeRecord(call, key, _) ->
@@ -5859,20 +5976,15 @@ module OwningStackAot =
                             let dropInputs () =
                                 for index in 0 .. values.Length - 1 do
                                     emitDropEntry stack (stack.Length - 1 - index)
-                            let emitScalarResult resultType scalarValue =
+                            let emitScalarResult resultType resultValue =
                                 dropInputs ()
-                                let destination = emitContextLoad w "%ctx" 2
-                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a scalar primitive result." currentOwner instructionSpan [] []
-                                emitReserve w (emitOffset w destination "8") reserveError failBody
-                                w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {destination}, i64 {scalarValue}, i32 {typeId resultType})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                emitUpdateLive w "8" "0" failBody
-                                let resultEnd = emitOffset w destination "8"
-                                stack <- push prefix resultType destination "8" "8" resultEnd
+                                stack <- prefix @ [ registerEntry resultType resultValue ]
                             match operation, values with
                             | "drop", [ _ ] ->
                                 emitDropEntry stack (stack.Length - 1)
                                 stack <- prefix
+                            | "dup", [ value ] when value.Register.IsSome ->
+                                stack <- prefix @ [ value; value ]
                             | "dup", [ value ] ->
                                 let cursor = emitContextLoad w "%ctx" 2
                                 let source = value.Offset
@@ -5959,7 +6071,7 @@ module OwningStackAot =
                                 // Diagnostic builds first check the three operands are initialized.
                                 match runtimeProfile with
                                 | OwningRuntimeProfile.Diagnostic ->
-                                    for operand in [ text.Offset; index.Offset; fallback.Offset ] do
+                                    for operand in [ text; index; fallback ] |> List.filter (fun entry -> entry.Register.IsNone) |> List.map (fun entry -> entry.Offset) do
                                         let status = w.Fresh "byte.check.status"
                                         w.Inst($"{status} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {operand}, i32 8)")
                                         emitStatusResult w status failBody
@@ -5977,12 +6089,16 @@ module OwningStackAot =
                                 w.Inst($"{count32} = load i32, ptr {header}, align 8")
                                 let count = w.Fresh "byte.count"
                                 w.Inst($"{count} = zext i32 {count32} to i64")
-                                let indexValue = w.Fresh "byte.index"
-                                let indexPointer = loadAt index.Offset "index"
-                                w.Inst($"{indexValue} = load i64, ptr {indexPointer}, align 8")
-                                let fallbackValue = w.Fresh "byte.fallback"
-                                let fallbackPointer = loadAt fallback.Offset "fallback"
-                                w.Inst($"{fallbackValue} = load i64, ptr {fallbackPointer}, align 8")
+                                let inlineScalar (entry: OwningDynamicStackEntry) name =
+                                    match entry.Register with
+                                    | Some value -> value
+                                    | None ->
+                                        let value = w.Fresh $"byte.{name}"
+                                        let pointer = loadAt entry.Offset name
+                                        w.Inst($"{value} = load i64, ptr {pointer}, align 8")
+                                        value
+                                let indexValue = inlineScalar index "index"
+                                let fallbackValue = inlineScalar fallback "fallback"
                                 let inside = w.Fresh "byte.inside"
                                 w.Inst($"{inside} = icmp ult i64 {indexValue}, {count}")
                                 let safeIndex = w.Fresh "byte.safe.index"
@@ -6191,6 +6307,14 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
+                            | "equals", [ left; right ] when isRegisterType left.Type && left.Type <> IrFloat ->
+                                let a = scalarValue left
+                                let b = scalarValue right
+                                let equal = w.Fresh "equals.scalar"
+                                w.Inst($"{equal} = icmp eq i64 {a}, {b}")
+                                let asInt = w.Fresh "equals.i64"
+                                w.Inst($"{asInt} = zext i1 {equal} to i64")
+                                emitScalarResult IrBool asInt
                             | "equals", [ left; right ] ->
                                 let rightOffset = right.Offset
                                 let leftOffset = left.Offset
@@ -6206,8 +6330,7 @@ module OwningStackAot =
                             | "bool.not", [ value ] ->
                                 let source = value.Offset
                                 let raw = w.Fresh "bool.input"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {source})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let result = w.Fresh "bool.not"
                                 w.Inst($"{result} = xor i64 {raw}, 1")
                                 emitScalarResult IrBool result
@@ -6216,10 +6339,8 @@ module OwningStackAot =
                                 let leftOffset = left.Offset
                                 let a = w.Fresh "bool.left"
                                 let b = w.Fresh "bool.right"
-                                w.Inst($"{a} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {leftOffset})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                w.Inst($"{b} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {rightOffset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto a left
+                                emitScalarInto b right
                                 let result = w.Fresh "bool.binary"
                                 let opcode = if operation = "bool.and" then "and" else "or"
                                 w.Inst($"{result} = {opcode} i64 {a}, {b}")
@@ -6227,10 +6348,8 @@ module OwningStackAot =
                             | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ left; right ] ->
                                 let leftBits = w.Fresh "float.left.bits"
                                 let rightBits = w.Fresh "float.right.bits"
-                                w.Inst($"{leftBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {left.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                w.Inst($"{rightBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {right.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto leftBits left
+                                emitScalarInto rightBits right
                                 let leftValue = w.Fresh "float.left"
                                 let rightValue = w.Fresh "float.right"
                                 w.Inst($"{leftValue} = bitcast i64 {leftBits} to double")
@@ -6273,10 +6392,8 @@ module OwningStackAot =
                             | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ left; right ] ->
                                 let leftBits = w.Fresh "float.compare.left.bits"
                                 let rightBits = w.Fresh "float.compare.right.bits"
-                                w.Inst($"{leftBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {left.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                w.Inst($"{rightBits} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {right.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto leftBits left
+                                emitScalarInto rightBits right
                                 let leftValue = w.Fresh "float.compare.left"
                                 let rightValue = w.Fresh "float.compare.right"
                                 w.Inst($"{leftValue} = bitcast i64 {leftBits} to double")
@@ -6294,8 +6411,7 @@ module OwningStackAot =
                                 emitScalarResult IrBool result
                             | "int.to-float", [ value ] ->
                                 let raw = w.Fresh "int.to.float.input"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let converted = w.Fresh "int.to.float.value"
                                 w.Inst($"{converted} = sitofp i64 {raw} to double")
                                 let bits = w.Fresh "int.to.float.bits"
@@ -6303,8 +6419,7 @@ module OwningStackAot =
                                 emitScalarResult IrFloat bits
                             | "float.to-int", [ value ] ->
                                 let raw = w.Fresh "float.to.int.input.bits"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let converted = w.Fresh "float.to.int.input"
                                 w.Inst($"{converted} = bitcast i64 {raw} to double")
                                 let lowerOkay = w.Fresh "float.to.int.lower.ok"
@@ -6327,8 +6442,7 @@ module OwningStackAot =
                                 emitScalarResult IrInt result
                             | "float.round", [ value ] ->
                                 let raw = w.Fresh "float.round.input.bits"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let inputExponent = w.Fresh "float.round.input.exponent"
                                 w.Inst($"{inputExponent} = and i64 {raw}, 9218868437227405312")
                                 let inputFinite = w.Fresh "float.round.input.finite"
@@ -6363,8 +6477,7 @@ module OwningStackAot =
                                 emitScalarResult IrInt result
                             | "int.to-string", [ value ] ->
                                 let raw = w.Fresh "int.to.string.input"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let asciiBuffer = w.Fresh "int.to.string.ascii.buffer"
                                 let ascii = w.Fresh "int.to.string.ascii"
                                 let lengthPointer = w.Fresh "int.to.string.length.pointer"
@@ -6418,8 +6531,7 @@ module OwningStackAot =
                                 // Preserve the Float bits until the native formatter has
                                 // copied them into its bounded stack-local conversion state.
                                 let raw = w.Fresh "float.to.string.input.bits"
-                                w.Inst($"{raw} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {value.Offset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto raw value
                                 let exponent = w.Fresh "float.to.string.input.exponent"
                                 w.Inst($"{exponent} = and i64 {raw}, 9218868437227405312")
                                 let nonFinite = w.Fresh "float.to.string.input.nonfinite"
@@ -6487,10 +6599,8 @@ module OwningStackAot =
                                 let leftOffset = left.Offset
                                 let a = w.Fresh "integer.left"
                                 let b = w.Fresh "integer.right"
-                                w.Inst($"{a} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {leftOffset})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                w.Inst($"{b} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {rightOffset})")
-                                emitRuntimeStatus w "%ctx" failBody
+                                emitScalarInto a left
+                                emitScalarInto b right
                                 if operation = "int.remainder" then
                                     let isZero = w.Fresh "remainder.zero"
                                     w.Inst($"{isZero} = icmp eq i64 {b}, 0")
@@ -6696,6 +6806,8 @@ module OwningStackAot =
             emitClearEnvironment plan.RootEnvironment
             if analysis.FunctionExit.AllowRewind then
                 emitArenaRewind w baselineCursor failBody
+            // Register results get arena bytes for the caller's descriptors.
+            let emittedStack = materializeAll owner None emittedStack
             for index, output in emittedStack |> List.indexed do
                 let pointer = emitDescriptorElementPointer w "%results" index
                 emitStoreDescriptor w pointer output
@@ -6868,7 +6980,7 @@ module OwningStackAot =
                 callback.Inst($"br label %%{failure}")
                 callback.Line($"{extentOkay}:")
                 let ownerEnd = emitOffset callback inputOffset suppliedExtent
-                let descriptor = { Type = ty; Offset = inputOffset; Extent = suppliedExtent; Payload = payload; OwnerEnd = ownerEnd }
+                let descriptor = { Type = ty; Offset = inputOffset; Extent = suppliedExtent; Payload = payload; OwnerEnd = ownerEnd; Register = None }
                 let descriptorPointer = emitDescriptorElementPointer callback inputDescriptors inputIndex
                 emitStoreDescriptor callback descriptorPointer descriptor
                 inputEntries.Add((descriptor, dataPointer, suppliedExtent))
@@ -7075,7 +7187,7 @@ module OwningStackAot =
                       Offset = sourceOffset
                       Extent = extentBytes
                       Payload = payloadBytes
-                      OwnerEnd = sourceOwnerEnd }
+                      OwnerEnd = sourceOwnerEnd; Register = None }
                 let descriptorPointer = emitDescriptorElementPointer callback inputDescriptors inputIndex
                 emitStoreDescriptor callback descriptorPointer descriptor
                 emitDescriptorTransfer callback descriptor failure
@@ -7120,7 +7232,7 @@ module OwningStackAot =
                   Offset = appendStart
                   Extent = completionExtent
                   Payload = measuredCompletionPayload
-                  OwnerEnd = completionOwnerEnd }
+                  OwnerEnd = completionOwnerEnd; Register = None }
             let completionDescriptorPointer = emitDescriptorElementPointer callback inputDescriptors 2
             emitStoreDescriptor callback completionDescriptorPointer completionDescriptor
             emitDescriptorTransfer callback completionDescriptor failure
@@ -7208,302 +7320,312 @@ module OwningStackAot =
             callback.Line("")
             role, callback.Text, explicitAllocaBoundBytes callback.Text
 
-        let wrapper = OwningLlvmWriter()
-        let wrapperFailure = wrapper.Label "entry.failure"
-        let wrapperBodyFailure = wrapper.Label "entry.body.failure"
-        let wrapperSuccess = wrapper.Label "entry.success"
-        let hasValidatedEntryInputs = body.BodyInputTypes |> List.exists hasValidatedScalar
-        let wrapperValidationFailure = if hasValidatedEntryInputs then Some(wrapper.Label "entry.validation.failure") else None
-        let exportSignature =
+        // One exported wrapper per entry body: the default single-entry export,
+        // or (multi-entry host module) one named export per body.
+        let emitEntryWrapper (body: IrExecutableBody) (frameSymbol: string) (exportName: string option) =
+            let wrapper = OwningLlvmWriter()
+            let wrapperFailure = wrapper.Label "entry.failure"
+            let wrapperBodyFailure = wrapper.Label "entry.body.failure"
+            let wrapperSuccess = wrapper.Label "entry.success"
+            let hasValidatedEntryInputs = body.BodyInputTypes |> List.exists hasValidatedScalar
+            let wrapperValidationFailure = if hasValidatedEntryInputs then Some(wrapper.Label "entry.validation.failure") else None
+            let exportSignature =
+                match nativeHostProfile, exportName with
+                | Some _, Some name -> $"define {dllExport}i32 @{name}(ptr %%ctx, ptr %%provider.context, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+                | Some _, None -> $"define {dllExport}i32 @agentlang_owning_execute_with_host_context(ptr %%ctx, ptr %%provider.context, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+                | None, _ -> $"define {dllExport}i32 @agentlang_owning_execute(ptr %%ctx, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
+            wrapper.Line(exportSignature)
+            wrapper.Line("entry:")
+            wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
+            let contextStatus = emitContextLoad wrapper "%ctx" 19
+            let contextOkay = wrapper.Fresh "entry.context.ok"
+            let beginOkay = wrapper.Label "entry.begin.ok"
+            wrapper.Inst($"{contextOkay} = icmp eq i32 {contextStatus}, 0")
+            wrapper.Inst($"br i1 {contextOkay}, label %%{beginOkay}, label %%{wrapperFailure}")
+            wrapper.Line($"{beginOkay}:")
+
             match nativeHostProfile with
-            | Some _ -> "define dllexport i32 @agentlang_owning_execute_with_host_context(ptr %ctx, ptr %provider.context, ptr %input, i32 %input.bytes, ptr %input.extents, i32 %input.count, ptr %retained, i32 %retained.capacity) {"
-            | None -> "define dllexport i32 @agentlang_owning_execute(ptr %ctx, ptr %input, i32 %input.bytes, ptr %input.extents, i32 %input.count, ptr %retained, i32 %retained.capacity) {"
-        wrapper.Line(exportSignature)
-        wrapper.Line("entry:")
-        wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
-        let contextStatus = emitContextLoad wrapper "%ctx" 19
-        let contextOkay = wrapper.Fresh "entry.context.ok"
-        let beginOkay = wrapper.Label "entry.begin.ok"
-        wrapper.Inst($"{contextOkay} = icmp eq i32 {contextStatus}, 0")
-        wrapper.Inst($"br i1 {contextOkay}, label %%{beginOkay}, label %%{wrapperFailure}")
-        wrapper.Line($"{beginOkay}:")
+            | Some _ ->
+                let hostContextPresent = wrapper.Fresh "entry.host.context.present"
+                let hostContextOkay = wrapper.Label "entry.host.context.ok"
+                let hostContextMissing = wrapper.Label "entry.host.context.missing"
+                wrapper.Inst($"{hostContextPresent} = icmp ne ptr %%provider.context, null")
+                wrapper.Inst($"br i1 {hostContextPresent}, label %%{hostContextOkay}, label %%{hostContextMissing}")
+                wrapper.Line($"{hostContextMissing}:")
+                let missingContextError = addDiagnostic "NATIVE_HOST_CONTEXT_REQUIRED" "This export requires an execution-scoped native host provider context." body.BodyName None [ "non-null provider context" ] [ "null" ]
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {missingContextError}, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{hostContextOkay}:")
+            | None -> ()
 
-        match nativeHostProfile with
-        | Some _ ->
-            let hostContextPresent = wrapper.Fresh "entry.host.context.present"
-            let hostContextOkay = wrapper.Label "entry.host.context.ok"
-            let hostContextMissing = wrapper.Label "entry.host.context.missing"
-            wrapper.Inst($"{hostContextPresent} = icmp ne ptr %%provider.context, null")
-            wrapper.Inst($"br i1 {hostContextPresent}, label %%{hostContextOkay}, label %%{hostContextMissing}")
-            wrapper.Line($"{hostContextMissing}:")
-            let missingContextError = addDiagnostic "NATIVE_HOST_CONTEXT_REQUIRED" "This export requires an execution-scoped native host provider context." body.BodyName None [ "non-null provider context" ] [ "null" ]
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {missingContextError}, i32 0, i32 0)")
+            let inputCountOkay = wrapper.Fresh "entry.input.count.ok"
+            let inputsCounted = wrapper.Label "entry.input.counted"
+            let countFailure = wrapper.Label "entry.input.count.failure"
+            wrapper.Inst($"{inputCountOkay} = icmp eq i32 %%input.count, {body.BodyInputTypes.Length}")
+            wrapper.Inst($"br i1 {inputCountOkay}, label %%{inputsCounted}, label %%{countFailure}")
+            wrapper.Line($"{countFailure}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 %%input.count)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{hostContextOkay}:")
-        | None -> ()
+            wrapper.Line($"{inputsCounted}:")
 
-        let inputCountOkay = wrapper.Fresh "entry.input.count.ok"
-        let inputsCounted = wrapper.Label "entry.input.counted"
-        let countFailure = wrapper.Label "entry.input.count.failure"
-        wrapper.Inst($"{inputCountOkay} = icmp eq i32 %%input.count, {body.BodyInputTypes.Length}")
-        wrapper.Inst($"br i1 {inputCountOkay}, label %%{inputsCounted}, label %%{countFailure}")
-        wrapper.Line($"{countFailure}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 %%input.count)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{inputsCounted}:")
+            if not body.BodyInputTypes.IsEmpty then
+                let extentsPresent = wrapper.Fresh "entry.input.extents.present"
+                let bytesPresent = wrapper.Fresh "entry.input.bytes.present"
+                let pointersPresent = wrapper.Fresh "entry.input.pointers.present"
+                let pointersOkay = wrapper.Label "entry.input.pointers.ok"
+                let pointersInvalid = wrapper.Label "entry.input.pointers.invalid"
+                wrapper.Inst($"{extentsPresent} = icmp ne ptr %%input.extents, null")
+                wrapper.Inst($"{bytesPresent} = icmp ne ptr %%input, null")
+                wrapper.Inst($"{pointersPresent} = and i1 {extentsPresent}, {bytesPresent}")
+                wrapper.Inst($"br i1 {pointersPresent}, label %%{pointersOkay}, label %%{pointersInvalid}")
+                wrapper.Line($"{pointersInvalid}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{pointersOkay}:")
 
-        if not body.BodyInputTypes.IsEmpty then
-            let extentsPresent = wrapper.Fresh "entry.input.extents.present"
-            let bytesPresent = wrapper.Fresh "entry.input.bytes.present"
-            let pointersPresent = wrapper.Fresh "entry.input.pointers.present"
-            let pointersOkay = wrapper.Label "entry.input.pointers.ok"
-            let pointersInvalid = wrapper.Label "entry.input.pointers.invalid"
-            wrapper.Inst($"{extentsPresent} = icmp ne ptr %%input.extents, null")
-            wrapper.Inst($"{bytesPresent} = icmp ne ptr %%input, null")
-            wrapper.Inst($"{pointersPresent} = and i1 {extentsPresent}, {bytesPresent}")
-            wrapper.Inst($"br i1 {pointersPresent}, label %%{pointersOkay}, label %%{pointersInvalid}")
-            wrapper.Line($"{pointersInvalid}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {body.BodyInputTypes.Length}, i32 0)")
+            let inputDescriptors =
+                if body.BodyInputTypes.IsEmpty then "null"
+                else
+                    let array = wrapper.Fresh "entry.input.descriptors"
+                    wrapper.Inst($"{array} = alloca [{body.BodyInputTypes.Length} x %%AlOwningDescriptor], align 4")
+                    array
+            let inputSizes = ResizeArray<int * string * string * string * IrType>()
+            let mutable inputOffset = "0"
+            for index, ty in body.BodyInputTypes |> List.indexed do
+                let tablePointer = wrapper.Fresh "input.extent.pointer"
+                let hostExtent = wrapper.Fresh "input.host.extent"
+                wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {index}")
+                wrapper.Inst($"{hostExtent} = load i32, ptr {tablePointer}, align 4")
+                let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes do not match the verified dynamic value layout." body.BodyName None [] []
+                let remainingBytes = emitSub wrapper "%input.bytes" inputOffset
+                let offsetWithinInput = wrapper.Fresh "input.offset.within.bytes"
+                let extentWithinInput = wrapper.Fresh "input.extent.within.bytes"
+                let inputSliceWithin = wrapper.Fresh "input.slice.within.bytes"
+                let sliceReady = wrapper.Label "input.slice.ready"
+                let sliceInvalid = wrapper.Label "input.slice.invalid"
+                wrapper.Inst($"{offsetWithinInput} = icmp ule i32 {inputOffset}, %%input.bytes")
+                wrapper.Inst($"{extentWithinInput} = icmp ule i32 {hostExtent}, {remainingBytes}")
+                wrapper.Inst($"{inputSliceWithin} = and i1 {offsetWithinInput}, {extentWithinInput}")
+                wrapper.Inst($"br i1 {inputSliceWithin}, label %%{sliceReady}, label %%{sliceInvalid}")
+                wrapper.Line($"{sliceInvalid}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{sliceReady}:")
+                let inputPointer = emitPointerOffset wrapper "%input" inputOffset
+                let payloadPointer = wrapper.Fresh "input.payload.pointer"
+                let measuredExtentPointer = wrapper.Fresh "input.measured.extent.pointer"
+                wrapper.Inst($"{payloadPointer} = alloca i32, align 4")
+                wrapper.Inst($"{measuredExtentPointer} = alloca i32, align 4")
+                let status = wrapper.Fresh "input.measure.status"
+                wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
+                emitStatusResult wrapper status wrapperFailure
+                let payloadBytes = wrapper.Fresh "input.measured.payload"
+                let extentBytes = wrapper.Fresh "input.measured.extent"
+                wrapper.Inst($"{payloadBytes} = load i32, ptr {payloadPointer}, align 4")
+                wrapper.Inst($"{extentBytes} = load i32, ptr {measuredExtentPointer}, align 4")
+                let extentExact = wrapper.Fresh "input.extent.exact"
+                let exactLabel = wrapper.Label "input.extent.exact"
+                let invalidLabel = wrapper.Label "input.extent.invalid"
+                wrapper.Inst($"{extentExact} = icmp eq i32 {extentBytes}, {hostExtent}")
+                wrapper.Inst($"br i1 {extentExact}, label %%{exactLabel}, label %%{invalidLabel}")
+                wrapper.Line($"{invalidLabel}:")
+                wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 {extentBytes}, i32 {hostExtent})")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{exactLabel}:")
+                inputSizes.Add((index, inputOffset, hostExtent, payloadBytes, ty))
+                inputOffset <- emitOffset wrapper inputOffset hostExtent
+
+            let inputTotalExact = wrapper.Fresh "input.total.exact"
+            let inputValid = wrapper.Label "input.valid"
+            let inputInvalid = wrapper.Label "input.invalid"
+            wrapper.Inst($"{inputTotalExact} = icmp eq i32 {inputOffset}, %%input.bytes")
+            wrapper.Inst($"br i1 {inputTotalExact}, label %%{inputValid}, label %%{inputInvalid}")
+            wrapper.Line($"{inputInvalid}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {inputOffset}, i32 %%input.bytes)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{pointersOkay}:")
+            wrapper.Line($"{inputValid}:")
+            let inputReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve verified entry inputs." body.BodyName None [] []
+            emitReserve wrapper inputOffset inputReserveError wrapperFailure
+            for index, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                let inputPointer = emitPointerOffset wrapper "%input" sourceOffset
+                let copyError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes changed after validation." body.BodyName None [] []
+                let status = wrapper.Fresh "input.copy.status"
+                wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {sourceOffset}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
+                emitStatusResult wrapper status wrapperFailure
+                let ownerEnd = emitOffset wrapper sourceOffset extentBytes
+                let entry = { Type = ty; Offset = sourceOffset; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd; Register = None }
+                let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
+                emitStoreDescriptor wrapper pointer entry
+                emitDescriptorTransfer wrapper entry wrapperFailure
 
-        let inputDescriptors =
-            if body.BodyInputTypes.IsEmpty then "null"
-            else
-                let array = wrapper.Fresh "entry.input.descriptors"
-                wrapper.Inst($"{array} = alloca [{body.BodyInputTypes.Length} x %%AlOwningDescriptor], align 4")
-                array
-        let inputSizes = ResizeArray<int * string * string * string * IrType>()
-        let mutable inputOffset = "0"
-        for index, ty in body.BodyInputTypes |> List.indexed do
-            let tablePointer = wrapper.Fresh "input.extent.pointer"
-            let hostExtent = wrapper.Fresh "input.host.extent"
-            wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {index}")
-            wrapper.Inst($"{hostExtent} = load i32, ptr {tablePointer}, align 4")
-            let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes do not match the verified dynamic value layout." body.BodyName None [] []
-            let remainingBytes = emitSub wrapper "%input.bytes" inputOffset
-            let offsetWithinInput = wrapper.Fresh "input.offset.within.bytes"
-            let extentWithinInput = wrapper.Fresh "input.extent.within.bytes"
-            let inputSliceWithin = wrapper.Fresh "input.slice.within.bytes"
-            let sliceReady = wrapper.Label "input.slice.ready"
-            let sliceInvalid = wrapper.Label "input.slice.invalid"
-            wrapper.Inst($"{offsetWithinInput} = icmp ule i32 {inputOffset}, %%input.bytes")
-            wrapper.Inst($"{extentWithinInput} = icmp ule i32 {hostExtent}, {remainingBytes}")
-            wrapper.Inst($"{inputSliceWithin} = and i1 {offsetWithinInput}, {extentWithinInput}")
-            wrapper.Inst($"br i1 {inputSliceWithin}, label %%{sliceReady}, label %%{sliceInvalid}")
-            wrapper.Line($"{sliceInvalid}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 0, i32 0)")
+            if hasValidatedEntryInputs then
+                // Raw-value admission is a top-level semantic callsite. Its
+                // validator body must have the same depth as a user call made
+                // from the verified entry body, whose native entry frame is
+                // already active. Add that frame only while validating host
+                // inputs, then remove it on both successful and failed paths.
+                let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
+                let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
+                wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
+                emitStatusResult wrapper validationFrame wrapperFailure
+                for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                    if hasValidatedScalar ty then
+                        let entry =
+                            { Type = ty
+                              Offset = sourceOffset
+                              Extent = extentBytes
+                              Payload = payloadBytes
+                              OwnerEnd = emitOffset wrapper sourceOffset extentBytes; Register = None }
+                        emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
+                wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                let validationSucceeded = wrapper.Label "entry.validation.succeeded"
+                wrapper.Inst($"br label %%{validationSucceeded}")
+                wrapper.Line(wrapperValidationFailure.Value + ":")
+                wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line(validationSucceeded + ":")
+
+            let outputDescriptors =
+                if body.BodyOutputTypes.IsEmpty then "null"
+                else
+                    let array = wrapper.Fresh "entry.output.descriptors"
+                    wrapper.Inst($"{array} = alloca [{body.BodyOutputTypes.Length} x %%AlOwningDescriptor], align 4")
+                    array
+            let bodyCall = wrapper.Fresh "entry.body.status"
+            let entryCallError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
+            let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
+            wrapper.Inst($"{bodyCall} = call i32 {frameSymbol}(ptr %%ctx, {hiddenHostContext}ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
+            let bodyOkay = wrapper.Fresh "entry.body.ok"
+            wrapper.Inst($"{bodyOkay} = icmp eq i32 {bodyCall}, 0")
+            wrapper.Inst($"br i1 {bodyOkay}, label %%{wrapperSuccess}, label %%{wrapperBodyFailure}")
+            wrapper.Line($"{wrapperBodyFailure}:")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{sliceReady}:")
-            let inputPointer = emitPointerOffset wrapper "%input" inputOffset
-            let payloadPointer = wrapper.Fresh "input.payload.pointer"
-            let measuredExtentPointer = wrapper.Fresh "input.measured.extent.pointer"
-            wrapper.Inst($"{payloadPointer} = alloca i32, align 4")
-            wrapper.Inst($"{measuredExtentPointer} = alloca i32, align 4")
-            let status = wrapper.Fresh "input.measure.status"
-            wrapper.Inst($"{status} = call i32 @al_owning_measure_external_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, ptr {inputPointer}, i32 {hostExtent}, i32 0, i32 {errorId}, ptr {payloadPointer}, ptr {measuredExtentPointer})")
-            emitStatusResult wrapper status wrapperFailure
-            let payloadBytes = wrapper.Fresh "input.measured.payload"
-            let extentBytes = wrapper.Fresh "input.measured.extent"
-            wrapper.Inst($"{payloadBytes} = load i32, ptr {payloadPointer}, align 4")
-            wrapper.Inst($"{extentBytes} = load i32, ptr {measuredExtentPointer}, align 4")
-            let extentExact = wrapper.Fresh "input.extent.exact"
-            let exactLabel = wrapper.Label "input.extent.exact"
-            let invalidLabel = wrapper.Label "input.extent.invalid"
-            wrapper.Inst($"{extentExact} = icmp eq i32 {extentBytes}, {hostExtent}")
-            wrapper.Inst($"br i1 {extentExact}, label %%{exactLabel}, label %%{invalidLabel}")
-            wrapper.Line($"{invalidLabel}:")
-            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 {errorId}, i32 {extentBytes}, i32 {hostExtent})")
+            wrapper.Line($"{wrapperSuccess}:")
+
+            let outputPlan = ResizeArray<OwningDynamicStackEntry * string>()
+            let mutable outputTotal64 = "0"
+            for index, ty in body.BodyOutputTypes |> List.indexed do
+                let pointer = emitDescriptorElementPointer wrapper outputDescriptors index
+                let entry, actualType = emitLoadDescriptor wrapper pointer ty
+                let typeValid = wrapper.Fresh "entry.output.type.valid"
+                let typeOkay = wrapper.Label "entry.output.type.ok"
+                let typeInvalid = wrapper.Label "entry.output.type.invalid"
+                wrapper.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId ty}")
+                wrapper.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
+                wrapper.Line($"{typeInvalid}:")
+                wrapper.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
+                wrapper.Inst($"br label %%{wrapperFailure}")
+                wrapper.Line($"{typeOkay}:")
+                emitDescriptorBounds wrapper entry (Some(string (typeId ty))) wrapperFailure
+                let infoForOutput = typeInfo ty
+                let serializedExtent =
+                    if not infoForOutput.IsDynamic && infoForOutput.PayloadBytes = 0 then
+                        let isEmptyProjection = wrapper.Fresh "entry.output.empty.projection"
+                        let extent = wrapper.Fresh "entry.output.serialized.extent"
+                        wrapper.Inst($"{isEmptyProjection} = icmp eq i32 {entry.Extent}, 0")
+                        wrapper.Inst($"{extent} = select i1 {isEmptyProjection}, i32 8, i32 {entry.Extent}")
+                        extent
+                    else entry.Extent
+                outputPlan.Add((entry, serializedExtent))
+                let size64 = wrapper.Fresh "entry.output.size.i64"
+                let total64 = wrapper.Fresh "entry.output.total.i64"
+                wrapper.Inst($"{size64} = zext i32 {serializedExtent} to i64")
+                wrapper.Inst($"{total64} = add i64 {outputTotal64}, {size64}")
+                outputTotal64 <- total64
+
+            let retainedCapacity64 = wrapper.Fresh "entry.retained.capacity.i64"
+            let requiredFitsU32 = wrapper.Fresh "entry.retained.required.fits.u32"
+            let requiredTruncated = wrapper.Fresh "entry.retained.required.truncated"
+            let requiredBytes = wrapper.Fresh "entry.retained.required"
+            let retainedTotalFits = wrapper.Fresh "entry.retained.capacity.ok"
+            let outputCapacityReady = wrapper.Label "entry.retained.capacity.ready"
+            let outputCapacityFailure = wrapper.Label "entry.retained.capacity.failure"
+            wrapper.Inst($"{retainedCapacity64} = zext i32 %%retained.capacity to i64")
+            wrapper.Inst($"{requiredFitsU32} = icmp ule i64 {outputTotal64}, 4294967295")
+            wrapper.Inst($"{requiredTruncated} = trunc i64 {outputTotal64} to i32")
+            wrapper.Inst($"{requiredBytes} = select i1 {requiredFitsU32}, i32 {requiredTruncated}, i32 4294967295")
+            wrapper.Inst($"{retainedTotalFits} = icmp ule i64 {outputTotal64}, {retainedCapacity64}")
+            wrapper.Inst($"br i1 {retainedTotalFits}, label %%{outputCapacityReady}, label %%{outputCapacityFailure}")
+            wrapper.Line($"{outputCapacityFailure}:")
+            wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 3, i32 0, i32 {requiredBytes}, i32 %%retained.capacity)")
             wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{exactLabel}:")
-            inputSizes.Add((index, inputOffset, hostExtent, payloadBytes, ty))
-            inputOffset <- emitOffset wrapper inputOffset hostExtent
+            wrapper.Line($"{outputCapacityReady}:")
 
-        let inputTotalExact = wrapper.Fresh "input.total.exact"
-        let inputValid = wrapper.Label "input.valid"
-        let inputInvalid = wrapper.Label "input.invalid"
-        wrapper.Inst($"{inputTotalExact} = icmp eq i32 {inputOffset}, %%input.bytes")
-        wrapper.Inst($"br i1 {inputTotalExact}, label %%{inputValid}, label %%{inputInvalid}")
-        wrapper.Line($"{inputInvalid}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 4, i32 0, i32 {inputOffset}, i32 %%input.bytes)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{inputValid}:")
-        let inputReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve verified entry inputs." body.BodyName None [] []
-        emitReserve wrapper inputOffset inputReserveError wrapperFailure
-        for index, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
-            let inputPointer = emitPointerOffset wrapper "%input" sourceOffset
-            let copyError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes changed after validation." body.BodyName None [] []
-            let status = wrapper.Fresh "input.copy.status"
-            wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {sourceOffset}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
-            emitStatusResult wrapper status wrapperFailure
-            let ownerEnd = emitOffset wrapper sourceOffset extentBytes
-            let entry = { Type = ty; Offset = sourceOffset; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd }
-            let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
-            emitStoreDescriptor wrapper pointer entry
-            emitDescriptorTransfer wrapper entry wrapperFailure
+            // Materialize a zero-width Empty token only when it becomes a standalone
+            // output. A projected nested Empty remains a zero-byte descriptor.
+            let serializedOutputs = ResizeArray<OwningDynamicStackEntry * string>()
+            for entry, _ in outputPlan do
+                let outputInfo = typeInfo entry.Type
+                if not outputInfo.IsDynamic && outputInfo.PayloadBytes = 0 then
+                    let projectedEmpty = wrapper.Fresh "entry.output.needs.empty.token"
+                    let tokenLabel = wrapper.Label "entry.output.empty.token"
+                    let keepLabel = wrapper.Label "entry.output.empty.keep"
+                    let joinLabel = wrapper.Label "entry.output.empty.join"
+                    wrapper.Inst($"{projectedEmpty} = icmp eq i32 {entry.Extent}, 0")
+                    wrapper.Inst($"br i1 {projectedEmpty}, label %%{tokenLabel}, label %%{keepLabel}")
+                    wrapper.Line($"{tokenLabel}:")
+                    let tokenStart = emitContextLoad wrapper "%ctx" 2
+                    let tokenEnd = emitOffset wrapper tokenStart "8"
+                    let tokenReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to materialize standalone Empty output." body.BodyName None [] []
+                    emitReserve wrapper tokenEnd tokenReserveError wrapperFailure
+                    wrapper.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId entry.Type})")
+                    emitRuntimeStatus wrapper "%ctx" wrapperFailure
+                    let tokenPredecessor = wrapper.CurrentBlock
+                    wrapper.Inst($"br label %%{joinLabel}")
+                    wrapper.Line($"{keepLabel}:")
+                    let keepPredecessor = wrapper.CurrentBlock
+                    wrapper.Inst($"br label %%{joinLabel}")
+                    wrapper.Line($"{joinLabel}:")
+                    let outputOffset = wrapper.Fresh "entry.output.materialized.offset"
+                    let outputExtent = wrapper.Fresh "entry.output.materialized.extent"
+                    let outputPayload = wrapper.Fresh "entry.output.materialized.payload"
+                    let outputOwnerEnd = wrapper.Fresh "entry.output.materialized.owner.end"
+                    wrapper.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {entry.Offset}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {entry.Extent}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {entry.Payload}, %%{keepPredecessor} ]")
+                    wrapper.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {entry.OwnerEnd}, %%{keepPredecessor} ]")
+                    serializedOutputs.Add(({ entry with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }, outputExtent))
+                else
+                    serializedOutputs.Add((entry, entry.Extent))
 
-        if hasValidatedEntryInputs then
-            // Raw-value admission is a top-level semantic callsite. Its
-            // validator body must have the same depth as a user call made
-            // from the verified entry body, whose native entry frame is
-            // already active. Add that frame only while validating host
-            // inputs, then remove it on both successful and failed paths.
-            let validationDepthError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
-            let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
-            wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
-            emitStatusResult wrapper validationFrame wrapperFailure
-            for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
-                if hasValidatedScalar ty then
-                    let entry =
-                        { Type = ty
-                          Offset = sourceOffset
-                          Extent = extentBytes
-                          Payload = payloadBytes
-                          OwnerEnd = emitOffset wrapper sourceOffset extentBytes }
-                    emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
-            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
-            let validationSucceeded = wrapper.Label "entry.validation.succeeded"
-            wrapper.Inst($"br label %%{validationSucceeded}")
-            wrapper.Line(wrapperValidationFailure.Value + ":")
-            wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
-            wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line(validationSucceeded + ":")
-
-        let outputDescriptors =
-            if body.BodyOutputTypes.IsEmpty then "null"
-            else
-                let array = wrapper.Fresh "entry.output.descriptors"
-                wrapper.Inst($"{array} = alloca [{body.BodyOutputTypes.Length} x %%AlOwningDescriptor], align 4")
-                array
-        let bodyCall = wrapper.Fresh "entry.body.status"
-        let entryCallError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." body.BodyName None [] []
-        let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
-        wrapper.Inst($"{bodyCall} = call i32 {entryFrameSymbols[0]}(ptr %%ctx, {hiddenHostContext}ptr {inputDescriptors}, ptr {outputDescriptors}, i32 {entryCallError})")
-        let bodyOkay = wrapper.Fresh "entry.body.ok"
-        wrapper.Inst($"{bodyOkay} = icmp eq i32 {bodyCall}, 0")
-        wrapper.Inst($"br i1 {bodyOkay}, label %%{wrapperSuccess}, label %%{wrapperBodyFailure}")
-        wrapper.Line($"{wrapperBodyFailure}:")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{wrapperSuccess}:")
-
-        let outputPlan = ResizeArray<OwningDynamicStackEntry * string>()
-        let mutable outputTotal64 = "0"
-        for index, ty in body.BodyOutputTypes |> List.indexed do
-            let pointer = emitDescriptorElementPointer wrapper outputDescriptors index
-            let entry, actualType = emitLoadDescriptor wrapper pointer ty
-            let typeValid = wrapper.Fresh "entry.output.type.valid"
-            let typeOkay = wrapper.Label "entry.output.type.ok"
-            let typeInvalid = wrapper.Label "entry.output.type.invalid"
-            wrapper.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId ty}")
-            wrapper.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
-            wrapper.Line($"{typeInvalid}:")
-            wrapper.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
-            wrapper.Inst($"br label %%{wrapperFailure}")
-            wrapper.Line($"{typeOkay}:")
-            emitDescriptorBounds wrapper entry (Some(string (typeId ty))) wrapperFailure
-            let infoForOutput = typeInfo ty
-            let serializedExtent =
-                if not infoForOutput.IsDynamic && infoForOutput.PayloadBytes = 0 then
-                    let isEmptyProjection = wrapper.Fresh "entry.output.empty.projection"
-                    let extent = wrapper.Fresh "entry.output.serialized.extent"
-                    wrapper.Inst($"{isEmptyProjection} = icmp eq i32 {entry.Extent}, 0")
-                    wrapper.Inst($"{extent} = select i1 {isEmptyProjection}, i32 8, i32 {entry.Extent}")
-                    extent
-                else entry.Extent
-            outputPlan.Add((entry, serializedExtent))
-            let size64 = wrapper.Fresh "entry.output.size.i64"
-            let total64 = wrapper.Fresh "entry.output.total.i64"
-            wrapper.Inst($"{size64} = zext i32 {serializedExtent} to i64")
-            wrapper.Inst($"{total64} = add i64 {outputTotal64}, {size64}")
-            outputTotal64 <- total64
-
-        let retainedCapacity64 = wrapper.Fresh "entry.retained.capacity.i64"
-        let requiredFitsU32 = wrapper.Fresh "entry.retained.required.fits.u32"
-        let requiredTruncated = wrapper.Fresh "entry.retained.required.truncated"
-        let requiredBytes = wrapper.Fresh "entry.retained.required"
-        let retainedTotalFits = wrapper.Fresh "entry.retained.capacity.ok"
-        let outputCapacityReady = wrapper.Label "entry.retained.capacity.ready"
-        let outputCapacityFailure = wrapper.Label "entry.retained.capacity.failure"
-        wrapper.Inst($"{retainedCapacity64} = zext i32 %%retained.capacity to i64")
-        wrapper.Inst($"{requiredFitsU32} = icmp ule i64 {outputTotal64}, 4294967295")
-        wrapper.Inst($"{requiredTruncated} = trunc i64 {outputTotal64} to i32")
-        wrapper.Inst($"{requiredBytes} = select i1 {requiredFitsU32}, i32 {requiredTruncated}, i32 4294967295")
-        wrapper.Inst($"{retainedTotalFits} = icmp ule i64 {outputTotal64}, {retainedCapacity64}")
-        wrapper.Inst($"br i1 {retainedTotalFits}, label %%{outputCapacityReady}, label %%{outputCapacityFailure}")
-        wrapper.Line($"{outputCapacityFailure}:")
-        wrapper.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 3, i32 0, i32 {requiredBytes}, i32 %%retained.capacity)")
-        wrapper.Inst($"br label %%{wrapperFailure}")
-        wrapper.Line($"{outputCapacityReady}:")
-
-        // Materialize a zero-width Empty token only when it becomes a standalone
-        // output. A projected nested Empty remains a zero-byte descriptor.
-        let serializedOutputs = ResizeArray<OwningDynamicStackEntry * string>()
-        for entry, _ in outputPlan do
-            let outputInfo = typeInfo entry.Type
-            if not outputInfo.IsDynamic && outputInfo.PayloadBytes = 0 then
-                let projectedEmpty = wrapper.Fresh "entry.output.needs.empty.token"
-                let tokenLabel = wrapper.Label "entry.output.empty.token"
-                let keepLabel = wrapper.Label "entry.output.empty.keep"
-                let joinLabel = wrapper.Label "entry.output.empty.join"
-                wrapper.Inst($"{projectedEmpty} = icmp eq i32 {entry.Extent}, 0")
-                wrapper.Inst($"br i1 {projectedEmpty}, label %%{tokenLabel}, label %%{keepLabel}")
-                wrapper.Line($"{tokenLabel}:")
-                let tokenStart = emitContextLoad wrapper "%ctx" 2
-                let tokenEnd = emitOffset wrapper tokenStart "8"
-                let tokenReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to materialize standalone Empty output." body.BodyName None [] []
-                emitReserve wrapper tokenEnd tokenReserveError wrapperFailure
-                wrapper.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {tokenStart}, i32 {typeId entry.Type})")
+            let mutable outputDestinationOffset = "0"
+            for entry, extent in serializedOutputs do
+                let destination = emitPointerOffset wrapper "%retained" outputDestinationOffset
+                let remainingCapacity = emitSub wrapper "%retained.capacity" outputDestinationOffset
+                wrapper.Inst($"call void @al_owning_publish(ptr %%ctx, ptr {destination}, i32 {remainingCapacity}, i32 {entry.Offset}, i32 {extent}, i32 {typeId entry.Type})")
                 emitRuntimeStatus wrapper "%ctx" wrapperFailure
-                let tokenPredecessor = wrapper.CurrentBlock
-                wrapper.Inst($"br label %%{joinLabel}")
-                wrapper.Line($"{keepLabel}:")
-                let keepPredecessor = wrapper.CurrentBlock
-                wrapper.Inst($"br label %%{joinLabel}")
-                wrapper.Line($"{joinLabel}:")
-                let outputOffset = wrapper.Fresh "entry.output.materialized.offset"
-                let outputExtent = wrapper.Fresh "entry.output.materialized.extent"
-                let outputPayload = wrapper.Fresh "entry.output.materialized.payload"
-                let outputOwnerEnd = wrapper.Fresh "entry.output.materialized.owner.end"
-                wrapper.Inst($"{outputOffset} = phi i32 [ {tokenStart}, %%{tokenPredecessor} ], [ {entry.Offset}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputExtent} = phi i32 [ 8, %%{tokenPredecessor} ], [ {entry.Extent}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputPayload} = phi i32 [ 0, %%{tokenPredecessor} ], [ {entry.Payload}, %%{keepPredecessor} ]")
-                wrapper.Inst($"{outputOwnerEnd} = phi i32 [ {tokenEnd}, %%{tokenPredecessor} ], [ {entry.OwnerEnd}, %%{keepPredecessor} ]")
-                serializedOutputs.Add(({ entry with Offset = outputOffset; Extent = outputExtent; Payload = outputPayload; OwnerEnd = outputOwnerEnd }, outputExtent))
-            else
-                serializedOutputs.Add((entry, entry.Extent))
+                outputDestinationOffset <- emitOffset wrapper outputDestinationOffset extent
 
-        let mutable outputDestinationOffset = "0"
-        for entry, extent in serializedOutputs do
-            let destination = emitPointerOffset wrapper "%retained" outputDestinationOffset
-            let remainingCapacity = emitSub wrapper "%retained.capacity" outputDestinationOffset
-            wrapper.Inst($"call void @al_owning_publish(ptr %%ctx, ptr {destination}, i32 {remainingCapacity}, i32 {entry.Offset}, i32 {extent}, i32 {typeId entry.Type})")
-            emitRuntimeStatus wrapper "%ctx" wrapperFailure
-            outputDestinationOffset <- emitOffset wrapper outputDestinationOffset extent
+            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            let successfulLive = emitContextLoad wrapper "%ctx" 4
+            let successfulLocals = emitContextLoad wrapper "%ctx" 8
+            let negativeSuccessfulLive = emitSub wrapper "0" successfulLive
+            let negativeSuccessfulLocals = emitSub wrapper "0" successfulLocals
+            emitUpdateLive wrapper negativeSuccessfulLive negativeSuccessfulLocals wrapperFailure
+            wrapper.Inst("br label %entry.return.status")
 
-        wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
-        let successfulLive = emitContextLoad wrapper "%ctx" 4
-        let successfulLocals = emitContextLoad wrapper "%ctx" 8
-        let negativeSuccessfulLive = emitSub wrapper "0" successfulLive
-        let negativeSuccessfulLocals = emitSub wrapper "0" successfulLocals
-        emitUpdateLive wrapper negativeSuccessfulLive negativeSuccessfulLocals wrapperFailure
-        wrapper.Inst("br label %entry.return.status")
-
-        wrapper.Line($"{wrapperFailure}:")
-        let failedLive = emitContextLoad wrapper "%ctx" 4
-        let failedLocals = emitContextLoad wrapper "%ctx" 8
-        let failedReservations = emitContextLoad wrapper "%ctx" 6
-        let failedTotalLive = emitOffset wrapper failedLive failedLocals
-        let zeroLive = emitSub wrapper "0" failedTotalLive
-        let zeroLocal = emitSub wrapper "0" failedLocals
-        wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
-        wrapper.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {zeroLive}, i32 {zeroLocal})")
-        wrapper.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {failedReservations})")
-        wrapper.Inst("br label %entry.return.status")
-        wrapper.Line("entry.return.status:")
-        let finalStatus = emitContextLoad wrapper "%ctx" 19
-        wrapper.Inst($"ret i32 {finalStatus}")
-        wrapper.Line("}")
-        writer.Line(wrapper.Text)
+            wrapper.Line($"{wrapperFailure}:")
+            let failedLive = emitContextLoad wrapper "%ctx" 4
+            let failedLocals = emitContextLoad wrapper "%ctx" 8
+            let failedReservations = emitContextLoad wrapper "%ctx" 6
+            let failedTotalLive = emitOffset wrapper failedLive failedLocals
+            let zeroLive = emitSub wrapper "0" failedTotalLive
+            let zeroLocal = emitSub wrapper "0" failedLocals
+            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            wrapper.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {zeroLive}, i32 {zeroLocal})")
+            wrapper.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {failedReservations})")
+            wrapper.Inst("br label %entry.return.status")
+            wrapper.Line("entry.return.status:")
+            let finalStatus = emitContextLoad wrapper "%ctx" 19
+            wrapper.Inst($"ret i32 {finalStatus}")
+            wrapper.Line("}")
+            writer.Line(wrapper.Text)
+            wrapper.Text
+        let wrapperTexts =
+            match hostExportNames with
+            | Some names ->
+                bodies |> List.mapi (fun index current -> emitEntryWrapper current entryFrameSymbols[index] (Some names[index]))
+            | None -> [ emitEntryWrapper body entryFrameSymbols[0] None ]
         let mailboxCallbackTexts = ResizeArray<string * string * int>()
         if mailboxMode then
             for index, entryBody in bodies |> List.indexed do
@@ -7517,9 +7639,10 @@ module OwningStackAot =
             diagnosticRole <- None
             mailboxCallbackTexts.Add((associatedRole, associatedCallbackText, associatedAllocaBytes))
             writer.Line(associatedCallbackText)
-        if usesOsRandom.Value then
+        if usesOsRandom.Value && target = OwningTarget.WindowsX64 then
             // The runtime's weak reference falls back to a failing stub; this
             // module supplies the OS random source (Windows CNG system RNG).
+            // Linux needs nothing here: the runtime reads getrandom itself.
             writer.Line("declare dllimport i32 @BCryptGenRandom(ptr, ptr, i32, i32)")
             writer.Line("define i32 @al_owning_os_random_fill(ptr %buffer, i32 %length) {")
             writer.Line("entry:")
@@ -7527,7 +7650,7 @@ module OwningStackAot =
             writer.Line("  ret i32 %status")
             writer.Line("}")
         let metadataPerFrameBytes = frameTexts |> Seq.map explicitAllocaBoundBytes |> Seq.fold max 0
-        let wrapperMetadataBytes = explicitAllocaBoundBytes wrapper.Text
+        let wrapperMetadataBytes = wrapperTexts |> List.map explicitAllocaBoundBytes |> List.fold max 0
         let mailboxCallbackMetadataBytes = mailboxCallbackTexts |> Seq.map (fun (_, _, bytes) -> bytes) |> Seq.fold max 0
         let topLevelMetadataBytes = max wrapperMetadataBytes mailboxCallbackMetadataBytes
         let metadataPeakBoundBytes = int64 metadataPerFrameBytes * 66L + int64 topLevelMetadataBytes
@@ -7550,7 +7673,7 @@ module OwningStackAot =
         // Fixed and dynamic layouts both use explicit arena descriptors. The old
         // packed fixed emitter remains historical code and is never selected.
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile
+            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile OwningTarget.WindowsX64 None
         llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
@@ -7974,7 +8097,7 @@ module OwningStackAot =
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile
+            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile OwningTarget.WindowsX64 None
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native-host.ll")
@@ -8210,6 +8333,50 @@ module OwningStackAot =
     /// Compile the fixed initialize/begin/resume lifecycle into one immutable
     /// owning module with a shared type-index layout, ordinary mailbox callbacks,
     /// and a callback that resumes from two retained arena roots.
+    /// Emits (without compiling) one native host module with several named
+    /// entry exports for an explicit target. Every entry body is the
+    /// compiler-minted shim of its EntryWord; all share one verified program,
+    /// one layout and one type-index universe. Returns the LLVM IR and the
+    /// diagnostic table (index i is error id i + 1).
+    let emitHostModule
+        (runtimeProfile: OwningRuntimeProfile)
+        (target: OwningTarget)
+        (profile: OwningNativeHostProfile)
+        (entries: OwningHostEntry list) =
+        if List.isEmpty entries then invalidArg (nameof entries) "A host module needs at least one entry."
+        let names = entries |> List.map (fun entry -> entry.ExportName)
+        if (List.distinct names).Length <> names.Length then invalidArg (nameof entries) "Host entry export names must be distinct."
+        for name in names do
+            if String.IsNullOrWhiteSpace name || not (name |> Seq.forall (fun ch -> Char.IsAsciiLetterOrDigit ch || ch = '_')) then
+                invalidArg (nameof entries) $"Host entry export name '{name}' must be a C identifier."
+        let bodies = entries |> List.map (fun entry -> entry.Body)
+        let programInfo = makeProgramInfoForBodies true (Some profile) bodies
+        let manifest = match profile with OwningNativeHostProfile.AppHost manifest -> manifest
+        let allowedEffects = Set.union (allowedHostEffects manifest) (OwningStdlib.effectful |> Map.fold (fun all _ effects -> Set.union all effects) Set.empty)
+        let program = VerifiedIrBody.program (List.head bodies)
+        let inspected = VerifiedIrProgram.inspect program
+        for entry in entries do
+            let body = VerifiedIrBody.inspect entry.Body
+            let shimCalls =
+                match body.BodyBlock.Code with
+                | [ instruction ] ->
+                    match instruction.Operation with
+                    | IrOperation.Call call ->
+                        call.ResolvedName = entry.EntryWord
+                        && (match call.ResolvedTarget with UserWordTarget _ -> true | _ -> false)
+                    | _ -> false
+                | _ -> false
+            if body.BodyName <> $"<flow-entrypoint:{entry.EntryWord}>" || not shimCalls
+               || not (Set.isSubset body.BodyInferredEffects allowedEffects) then
+                failNativeHostProfile $"compiler-minted shim of {entry.EntryWord} with effects within the host profile" body.BodyName
+        ignore inspected
+        let analyses =
+            bodies |> List.map (fun verified -> ArenaLifetime.analyzeBody (IrVerifier.verifyBody program (VerifiedIrBody.inspect verified)))
+        let functionAnalyses = ArenaLifetime.analyzeProgram program
+        let llvmIr, diagnostics, _, _, _, _, _, _ =
+            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some names)
+        llvmIr, (diagnostics |> Array.map (fun info -> info.Diagnostic))
+
     let compileMailboxWithProfile
         (toolchain: LlvmToolchain)
         optimization
@@ -8229,7 +8396,7 @@ module OwningStackAot =
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedInit)
         let (llvmIr, internalDiagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
              emittedEntryFrames, backendMetadataPerFrameBytes, callbackMetadataPerEntryBytes) =
-            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile
+            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile OwningTarget.WindowsX64 None
         let roles = [ "initialize"; "begin"; "resume" ]
         if emittedEntryFrames.Length <> roles.Length then
             invalidOp "Owning mailbox emitter did not produce exactly three entry frames."
