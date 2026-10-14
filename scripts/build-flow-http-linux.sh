@@ -9,7 +9,7 @@ mkdir -p "$OUT"
 rm -rf "$OUT/src"; cp -r "$STAGE/src" "$OUT/src"; cp "$STAGE/module.ll" "$OUT/module.ll"
 cd "$OUT"
 DEFS="-DAL_OWNING_TRUSTED_GENERATED=$TRUSTED"
-clang --target=x86_64-pc-linux-gnu "$OPT" -c -x ir module.ll -o module.o
+clang --target=x86_64-pc-linux-gnu -Wno-override-module "$OPT" -c -x ir module.ll -o module.o
 clang --target=x86_64-pc-linux-gnu "$OPT" -std=c11 -ffreestanding -fno-builtin -Wall -Wextra $DEFS -Isrc -c src/owning_stack_runtime.c -o runtime.o
 clang --target=x86_64-pc-linux-gnu "$OPT" -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_db.c -o db.o
 clang --target=x86_64-pc-linux-gnu "$OPT" -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_host.c -o host.o
