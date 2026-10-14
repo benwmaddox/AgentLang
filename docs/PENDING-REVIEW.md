@@ -95,7 +95,10 @@ Noted for after the apples-to-apples Campfire comparison.
    `name: Type` lines are enough. `field` stays readable during migration,
    and the formatter drops it (user, 2026-10-14).
 4. **Name rule:** word and namespace-segment names may not contain `(` or
-   `)`. Dots stay namespace separators (user, 2026-10-14).
+   `)`. Dots stay namespace separators (user, 2026-10-14). Already true: a segment
+   allows letters, digits, `-`, `_`, `?`, `!` (documented in CURRENT-SYNTAX
+   "Names"). Widening to other symbols needs a user decision, since most
+   symbols are operators or punctuation in Flow.
 5. **Shared test overrides:** overrides declared at the top of a test file
    apply to every `test-file` block in it, and blocks may still override
    locally. An override that none of its block's tests reach is a

@@ -145,6 +145,13 @@ fn marker.read(path: String) -> String {
 }
 ```
 
+## Names
+
+A word name is a dotted path of segments, such as `campfire.views.room-page`;
+dots separate namespace segments. A segment starts with a letter or `_` and
+continues with letters, digits, `-`, `_`, `?` or `!`, so a name never contains
+`(` or `)`. Type names are PascalCase identifiers.
+
 ## Enums
 
 An enum lists its case names, one per line or separated by `;`, like record

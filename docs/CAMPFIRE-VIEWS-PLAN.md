@@ -214,3 +214,8 @@ same placement.
 Each step is its own tested, reported and pushed milestone. Anything Rails or Rust
 does per request that AgentLang still skips is listed as a named gap in the
 benchmark report.
+
+## Restructure (report 271 on)
+
+Page slices pause while the Campfire app moves to pure Flow on a generic
+standard library: see [STDLIB-PLAN.md](STDLIB-PLAN.md).
