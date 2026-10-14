@@ -4747,7 +4747,8 @@ uint8_t *al_owning_stack_base(al_owning_stack_context *ctx) {
 
 /* ------------------------------------------------------------------------
  * Standard library slice 1 (report 272): Bytes, base64, hex, SHA-256,
- * HMAC-SHA256, PBKDF2-SHA256 and byte-offset String primitives.
+ * HMAC-SHA256, PBKDF2-SHA256 (all on the OS library, owning_stdlib2.h) and
+ * byte-offset String primitives.
  *
  * Bytes share the String layout (u32 count, 4 zero bytes, data, zero pad to
  * 8) under runtime kind 11, which skips the UTF-8 check. Every operation runs
@@ -4819,189 +4820,6 @@ static int32_t al_owning_os_random_fill(uint8_t *buffer, uint32_t length) {
   return 0;
 }
 #endif
-
-typedef struct {
-  uint32_t h[8];
-  uint64_t length;
-  uint8_t block[64];
-  uint32_t used;
-} al_stdlib_sha256;
-
-static const uint32_t al_stdlib_sha256_k[64] = {
-    0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu,
-    0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u, 0xd807aa98u, 0x12835b01u,
-    0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u,
-    0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
-    0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u,
-    0xa831c66du, 0xb00327c8u, 0xbf597fc7u, 0xc6e00bf3u, 0xd5a79147u,
-    0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
-    0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
-    0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u, 0xd192e819u,
-    0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u, 0x1e376c08u,
-    0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu,
-    0x682e6ff3u, 0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
-    0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u};
-
-#define AL_STDLIB_ROTR(x, n) (((x) >> (n)) | ((x) << (32u - (n))))
-
-static void al_stdlib_sha256_compress(uint32_t h[8], const uint8_t *block) {
-  uint32_t w[64];
-  uint32_t a, b, c, d, e, f, g, hh;
-  uint32_t i;
-  for (i = 0u; i < 16u; ++i)
-    w[i] = ((uint32_t)block[i * 4u] << 24) |
-           ((uint32_t)block[i * 4u + 1u] << 16) |
-           ((uint32_t)block[i * 4u + 2u] << 8) | (uint32_t)block[i * 4u + 3u];
-  for (i = 16u; i < 64u; ++i) {
-    const uint32_t s0 = AL_STDLIB_ROTR(w[i - 15u], 7u) ^
-                        AL_STDLIB_ROTR(w[i - 15u], 18u) ^ (w[i - 15u] >> 3);
-    const uint32_t s1 = AL_STDLIB_ROTR(w[i - 2u], 17u) ^
-                        AL_STDLIB_ROTR(w[i - 2u], 19u) ^ (w[i - 2u] >> 10);
-    w[i] = w[i - 16u] + s0 + w[i - 7u] + s1;
-  }
-  a = h[0];
-  b = h[1];
-  c = h[2];
-  d = h[3];
-  e = h[4];
-  f = h[5];
-  g = h[6];
-  hh = h[7];
-  for (i = 0u; i < 64u; ++i) {
-    const uint32_t s1 =
-        AL_STDLIB_ROTR(e, 6u) ^ AL_STDLIB_ROTR(e, 11u) ^ AL_STDLIB_ROTR(e, 25u);
-    const uint32_t ch = (e & f) ^ (~e & g);
-    const uint32_t t1 = hh + s1 + ch + al_stdlib_sha256_k[i] + w[i];
-    const uint32_t s0 =
-        AL_STDLIB_ROTR(a, 2u) ^ AL_STDLIB_ROTR(a, 13u) ^ AL_STDLIB_ROTR(a, 22u);
-    const uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
-    const uint32_t t2 = s0 + maj;
-    hh = g;
-    g = f;
-    f = e;
-    e = d + t1;
-    d = c;
-    c = b;
-    b = a;
-    a = t1 + t2;
-  }
-  h[0] += a;
-  h[1] += b;
-  h[2] += c;
-  h[3] += d;
-  h[4] += e;
-  h[5] += f;
-  h[6] += g;
-  h[7] += hh;
-}
-
-static void al_stdlib_sha256_init(al_stdlib_sha256 *s) {
-  static const uint32_t initial[8] = {0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u,
-                                      0xa54ff53au, 0x510e527fu, 0x9b05688cu,
-                                      0x1f83d9abu, 0x5be0cd19u};
-  uint32_t i;
-  for (i = 0u; i < 8u; ++i)
-    s->h[i] = initial[i];
-  s->length = 0u;
-  s->used = 0u;
-}
-
-static void al_stdlib_sha256_update(al_stdlib_sha256 *s, const uint8_t *data,
-                                    uint32_t length) {
-  uint32_t i;
-  s->length += length;
-  for (i = 0u; i < length; ++i) {
-    s->block[s->used++] = data[i];
-    if (s->used == 64u) {
-      al_stdlib_sha256_compress(s->h, s->block);
-      s->used = 0u;
-    }
-  }
-}
-
-static void al_stdlib_sha256_final(al_stdlib_sha256 *s, uint8_t out[32]) {
-  const uint64_t bits = s->length * 8u;
-  uint32_t i;
-  s->block[s->used++] = 0x80u;
-  if (s->used > 56u) {
-    while (s->used < 64u)
-      s->block[s->used++] = 0u;
-    al_stdlib_sha256_compress(s->h, s->block);
-    s->used = 0u;
-  }
-  while (s->used < 56u)
-    s->block[s->used++] = 0u;
-  for (i = 0u; i < 8u; ++i)
-    s->block[56u + i] = (uint8_t)(bits >> (56u - i * 8u));
-  al_stdlib_sha256_compress(s->h, s->block);
-  for (i = 0u; i < 8u; ++i) {
-    out[i * 4u] = (uint8_t)(s->h[i] >> 24);
-    out[i * 4u + 1u] = (uint8_t)(s->h[i] >> 16);
-    out[i * 4u + 2u] = (uint8_t)(s->h[i] >> 8);
-    out[i * 4u + 3u] = (uint8_t)s->h[i];
-  }
-}
-
-/* HMAC-SHA256 with precomputed inner and outer states, so PBKDF2 hashes the
- * key once rather than once per iteration. */
-typedef struct {
-  al_stdlib_sha256 inner;
-  al_stdlib_sha256 outer;
-} al_stdlib_hmac;
-
-static void al_stdlib_hmac_init(al_stdlib_hmac *m, const uint8_t *key,
-                                uint32_t key_length) {
-  uint8_t block[64];
-  uint8_t pad[64];
-  uint32_t i;
-  for (i = 0u; i < 64u; ++i)
-    block[i] = 0u;
-  if (key_length > 64u) {
-    al_stdlib_sha256 hashed;
-    al_stdlib_sha256_init(&hashed);
-    al_stdlib_sha256_update(&hashed, key, key_length);
-    al_stdlib_sha256_final(&hashed, block);
-  } else {
-    for (i = 0u; i < key_length; ++i)
-      block[i] = key[i];
-  }
-  for (i = 0u; i < 64u; ++i)
-    pad[i] = (uint8_t)(block[i] ^ 0x36u);
-  al_stdlib_sha256_init(&m->inner);
-  al_stdlib_sha256_update(&m->inner, pad, 64u);
-  for (i = 0u; i < 64u; ++i)
-    pad[i] = (uint8_t)(block[i] ^ 0x5cu);
-  al_stdlib_sha256_init(&m->outer);
-  al_stdlib_sha256_update(&m->outer, pad, 64u);
-}
-
-/* The runtime is freestanding: no struct copies (they lower to memcpy). */
-static void al_stdlib_sha256_copy(al_stdlib_sha256 *target,
-                                  const al_stdlib_sha256 *source) {
-  uint32_t i;
-  for (i = 0u; i < 8u; ++i)
-    target->h[i] = source->h[i];
-  for (i = 0u; i < 64u; ++i)
-    target->block[i] = source->block[i];
-  target->length = source->length;
-  target->used = source->used;
-}
-
-static void al_stdlib_hmac_run(const al_stdlib_hmac *m, const uint8_t *a,
-                               uint32_t a_length, const uint8_t *b,
-                               uint32_t b_length, uint8_t out[32]) {
-  al_stdlib_sha256 inner;
-  al_stdlib_sha256 outer;
-  uint8_t digest[32];
-  al_stdlib_sha256_copy(&inner, &m->inner);
-  al_stdlib_sha256_copy(&outer, &m->outer);
-  al_stdlib_sha256_update(&inner, a, a_length);
-  if (b_length != 0u)
-    al_stdlib_sha256_update(&inner, b, b_length);
-  al_stdlib_sha256_final(&inner, digest);
-  al_stdlib_sha256_update(&outer, digest, 32u);
-  al_stdlib_sha256_final(&outer, out);
-}
 
 /* The writer: base == 0 counts only. */
 typedef struct {
@@ -5390,33 +5208,21 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
     al_stdlib_pad(w);
     return 1;
   }
-  case AL_STDLIB_SHA256: {
-    uint8_t digest[32];
-    uint32_t i;
-    for (i = 0u; i < 32u; ++i)
-      digest[i] = 0u;
-    if (w->base != 0) {
-      al_stdlib_sha256 s;
-      al_stdlib_sha256_init(&s);
-      al_stdlib_sha256_update(&s, x, n[0]);
-      al_stdlib_sha256_final(&s, digest);
+  case AL_STDLIB_SHA256:
+  case AL_STDLIB_HMAC_SHA256:
+    /* The OS library writes the digest straight into the result. */
+    al_stdlib_begin_text(w, 32u);
+    if (w->base != 0 &&
+        (op == AL_STDLIB_SHA256
+             ? al_os_sha256(x, n[0], w->base + w->extent)
+             : al_os_hmac(0, x, n[0], al_stdlib_data(ctx, a[1]), n[1],
+                          w->base + w->extent)) != 1) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id, 1u, 0u);
+      return 0;
     }
-    al_stdlib_text(w, digest, 32u);
+    w->extent += 32u;
+    al_stdlib_pad(w);
     return 1;
-  }
-  case AL_STDLIB_HMAC_SHA256: {
-    uint8_t digest[32];
-    uint32_t i;
-    for (i = 0u; i < 32u; ++i)
-      digest[i] = 0u;
-    if (w->base != 0) {
-      al_stdlib_hmac m;
-      al_stdlib_hmac_init(&m, x, n[0]);
-      al_stdlib_hmac_run(&m, al_stdlib_data(ctx, a[1]), n[1], 0, 0u, digest);
-    }
-    al_stdlib_text(w, digest, 32u);
-    return 1;
-  }
   case AL_STDLIB_PBKDF2_SHA256: {
     const int64_t iterations = al_stdlib_int(ctx, a[2]);
     const int64_t length = al_stdlib_int(ctx, a[3]);
@@ -5427,37 +5233,14 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
     }
     al_stdlib_some(w);
     al_stdlib_begin_text(w, (uint32_t)length);
-    if (w->base == 0) {
-      w->extent += (uint64_t)length;
-    } else {
-      const uint8_t *salt = al_stdlib_data(ctx, a[1]);
-      al_stdlib_hmac m;
-      uint32_t block_index = 1u;
-      uint32_t produced = 0u;
-      al_stdlib_hmac_init(&m, x, n[0]);
-      while (produced < (uint32_t)length) {
-        uint8_t counter[4];
-        uint8_t u[32];
-        uint8_t t[32];
-        uint32_t i;
-        int64_t round;
-        counter[0] = (uint8_t)(block_index >> 24);
-        counter[1] = (uint8_t)(block_index >> 16);
-        counter[2] = (uint8_t)(block_index >> 8);
-        counter[3] = (uint8_t)block_index;
-        al_stdlib_hmac_run(&m, salt, n[1], counter, 4u, u);
-        for (i = 0u; i < 32u; ++i)
-          t[i] = u[i];
-        for (round = 1; round < iterations; ++round) {
-          al_stdlib_hmac_run(&m, u, 32u, 0, 0u, u);
-          for (i = 0u; i < 32u; ++i)
-            t[i] = (uint8_t)(t[i] ^ u[i]);
-        }
-        for (i = 0u; i < 32u && produced < (uint32_t)length; ++i, ++produced)
-          al_stdlib_put_byte(w, t[i]);
-        ++block_index;
-      }
+    if (w->base != 0 &&
+        al_os_pbkdf2_sha256(x, n[0], al_stdlib_data(ctx, a[1]), n[1],
+                            (uint64_t)iterations, w->base + w->extent,
+                            (uint32_t)length) != 1) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id, 1u, 0u);
+      return 0;
     }
+    w->extent += (uint64_t)length;
     al_stdlib_pad(w);
     return 1;
   }
@@ -5702,11 +5485,8 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
     const uint8_t *x = al_stdlib_data(ctx, arguments[0]);
     const uint8_t *y = al_stdlib_data(ctx, arguments[1]);
     const uint32_t shorter = lengths[0] < lengths[1] ? lengths[0] : lengths[1];
-    uint32_t difference = lengths[0] ^ lengths[1];
-    uint32_t i;
-    for (i = 0u; i < shorter; ++i)
-      difference |= (uint32_t)(x[i] ^ y[i]);
-    *out_value = difference == 0u ? 1 : 0;
+    const int32_t same = al_os_equal_constant_time(x, y, shorter);
+    *out_value = same && lengths[0] == lengths[1] ? 1 : 0;
   }
   return 0;
 }
