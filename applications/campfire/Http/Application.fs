@@ -80,17 +80,12 @@ module Application =
                 [ "user.can-administer?"; "message.can-administer?"
                   "campfire.rooms.list-for-user"; "campfire.messages.page-for-member"
                   "campfire.messages.create-for-member"; "campfire.authentication.restore-session"
-                  "campfire.authentication.sign-in"; "campfire.authentication.sign-out"
-                  "scan.byte"; "scan.between"; "scan.from"; "scan.found-or"
-                  "scan.positions"; "scan.digits"; "scan.remove"; "scan.remove-all"
-                  "scan.char-width"; "scan.first-char"; "scan.run-end"; "scan.compare-step"
-                  "scan.compare-ticks"; "scan.compare-bytes"; "campfire.ua.ruby-spaces"; "campfire.ua.ruby-blank?"
-                  "campfire.ua.letter?"; "campfire.ua.alnum-dash"; "campfire.ua.comparable-version?"; "campfire.ua.normalized-integer"
-                  "campfire.ua.version-scan-step"; "campfire.ua.scan-version"; "campfire.ua.version-segments"; "campfire.ua.compare-segment"
-                  "campfire.ua.segment-pick-step"; "campfire.ua.segment-at"; "campfire.ua.first-order"; "campfire.ua.first-nonzero"
-                  "campfire.ua.compare-segments"; "campfire.browser.version-compare"; "campfire.browser.version-at-least?"
-                  "campfire.browser.supported?" ] do
+                  "campfire.authentication.sign-in"; "campfire.authentication.sign-out" ] do
                 commit engine name true
+            // The browser gate and its Ruby-version closure qualify as library words
+            // in AgentLang.Campfire.Browser.Tests; one library commit per word here
+            // costs ~40 s of whole-dictionary recompilation each, so the
+            // application commits them as project words with the rest.
             invokeCommand engine "commit" [] |> ignore
         let entry = engine.BindFlowEntryPoint("campfire.http.dispatch", [ TNamed "CampfireHttpRequest" ], [ TNamed "CampfireHttpResponse" ])
         let invoke value =

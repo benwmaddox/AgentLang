@@ -113,6 +113,7 @@ Step 1: Pure logic (only String ops needed).
 - Port browser version compare and UA normalization (RubyVersion.fs, UserAgentNormalizer.fs, browser_normalizer.c, host tag 6) to Flow.
 - Delete: browser_normalizer.c (about 1,548), RubyVersion.fs (133), UserAgentNormalizer.fs (582), tag 6 in room-read-host.json.
 - Tests: Browser.Tests, browser-tests.flow.
+- Done in 272: applications/campfire/user-agent.flow + text-scan.flow (fold-based; Flow rejects recursion), parity corpus user-agent-corpus-tests.flow, tag 6 retired. Room-read C version compare removed too.
 - Expected remaining: C about 11,550; F# about 2,950.
 
 Step 2: CSRF and avatar derivation.
