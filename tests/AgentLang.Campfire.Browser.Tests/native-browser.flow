@@ -1,0 +1,45 @@
+// Test-only entrypoints that flatten BrowserInfo for interpreter/native parity.
+
+fn campfire.browser.native-family(family: BrowserFamily) -> String {
+    match family {
+        safari => "safari"
+        chrome => "chrome"
+        firefox => "firefox"
+        opera => "opera"
+        internet-explorer => "internet-explorer"
+        other => "other"
+    }
+}
+
+test campfire.browser.native-family/opera {
+    campfire.browser.native-family(BrowserFamily.opera())
+    => value "opera"
+}
+
+fn campfire.browser.native-probe(present: Bool, header: String) -> String {
+    let info = if present {
+        campfire.browser.from-user-agent(option.some<String>(header))
+    } else {
+        campfire.browser.from-user-agent(option.none<String>())
+    }
+    let version = match info.version {
+        none => "<none>"
+        some text => text
+    }
+    let bot = if info.is-bot {
+        "bot"
+    } else {
+        "human"
+    }
+    string.join([campfire.browser.native-family(info.family), "|", version, "|", bot])
+}
+
+test campfire.browser.native-probe/chrome {
+    campfire.browser.native-probe(true, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    => value "chrome|120.0.0.0|human"
+}
+
+test campfire.browser.native-probe/missing {
+    campfire.browser.native-probe(false, "")
+    => value "other|4.0|human"
+}

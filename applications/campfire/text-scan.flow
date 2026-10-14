@@ -72,15 +72,13 @@ fn scan.contains?(value: Option<String>, needle: String) -> Bool {
     }
 }
 
-fn scan.mark-hex(marked: String, digit: String) -> String {
-    string.replace(marked, digit, string.concat(digit, ","))
-}
-
 // A list with 2 * byte-length + 1 elements: a fold over it runs at least one
-// step per byte plus one.
+// step per byte plus one. Building it needs no iteration.
 fn scan.positions(source: String) -> List<String> {
-    let digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
-    string.split(digits.fold(hex.encode(bytes.from-utf8(source)), scan.mark-hex), ",")
+    let hex = hex.encode(bytes.from-utf8(source))
+    let low = string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(hex, "0", "0,"), "1", "1,"), "2", "2,"), "3", "3,"), "4", "4,"), "5", "5,"), "6", "6,"), "7", "7,")
+    let high = string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(string.replace(low, "8", "8,"), "9", "9,"), "a", "a,"), "b", "b,"), "c", "c,"), "d", "d,"), "e", "e,"), "f", "f,")
+    string.split(high, ",")
 }
 
 fn scan.digits() -> List<String> {
@@ -250,8 +248,14 @@ fn scan.compare-step(state: ScanCompare, tick: String) -> ScanCompare {
     }
 }
 
+// Ordinal UTF-8 byte comparison over a counter list with at least
+// byte-length(left) + 1 elements: -1, 0 or 1.
+fn scan.compare-ticks(ticks: List<String>, left: String, right: String) -> Int {
+    let state = ticks.fold(scanCompare.new(left = left, right = right, index = 0, result = 0, done = false), scan.compare-step)
+    state.result
+}
+
 // Ordinal UTF-8 byte comparison: -1, 0 or 1.
 fn scan.compare-bytes(left: String, right: String) -> Int {
-    let state = scan.positions(left).fold(scanCompare.new(left = left, right = right, index = 0, result = 0, done = false), scan.compare-step)
-    state.result
+    scan.compare-ticks(scan.positions(left), left, right)
 }

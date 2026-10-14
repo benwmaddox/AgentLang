@@ -14,7 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AgentLang.Core\AgentLang.Core.fsproj" />
-    <ProjectReference Include="..\..\applications\campfire\Browser\AgentLang.Campfire.Browser.fsproj" />
-    <ProjectReference Include="..\..\applications\campfire\Browser\AgentLang.Campfire.Browser.Host.fsproj" />
+    <ProjectReference Include="..\..\src\AgentLang.Llvm\AgentLang.Llvm.fsproj" />
   </ItemGroup>
 </Project>

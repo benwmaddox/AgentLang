@@ -1,0 +1,239 @@
+test scan.byte/inside {
+    scan.byte("é", 1)
+    => value 169
+}
+
+test scan.byte/past-end {
+    scan.byte("a", 1)
+    => value -1
+}
+
+test scan.between/ascii {
+    scan.between("Mozilla/5.0", 8, 11)
+    => value "5.0"
+}
+
+test scan.between/split-character {
+    scan.between("é", 1, 2)
+    => value ""
+}
+
+test scan.from/tail {
+    scan.from("Chrome/120", 7)
+    => value "120"
+}
+
+test scan.at?/match {
+    scan.at?("a,gzip(gfe)", ",gzip(gfe)", 1)
+    => value true
+}
+
+test scan.at?/later {
+    scan.at?("ab ab", "ab", 1)
+    => value false
+}
+
+test scan.found-or/fallback {
+    scan.found-or(option.none<Int>(), 7)
+    => value 7
+}
+
+test scan.found-or/found {
+    scan.found-or(option.some<Int>(3), 7)
+    => value 3
+}
+
+test scan.contains?/some {
+    scan.contains?(option.some<String>("Windows NT 10.0"), "Windows NT")
+    => value true
+}
+
+test scan.contains?/none {
+    scan.contains?(option.none<String>(), "x")
+    => value false
+}
+
+test scan.positions/counter {
+    scan.positions("é!")
+    => value ["c", "3", "a", "9", "2", "1", ""]
+}
+
+test scan.positions/empty {
+    scan.positions("")
+    => value [""]
+}
+
+test scan.digits/ten {
+    scan.join(scan.digits(), "")
+    => value "0123456789"
+}
+
+test scan.remove/all {
+    scan.remove("1.2.3", ".")
+    => value "123"
+}
+
+test scan.remove-all/many {
+    scan.remove-all("17.2-beta", scan.digits())
+    => value ".-beta"
+}
+
+test scan.remove-all/no-needles {
+    scan.remove-all("abc", list.empty<String>())
+    => value "abc"
+}
+
+test scan.char-width/lead-bytes {
+    [scan.char-width(65), scan.char-width(195), scan.char-width(227), scan.char-width(240)]
+    => value [1, 2, 3, 4]
+}
+
+test scan.first-char/multibyte {
+    scan.first-char("é1")
+    => value "é"
+}
+
+test scan.last-char/multibyte {
+    scan.last-char("1🚀")
+    => value "🚀"
+}
+
+test scan.run-end/digits {
+    scan.run-end("ab120.0x", 2, list.append(scan.digits(), "."))
+    => value 7
+}
+
+test scan.run-end/to-end {
+    scan.run-end("ab120", 2, scan.digits())
+    => value 5
+}
+
+test scan.run-end/none {
+    scan.run-end("abc", 0, scan.digits())
+    => value 0
+}
+
+test scan.last-step/replaces {
+    scan.last-step(option.some<String>("a"), "b")
+    => value option.some<String>("b")
+}
+
+test scan.last/items {
+    scan.last(["a", "b", "c"])
+    => value option.some<String>("c")
+}
+
+test scan.last/empty {
+    scan.last(list.empty<String>())
+    => value option.none<String>()
+}
+
+test scan.trim-end/trailing {
+    scan.trim-end("a b \t ", [" ", "\t"])
+    => value 3
+}
+
+test scan.trim-end/blank {
+    scan.trim-end("   ", [" "])
+    => value 0
+}
+
+test scan.pick-step/target {
+    scan.pick-step(scanPick.new(target = 1, index = 1, found = option.none<String>()), "x").found
+    => value option.some<String>("x")
+}
+
+test scan.item/second {
+    scan.item(["a", "b", "c"], 1)
+    => value option.some<String>("b")
+}
+
+test scan.item/missing {
+    scan.item(["a"], 3)
+    => value option.none<String>()
+}
+
+test scan.stop-step/closer {
+    scan.stop-step(scanStops.new(source = "a b/c", start = 0, best = 5), "/").best
+    => value 3
+}
+
+test scan.first-stop/earliest {
+    scan.first-stop("Chrome/120 x", 0, [" ", "/"])
+    => value 6
+}
+
+test scan.first-stop/none {
+    scan.first-stop("Chrome", 0, [" ", "/"])
+    => value 6
+}
+
+test scan.join-step/first {
+    scan.join-step(scanJoin.new(separator = "; ", joined = option.none<String>()), "a").joined
+    => value option.some<String>("a")
+}
+
+test scan.join/separator {
+    scan.join(["a", "", "c"], "; ")
+    => value "a; ; c"
+}
+
+test scan.join/empty {
+    scan.join(list.empty<String>(), "; ")
+    => value ""
+}
+
+test scan.kept-step/empty-is-pending {
+    scan.kept-step(scanKept.new(kept = ["a"], pending = list.empty<String>()), "").kept
+    => value ["a"]
+}
+
+test scan.split-ruby/trailing-empties {
+    scan.split-ruby("a; ; b; ; ", "; ")
+    => value ["a", "", "b"]
+}
+
+test scan.split-ruby/empty {
+    scan.split-ruby("", "; ")
+    => value list.empty<String>()
+}
+
+test scan.compare-step/done {
+    scan.compare-step(scanCompare.new(left = "a", right = "b", index = 0, result = 1, done = true), "").result
+    => value 1
+}
+
+test scan.compare-bytes/orders {
+    [scan.compare-bytes("abc", "abd"), scan.compare-bytes("ab", "abc"), scan.compare-bytes("b", "a"), scan.compare-bytes("é", "é"), scan.compare-bytes("z", "é")]
+    => value [-1, -1, 1, 0, -1]
+}
+
+test scan.compare-step/equal-advances {
+    scan.compare-step(scanCompare.new(left = "ab", right = "ab", index = 0, result = 0, done = false), "").index
+    => value 1
+}
+
+test scan.compare-step/both-end {
+    scan.compare-step(scanCompare.new(left = "a", right = "a", index = 1, result = 0, done = false), "")
+    => value scanCompare.new(left = "a", right = "a", index = 1, result = 0, done = true)
+}
+
+test scan.compare-step/less {
+    scan.compare-step(scanCompare.new(left = "a", right = "b", index = 0, result = 0, done = false), "").result
+    => value -1
+}
+
+test scan.compare-step/greater {
+    scan.compare-step(scanCompare.new(left = "b", right = "a", index = 0, result = 0, done = false), "").result
+    => value 1
+}
+
+test scan.compare-ticks/no-ticks {
+    scan.compare-ticks(list.empty<String>(), "a", "b")
+    => value 0
+}
+
+test scan.compare-ticks/ticks {
+    scan.compare-ticks(["", "", ""], "a", "b")
+    => value -1
+}

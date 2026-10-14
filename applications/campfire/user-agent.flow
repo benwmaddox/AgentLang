@@ -1168,13 +1168,19 @@ fn campfire.ua.version-scan-step(state: RubyVersionScan, tick: String) -> RubyVe
     }
 }
 
+// Runs one scan step per counter element; the caller passes at least
+// byte-length(value) + 1 elements.
+fn campfire.ua.scan-version(ticks: List<String>, value: String) -> List<RubyVersionSegment> {
+    let state = ticks.fold(rubyVersionScan.new(source = value, index = 0, segments = list.empty<RubyVersionSegment>(), done = false), campfire.ua.version-scan-step)
+    state.segments
+}
+
 fn campfire.ua.version-segments(value: String) -> List<RubyVersionSegment> {
     if campfire.ua.ruby-blank?(value) {
         list.empty<RubyVersionSegment>()
     } else {
         if campfire.ua.comparable-version?(value) {
-            let state = scan.positions(value).fold(rubyVersionScan.new(source = value, index = 0, segments = list.empty<RubyVersionSegment>(), done = false), campfire.ua.version-scan-step)
-            state.segments
+            campfire.ua.scan-version(scan.positions(value), value)
         } else {
             list.singleton<RubyVersionSegment>(rubyVersionSegment.new(numeric = false, text = value))
         }
@@ -1236,6 +1242,10 @@ fn campfire.ua.compare-segments(left: List<RubyVersionSegment>, right: List<Ruby
         campfire.ua.compare-segment(campfire.ua.segment-at(left, 4), campfire.ua.segment-at(right, 4)),
         campfire.ua.compare-segment(campfire.ua.segment-at(left, 5), campfire.ua.segment-at(right, 5))
     ]
+    campfire.ua.first-nonzero(orders)
+}
+
+fn campfire.ua.first-nonzero(orders: List<Int>) -> Int {
     orders.fold(0, campfire.ua.first-order)
 }
 
