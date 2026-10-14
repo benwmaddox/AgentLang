@@ -209,7 +209,7 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room) {
         $hostPath,
         'applications/campfire/Native/http/request_encoder.c', 'applications/campfire/Native/http/request_encoder.h',
         'applications/campfire/Native/http/browser_normalizer.c', 'applications/campfire/Native/http/browser_normalizer.h',
-        'applications/campfire/Native/http/campfire_html_encoder.c', 'applications/campfire/Native/http/campfire_html_encoder.h',
+        
         'applications/campfire/Native/http/campfire_http_renderer.c', 'applications/campfire/Native/http/campfire_http_renderer.h',
         'applications/campfire/Native/http/cookie_response_codec.c', 'applications/campfire/Native/http/cookie_response_codec.h',
         'applications/campfire/Native/http/cookie_wire.c', 'applications/campfire/Native/http/cookie_wire.h',

@@ -10,7 +10,8 @@ fn campfire.http.response(status: Int, view: HttpView, text: String, refresh: Op
         message = option.none<MessageRow>(),
         refresh-session-token = refresh,
         remember-return-to = false,
-        last-room = option.none<RoomId>()
+        last-room = option.none<RoomId>(),
+        body = campfire.views.body(status, view, text)
     )
 }
 
@@ -26,7 +27,8 @@ fn campfire.http.unauthenticated() -> CampfireHttpResponse {
         message = option.none<MessageRow>(),
         refresh-session-token = option.none<SessionToken>(),
         remember-return-to = true,
-        last-room = option.none<RoomId>()
+        last-room = option.none<RoomId>(),
+        body = ""
     )
 }
 
@@ -56,7 +58,8 @@ fn campfire.http.show-room(request: CampfireHttpRequest, user: AuthUser, room: R
                 message = option.none<MessageRow>(),
                 refresh-session-token = refresh,
                 remember-return-to = false,
-                last-room = remember-room
+                last-room = remember-room,
+                body = campfire.views.room-text(room, messages)
             )
         }
     }
@@ -92,7 +95,8 @@ fn campfire.http.create-message(request: CampfireHttpRequest, user: AuthUser, ro
                                     message = option.some<MessageRow>(created),
                                     refresh-session-token = refresh,
                                     remember-return-to = false,
-                                    last-room = option.none<RoomId>()
+                                    last-room = option.none<RoomId>(),
+                                    body = campfire.views.text(campfire.views.append(created))
                                 )
                             } else {
                                 campfire.http.response(406, HttpView.empty(), "", refresh)

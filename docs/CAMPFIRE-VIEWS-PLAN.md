@@ -106,10 +106,19 @@ same placement.
        `CampfireRoomReadV1` and their operation tables and ABI headers) from the
        compiler. Apps declare typed host operations and effects in Flow; the
        compiler generates the native ABI, and the app's adapter implements it;
+       **Done in report 267:** Campfire supplies `room-read-host.json`, both
+       hosts send the Flow-rendered body, and the C and .NET HTML renderers
+       are gone;
     3b. host data for the full page, built on that mechanism;
     4. message partial with seed-subset rich text checked against Rails vectors;
     5. layout, head, nav and composer;
     6. rerun the report-259 protocol.
+- **Per-batch performance check (user, 2026-10-13):** run
+  `.agentlang/campfire-bench/Quick-Bench.ps1`.
+  - It runs only the AgentLang native host on the fixed room-page GET.
+  - It compares against the previous AgentLang record and the recorded
+    report-259 Rails and Rust runs, which are never rerun.
+  - Full ABBA runs are only for confirming a regression.
 - **No list length limit:** the 10,000-element cap is dropped; memory bounds
   lists.
 - **Shared immutable literals:** each String or proven `Html` literal is emitted

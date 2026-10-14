@@ -17,3 +17,28 @@ test campfire.views.room-text/unnamed {
     campfire.views.room-text(roomRow.new(id = RoomId.new(4), name = option.none<String>(), kind = RoomKind.direct(), creator-id = UserId.new(1), created-at = "2026-01-01T00:00:00Z", updated-at = "2026-01-01T00:00:00Z"), list.empty<MessageRow>())
     => value "<!doctype html><html><body><h1></h1><section id=\"messages\"></section><form method=\"post\" action=\"/rooms/4/messages\"><textarea name=\"message[body]\"></textarea><button type=\"submit\">Send</button></form></body></html>"
 }
+
+test campfire.views.not-found/escapes {
+    campfire.views.text(campfire.views.not-found("Gone & <away>"))
+    => value "<!doctype html><html><body><p>Gone &amp; &lt;away&gt;</p></body></html>"
+}
+
+test campfire.views.incompatible/fixed {
+    campfire.views.text(campfire.views.incompatible())
+    => value "<!doctype html><html><body><p>Please upgrade your browser.</p></body></html>"
+}
+
+test campfire.views.login/unauthorized {
+    campfire.views.text(campfire.views.login(401, "member@example.test"))
+    => value "<!doctype html><html><body><p role=\"alert\">Too many requests or unauthorized.</p><form method=\"post\" action=\"/session\"><label for=\"email_address\">Email address</label><input id=\"email_address\" name=\"email_address\" type=\"email\" autocomplete=\"username\" value=\"member@example.test\"><label for=\"password\">Password</label><input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" maxlength=\"72\"><button type=\"submit\">Sign in</button></form></body></html>"
+}
+
+test campfire.views.append/one {
+    campfire.views.text(campfire.views.append(messageRow.new(id = MessageId.new(5), room-id = RoomId.new(3), creator-id = UserId.new(1), client-message-id = "c-5", body = option.some<String>("x"), created-at = "a", updated-at = "b")))
+    => value "<turbo-stream action=\"append\" target=\"messages\"><template><div id=\"message_c-5\" class=\"message\" data-message-id=\"5\"><div id=\"presentation_message_c-5\" dir=\"auto\">x</div></div></template></turbo-stream>"
+}
+
+test campfire.views.body/redirect {
+    campfire.views.body(302, HttpView.redirect-root(), "Room not found or inaccessible")
+    => value ""
+}

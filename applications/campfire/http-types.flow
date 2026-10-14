@@ -74,4 +74,5 @@ record CampfireHttpResponse {
     field refresh-session-token: Option<SessionToken>
     field remember-return-to: Bool
     field last-room: Option<RoomId>
+    field body: String
 }

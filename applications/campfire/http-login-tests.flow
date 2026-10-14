@@ -157,7 +157,7 @@ test-file campfire-http-login-route-first-run {
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         )
         effects {
             db.read: 0
@@ -228,7 +228,7 @@ test-file campfire-http-login-page {
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = "<!doctype html><html><body><p role=\"alert\">Too many requests or unauthorized.</p><form method=\"post\" action=\"/session\"><label for=\"email_address\">Email address</label><input id=\"email_address\" name=\"email_address\" type=\"email\" autocomplete=\"username\" value=\"member@example.test\"><label for=\"password\">Password</label><input id=\"password\" name=\"password\" type=\"password\" autocomplete=\"current-password\" maxlength=\"72\"><button type=\"submit\">Sign in</button></form></body></html>"
         )
     }
 }
@@ -483,7 +483,7 @@ test-file campfire-http-login-submit {
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("new-login-token")),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         )
         effects {
             db.read: 0
@@ -686,7 +686,7 @@ test-file campfire-http-dispatch-after-ban {
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("new-login-token")),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         )
         effects {
             db.read: 0

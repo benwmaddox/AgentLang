@@ -4,8 +4,6 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="NativeHostTests.fs" />
-    <Compile Include="NativeSqliteTests.fs" />
     <Compile Include="RoomReadEntryTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

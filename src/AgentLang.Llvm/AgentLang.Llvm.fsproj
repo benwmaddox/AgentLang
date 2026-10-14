@@ -24,8 +24,6 @@
     <EmbeddedResource Include="native\owning_stack_profile.h" LogicalName="AgentLang.Llvm.native.owning_stack_profile.h" />
     <EmbeddedResource Include="native\float_format.h" LogicalName="AgentLang.Llvm.native.float_format.h" />
     <EmbeddedResource Include="native\owning_mailbox_abi.h" LogicalName="AgentLang.Llvm.native.owning_mailbox_abi.h" />
-    <EmbeddedResource Include="native\campfire_room_host_abi.h" LogicalName="AgentLang.Llvm.native.campfire_room_host_abi.h" />
-    <EmbeddedResource Include="native\campfire_room_read_host_abi.h" LogicalName="AgentLang.Llvm.native.campfire_room_read_host_abi.h" />
   </ItemGroup>
 
   <ItemGroup>

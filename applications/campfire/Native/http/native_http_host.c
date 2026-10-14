@@ -18,7 +18,6 @@
 #include "room_read_adapter.h"
 #include "request_encoder.h"
 #include "browser_normalizer.h"
-#include "campfire_html_encoder.h"
 #include "campfire_http_renderer.h"
 #include "cookie_response_codec.h"
 #include "cookie_wire.h"

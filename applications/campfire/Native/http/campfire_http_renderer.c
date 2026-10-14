@@ -1,6 +1,5 @@
 #include "campfire_http_renderer.h"
 
-#include "campfire_html_encoder.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -87,6 +86,7 @@ typedef struct al_http_parsed_response {
   uint32_t remember_return_to;
   uint32_t has_last_room;
   int64_t last_room;
+  al_http_text body;
 } al_http_parsed_response;
 
 typedef struct al_http_body_sink {
@@ -333,6 +333,7 @@ static int al_http_parse_response(const uint8_t *bytes, uint32_t extent,
       !al_http_read_bool(&cursor, &out_response->remember_return_to) ||
       !al_http_read_optional_i64(&cursor, &out_response->has_last_room,
                                  &out_response->last_room) ||
+      !al_http_read_text(&cursor, &out_response->body) ||
       cursor.offset != cursor.extent)
     return 0;
 
@@ -412,19 +413,6 @@ static int al_http_contract_valid(const uint8_t *bytes, uint32_t extent,
   }
 }
 
-static int al_http_html_measure(al_http_text text, uint32_t *out_bytes) {
-  uint32_t required = 0u;
-  const int32_t status = al_campfire_html_encode_utf8_v1(
-      text.utf16le, text.code_units, NULL, 0u,
-      &required);
-  if ((required == 0u && status != AL_CAMPFIRE_HTML_ENCODE_OK) ||
-      (required != 0u &&
-       status != AL_CAMPFIRE_HTML_ENCODE_OUTPUT_TOO_SMALL))
-    return 0;
-  *out_bytes = required;
-  return 1;
-}
-
 static int al_http_sink_append(al_http_body_sink *sink, const uint8_t *bytes,
                                uint32_t length) {
   uint32_t index;
@@ -440,164 +428,21 @@ static int al_http_sink_append(al_http_body_sink *sink, const uint8_t *bytes,
   return 1;
 }
 
-static int al_http_sink_html(al_http_body_sink *sink, al_http_text text) {
-  uint32_t required;
-  if (!al_http_html_measure(text, &required))
-    return 0;
-  if (sink->writing == 0u)
-    return al_http_sink_append(sink, NULL, required);
-  if (sink->used > sink->capacity || required > sink->capacity - sink->used)
-    return 0;
-  {
-    uint32_t written = 0u;
-    const int32_t status = al_campfire_html_encode_utf8_v1(
-        text.utf16le, text.code_units,
-        sink->bytes + sink->used, sink->capacity - sink->used, &written);
-    if (status != AL_CAMPFIRE_HTML_ENCODE_OK || written != required)
-      return 0;
-    sink->used += written;
-  }
-  return 1;
-}
-
-static int al_http_format_i64(int64_t value, uint8_t output[20],
-                              uint32_t *out_length) {
-  uint8_t reverse[20];
-  uint64_t magnitude;
-  uint32_t digits = 0u;
-  uint32_t output_offset = 0u;
-  uint32_t index;
-  if (value < 0)
-    magnitude = (uint64_t)(-(value + 1)) + 1u;
-  else
-    magnitude = (uint64_t)value;
-  do {
-    reverse[digits] = (uint8_t)('0' + (magnitude % 10u));
-    magnitude /= 10u;
-    ++digits;
-  } while (magnitude != 0u);
-  if (value < 0)
-    output[output_offset++] = (uint8_t)'-';
-  for (index = 0u; index < digits; ++index)
-    output[output_offset + index] = reverse[digits - index - 1u];
-  *out_length = output_offset + digits;
-  return 1;
-}
-
-static int al_http_emit_message(al_http_body_sink *sink,
-                                const al_http_message_row *message) {
-  /* Rails-shaped identity: messages_helper#message_tag and
-   * dom_id(message, :presentation). Message#to_key is [client_message_id],
-   * so DOM ids use it; data-message-id is the row id. Keep in step with
-   * ResponseRenderer.fs. */
-  static const uint8_t prefix[] = "<div id=\"message_";
-  static const uint8_t data_id_prefix[] =
-      "\" class=\"message\" data-message-id=\"";
-  static const uint8_t presentation_prefix[] =
-      "\"><div id=\"presentation_message_";
-  static const uint8_t presentation_suffix[] = "\" dir=\"auto\">";
-  static const uint8_t paragraph_suffix[] = "</div></div>";
-  uint8_t decimal[20];
-  uint32_t decimal_length;
-  al_http_text body;
-
-  al_http_format_i64(message->id, decimal, &decimal_length);
-  if (!al_http_sink_append(sink, prefix, (uint32_t)(sizeof(prefix) - 1u)) ||
-      !al_http_sink_html(sink, message->client_message_id) ||
-      !al_http_sink_append(sink, data_id_prefix,
-                           (uint32_t)(sizeof(data_id_prefix) - 1u)) ||
-      !al_http_sink_append(sink, decimal, decimal_length) ||
-      !al_http_sink_append(sink, presentation_prefix,
-                           (uint32_t)(sizeof(presentation_prefix) - 1u)) ||
-      !al_http_sink_html(sink, message->client_message_id) ||
-      !al_http_sink_append(sink, presentation_suffix,
-                           (uint32_t)(sizeof(presentation_suffix) - 1u)))
-    return 0;
-  if (message->body.present != 0u) {
-    body = message->body.value;
-    if (!al_http_sink_html(sink, body))
-      return 0;
-  }
-  return al_http_sink_append(sink, paragraph_suffix,
-                             (uint32_t)(sizeof(paragraph_suffix) - 1u));
-}
-
-static int al_http_emit_room_messages(al_http_body_sink *sink,
-                                      const uint8_t *bytes,
-                                      uint32_t extent,
-                                      const al_http_parsed_response *response) {
-  al_http_cursor cursor;
-  al_http_message_row message;
-  uint32_t index;
-  cursor.bytes = bytes;
-  cursor.extent = extent;
-  cursor.offset = response->messages_items_offset;
-  for (index = 0u; index < response->messages_count; ++index) {
-    if (!al_http_parse_message_row(&cursor, &message) ||
-        !al_http_emit_message(sink, &message))
-      return 0;
-  }
-  return 1;
-}
-
-static int al_http_emit_body(al_http_body_sink *sink, const uint8_t *bytes,
-                             uint32_t extent,
+/* The body is rendered by the Flow application (applications/campfire/
+ * views.flow) and arrives as the response's last field, already UTF-8. HTML
+ * views send it as-is; every other view must carry an empty body. */
+static int al_http_emit_body(al_http_body_sink *sink,
                              const al_http_parsed_response *response) {
-  static const uint8_t not_found_prefix[] =
-      "<!doctype html><html><body><p>";
-  static const uint8_t paragraph_suffix[] = "</p></body></html>";
-  static const uint8_t incompatible_body[] =
-      "<!doctype html><html><body><p>Please upgrade your browser.</p></body></html>";
-  static const uint8_t room_prefix[] =
-      "<!doctype html><html><body><h1>";
-  static const uint8_t room_heading_suffix[] =
-      "</h1><section id=\"messages\">";
-  static const uint8_t room_form_prefix[] =
-      "</section><form method=\"post\" action=\"/rooms/";
-  static const uint8_t room_form_middle[] =
-      "/messages\"><textarea name=\"message[body]\"></textarea><button type=\"submit\">Send</button></form></body></html>";
-
   switch (response->view) {
   case AL_HTTP_VIEW_EMPTY:
   case AL_HTTP_VIEW_REDIRECT_ROOT:
   case AL_HTTP_VIEW_REDIRECT_SESSION:
-    return 1;
+    return al_http_text_is_empty(response->body);
   case AL_HTTP_VIEW_INCOMPATIBLE_BROWSER:
-    return al_http_sink_append(
-        sink, incompatible_body,
-        (uint32_t)(sizeof(incompatible_body) - 1u));
   case AL_HTTP_VIEW_ROOM_NOT_FOUND:
-    return al_http_sink_append(
-               sink, not_found_prefix,
-               (uint32_t)(sizeof(not_found_prefix) - 1u)) &&
-           al_http_sink_html(sink, response->text) &&
-           al_http_sink_append(
-               sink, paragraph_suffix,
-               (uint32_t)(sizeof(paragraph_suffix) - 1u));
-  case AL_HTTP_VIEW_ROOM: {
-    uint8_t decimal[20];
-    uint32_t decimal_length;
-    al_http_text room_name;
-    al_http_format_i64(response->room.id, decimal, &decimal_length);
-    if (!al_http_sink_append(sink, room_prefix,
-                             (uint32_t)(sizeof(room_prefix) - 1u)))
-      return 0;
-    if (response->room.name.present != 0u) {
-      room_name = response->room.name.value;
-      if (!al_http_sink_html(sink, room_name))
-        return 0;
-    }
-    if (!al_http_sink_append(sink, room_heading_suffix,
-                             (uint32_t)(sizeof(room_heading_suffix) - 1u)) ||
-        !al_http_emit_room_messages(sink, bytes, extent, response) ||
-        !al_http_sink_append(sink, room_form_prefix,
-                             (uint32_t)(sizeof(room_form_prefix) - 1u)) ||
-        !al_http_sink_append(sink, decimal, decimal_length) ||
-        !al_http_sink_append(sink, room_form_middle,
-                             (uint32_t)(sizeof(room_form_middle) - 1u)))
-      return 0;
-    return 1;
-  }
+  case AL_HTTP_VIEW_ROOM:
+    return al_http_sink_append(sink, response->body.utf16le,
+                               response->body.code_units);
   default:
     return 0;
   }
@@ -711,8 +556,7 @@ int32_t al_campfire_http_render_v1(
   measure.capacity = UINT32_MAX;
   measure.used = 0u;
   measure.writing = 0u;
-  if (!al_http_emit_body(&measure, response_abi5, response_extent_bytes,
-                         &response))
+  if (!al_http_emit_body(&measure, &response))
     return AL_CAMPFIRE_HTTP_RENDER_LENGTH_OVERFLOW;
   *out_body_required_bytes = measure.used;
   al_http_set_metadata(&response, out_metadata);
@@ -728,8 +572,7 @@ int32_t al_campfire_http_render_v1(
   write.capacity = body_capacity_bytes;
   write.used = 0u;
   write.writing = 1u;
-  if (!al_http_emit_body(&write, response_abi5, response_extent_bytes,
-                         &response) ||
+  if (!al_http_emit_body(&write, &response) ||
       write.used != measure.used) {
     *out_body_required_bytes = 0u;
     al_http_clear_metadata(out_metadata);

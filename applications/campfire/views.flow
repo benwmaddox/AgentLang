@@ -33,3 +33,51 @@ fn campfire.views.room-text(room: RoomRow, messages: List<MessageRow>) -> String
 
     campfire.views.text(campfire.views.room(room, messages))
 }
+
+fn campfire.views.not-found(text: String) -> Html {
+    effects none
+    html"<!doctype html><html><body><p>{text}</p></body></html>"
+}
+
+fn campfire.views.incompatible() -> Html {
+    effects none
+    html"<!doctype html><html><body><p>Please upgrade your browser.</p></body></html>"
+}
+
+fn campfire.views.login(status: Int, email: String) -> Html {
+    effects none
+    doc "The sign-in form; 401 and 429 show the throttling alert."
+
+    let alert = if bool.or(status == 401, status == 429) {
+        html"""<p role="alert">Too many requests or unauthorized.</p>"""
+    } else {
+        html""
+    }
+    html"""<!doctype html><html><body>{alert}<form method="post" action="/session"><label for="email_address">Email address</label><input id="email_address" name="email_address" type="email" autocomplete="username" value="{email}"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="72"><button type="submit">Sign in</button></form></body></html>"""
+}
+
+fn campfire.views.append(message: MessageRow) -> Html {
+    effects none
+    doc "Turbo stream appending one message to the room's message list."
+
+    html"""<turbo-stream action="append" target="messages"><template>{campfire.views.message(message)}</template></turbo-stream>"""
+}
+
+fn campfire.views.body(status: Int, view: HttpView, text: String) -> String {
+    effects none
+    doc "The body of every response without route data: markup for the HTML views, empty for redirects and plain responses."
+
+    match view {
+        empty => ""
+        room => ""
+        append-message => ""
+        redirect-root => ""
+        redirect-session => ""
+        incompatible-browser => campfire.views.text(campfire.views.incompatible())
+        room-not-found => campfire.views.text(campfire.views.not-found(text))
+        login-page => campfire.views.text(campfire.views.login(status, text))
+        redirect-authenticated => ""
+        redirect-first-run => ""
+        redirect-signed-out => ""
+    }
+}

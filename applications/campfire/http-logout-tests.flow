@@ -66,7 +66,7 @@ test-file campfire-http-authenticated-sign-out {
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0
@@ -105,7 +105,7 @@ test-file campfire-http-authenticated-sign-out {
             message = option.none<MessageRow>(),
             refresh-session-token = option.none<SessionToken>(),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0
@@ -144,7 +144,7 @@ test-file campfire-http-authenticated-sign-out {
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0
@@ -183,7 +183,7 @@ test-file campfire-http-authenticated-sign-out {
             message = option.none<MessageRow>(),
             refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
             remember-return-to = false,
-            last-room = option.none<RoomId>()
+            last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0
@@ -311,7 +311,7 @@ test-file campfire-http-logout-form-errors {
         => value campfireHttpResponse.new(
             status = 400, view = HttpView.empty(), text = "", room = option.none<RoomRow>(), messages = list.empty<MessageRow>(),
             message = option.none<MessageRow>(), refresh-session-token = option.some<SessionToken>(SessionToken.new("pending-refresh")),
-            remember-return-to = false, last-room = option.none<RoomId>()
+            remember-return-to = false, last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0
@@ -462,7 +462,7 @@ test-file campfire-http-dispatch-after-ban-sign-out {
         => value campfireHttpResponse.new(
             status = 201, view = HttpView.empty(), text = "authenticated", room = option.none<RoomRow>(),
             messages = list.empty<MessageRow>(), message = option.none<MessageRow>(), refresh-session-token = option.none<SessionToken>(),
-            remember-return-to = false, last-room = option.none<RoomId>()
+            remember-return-to = false, last-room = option.none<RoomId>(), body = ""
         ) effects {
             db.read: 0
             db.write: 0

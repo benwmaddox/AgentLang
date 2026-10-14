@@ -42,7 +42,7 @@ $staticSourceFiles = @(
     'applications/campfire/Native/room_read_pure.h',
     'applications/campfire/Native/room_read_sqlite.def',
     'applications/campfire/Native/room_read_sqlite_subset.h',
-    'src/AgentLang.Llvm/native/campfire_room_read_host_abi.h',
+    'applications/campfire/Native/campfire_room_read_host_abi.h', 'applications/campfire/Native/room-read-host.json',
     'src/AgentLang.Llvm/native/owning_stack_runtime.c',
     'src/AgentLang.Llvm/native/owning_stack_runtime.h',
     'src/AgentLang.Llvm/native/owning_stack_profile.h',

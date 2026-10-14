@@ -153,7 +153,8 @@ module NativeRoomReadTests =
               "applications/campfire/Native/room_read_pure.h"
               "applications/campfire/Native/room_read_sqlite.def"
               "applications/campfire/Native/room_read_sqlite_subset.h"
-              "src/AgentLang.Llvm/native/campfire_room_read_host_abi.h"
+              "applications/campfire/Native/campfire_room_read_host_abi.h"
+              "applications/campfire/Native/room-read-host.json"
               "src/AgentLang.Llvm/native/owning_stack_runtime.c"
               "src/AgentLang.Llvm/native/owning_stack_runtime.h"
               "src/AgentLang.Llvm/native/owning_stack_profile.h"
@@ -1136,12 +1137,15 @@ module NativeRoomReadTests =
         let cases = createCases referenceCookies
         let artifactHashes = ResizeArray<string * string>()
         let mutable smokeFixture: (TestCase * Value * byte array * byte array) option = None
+        // The app-owned host manifest: the compiler knows nothing about Campfire.
+        let hostManifest = OwningAppHostManifest.Load(Path.Combine(repo, "applications", "campfire", "Native", "room-read-host.json"))
+        let hostProfile = OwningNativeHostProfile.AppHost hostManifest
         try
             for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
                 let optimizationName = match optimization with LlvmOptimization.O0 -> "O0" | LlvmOptimization.O2 -> "O2"
                 let artifactDirectory = Path.Combine(runRoot, "test-artifacts", optimizationName)
                 progress $"{optimizationName}: compiling native profile artifact"
-                use native = OwningStackAot.compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation toolchain optimization runtimeProfile executionProfile OwningNativeHostProfile.CampfireRoomReadV1 aggregator dependencies artifactDirectory body
+                use native = OwningStackAot.compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation toolchain optimization runtimeProfile executionProfile hostProfile aggregator dependencies artifactDirectory body
                 progress $"{optimizationName}: native profile artifact compiled"
                 check assertions $"{optimizationName}: native manifest is emitted" native.NativeHostManifestPath.IsSome
                 check assertions $"{optimizationName}: compiled program retains the selected runtime profile" (native.RuntimeProfile = runtimeProfile)
@@ -1333,14 +1337,17 @@ module NativeRoomReadTests =
                     progress $"{optimizationName}: standalone no-CLR smoke passed"
 
             let mismatchDirectory = Path.Combine(runRoot, "test-profile-mismatch-must-not-exist")
-            progress "checking pre-emission rejection under the unrelated room-find profile"
-            let oldProfileDiagnostic =
+            progress "checking pre-emission rejection when the app manifest omits a reachable host operation"
+            let narrowedProfile =
+                OwningNativeHostProfile.AppHost
+                    { hostManifest with Operations = hostManifest.Operations |> List.filter (fun operation -> operation.Name <> "campfire.messages.last-page") }
+            let narrowedDiagnostic =
                 try
-                    OwningStackAot.compileWithNativeHostDependencies toolchain LlvmOptimization.O0 OwningNativeHostProfile.CampfireRoomFindForUserV1 aggregator dependencies mismatchDirectory body |> ignore
+                    OwningStackAot.compileWithNativeHostDependencies toolchain LlvmOptimization.O0 narrowedProfile aggregator dependencies mismatchDirectory body |> ignore
                     "compiled"
                 with
                 | LanguageException diagnostic -> diagnostic.Code
-            check assertions $"room-read body is rejected by the unrelated room-find profile with its existing diagnostic (actual {oldProfileDiagnostic})" (oldProfileDiagnostic = "IR_OWNING_STACK_EFFECT_UNSUPPORTED")
+            check assertions $"a reachable host call missing from the app manifest is rejected (actual {narrowedDiagnostic})" (narrowedDiagnostic = "IR_NATIVE_HOST_OPERATION_UNSUPPORTED")
             check assertions "profile rejection occurs before native artifacts are emitted" (not (Directory.Exists mismatchDirectory))
             writeReceipt repo runRoot (runtimeProfileName runtimeProfile) (executionProfileName executionProfile) true assertions.Value (Map.ofSeq artifactHashes)
             progress "native room-read verifier passed"

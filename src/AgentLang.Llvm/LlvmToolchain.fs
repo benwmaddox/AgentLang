@@ -379,11 +379,6 @@ module LlvmToolchain =
             toolchain optimization OwningRuntimeProfile.Diagnostic llvmIrPath runtimeSourcePath adapterSourcePath
             hostAbiHeaderPath linkLibraryPaths runtimeIncludeDirectory outputDllPath
 
-    let compileLibraryWithRuntimeAndNativeHostAdapterAndNativeStackScreen toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath runtimeIncludeDirectory outputDllPath =
-        compileLibraryWithRuntimeAndNativeHostAdapterDependenciesAndNativeStackScreen
-            toolchain optimization llvmIrPath runtimeSourcePath adapterSourcePath
-                (Path.Combine(runtimeIncludeDirectory, "campfire_room_host_abi.h")) [] runtimeIncludeDirectory outputDllPath
-
     /// Compile a deterministic set of per-entry LLVM objects, one immutable
     /// module-metadata C object, and one arena runtime object into a DLL.
     /// Returns the DLL path and the object paths in link order.

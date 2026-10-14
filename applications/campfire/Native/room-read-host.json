@@ -1,0 +1,31 @@
+{
+  "profileId": "campfire-room-read-v1",
+  "entryWord": "campfire.http.room-read",
+  "entryInputTypes": [ "CampfireHttpRequest" ],
+  "entryOutputTypes": [ "CampfireHttpResponse" ],
+  "adapterSymbol": "al_host_campfire_room_read_v1",
+  "header": "campfire_room_read_host_abi.h",
+  "adapterFileName": "campfire_room_read_host_adapter.c",
+  "outputLimitBytes": 16777216,
+  "boundarySchemas": [
+    "CampfireHttpRequest", "CampfireHttpResponse",
+    "AuthUser", "SessionRow", "SessionRefresh", "RestoredSession",
+    "MembershipKey", "MessageRow", "RoomRow", "BrowserInfo",
+    "HttpMessageInput", "HttpLoginInput", "HttpLogoutInput",
+    "SessionId", "UserId", "RoomId", "MessageId", "SessionToken",
+    "BotKey", "RemoteIp", "UtcInstant", "Role", "AuthUserStatus",
+    "RoomKind", "DbError", "BrowserFamily", "HttpRoute", "RequestMethod",
+    "HttpFormError", "HttpView"
+  ],
+  "operations": [
+    { "tag": 1, "name": "campfire.cookies.verify-session-token", "inputTypes": [ "String", "UtcInstant" ], "outputTypes": [ "Option<SessionToken>" ], "effects": [] },
+    { "tag": 2, "name": "campfire.sessions.find-by-token", "inputTypes": [ "SessionToken" ], "outputTypes": [ "Result<Option<SessionRow>, DbError>" ], "effects": [ "db.read" ] },
+    { "tag": 3, "name": "campfire.sessions.refresh-before", "inputTypes": [ "SessionRefresh" ], "outputTypes": [ "Result<SessionRow, DbError>" ], "effects": [ "db.write" ] },
+    { "tag": 4, "name": "campfire.users.find-by-id", "inputTypes": [ "UserId" ], "outputTypes": [ "Result<Option<AuthUser>, DbError>" ], "effects": [ "db.read" ] },
+    { "tag": 5, "name": "campfire.users.authenticate-bot-key", "inputTypes": [ "BotKey" ], "outputTypes": [ "Result<Option<AuthUser>, DbError>" ], "effects": [ "db.read" ] },
+    { "tag": 6, "name": "campfire.browser.version-at-least?", "inputTypes": [ "String", "String" ], "outputTypes": [ "Bool" ], "effects": [] },
+    { "tag": 7, "name": "campfire.rooms.find-for-user", "inputTypes": [ "UserId", "RoomId" ], "outputTypes": [ "Result<Option<RoomRow>, DbError>" ], "effects": [ "db.read" ] },
+    { "tag": 8, "name": "campfire.membership.exists?", "inputTypes": [ "MembershipKey" ], "outputTypes": [ "Result<Bool, DbError>" ], "effects": [ "db.read" ] },
+    { "tag": 9, "name": "campfire.messages.last-page", "inputTypes": [ "RoomId" ], "outputTypes": [ "Result<List<MessageRow>, DbError>" ], "effects": [ "db.read" ] }
+  ]
+}

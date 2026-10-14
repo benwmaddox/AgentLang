@@ -233,14 +233,14 @@ function AddBuild([string] $Root, [string] $RoomRoot, [hashtable] $Room, [string
         $hostPath,
         'applications/campfire/Native/http/request_encoder.c', 'applications/campfire/Native/http/request_encoder.h',
         'applications/campfire/Native/http/browser_normalizer.c', 'applications/campfire/Native/http/browser_normalizer.h',
-        'applications/campfire/Native/http/campfire_html_encoder.c', 'applications/campfire/Native/http/campfire_html_encoder.h',
+        
         'applications/campfire/Native/http/campfire_http_renderer.c', 'applications/campfire/Native/http/campfire_http_renderer.h',
         'applications/campfire/Native/http/cookie_response_codec.c', 'applications/campfire/Native/http/cookie_response_codec.h',
         'applications/campfire/Native/http/cookie_wire.c', 'applications/campfire/Native/http/cookie_wire.h',
         'applications/campfire/Native/http/cookie_unescape.c', 'applications/campfire/Native/http/cookie_unescape.h',
         'applications/campfire/Native/http/cookie_expiry.c', 'applications/campfire/Native/http/cookie_expiry.h',
         'src/AgentLang.Llvm/native/owning_stack_runtime.c', 'src/AgentLang.Llvm/native/owning_stack_runtime.h',
-        'src/AgentLang.Llvm/native/float_format.h', 'src/AgentLang.Llvm/native/campfire_room_read_host_abi.h',
+        'src/AgentLang.Llvm/native/float_format.h', 'applications/campfire/Native/campfire_room_read_host_abi.h', 'applications/campfire/Native/room-read-host.json',
         'scripts/Build-CampfireNativeHttp.ps1'
     )
     foreach ($path in $required) { Require ($pins.Contains($path)) "$ProfileKey native build omitted required source pin: $path" }

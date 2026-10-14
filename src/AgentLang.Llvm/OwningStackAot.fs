@@ -101,13 +101,69 @@ type OwningStackExecutionResult =
       Layouts: OwningStackTypeLayout list
       LayoutEvents: OwningStackLayoutEvent list }
 
-/// Explicitly opts the owning-stack compiler into one statically linked,
-/// compiler-authorized native host boundary. The default compiler entry point
-/// remains pure and rejects host operations.
+/// One host operation an application exposes to its native adapter: the
+/// host-operation word name, an app-chosen stable ABI tag, its boundary type
+/// names, and its effects. The compiler checks every reachable host call
+/// against this list and the verified program's host catalog.
+type OwningAppHostOperation =
+    { Name: string
+      Tag: uint32
+      InputTypes: string list
+      OutputTypes: string list
+      Effects: string list }
+
+/// An application's native host boundary, supplied by the application's build
+/// (for Campfire, applications/campfire/Native/room-read-host.json). The
+/// compiler knows nothing about any application: it generates the calls into
+/// AdapterSymbol, links the app's adapter source, and copies the app-owned
+/// HeaderPath next to it. Every adapter output is validated against its type
+/// index before it is committed (al_owning_commit_host_output).
+type OwningAppHostManifest =
+    { ProfileId: string
+      EntryWord: string
+      EntryInputTypes: string list
+      EntryOutputTypes: string list
+      AdapterSymbol: string
+      HeaderPath: string
+      AdapterFileName: string
+      OutputLimitBytes: uint32
+      BoundarySchemaNames: string list
+      Operations: OwningAppHostOperation list }
+
+    /// Reads an application host manifest. HeaderPath is resolved relative to
+    /// the manifest file.
+    static member Load(path: string) =
+        let fullPath = Path.GetFullPath path
+        use document = JsonDocument.Parse(File.ReadAllText fullPath)
+        let root = document.RootElement
+        let text (element: JsonElement) (name: string) = element.GetProperty(name).GetString()
+        let texts (element: JsonElement) (name: string) =
+            element.GetProperty(name).EnumerateArray() |> Seq.map (fun item -> item.GetString()) |> List.ofSeq
+        { ProfileId = text root "profileId"
+          EntryWord = text root "entryWord"
+          EntryInputTypes = texts root "entryInputTypes"
+          EntryOutputTypes = texts root "entryOutputTypes"
+          AdapterSymbol = text root "adapterSymbol"
+          HeaderPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName fullPath, text root "header"))
+          AdapterFileName = text root "adapterFileName"
+          OutputLimitBytes = root.GetProperty("outputLimitBytes").GetUInt32()
+          BoundarySchemaNames = texts root "boundarySchemas"
+          Operations =
+            root.GetProperty("operations").EnumerateArray()
+            |> Seq.map (fun operation ->
+                { Name = text operation "name"
+                  Tag = operation.GetProperty("tag").GetUInt32()
+                  InputTypes = texts operation "inputTypes"
+                  OutputTypes = texts operation "outputTypes"
+                  Effects = texts operation "effects" })
+            |> List.ofSeq }
+
+/// Explicitly opts the owning-stack compiler into one statically linked native
+/// host boundary described by the application. The default compiler entry
+/// point remains pure and rejects host operations.
 [<RequireQualifiedAccess>]
 type OwningNativeHostProfile =
-    | CampfireRoomFindForUserV1
-    | CampfireRoomReadV1
+    | AppHost of OwningAppHostManifest
 
 /// Trusted build inputs, never selected by language code or request data.
 type OwningNativeHostDependencies =
@@ -122,15 +178,6 @@ type private OwningNativeHostOperation =
       InputTypes: string list
       OutputTypes: string list
       Effects: Set<IrEffect> }
-
-type private UtcInstantValidatorNode =
-    | UtcValidatorParameterStore
-    | UtcValidatorParameter
-    | UtcValidatorInt of int64
-    | UtcValidatorBool of bool
-    | UtcValidatorCall of string * IrCallTarget * IrType list * IrType list * Set<IrEffect>
-    | UtcValidatorIf of UtcInstantValidatorNode list * UtcInstantValidatorNode list
-    | UtcValidatorOther of string
 
 type OwningMailboxEntryMetadata =
     { Role: string
@@ -381,11 +428,10 @@ type private OwningLlvmWriter() =
                 let mutable count = 0L
                 let elementType = other.Substring(separator + 3, other.Length - separator - 4)
                 if not (Int64.TryParse(countText, &count)) then false
-                elif elementType = "%AlCampfireRoomReadInput" then
-                    // The closed room-read profile has at most two input values.
-                    // Its borrowed descriptor is exactly 16 bytes on the x64 ABI.
-                    count >= 1L && count <= 2L
-                elif elementType.Contains("%AlCampfireRoomReadInput", StringComparison.Ordinal) then false
+                elif elementType = "%AlOwningHostInput" then
+                    // One borrowed 16-byte descriptor (x64) per host-operation input.
+                    count >= 1L && count <= 16L
+                elif elementType.Contains("%AlOwningHostInput", StringComparison.Ordinal) then false
                 else count >= 0L && isSupportedAllocaType elementType
         | _ -> false
 
@@ -826,170 +872,45 @@ module OwningStackAot =
             "The verified program does not match the closed native host profile contract."
             None None [ expected ] [ actual ]
 
-    let private validateCampfireRoomHostProfile (verifiedProgram: VerifiedIrProgram) (program: IrProgram) =
-        let operationId = HostOperationId "campfire.rooms.find-for-user"
-        let expectedEffects = Set.singleton IrEffect.DatabaseRead
-        let contractText (contract: IrHostOperationContract) =
-            let inputs = contract.InputTypes |> List.map (typeName program) |> String.concat " "
-            let outputs = contract.OutputTypes |> List.map (typeName program) |> String.concat " "
-            let effects = IrEffects.names contract.OperationEffects |> String.concat ","
-            $"{contract.OperationName}: {inputs} -> {outputs}; effects={effects}"
-        let contracts = VerifiedIrProgram.hostOperationContracts verifiedProgram
-        match contracts.TryFind operationId with
-        | Some contract
-            when contract.OperationName = "campfire.rooms.find-for-user"
-                 && (contract.InputTypes |> List.map (typeName program)) = [ "UserId"; "RoomId" ]
-                 && (contract.OutputTypes |> List.map (typeName program)) = [ "Result<Option<RoomRow>, DbError>" ]
-                 && contract.OperationEffects = expectedEffects -> ()
-        | Some contract ->
-            failNativeHostProfile
-                "campfire.rooms.find-for-user: UserId RoomId -> Result<Option<RoomRow>, DbError>; effects=db.read"
-                (contractText contract)
-        | None ->
-            failNativeHostProfile "verified host catalog contains campfire.rooms.find-for-user" "operation absent"
+    let private hostOperationsOf (manifest: OwningAppHostManifest) : OwningNativeHostOperation list =
+        manifest.Operations
+        |> List.map (fun operation ->
+            { Id = HostOperationId operation.Name
+              Name = operation.Name
+              Tag = operation.Tag
+              InputTypes = operation.InputTypes
+              OutputTypes = operation.OutputTypes
+              Effects =
+                operation.Effects
+                |> List.map (fun name ->
+                    match IrEffects.ofName name with
+                    | Some effect -> effect
+                    | None -> failNativeHostProfile $"{operation.Name}: known effect names" name)
+                |> Set.ofList })
 
-        let namedDefinitions =
-            program.NominalTypesByKey
-            |> Map.toList
-            |> List.map snd
-            |> List.map (function
-                | IrRecordDefinition definition -> definition.TypeName, IrRecordDefinition definition
-                | IrScalarDefinition definition -> definition.TypeName, IrScalarDefinition definition
-                | IrEnumDefinition definition -> definition.TypeName, IrEnumDefinition definition)
-        let lookup name =
-            match namedDefinitions |> List.filter (fun (actualName, _) -> actualName = name) with
-            | [ _, definition ] -> definition
-            | matches ->
-                failNativeHostProfile
-                    $"one nominal definition named {name}"
-                    (if matches.IsEmpty then "definition absent" else $"{matches.Length} definitions")
-                IrEnumDefinition { TypeKey = ProgramTypeKey -1; TypeName = ""; Cases = [] }
-        let requireScalar name baseType =
-            match lookup name with
-            | IrScalarDefinition scalar when scalar.BaseType = baseType && scalar.ValidatorCall.IsNone -> ()
-            | IrScalarDefinition scalar -> failNativeHostProfile $"{name}: unvalidated {IrTypes.format baseType} scalar" $"{name}: {IrTypes.format scalar.BaseType}; validator={scalar.ValidatorCall.IsSome}"
-            | _ -> failNativeHostProfile $"{name}: scalar" "different nominal definition kind"
-        let requireEnum name cases =
-            match lookup name with
-            | IrEnumDefinition definition when definition.Cases = cases -> ()
-            | IrEnumDefinition definition ->
-                let expectedCases = String.concat "," cases
-                let actualCases = String.concat "," definition.Cases
-                failNativeHostProfile $"{name} cases={expectedCases}" $"{name} cases={actualCases}"
-            | _ -> failNativeHostProfile $"{name}: enum" "different nominal definition kind"
-        requireScalar "UserId" IrInt
-        requireScalar "RoomId" IrInt
-        requireEnum "RoomKind" [ "open"; "closed"; "direct" ]
-        requireEnum "DbError" [ "unavailable"; "not-found"; "constraint-conflict"; "invalid-input" ]
-        let expectedRoomFields =
-            [ "id", "RoomId"
-              "name", "Option<String>"
-              "kind", "RoomKind"
-              "creator-id", "UserId"
-              "created-at", "String"
-              "updated-at", "String" ]
-        match lookup "RoomRow" with
-        | IrRecordDefinition definition ->
-            let actual =
-                definition.RecordFields
-                |> List.map (fun field -> field.FieldName, typeName program field.FieldType)
-            if definition.ValidatorCall.IsSome || actual <> expectedRoomFields then
-                let formatFields fields =
-                    fields |> List.map (fun (name, ty) -> name + ":" + ty) |> String.concat ","
-                failNativeHostProfile
-                    $"RoomRow fields={formatFields expectedRoomFields}; no validator"
-                    $"RoomRow fields={formatFields actual}; validator={definition.ValidatorCall.IsSome}"
-        | _ -> failNativeHostProfile "RoomRow: record" "different nominal definition kind"
+    let private hostOperationForId (manifest: OwningAppHostManifest) operationId =
+        hostOperationsOf manifest |> List.tryFind (fun operation -> operation.Id = operationId)
 
-    let private nativeHostOperationId = HostOperationId "campfire.rooms.find-for-user"
-    let private nativeHostOperationName = "campfire.rooms.find-for-user"
-    let private nativeHostAdapterSymbol = "al_host_campfire_rooms_find_for_user_v1"
-    let private nativeHostOutputLimit = 65536u
+    let private allowedHostEffects (manifest: OwningAppHostManifest) =
+        hostOperationsOf manifest |> List.fold (fun effects operation -> Set.union effects operation.Effects) Set.empty
 
-    let private nativeRoomReadAdapterSymbol = "al_host_campfire_room_read_v1"
-    let private nativeRoomReadOutputLimit = 16777216u
-    let private nativeRoomReadAllowedEffects = Set.ofList [ IrEffect.DatabaseRead; IrEffect.DatabaseWrite ]
-    let private nativeRoomReadOperations =
-        let read = Set.singleton IrEffect.DatabaseRead
-        let write = Set.singleton IrEffect.DatabaseWrite
-        [ { Id = HostOperationId "campfire.cookies.verify-session-token"
-            Name = "campfire.cookies.verify-session-token"
-            Tag = 1u
-            InputTypes = [ "String"; "UtcInstant" ]
-            OutputTypes = [ "Option<SessionToken>" ]
-            Effects = Set.empty }
-          { Id = HostOperationId "campfire.sessions.find-by-token"
-            Name = "campfire.sessions.find-by-token"
-            Tag = 2u
-            InputTypes = [ "SessionToken" ]
-            OutputTypes = [ "Result<Option<SessionRow>, DbError>" ]
-            Effects = read }
-          { Id = HostOperationId "campfire.sessions.refresh-before"
-            Name = "campfire.sessions.refresh-before"
-            Tag = 3u
-            InputTypes = [ "SessionRefresh" ]
-            OutputTypes = [ "Result<SessionRow, DbError>" ]
-            Effects = write }
-          { Id = HostOperationId "campfire.users.find-by-id"
-            Name = "campfire.users.find-by-id"
-            Tag = 4u
-            InputTypes = [ "UserId" ]
-            OutputTypes = [ "Result<Option<AuthUser>, DbError>" ]
-            Effects = read }
-          { Id = HostOperationId "campfire.users.authenticate-bot-key"
-            Name = "campfire.users.authenticate-bot-key"
-            Tag = 5u
-            InputTypes = [ "BotKey" ]
-            OutputTypes = [ "Result<Option<AuthUser>, DbError>" ]
-            Effects = read }
-          { Id = HostOperationId "campfire.browser.version-at-least?"
-            Name = "campfire.browser.version-at-least?"
-            Tag = 6u
-            InputTypes = [ "String"; "String" ]
-            OutputTypes = [ "Bool" ]
-            Effects = Set.empty }
-          { Id = nativeHostOperationId
-            Name = nativeHostOperationName
-            Tag = 7u
-            InputTypes = [ "UserId"; "RoomId" ]
-            OutputTypes = [ "Result<Option<RoomRow>, DbError>" ]
-            Effects = read }
-          { Id = HostOperationId "campfire.membership.exists?"
-            Name = "campfire.membership.exists?"
-            Tag = 8u
-            InputTypes = [ "MembershipKey" ]
-            OutputTypes = [ "Result<Bool, DbError>" ]
-            Effects = read }
-          { Id = HostOperationId "campfire.messages.last-page"
-            Name = "campfire.messages.last-page"
-            Tag = 9u
-            InputTypes = [ "RoomId" ]
-            OutputTypes = [ "Result<List<MessageRow>, DbError>" ]
-            Effects = read } ]
-
-    let private nativeRoomReadOperationForId operationId =
-        nativeRoomReadOperations |> List.tryFind (fun operation -> operation.Id = operationId)
-
-    let private nativeHostHeaderResourceFor = function
-        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "AgentLang.Llvm.native.campfire_room_host_abi.h"
-        | OwningNativeHostProfile.CampfireRoomReadV1 -> "AgentLang.Llvm.native.campfire_room_read_host_abi.h"
-
-    let private nativeHostHeaderNameFor = function
-        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "campfire_room_host_abi.h"
-        | OwningNativeHostProfile.CampfireRoomReadV1 -> "campfire_room_read_host_abi.h"
-
-    let private nativeHostAdapterFileFor = function
-        | OwningNativeHostProfile.CampfireRoomFindForUserV1 -> "campfire_room_host_adapter.c"
-        | OwningNativeHostProfile.CampfireRoomReadV1 -> "campfire_room_read_host_adapter.c"
-
-    let private validateCampfireRoomReadHostProfile (verifiedProgram: VerifiedIrProgram) (program: IrProgram) =
+    /// The manifest is well formed (distinct names and nonzero tags) and each
+    /// declared operation matches the verified program's host contract.
+    let private validateAppHostProfile (manifest: OwningAppHostManifest) (verifiedProgram: VerifiedIrProgram) (program: IrProgram) =
+        let operations = hostOperationsOf manifest
+        if operations.IsEmpty then failNativeHostProfile $"{manifest.ProfileId}: at least one host operation" "no operations"
+        if (operations |> List.map (fun operation -> operation.Name) |> List.distinct).Length <> operations.Length then
+            failNativeHostProfile $"{manifest.ProfileId}: distinct operation names" "duplicate operation name"
+        if operations |> List.exists (fun operation -> operation.Tag = 0u)
+           || (operations |> List.map (fun operation -> operation.Tag) |> List.distinct).Length <> operations.Length then
+            failNativeHostProfile $"{manifest.ProfileId}: distinct nonzero operation tags" "zero or duplicate tag"
         let contracts = VerifiedIrProgram.hostOperationContracts verifiedProgram
         let contractText (contract: IrHostOperationContract) =
             let inputs = contract.InputTypes |> List.map (typeName program) |> String.concat " "
             let outputs = contract.OutputTypes |> List.map (typeName program) |> String.concat " "
             let effects = IrEffects.names contract.OperationEffects |> String.concat ","
             $"{contract.OperationName}: {inputs} -> {outputs}; effects={effects}"
-        for expected in nativeRoomReadOperations do
+        for expected in operations do
             match contracts.TryFind expected.Id with
             | Some contract
                 when contract.OperationName = expected.Name
@@ -1005,177 +926,6 @@ module OwningStackAot =
                     (contractText contract)
             | None ->
                 failNativeHostProfile $"verified host catalog contains {expected.Name}" "operation absent"
-
-        let namedDefinitions =
-            program.NominalTypesByKey
-            |> Map.toList
-            |> List.map snd
-            |> List.map (function
-                | IrRecordDefinition definition -> definition.TypeName, IrRecordDefinition definition
-                | IrScalarDefinition definition -> definition.TypeName, IrScalarDefinition definition
-                | IrEnumDefinition definition -> definition.TypeName, IrEnumDefinition definition)
-        let lookup name =
-            match namedDefinitions |> List.filter (fun (actualName, _) -> actualName = name) with
-            | [ _, definition ] -> definition
-            | matches ->
-                failNativeHostProfile
-                    $"one nominal definition named {name}"
-                    (if matches.IsEmpty then "definition absent" else $"{matches.Length} definitions")
-                IrEnumDefinition { TypeKey = ProgramTypeKey -1; TypeName = ""; Cases = [] }
-        let requireScalar name baseType validatorName =
-            match lookup name with
-            | IrScalarDefinition scalar
-                when scalar.BaseType = baseType
-                     && (scalar.ValidatorCall |> Option.map (fun call -> call.ResolvedName)) = validatorName -> ()
-            | IrScalarDefinition scalar ->
-                let expectedValidator = validatorName |> Option.defaultValue "none"
-                let actualValidator = scalar.ValidatorCall |> Option.map (fun call -> call.ResolvedName) |> Option.defaultValue "none"
-                failNativeHostProfile
-                    $"{name}: {IrTypes.format baseType} scalar; validator={expectedValidator}"
-                    $"{name}: {IrTypes.format scalar.BaseType}; validator={actualValidator}"
-            | _ -> failNativeHostProfile $"{name}: scalar" "different nominal definition kind"
-        let validateUtcInstantValidator () =
-            let functions =
-                program.FunctionsById
-                |> Map.toList
-                |> List.map snd
-                |> List.filter (fun fn -> fn.FunctionName = "utc-instant.valid?")
-            let normalizeCall (call: IrResolvedCall) =
-                UtcValidatorCall(call.ResolvedName, call.ResolvedTarget, call.InputTypes, call.OutputTypes, call.ResolvedEffects)
-            let rec normalizeBlock (parameterSlot: LocalSlot) (block: IrBlock) =
-                block.Code
-                |> List.collect (fun instruction ->
-                    match instruction.Operation with
-                    | IrOperation.Scope inner | IrOperation.Compact inner -> normalizeBlock parameterSlot inner
-                    | IrOperation.If(thenBlock, elseBlock) -> [ UtcValidatorIf(normalizeBlock parameterSlot thenBlock, normalizeBlock parameterSlot elseBlock) ]
-                    | IrOperation.StoreLocal slot when slot = parameterSlot -> [ UtcValidatorParameterStore ]
-                    | IrOperation.LoadLocal slot when slot = parameterSlot -> [ UtcValidatorParameter ]
-                    | IrOperation.LoadLocal slot -> [ UtcValidatorOther(sprintf "LoadLocal %A" slot) ]
-                    | IrOperation.Constant(LInt value, IrInt) -> [ UtcValidatorInt value ]
-                    | IrOperation.Constant(LBool value, IrBool) -> [ UtcValidatorBool value ]
-                    | IrOperation.Call call -> [ normalizeCall call ]
-                    | operation -> [ UtcValidatorOther(sprintf "%A" operation) ])
-            let expectedLess = UtcValidatorCall("int.less-than", PrimitiveTarget(PrimitiveId "int.less-than"), [ IrInt; IrInt ], [ IrBool ], Set.empty)
-            let expectedGreater = UtcValidatorCall("int.greater-than", PrimitiveTarget(PrimitiveId "int.greater-than"), [ IrInt; IrInt ], [ IrBool ], Set.empty)
-            let expectedBody =
-                [ UtcValidatorParameterStore
-                  UtcValidatorParameter
-                  UtcValidatorInt(-62135596800000000L)
-                  expectedLess
-                  UtcValidatorIf(
-                      [ UtcValidatorBool false ],
-                      [ UtcValidatorParameter
-                        UtcValidatorInt(253402300799999999L)
-                        expectedGreater
-                        UtcValidatorIf([ UtcValidatorBool false ], [ UtcValidatorBool true ]) ]) ]
-            match lookup "UtcInstant", functions with
-            | IrScalarDefinition scalar, [ fn ] ->
-                let parameterSlot =
-                    match fn.FunctionBody.EntryShape.StackTypes, fn.FunctionBody.EntryShape.LocalTypes, fn.FunctionBody.Code with
-                    | [ IrInt ], localTypes, firstInstruction :: _ when Map.isEmpty localTypes ->
-                        match firstInstruction.Operation with
-                        | IrOperation.StoreLocal slot when fn.LocalNames.Count = 1 && fn.LocalNames.ContainsKey slot -> Some slot
-                        | _ -> None
-                    | _ -> None
-                match scalar.ValidatorCall with
-                | Some validator
-                    when validator.ResolvedName = fn.FunctionName
-                         && validator.ResolvedTarget = UserWordTarget(fn.FunctionId, fn.FunctionRevision)
-                         && validator.InputTypes = [ IrInt ]
-                         && validator.OutputTypes = [ IrBool ]
-                         && Set.isEmpty validator.ResolvedDeclaredEffects
-                         && Set.isEmpty validator.ResolvedEffects
-                         && fn.InputTypes = [ IrInt ]
-                         && fn.OutputTypes = [ IrBool ]
-                         && Set.isEmpty fn.FunctionDeclaredEffects
-                         && Set.isEmpty fn.FunctionInferredEffects
-                          && parameterSlot.IsSome
-                          && normalizeBlock parameterSlot.Value fn.FunctionBody = expectedBody -> ()
-                | _ ->
-                    let actual =
-                        match parameterSlot with
-                        | Some slot -> normalizeBlock slot fn.FunctionBody |> sprintf "%A"
-                        | None ->
-                            sprintf "parameter binding shape differs; entry stack=%A; entry locals=%A; local slots=%A; body=%A"
-                                fn.FunctionBody.EntryShape.StackTypes fn.FunctionBody.EntryShape.LocalTypes fn.LocalNames fn.FunctionBody.Code
-                    failNativeHostProfile
-                        "UtcInstant validator is pure utc-instant.valid?(Int) -> Bool with exact microsecond bounds -62135596800000000 through 253402300799999999"
-                        actual
-            | _ ->
-                failNativeHostProfile
-                    "one validated UtcInstant scalar and one utc-instant.valid? function"
-                    $"UtcInstant definition or validator count differs ({functions.Length})"
-        let requireEnum name cases =
-            match lookup name with
-            | IrEnumDefinition definition when definition.Cases = cases -> ()
-            | IrEnumDefinition definition ->
-                let expectedCases = String.concat "," cases
-                let actualCases = String.concat "," definition.Cases
-                failNativeHostProfile $"{name} cases={expectedCases}" $"{name} cases={actualCases}"
-            | _ -> failNativeHostProfile $"{name}: enum" "different nominal definition kind"
-        let requireRecord name expectedFields =
-            match lookup name with
-            | IrRecordDefinition definition ->
-                let actual = definition.RecordFields |> List.map (fun field -> field.FieldName, typeName program field.FieldType)
-                let formatFields fields = fields |> List.map (fun (fieldName, ty) -> fieldName + ":" + ty) |> String.concat ","
-                if definition.ValidatorCall.IsSome || actual <> expectedFields then
-                    failNativeHostProfile
-                        $"{name} fields={formatFields expectedFields}; no validator"
-                        $"{name} fields={formatFields actual}; validator={definition.ValidatorCall.IsSome}"
-            | _ -> failNativeHostProfile $"{name}: record" "different nominal definition kind"
-
-        // These are all nominal types that cross the request/response or one of
-        // the nine host-operation boundaries. UtcInstant is intentionally pinned
-        // to the validated microsecond representation used by the application.
-        [ "SessionId", IrInt, None
-          "UserId", IrInt, None
-          "RoomId", IrInt, None
-          "MessageId", IrInt, None
-          "SessionToken", IrString, None
-          "BotKey", IrString, None
-          "RemoteIp", IrString, None
-          "UtcInstant", IrInt, Some "utc-instant.valid?" ]
-        |> List.iter (fun (name, baseType, validator) -> requireScalar name baseType validator)
-        validateUtcInstantValidator ()
-
-        [ "Role", [ "member"; "administrator"; "bot" ]
-          "AuthUserStatus", [ "active"; "deactivated"; "banned" ]
-          "RoomKind", [ "open"; "closed"; "direct" ]
-          "DbError", [ "unavailable"; "not-found"; "constraint-conflict"; "invalid-input" ]
-          "BrowserFamily", [ "safari"; "chrome"; "firefox"; "opera"; "internet-explorer"; "other" ]
-          "HttpRoute", [ "room-show"; "message-create"; "session-new"; "session-create"; "session-destroy" ]
-          "RequestMethod", [ "get"; "head"; "unsafe" ]
-          "HttpFormError", [ "invalid-form"; "unsupported-media"; "unsupported-attachment"; "body-too-large" ]
-          "HttpView", [ "empty"; "room"; "append-message"; "redirect-root"; "redirect-session"; "incompatible-browser"; "room-not-found"; "login-page"; "redirect-authenticated"; "redirect-first-run"; "redirect-signed-out" ] ]
-        |> List.iter (fun (name, cases) -> requireEnum name cases)
-
-        [ "AuthUser",
-          [ "id", "UserId"; "name", "String"; "role", "Role"; "status", "AuthUserStatus" ]
-          "SessionRow",
-          [ "id", "SessionId"; "user-id", "UserId"; "token", "SessionToken"; "ip-address", "Option<RemoteIp>"; "user-agent", "Option<String>"; "last-active-at", "UtcInstant"; "created-at", "UtcInstant"; "updated-at", "UtcInstant" ]
-          "SessionRefresh",
-          [ "session-id", "SessionId"; "cutoff", "UtcInstant"; "now", "UtcInstant"; "ip-address", "Option<RemoteIp>"; "user-agent", "Option<String>" ]
-          "MembershipKey",
-          [ "user-id", "UserId"; "room-id", "RoomId" ]
-          "MessageRow",
-          [ "id", "MessageId"; "room-id", "RoomId"; "creator-id", "UserId"; "client-message-id", "String"; "body", "Option<String>"; "created-at", "String"; "updated-at", "String" ]
-          "RoomRow",
-          [ "id", "RoomId"; "name", "Option<String>"; "kind", "RoomKind"; "creator-id", "UserId"; "created-at", "String"; "updated-at", "String" ]
-          "BrowserInfo",
-          [ "family", "BrowserFamily"; "version", "Option<String>"; "is-bot", "Bool" ]
-          "HttpMessageInput",
-          [ "client-message-id", "Option<String>"; "body", "Option<String>" ]
-          "HttpLoginInput",
-          [ "email-address", "Option<String>"; "password", "Option<String>" ]
-          "HttpLogoutInput",
-          [ "push-subscription-endpoint", "Option<String>" ]
-          "RestoredSession",
-          [ "user", "Option<AuthUser>"; "session", "SessionRow"; "refresh-cookie", "Bool" ]
-          "CampfireHttpRequest",
-          [ "route", "HttpRoute"; "method", "RequestMethod"; "room-id", "RoomId"; "now", "UtcInstant"; "remote-ip", "RemoteIp"; "user-agent", "Option<String>"; "base-url", "String"; "request-is-ssl", "Bool"; "force-ssl", "Bool"; "origin", "Option<String>"; "fetch-site", "Option<String>"; "session-token", "Option<String>"; "bot-key", "Option<BotKey>"; "message-form", "Result<Option<HttpMessageInput>, HttpFormError>"; "login-form", "Result<Option<HttpLoginInput>, HttpFormError>"; "logout-form", "Result<Option<HttpLogoutInput>, HttpFormError>"; "accepts-turbo", "Bool"; "accepts-html", "Bool"; "last-room", "Option<String>"; "browser", "BrowserInfo" ]
-          "CampfireHttpResponse",
-          [ "status", "Int"; "view", "HttpView"; "text", "String"; "room", "Option<RoomRow>"; "messages", "List<MessageRow>"; "message", "Option<MessageRow>"; "refresh-session-token", "Option<SessionToken>"; "remember-return-to", "Bool"; "last-room", "Option<RoomId>" ] ]
-        |> List.iter (fun (name, fields) -> requireRecord name fields)
 
     let rec private langTypeFor (program: IrProgram) = function
         | IrInt -> TInt
@@ -1204,54 +954,55 @@ module OwningStackAot =
         let program = VerifiedIrProgram.inspect sourceProgram
         match nativeHostProfile with
         | None -> VerifiedIrProgram.requireNoHostOperations sourceProgram
-        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> validateCampfireRoomHostProfile sourceProgram program
-        | Some OwningNativeHostProfile.CampfireRoomReadV1 -> validateCampfireRoomReadHostProfile sourceProgram program
+        | Some(OwningNativeHostProfile.AppHost manifest) -> validateAppHostProfile manifest sourceProgram program
         let bodies = checkedBodies |> List.map VerifiedIrBody.inspect
         let body = List.head bodies
 
         match nativeHostProfile with
-        | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
-            let expectedInputs = [ "CampfireHttpRequest" ]
-            let expectedOutputs = [ "CampfireHttpResponse" ]
-            if body.BodyName <> "<flow-entrypoint:campfire.http.room-read>"
+        | Some(OwningNativeHostProfile.AppHost manifest) ->
+            // The entry is the compiler-minted shim that directly calls the
+            // manifest's entry word with exactly its declared boundary types.
+            let allowedEffects = allowedHostEffects manifest
+            let expectedInputs = manifest.EntryInputTypes
+            let expectedOutputs = manifest.EntryOutputTypes
+            let inputText = String.concat " " expectedInputs
+            let outputText = String.concat " " expectedOutputs
+            let effectText = IrEffects.names allowedEffects |> String.concat ","
+            let entryShape = $"compiler-minted {manifest.EntryWord}: {inputText} -> {outputText}; effects within {effectText}"
+            if body.BodyName <> $"<flow-entrypoint:{manifest.EntryWord}>"
                || (body.BodyInputTypes |> List.map (typeName program)) <> expectedInputs
                || (body.BodyOutputTypes |> List.map (typeName program)) <> expectedOutputs
-               || body.BodyDeclaredEffects <> nativeRoomReadAllowedEffects
-               || body.BodyInferredEffects <> nativeRoomReadAllowedEffects then
+               || not (Set.isSubset body.BodyDeclaredEffects allowedEffects)
+               || not (Set.isSubset body.BodyInferredEffects allowedEffects) then
                 let bodyInputs = body.BodyInputTypes |> List.map (typeName program) |> String.concat " "
                 let bodyOutputs = body.BodyOutputTypes |> List.map (typeName program) |> String.concat " "
                 let bodyEffects = IrEffects.names body.BodyInferredEffects |> String.concat ","
-                failNativeHostProfile
-                    "compiler-minted campfire.http.room-read: CampfireHttpRequest -> CampfireHttpResponse; effects=db.read,db.write"
-                    $"{body.BodyName}: {bodyInputs} -> {bodyOutputs}; effects={bodyEffects}"
+                failNativeHostProfile entryShape $"{body.BodyName}: {bodyInputs} -> {bodyOutputs}; effects={bodyEffects}"
             let entryFunction =
                 program.FunctionsById
                 |> Map.toList
                 |> List.map snd
-                |> List.filter (fun fn -> fn.FunctionName = "campfire.http.room-read")
+                |> List.filter (fun fn -> fn.FunctionName = manifest.EntryWord)
             match entryFunction, body.BodyBlock.Code with
             | [ fn ], [ instruction ] ->
                 match instruction.Operation with
                 | IrOperation.Call call
-                    when call.ResolvedName = "campfire.http.room-read"
+                    when call.ResolvedName = manifest.EntryWord
                          && call.InputTypes = fn.InputTypes
                          && call.OutputTypes = fn.OutputTypes
-                         && call.ResolvedDeclaredEffects = nativeRoomReadAllowedEffects
-                         && call.ResolvedEffects = nativeRoomReadAllowedEffects
+                         && call.ResolvedDeclaredEffects = fn.FunctionDeclaredEffects
+                         && call.ResolvedEffects = fn.FunctionInferredEffects
                          && call.ResolvedTarget = UserWordTarget(fn.FunctionId, fn.FunctionRevision) -> ()
-                | _ -> failNativeHostProfile "direct call to the committed campfire.http.room-read definition" "different entry shim call"
+                | _ -> failNativeHostProfile $"direct call to the committed {manifest.EntryWord} definition" "different entry shim call"
                 if (fn.InputTypes |> List.map (typeName program)) <> expectedInputs
                    || (fn.OutputTypes |> List.map (typeName program)) <> expectedOutputs
-                   || fn.FunctionDeclaredEffects <> nativeRoomReadAllowedEffects
-                   || fn.FunctionInferredEffects <> nativeRoomReadAllowedEffects then
+                   || not (Set.isSubset fn.FunctionDeclaredEffects allowedEffects)
+                   || not (Set.isSubset fn.FunctionInferredEffects allowedEffects) then
                     let functionInputs = fn.InputTypes |> List.map (typeName program) |> String.concat " "
                     let functionOutputs = fn.OutputTypes |> List.map (typeName program) |> String.concat " "
                     let functionEffects = IrEffects.names fn.FunctionInferredEffects |> String.concat ","
-                    failNativeHostProfile
-                        "campfire.http.room-read definition: CampfireHttpRequest -> CampfireHttpResponse; effects=db.read,db.write"
-                        $"{fn.FunctionName}: {functionInputs} -> {functionOutputs}; effects={functionEffects}"
-            | _ -> failNativeHostProfile "one compiler-minted campfire.http.room-read entry definition and direct shim" "entry definition or shim shape differs"
-        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> ()
+                    failNativeHostProfile entryShape $"{fn.FunctionName}: {functionInputs} -> {functionOutputs}; effects={functionEffects}"
+            | _ -> failNativeHostProfile $"one compiler-minted {manifest.EntryWord} entry definition and direct shim" "entry definition or shim shape differs"
         | None -> ()
 
         let requireEffectFree owner effects =
@@ -1263,43 +1014,24 @@ module OwningStackAot =
         let requireProgramEffects owner effects =
             match nativeHostProfile with
             | None -> requireEffectFree owner effects
-            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 ->
-                let allowedEffects = Set.singleton IrEffect.DatabaseRead
+            | Some(OwningNativeHostProfile.AppHost manifest) ->
+                let allowedEffects = allowedHostEffects manifest
                 if not (Set.isSubset effects allowedEffects) then
                     Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
-                        "The Campfire native-host profile permits only its fixed db.read capability."
+                        $"The {manifest.ProfileId} native-host profile permits only the effects of its declared host operations."
                         (Some owner) None (IrEffects.names allowedEffects) (IrEffects.names effects)
-            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
-                if not (Set.isSubset effects nativeRoomReadAllowedEffects) then
-                    Diagnostics.raiseError "IR_OWNING_STACK_EFFECT_UNSUPPORTED"
-                        "The Campfire room-read native-host profile permits only its fixed db.read and db.write capabilities."
-                        (Some owner) None (IrEffects.names nativeRoomReadAllowedEffects) (IrEffects.names effects)
 
-        let mutable nativeHostCallSeen = false
-        let mutable nativeHostCalls = Set.empty<HostOperationId>
         let validateHostCall owner span (call: IrResolvedCall) (operationId: HostOperationId) =
             match nativeHostProfile with
-            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1
-                when operationId = nativeHostOperationId
-                     && call.ResolvedName = nativeHostOperationName
-                     && (call.InputTypes |> List.map (typeName program)) = [ "UserId"; "RoomId" ]
-                     && (call.OutputTypes |> List.map (typeName program)) = [ "Result<Option<RoomRow>, DbError>" ]
-                     && call.ResolvedDeclaredEffects = Set.singleton IrEffect.DatabaseRead
-                     && call.ResolvedEffects = Set.singleton IrEffect.DatabaseRead ->
-                nativeHostCallSeen <- true
-                nativeHostCalls <- Set.add operationId nativeHostCalls
-            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> rejectHostOperation owner span operationId
-            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
-                match nativeRoomReadOperationForId operationId with
+            | Some(OwningNativeHostProfile.AppHost manifest) ->
+                match hostOperationForId manifest operationId with
                 | Some expected
                     when call.ResolvedName = expected.Name
                          && (call.InputTypes |> List.map (typeName program)) = expected.InputTypes
                          && (call.OutputTypes |> List.map (typeName program)) = expected.OutputTypes
                          && call.ResolvedDeclaredEffects = expected.Effects
-                         && call.ResolvedEffects = expected.Effects ->
-                    nativeHostCalls <- Set.add operationId nativeHostCalls
-                | Some _ -> rejectHostOperation owner span operationId
-                | None -> rejectHostOperation owner span operationId
+                         && call.ResolvedEffects = expected.Effects -> ()
+                | _ -> rejectHostOperation owner span operationId
             | None -> rejectHostOperation owner span operationId
 
         let nominalTypeIds =
@@ -1935,20 +1667,6 @@ module OwningStackAot =
             enqueueKnownTypeValidators current.BodyName
             inspectCalls current.BodyName current.BodyBlock
         while pending.Count > 0 do checkFunction (pending.Dequeue())
-        match nativeHostProfile with
-        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 when not nativeHostCallSeen ->
-            failNativeHostProfile "reachable call to campfire.rooms.find-for-user" "host operation is not reachable from the compiled entry"
-        | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> ()
-        | Some OwningNativeHostProfile.CampfireRoomReadV1 when nativeHostCalls <> (nativeRoomReadOperations |> List.map (fun operation -> operation.Id) |> Set.ofList) ->
-            let expected = nativeRoomReadOperations |> List.map (fun operation -> operation.Name) |> List.sort
-            let actual = nativeHostCalls |> Set.toList |> List.map string |> List.sort
-            let expectedText = String.concat "," expected
-            let actualText = String.concat "," actual
-            failNativeHostProfile
-                $"reachable host-operation closure={expectedText}"
-                $"reachable host-operation closure={actualText}"
-        | Some OwningNativeHostProfile.CampfireRoomReadV1 -> ()
-        | None -> ()
         let typeInfos = typeInfos
         if typeInfos.Count > 4096 then
             Diagnostics.raiseError "IR_OWNING_STACK_LAYOUT_TYPE_COUNT"
@@ -4007,8 +3725,8 @@ module OwningStackAot =
         writer.Line("%AlOwningDescriptor = type { i32, i32, i32, i32, i32 }")
         writer.Line("%AlOwningExternalSlice = type { ptr, i32, i32 }")
         writer.Line("%AlOwningMailboxOutputSlice = type { i32, i32, i32, i32 }")
-        if nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomReadV1 then
-            writer.Line("%AlCampfireRoomReadInput = type { ptr, i32, i32 }")
+        if nativeHostProfile.IsSome then
+            writer.Line("%AlOwningHostInput = type { ptr, i32, i32 }")
 
         let fieldArraySize = max 1 descriptorFields.Count
         let renderedTypeDescriptors =
@@ -4058,10 +3776,8 @@ module OwningStackAot =
         if nativeHostProfile.IsSome then
             writer.Line("declare i32 @al_owning_commit_host_output(ptr, ptr, i32, i32, i32, i32, i32, i32, ptr)")
             match nativeHostProfile with
-            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 ->
-                writer.Line($"declare i32 @{nativeHostAdapterSymbol}(ptr, i64, i64, ptr, i32, ptr)")
-            | Some OwningNativeHostProfile.CampfireRoomReadV1 ->
-                writer.Line($"declare i32 @{nativeRoomReadAdapterSymbol}(ptr, i32, ptr, ptr, i32, i32, ptr, i32, ptr)")
+            | Some(OwningNativeHostProfile.AppHost manifest) ->
+                writer.Line($"declare i32 @{manifest.AdapterSymbol}(ptr, i32, ptr, ptr, i32, i32, ptr, i32, ptr)")
             | None -> invalidOp "Native host profile presence changed during declaration emission."
         writer.Line("declare i32 @al_owning_string_length(ptr, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_string_char_length(ptr, i32, i32, i32, ptr)")
@@ -5712,11 +5428,8 @@ module OwningStackAot =
                             emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         | HostOperationTarget operationId ->
                             match nativeHostProfile with
-                            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 when operationId = nativeHostOperationId -> ()
-                            | Some OwningNativeHostProfile.CampfireRoomFindForUserV1 -> rejectHostOperation currentOwner instructionSpan operationId
-                            | Some OwningNativeHostProfile.CampfireRoomReadV1 when Option.isSome (nativeRoomReadOperationForId operationId) -> ()
-                            | Some OwningNativeHostProfile.CampfireRoomReadV1 -> rejectHostOperation currentOwner instructionSpan operationId
-                            | None -> rejectHostOperation currentOwner instructionSpan operationId
+                            | Some(OwningNativeHostProfile.AppHost manifest) when Option.isSome (hostOperationForId manifest operationId) -> ()
+                            | _ -> rejectHostOperation currentOwner instructionSpan operationId
                         | UserWordTarget _ -> ()
                         match call.ResolvedTarget with
                         | PrimitiveTarget(PrimitiveId operation) ->
@@ -6328,24 +6041,28 @@ module OwningStackAot =
                                 resultEntries.Add resultEntry
                             stack <- prefix @ List.ofSeq resultEntries
                             ignore revision
-                        | HostOperationTarget operationId when nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomReadV1 ->
+                        | HostOperationTarget operationId when (match nativeHostProfile with Some(OwningNativeHostProfile.AppHost manifest) -> (hostOperationForId manifest operationId).IsSome | None -> false) ->
+                            let manifest =
+                                match nativeHostProfile with
+                                | Some(OwningNativeHostProfile.AppHost manifest) -> manifest
+                                | None -> invalidOp "Native host profile disappeared during host call emission."
                             let operation =
-                                nativeRoomReadOperationForId operationId
-                                |> Option.defaultWith (fun () -> invalidOp "Owning validation admitted an operation outside the closed Campfire room-read profile.")
+                                hostOperationForId manifest operationId
+                                |> Option.defaultWith (fun () -> invalidOp "Owning validation admitted an operation outside the application host manifest.")
                             let values, prefix = pop call.InputTypes.Length
                             if values.IsEmpty || values.Length <> operation.InputTypes.Length then
-                                invalidOp "Verified Campfire room-read operation did not retain its fixed input count."
+                                invalidOp "Verified host operation did not retain its declared input count."
                             let outputType =
                                 match call.OutputTypes with
                                 | [ ty ] when (call.OutputTypes |> List.map (typeName info.Program)) = operation.OutputTypes -> ty
-                                | _ -> invalidOp "Verified Campfire room-read operation did not retain its fixed output type."
+                                | _ -> invalidOp "Verified host operation did not retain its declared output type."
                             let cursor = emitContextLoad w "%ctx" 2
                             let stackCapacity = emitContextLoad w "%ctx" 1
                             let remaining = emitSub w stackCapacity cursor
                             let belowHostLimit = w.Fresh "room.read.output.below.limit"
                             let capacity = w.Fresh "room.read.output.capacity"
-                            w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {nativeRoomReadOutputLimit}")
-                            w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {nativeRoomReadOutputLimit}")
+                            w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {manifest.OutputLimitBytes}")
+                            w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {manifest.OutputLimitBytes}")
                             let minimumExtent = (typeInfo outputType).MinimumExtentBytes
                             let enoughForMinimum = w.Fresh "room.read.output.minimum.fits"
                             let enoughLabel = w.Label "room.read.output.minimum.fits"
@@ -6353,20 +6070,20 @@ module OwningStackAot =
                             w.Inst($"{enoughForMinimum} = icmp uge i32 {capacity}, {minimumExtent}")
                             w.Inst($"br i1 {enoughForMinimum}, label %%{enoughLabel}, label %%{tooSmallLabel}")
                             w.Line($"{tooSmallLabel}:")
-                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum Campfire room-read host result." call.ResolvedName instructionSpan [ string minimumExtent ] []
+                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum native host result." call.ResolvedName instructionSpan [ string minimumExtent ] []
                             let minimumEnd = emitOffset w cursor (string minimumExtent)
                             emitReserve w minimumEnd capacityError failBody
                             w.Inst($"br label %%{failBody}")
                             w.Line($"{enoughLabel}:")
                             let reservedEnd = emitOffset w cursor capacity
-                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the Campfire room-read operation." call.ResolvedName instructionSpan [] []
+                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the native host operation." call.ResolvedName instructionSpan [] []
                             emitReserve w reservedEnd reserveError failBody
 
                             // Reserve the output before deriving any borrowed input
                             // pointers. The callback may write only into this suffix;
                             // every input remains live until it returns.
                             let inputArray = w.Fresh "room.read.inputs"
-                            w.Inst($"{inputArray} = alloca [{values.Length} x %%AlCampfireRoomReadInput], align 8")
+                            w.Inst($"{inputArray} = alloca [{values.Length} x %%AlOwningHostInput], align 8")
                             let stackDataField = w.Fresh "room.read.stack.data.field"
                             let stackData = w.Fresh "room.read.stack.data"
                             let outputPointer = w.Fresh "room.read.output.pointer"
@@ -6379,10 +6096,10 @@ module OwningStackAot =
                                 let extentField = w.Fresh "room.read.input.extent.field"
                                 let typeField = w.Fresh "room.read.input.type.field"
                                 let inputPointer = w.Fresh "room.read.input.pointer"
-                                w.Inst($"{element} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {inputArray}, i32 {index}")
-                                w.Inst($"{dataField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 0")
-                                w.Inst($"{extentField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 1")
-                                w.Inst($"{typeField} = getelementptr inbounds %%AlCampfireRoomReadInput, ptr {element}, i32 0, i32 2")
+                                w.Inst($"{element} = getelementptr inbounds %%AlOwningHostInput, ptr {inputArray}, i32 {index}")
+                                w.Inst($"{dataField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 0")
+                                w.Inst($"{extentField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 1")
+                                w.Inst($"{typeField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 2")
                                 w.Inst($"{inputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {value.Offset}")
                                 w.Inst($"store ptr {inputPointer}, ptr {dataField}, align 8")
                                 w.Inst($"store i32 {value.Extent}, ptr {extentField}, align 4")
@@ -6391,7 +6108,7 @@ module OwningStackAot =
                             let hostStatus = w.Fresh "room.read.call.status"
                             w.Inst($"{outputExtentPointer} = alloca i32, align 4")
                             w.Inst($"store i32 0, ptr {outputExtentPointer}, align 4")
-                            w.Inst($"{hostStatus} = call i32 @{nativeRoomReadAdapterSymbol}(ptr %%provider.context, i32 {operation.Tag}, ptr {layoutSymbol}, ptr {inputArray}, i32 {values.Length}, i32 {typeIndex outputType}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
+                            w.Inst($"{hostStatus} = call i32 @{manifest.AdapterSymbol}(ptr %%provider.context, i32 {operation.Tag}, ptr {layoutSymbol}, ptr {inputArray}, i32 {values.Length}, i32 {typeIndex outputType}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
                             let outputExtent = w.Fresh "room.read.output.extent"
                             let outputPayloadPointer = w.Fresh "room.read.output.payload.pointer"
                             let outputPayload = w.Fresh "room.read.output.payload"
@@ -6399,79 +6116,13 @@ module OwningStackAot =
                             w.Inst($"{outputPayloadPointer} = alloca i32, align 4")
                             w.Inst($"store i32 0, ptr {outputPayloadPointer}, align 4")
                             let outputTypeNames = String.concat " " operation.OutputTypes
-                            let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native Campfire room-read adapter failed or returned a malformed bounded value." call.ResolvedName instructionSpan [ $"valid {outputTypeNames} layout" ] [ "adapter failure or invalid serialized output" ]
+                            let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native host adapter failed or returned a malformed bounded value." call.ResolvedName instructionSpan [ $"valid {outputTypeNames} layout" ] [ "adapter failure or invalid serialized output" ]
                             let commitStatus = w.Fresh "room.read.output.commit.status"
                             w.Inst($"{commitStatus} = call i32 @al_owning_commit_host_output(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex outputType}, i32 {cursor}, i32 {reservedEnd}, i32 {outputExtent}, i32 {hostStatus}, i32 {boundaryError}, ptr {outputPayloadPointer})")
                             emitStatusResult w commitStatus failBody
                             w.Inst($"{outputPayload} = load i32, ptr {outputPayloadPointer}, align 4")
                             for index in 0 .. values.Length - 1 do
                                 emitDropEntry stack (stack.Length - 1 - index)
-                            let outputOwnerEnd = emitOffset w cursor outputExtent
-                            stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
-                        | HostOperationTarget operationId
-                            when nativeHostProfile = Some OwningNativeHostProfile.CampfireRoomFindForUserV1
-                                 && operationId = nativeHostOperationId ->
-                            let values, prefix = pop call.InputTypes.Length
-                            let userId, roomId =
-                                match values with
-                                | [ userId; roomId ] -> userId, roomId
-                                | _ -> invalidOp "Verified Campfire room lookup did not retain its two fixed inputs."
-                            emitDropEntry stack (stack.Length - 1)
-                            emitDropEntry stack (stack.Length - 2)
-                            let userIdValue = w.Fresh "host.user.id"
-                            let roomIdValue = w.Fresh "host.room.id"
-                            w.Inst($"{userIdValue} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {userId.Offset})")
-                            emitRuntimeStatus w "%ctx" failBody
-                            w.Inst($"{roomIdValue} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {roomId.Offset})")
-                            emitRuntimeStatus w "%ctx" failBody
-                            let outputType =
-                                match call.OutputTypes with
-                                | [ ty ] -> ty
-                                | _ -> invalidOp "Verified Campfire room lookup did not retain one fixed output."
-                            let cursor = emitContextLoad w "%ctx" 2
-                            let stackCapacity = emitContextLoad w "%ctx" 1
-                            let remaining = emitSub w stackCapacity cursor
-                            let belowHostLimit = w.Fresh "host.output.below.limit"
-                            let capacity = w.Fresh "host.output.capacity"
-                            w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {nativeHostOutputLimit}")
-                            w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {nativeHostOutputLimit}")
-                            let minimumExtent = (typeInfo outputType).MinimumExtentBytes
-                            let enoughForMinimum = w.Fresh "host.output.minimum.fits"
-                            let enoughLabel = w.Label "host.output.minimum.fits"
-                            let tooSmallLabel = w.Label "host.output.minimum.too.small"
-                            w.Inst($"{enoughForMinimum} = icmp uge i32 {capacity}, {minimumExtent}")
-                            w.Inst($"br i1 {enoughForMinimum}, label %%{enoughLabel}, label %%{tooSmallLabel}")
-                            w.Line($"{tooSmallLabel}:")
-                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum native host result." call.ResolvedName instructionSpan [ string minimumExtent ] []
-                            let minimumEnd = emitOffset w cursor (string minimumExtent)
-                            emitReserve w minimumEnd capacityError failBody
-                            w.Inst($"br label %%{failBody}")
-                            w.Line($"{enoughLabel}:")
-                            let reservedEnd = emitOffset w cursor capacity
-                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the native host operation." call.ResolvedName instructionSpan [] []
-                            emitReserve w reservedEnd reserveError failBody
-                            let stackDataField = w.Fresh "host.stack.data.field"
-                            let stackData = w.Fresh "host.stack.data"
-                            let outputPointer = w.Fresh "host.output.pointer"
-                            w.Inst($"{stackDataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
-                            w.Inst($"{stackData} = load ptr, ptr {stackDataField}, align 8")
-                            w.Inst($"{outputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
-                            let outputExtentPointer = w.Fresh "host.output.extent.pointer"
-                            let hostStatus = w.Fresh "host.call.status"
-                            w.Inst($"{outputExtentPointer} = alloca i32, align 4")
-                            w.Inst($"store i32 0, ptr {outputExtentPointer}, align 4")
-                            w.Inst($"{hostStatus} = call i32 @{nativeHostAdapterSymbol}(ptr %%provider.context, i64 {userIdValue}, i64 {roomIdValue}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
-                            let outputExtent = w.Fresh "host.output.extent"
-                            let outputPayloadPointer = w.Fresh "host.output.payload.pointer"
-                            let outputPayload = w.Fresh "host.output.payload"
-                            w.Inst($"{outputExtent} = load i32, ptr {outputExtentPointer}, align 4")
-                            w.Inst($"{outputPayloadPointer} = alloca i32, align 4")
-                            w.Inst($"store i32 0, ptr {outputPayloadPointer}, align 4")
-                            let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native Campfire host adapter failed or returned a malformed bounded value." call.ResolvedName instructionSpan [ "valid Result<Option<RoomRow>, DbError> layout" ] [ "adapter failure or invalid serialized output" ]
-                            let commitStatus = w.Fresh "host.output.commit.status"
-                            w.Inst($"{commitStatus} = call i32 @al_owning_commit_host_output(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex outputType}, i32 {cursor}, i32 {reservedEnd}, i32 {outputExtent}, i32 {hostStatus}, i32 {boundaryError}, ptr {outputPayloadPointer})")
-                            emitStatusResult w commitStatus failBody
-                            w.Inst($"{outputPayload} = load i32, ptr {outputPayloadPointer}, align 4")
                             let outputOwnerEnd = emitOffset w cursor outputExtent
                             stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
                         | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
@@ -6555,7 +6206,7 @@ module OwningStackAot =
                         | "%AlOwningDescriptor" -> 20L
                         | "%AlOwningExternalSlice" | "%AlOwningMailboxOutputSlice" -> 16L
                         | "%AlOwningTemplatePart" -> 24L
-                        | "%AlCampfireRoomReadInput" -> 16L
+                        | "%AlOwningHostInput" -> 16L
                         | other when other.StartsWith("[", StringComparison.Ordinal) && other.EndsWith("]", StringComparison.Ordinal) ->
                             let separator = other.IndexOf(" x ", StringComparison.Ordinal)
                             if separator <= 1 then invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
@@ -6564,11 +6215,11 @@ module OwningStackAot =
                             if not (Int64.TryParse(countText, &count)) || count < 0L then
                                 invalidOp $"Unable to account for emitted LLVM array count '{other}'."
                             let elementType = other.Substring(separator + 3, other.Length - separator - 4)
-                            if elementType = "%AlCampfireRoomReadInput" && (count < 1L || count > 2L) then
-                                invalidOp $"Unable to account for out-of-profile Campfire input descriptor array '{other}'."
-                            if elementType.Contains("%AlCampfireRoomReadInput", StringComparison.Ordinal)
-                               && elementType <> "%AlCampfireRoomReadInput" then
-                                invalidOp $"Unable to account for nested Campfire input descriptor array '{other}'."
+                            if elementType = "%AlOwningHostInput" && (count < 1L || count > 16L) then
+                                invalidOp $"Unable to account for an out-of-range host input descriptor array '{other}'."
+                            if elementType.Contains("%AlOwningHostInput", StringComparison.Ordinal)
+                               && elementType <> "%AlOwningHostInput" then
+                                invalidOp $"Unable to account for a nested host input descriptor array '{other}'."
                             Checked.(*) count (llvmTypeSize elementType)
                         | other -> invalidOp $"Unable to account for emitted LLVM alloca type '{other}'."
                     let size = llvmTypeSize typeName
@@ -7729,9 +7380,10 @@ module OwningStackAot =
     let compile (toolchain: LlvmToolchain) optimization outputDirectory (verifiedBody: VerifiedIrBody) =
         compileWithRuntimeProfile toolchain optimization OwningRuntimeProfile.Diagnostic outputDirectory verifiedBody
 
-    /// Compile a verified entry with the closed Campfire room-lookup adapter
-    /// statically linked into a separate host-context export. The adapter C
-    /// source is copied into the artifact directory before hashing and build.
+    /// Compile a verified entry with an application's native host adapter
+    /// (described by its OwningAppHostManifest) statically linked into a
+    /// separate host-context export. The adapter C source and the app-owned
+    /// ABI header are copied into the artifact directory before hashing and build.
     let compileWithNativeHostDependenciesWithRuntimeProfileAndInstrumentation
         (toolchain: LlvmToolchain)
         optimization
@@ -7769,15 +7421,19 @@ module OwningStackAot =
         let runtimeSourcePath = Path.Combine(runtimeDirectory, "owning_stack_runtime.c")
         let profileHeaderPath = Path.Combine(runtimeDirectory, "owning_stack_profile.h")
         let floatFormatHeaderPath = Path.Combine(runtimeDirectory, "float_format.h")
-        let hostAbiHeaderName = nativeHostHeaderNameFor profile
+        let manifest =
+            match profile with
+            | OwningNativeHostProfile.AppHost manifest -> manifest
+        if not (File.Exists manifest.HeaderPath) then invalidArg (nameof profile) "The application host ABI header does not exist."
+        let hostAbiHeaderName = Path.GetFileName manifest.HeaderPath
         let hostAbiHeaderPath = Path.Combine(runtimeDirectory, hostAbiHeaderName)
-        let adapterCopyName = nativeHostAdapterFileFor profile
+        let adapterCopyName = manifest.AdapterFileName
         let adapterCopyPath = Path.Combine(runtimeDirectory, adapterCopyName)
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.h" runtimeHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_runtime.c" runtimeSourcePath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.owning_stack_profile.h" profileHeaderPath
         writeEmbeddedResource assembly "AgentLang.Llvm.native.float_format.h" floatFormatHeaderPath
-        writeEmbeddedResource assembly (nativeHostHeaderResourceFor profile) hostAbiHeaderPath
+        File.WriteAllBytes(hostAbiHeaderPath, File.ReadAllBytes manifest.HeaderPath)
         File.WriteAllBytes(adapterCopyPath, File.ReadAllBytes fullAdapterSourcePath)
 
         let dependencyDirectory = Path.Combine(fullDirectory, "native-dependencies")
@@ -7899,81 +7555,45 @@ module OwningStackAot =
                linkLibraries = linkCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/'))
                runtimeLibraries = runtimeCopies |> List.map (fun path -> Path.GetRelativePath(fullDirectory, path).Replace('\\', '/')) |}
         let manifestCoreJson =
-            match profile with
-            | OwningNativeHostProfile.CampfireRoomFindForUserV1 ->
-                let manifestCore =
-                    {| formatVersion = 2
-                       profileId = "campfire-room-find-for-user-v1"
-                       runtimeProfile = runtimeProfileName
-                       executionProfile = executionProfileName
-                       operationId = "campfire.rooms.find-for-user"
-                       operationName = "campfire.rooms.find-for-user"
-                       adapterSymbol = nativeHostAdapterSymbol
-                       adapterSourceFile = Path.GetFileName fullAdapterSourcePath
-                       adapterSourceSha256 = hashFile adapterCopyPath
-                       hostAbiVersion = 1
-                       owningRuntimeAbiVersion = 2
-                       layoutSchemaVersion = 5
-                       layoutAbiVersion = 5
-                       exportName = "agentlang_owning_execute_with_host_context"
-                       inputTypes = [ "UserId"; "RoomId" ]
-                       outputTypes = [ "Result<Option<RoomRow>, DbError>" ]
-                       effects = [ "db.read" ]
-                       fixedEffectAllowlist = [ "db.read" ]
-                       outputLimitBytes = nativeHostOutputLimit
-                       optimization = optimizationName
-                       nativeDependencies = dependencyManifest
-                       sharedLayout = layouts
-                       sourceHashes = sourceHashes |}
-                JsonSerializer.Serialize(manifestCore, jsonOptions)
-            | OwningNativeHostProfile.CampfireRoomReadV1 ->
-                let operationManifest =
-                    nativeRoomReadOperations
-                    |> List.map (fun operation ->
-                        {| tag = operation.Tag
-                           operationId = operation.Name
-                           operationName = operation.Name
-                           inputTypes = operation.InputTypes
-                           outputTypes = operation.OutputTypes
-                           effects = IrEffects.names operation.Effects |})
-                let boundarySchemaNames =
-                    Set.ofList
-                        [ "CampfireHttpRequest"; "CampfireHttpResponse"
-                          "AuthUser"; "SessionRow"; "SessionRefresh"; "RestoredSession"
-                          "MembershipKey"; "MessageRow"; "RoomRow"; "BrowserInfo"
-                          "HttpMessageInput"; "HttpLoginInput"; "HttpLogoutInput"
-                          "SessionId"; "UserId"; "RoomId"; "MessageId"; "SessionToken"
-                          "BotKey"; "RemoteIp"; "UtcInstant"; "Role"; "AuthUserStatus"
-                          "RoomKind"; "DbError"; "BrowserFamily"; "HttpRoute"; "RequestMethod"
-                          "HttpFormError"; "HttpView" ]
-                let boundarySchemas = layouts |> List.filter (fun layout -> boundarySchemaNames.Contains layout.typeName)
-                let manifestCore =
-                    {| formatVersion = 2
-                       profileId = "campfire-room-read-v1"
-                       runtimeProfile = runtimeProfileName
-                       executionProfile = executionProfileName
-                       operationId = "campfire.http.room-read"
-                       operationName = "campfire.http.room-read"
-                       adapterSymbol = nativeRoomReadAdapterSymbol
-                       adapterSourceFile = Path.GetFileName fullAdapterSourcePath
-                       adapterSourceSha256 = hashFile adapterCopyPath
-                       hostAbiVersion = 1
-                       owningRuntimeAbiVersion = 2
-                       layoutSchemaVersion = 5
-                       layoutAbiVersion = 5
-                       exportName = "agentlang_owning_execute_with_host_context"
-                       inputTypes = [ "CampfireHttpRequest" ]
-                       outputTypes = [ "CampfireHttpResponse" ]
-                       effects = IrEffects.names nativeRoomReadAllowedEffects
-                       fixedEffectAllowlist = IrEffects.names nativeRoomReadAllowedEffects
-                       outputLimitBytes = nativeRoomReadOutputLimit
-                       optimization = optimizationName
-                       nativeDependencies = dependencyManifest
-                       operations = operationManifest
-                       boundarySchemas = boundarySchemas
-                       sharedLayout = layouts
-                       sourceHashes = sourceHashes |}
-                JsonSerializer.Serialize(manifestCore, jsonOptions)
+            let operationManifest =
+                hostOperationsOf manifest
+                |> List.map (fun operation ->
+                    {| tag = operation.Tag
+                       operationId = operation.Name
+                       operationName = operation.Name
+                       inputTypes = operation.InputTypes
+                       outputTypes = operation.OutputTypes
+                       effects = IrEffects.names operation.Effects |})
+            let boundarySchemaNames = Set.ofList manifest.BoundarySchemaNames
+            let boundarySchemas = layouts |> List.filter (fun layout -> boundarySchemaNames.Contains layout.typeName)
+            let allowedEffects = IrEffects.names (allowedHostEffects manifest)
+            let manifestCore =
+                {| formatVersion = 2
+                   profileId = manifest.ProfileId
+                   runtimeProfile = runtimeProfileName
+                   executionProfile = executionProfileName
+                   operationId = manifest.EntryWord
+                   operationName = manifest.EntryWord
+                   adapterSymbol = manifest.AdapterSymbol
+                   adapterSourceFile = Path.GetFileName fullAdapterSourcePath
+                   adapterSourceSha256 = hashFile adapterCopyPath
+                   hostAbiVersion = 1
+                   owningRuntimeAbiVersion = 2
+                   layoutSchemaVersion = 5
+                   layoutAbiVersion = 5
+                   exportName = "agentlang_owning_execute_with_host_context"
+                   inputTypes = manifest.EntryInputTypes
+                   outputTypes = manifest.EntryOutputTypes
+                   effects = allowedEffects
+                   fixedEffectAllowlist = allowedEffects
+                   outputLimitBytes = manifest.OutputLimitBytes
+                   optimization = optimizationName
+                   nativeDependencies = dependencyManifest
+                   operations = operationManifest
+                   boundarySchemas = boundarySchemas
+                   sharedLayout = layouts
+                   sourceHashes = sourceHashes |}
+            JsonSerializer.Serialize(manifestCore, jsonOptions)
         let fingerprint = hashBytes(Encoding.UTF8.GetBytes manifestCoreJson)
         use manifestCoreDocument = JsonDocument.Parse(manifestCoreJson)
         let serializedManifest =

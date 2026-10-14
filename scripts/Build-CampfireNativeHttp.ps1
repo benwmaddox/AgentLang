@@ -74,7 +74,7 @@ function Get-ExpectedRoomReadSources {
         'applications/campfire/Native/room_read_pure.h',
         'applications/campfire/Native/room_read_sqlite.def',
         'applications/campfire/Native/room_read_sqlite_subset.h',
-        'src/AgentLang.Llvm/native/campfire_room_read_host_abi.h',
+        'applications/campfire/Native/campfire_room_read_host_abi.h', 'applications/campfire/Native/room-read-host.json',
         'src/AgentLang.Llvm/native/owning_stack_runtime.c',
         'src/AgentLang.Llvm/native/owning_stack_runtime.h',
         'src/AgentLang.Llvm/native/owning_stack_profile.h',
@@ -260,9 +260,7 @@ $helperPins = [ordered]@{
     'request_encoder.h' = '53C6638A724BD493744CB9344F3BF3D389F8A16104675A93D9D7DFF205B83361'
     'browser_normalizer.c' = '37CBCE440FFD22D5800570ED593426E48AACCF611319F7A9B8C3CFE8EE4040A2'
     'browser_normalizer.h' = 'B2D5289556A9A13F9C33C2E02ABBEFED4071DC2C1172B7B8B14B6520C082182E'
-    'campfire_html_encoder.c' = 'AD66F1007DCD7B807F926A69F76D86232160FBD7672F42FB6B4F851F646B3430'
-    'campfire_html_encoder.h' = 'EEE4A2E851F80710BB28D92AAC900F1007AD25763FCEC9163526C9E754B9B457'
-    'campfire_http_renderer.c' = '39DAE6A7332FF7BBB9D59D0BBBA79115DBD029B7D4B59D57D5320A24D45B4BB7'
+    'campfire_http_renderer.c' = 'AEC9678B6B359B1D1F0BF36FF1C7E489698742D15C93CD65C1CAD845A1749C76'
     'campfire_http_renderer.h' = 'B0D3175950002ECBBF215021CF31394DAFD948CF4F8CA3A31BD10677F531837A'
     'cookie_response_codec.c' = 'E1E2FFBF5051751928C9823D918E2571D0D2A0D8EE03F53F625C20956A19AEE3'
     'cookie_response_codec.h' = 'C146FDE950083F21DFCEEE1BFC1C87AE9789E256EE6DAD42C029857BB48B9EBB'
@@ -360,7 +358,7 @@ foreach ($helperName in $helperPaths.Keys) {
     $sourcePins[$relativePath] = Get-Hash $helperPath
 }
 $hostHash = Get-Hash $HostSourcePath
-$expectedHostHash = '4406083083BF8D1D912DB39E5DAA6B9523F4E1E9129D15CC1902D08565169EDF'  # report 265: UTF-8 owning Strings
+$expectedHostHash = 'D61E8E83F41F2A3B09F2AB05A1C2EEA21DB5954EEC5D659417B37588A686F1E0'  # report 267: the Flow application renders every body
 if ($hostHash -ne $expectedHostHash) {
     throw 'HTTP host source differs from the reviewed native host revision.'
 }
@@ -377,7 +375,6 @@ $runtimeSource = Join-Path $llvmNative 'owning_stack_runtime.c'
 $helperSources = @(
     $helperPaths['request_encoder.c'],
     $helperPaths['browser_normalizer.c'],
-    $helperPaths['campfire_html_encoder.c'],
     $helperPaths['campfire_http_renderer.c'],
     $helperPaths['cookie_response_codec.c'],
     $helperPaths['cookie_wire.c'],
