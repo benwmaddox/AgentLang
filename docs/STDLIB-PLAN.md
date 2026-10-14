@@ -144,6 +144,27 @@ Step 5: HTTP plumbing and host removal.
 - Tests: all NativeRoomRead.Tests, NativeHttp.Tests, Integration.Tests, and the full Run-Gates.ps1 (run by the user; not run by this research).
 - Expected end state: C about 800 to 1,200 lines (host shim only). F# about 300 lines (PasswordVerification plus host wiring). Flow grows to about 4,000 to 5,000 non-test lines.
 
+## 5a. What stays native (rule from 2026-10-14)
+
+Long-term rule: C and F# keep only what is truly needed — parsing and
+lowering to LLVM, the minimal native runtime, and the OS boundary (sockets,
+SQLite, randomness, OS crypto). Everything else moves into Flow's stdlib,
+written in Flow where the language allows it.
+
+Slice 1 (report 272) landed as native primitives so the ports can start now:
+
+| Primitive | Long-term home | Why |
+| --- | --- | --- |
+| Bytes kind, bytes.length / concat / slice / xor / equal-constant-time? | native | value representation and constant-time compare |
+| crypto.sha256 / hmac-sha256 / pbkdf2-sha256, crypto.random-bytes | native | no fixed-width or bit operations in Flow; boundary code |
+| bytes.from-utf8 / to-utf8 | native | UTF-8 validity is a runtime invariant |
+| base64.*, hex.encode | Flow later | needs byte access, a byte builder and bit operations in Flow |
+| string.split / index-of / slice / byte-at / to-lower-ascii, int.parse | Flow later | expressible once Flow has loops or efficient recursion over bytes |
+
+Moving a "Flow later" primitive needs the building blocks it uses, the same
+known-answer tests (tests/AgentLang.Stdlib.Tests), and a quick-bench check
+that the Flow version does not cost noticeable throughput.
+
 ## 6. Open items
 
 - Authentication.Persistence\SqliteProvider.fs (512) and Authentication.Host\CampfireAuthenticationHost.fs (333) are not classified in detail.
