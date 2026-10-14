@@ -149,7 +149,8 @@ module FlowLint =
                             for argument in arguments do analyzeArgument outerFrames localBindings statementIndex argument
                         | FlowExpression.Property(receiver, _, _) ->
                             analyzeExpression outerFrames localBindings statementIndex receiver
-                        | FlowExpression.Equality(left, right, _) ->
+                        | FlowExpression.Equality(left, right, _)
+                        | FlowExpression.Binary(_, left, right, _) ->
                             analyzeExpression outerFrames localBindings statementIndex left
                             analyzeExpression outerFrames localBindings statementIndex right
                         | FlowExpression.ListLiteral(items, _) ->

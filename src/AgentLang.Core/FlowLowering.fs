@@ -344,6 +344,7 @@ module FlowLowering =
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
+        | FlowExpression.Binary(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
         | FlowExpression.ListLiteral(_, span)
@@ -454,6 +455,41 @@ module FlowLowering =
 
     let private exactCandidateFor (state: LoweringState) name =
         state.Signatures.TryFind name
+
+    /// Primitive behind a spaced arithmetic or comparison operator. There are no implicit
+    /// conversions: both operands must be Int or both Float (nominal scalars must be unwrapped).
+    let private operatorPrimitive operator leftType rightType span =
+        let symbol = FlowBinaryOperator.symbol operator
+        let reject () =
+            let hint =
+                match leftType, rightType with
+                | TString, TString when operator = FlowBinaryOperator.Add -> " Use string.concat to join strings."
+                | TInt, TFloat | TFloat, TInt -> " Convert explicitly with int.to-float or float.to-int."
+                | TFloat, TFloat when operator = FlowBinaryOperator.Remainder -> " '%' is defined only for Int."
+                | TNamed _, _ | _, TNamed _ -> " Nominal scalars are not numeric; unwrap them first."
+                | _ -> ""
+            fail "FLOW_OPERATOR_TYPE"
+                $"The '{symbol}' operator does not accept {Types.format leftType} and {Types.format rightType}.{hint}"
+                None (Some span) [ "Int and Int"; "Float and Float" ] [ Types.format leftType; Types.format rightType ]
+        match operator, leftType, rightType with
+        | FlowBinaryOperator.Add, TInt, TInt -> "add"
+        | FlowBinaryOperator.Subtract, TInt, TInt -> "subtract"
+        | FlowBinaryOperator.Multiply, TInt, TInt -> "multiply"
+        | FlowBinaryOperator.Divide, TInt, TInt -> "divide"
+        | FlowBinaryOperator.Remainder, TInt, TInt -> "int.remainder"
+        | FlowBinaryOperator.Less, TInt, TInt -> "int.less-than"
+        | FlowBinaryOperator.LessOrEqual, TInt, TInt -> "int.less-or-equal"
+        | FlowBinaryOperator.Greater, TInt, TInt -> "int.greater-than"
+        | FlowBinaryOperator.GreaterOrEqual, TInt, TInt -> "int.greater-or-equal"
+        | FlowBinaryOperator.Add, TFloat, TFloat -> "float.add"
+        | FlowBinaryOperator.Subtract, TFloat, TFloat -> "float.subtract"
+        | FlowBinaryOperator.Multiply, TFloat, TFloat -> "float.multiply"
+        | FlowBinaryOperator.Divide, TFloat, TFloat -> "float.divide"
+        | FlowBinaryOperator.Less, TFloat, TFloat -> "float.less-than"
+        | FlowBinaryOperator.LessOrEqual, TFloat, TFloat -> "float.less-or-equal"
+        | FlowBinaryOperator.Greater, TFloat, TFloat -> "float.greater-than"
+        | FlowBinaryOperator.GreaterOrEqual, TFloat, TFloat -> "float.greater-or-equal"
+        | _ -> reject ()
 
     let private fieldAccessorCandidate (state: LoweringState) recordName fieldName span =
         state.Signatures
@@ -873,6 +909,7 @@ module FlowLowering =
             let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
             let _, _, outputs = selectCallOutputs context state environment "equals" None arguments equalitySpan
             outputs
+        | FlowExpression.Binary _ -> inferBinary context state environment expression
         | FlowExpression.ListLiteral(items, literalSpan) ->
             match items with
             | [] -> fail "FLOW_LIST_LITERAL_EMPTY" "A list literal needs at least one element; use list.empty<T>() for an empty list." None (Some literalSpan) [ "one or more elements" ] []
@@ -953,6 +990,33 @@ module FlowLowering =
             | Some left, Some right -> fail "FLOW_IF_BRANCH_TYPE" "Both Flow if branches must produce the same output vector in the same order." None (Some span) (left |> List.map Types.format) (right |> List.map Types.format)
             | None, _ | _, None -> fail "FLOW_IF_BRANCH_VALUE" "Each Flow if branch must produce a nonempty output vector." None (Some span) [ "one or more outputs in each branch" ] []
 
+    /// Kept out of inferOutputs so that recursive frame stays small (deep host-built trees).
+    and private inferBinary context state environment expression =
+        let operator, left, right, operatorSpan =
+            match expression with
+            | FlowExpression.Binary(operator, left, right, span) -> operator, left, right, span
+            | _ -> failwith "inferBinary requires a binary operator expression"
+        let leftType = inferExpression context state environment left
+        let rightType = inferExpression context state environment right
+        match operator with
+        | FlowBinaryOperator.And | FlowBinaryOperator.Or ->
+            if leftType <> TBool || rightType <> TBool then
+                fail "FLOW_OPERATOR_TYPE"
+                    $"The '{FlowBinaryOperator.symbol operator}' operator requires Bool operands, not {Types.format leftType} and {Types.format rightType}."
+                    None (Some operatorSpan) [ "Bool and Bool" ] [ Types.format leftType; Types.format rightType ]
+            [ TBool ]
+        | FlowBinaryOperator.NotEqual ->
+            if leftType <> rightType then
+                fail "FLOW_OPERATOR_TYPE"
+                    $"The '!=' operator requires two operands of the same type, not {Types.format leftType} and {Types.format rightType}."
+                    None (Some operatorSpan) [ Types.format leftType ] [ Types.format rightType ]
+            let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
+            selectCallOutputs context state environment "equals" None arguments operatorSpan |> ignore
+            [ TBool ]
+        | _ ->
+            let primitive = operatorPrimitive operator leftType rightType operatorSpan
+            let _, _, outputs = operatorCall context state environment primitive left right operatorSpan
+            outputs
     /// The built-in Html type (see HtmlBuiltIn) is present in this program.
     and private isBuiltInHtml (context: Context) =
         match context.CompilerContext.Scalars.TryFind HtmlBuiltIn.typeName with
@@ -1081,6 +1145,14 @@ module FlowLowering =
             |> Option.defaultWith (fun () ->
                 fail "FLOW_UNKNOWN_ROOT_CALL" $"No exact dictionary key '{target.Name}' exists." None (Some target.Span) [ target.Name ] [])
         match mapArguments context state environment candidate None arguments callSpan with
+        | Ok(bound, outputs) -> candidate, bound, outputs
+        | Error problem -> raise (LanguageException { problem with Word = Some candidate.Name })
+
+    and private operatorCall context state environment primitive left right span =
+        let candidate =
+            exactCandidateFor state primitive
+            |> Option.defaultWith (fun () -> failwith $"operator primitive '{primitive}' is missing from the signature catalog")
+        match mapArguments context state environment candidate None [ FlowArgument.Positional left; FlowArgument.Positional right ] span with
         | Ok(bound, outputs) -> candidate, bound, outputs
         | Error problem -> raise (LanguageException { problem with Word = Some candidate.Name })
 
@@ -1248,6 +1320,9 @@ module FlowLowering =
                 | 1 -> FlowAstPathSegment.EqualityRight
                 | _ -> failwith "validated equality operand index is outside the binary operator"
             lowerResolvedCall context state environment path FlowCallForm.Direct "equals" candidate bound None arguments equalitySpan equalityOperandPath
+        | FlowExpression.Binary _ ->
+            inferExpression context state environment expression |> ignore
+            lowerBinary context state environment path expression
         | FlowExpression.ListLiteral(items, literalSpan) ->
             let itemType =
                 match inferExpression context state environment expression with
@@ -1317,6 +1392,40 @@ module FlowLowering =
             { Expressions = conditionFragment.Expressions @ [ If([ thenScope ], [ elseScope ], ifSpan) ]
               CallEvents = conditionFragment.CallEvents @ thenFragment.CallEvents @ elseFragment.CallEvents }
 
+    /// Kept out of lowerFlowExpression so that recursive frame stays small (deep host-built trees).
+    and private lowerBinary context state environment path expression =
+        let operator, left, right, operatorSpan =
+            match expression with
+            | FlowExpression.Binary(operator, left, right, span) -> operator, left, right, span
+            | _ -> failwith "lowerBinary requires a binary operator expression"
+        let binaryOperandPath index =
+            match index with
+            | 0 -> FlowAstPathSegment.BinaryLeft
+            | 1 -> FlowAstPathSegment.BinaryRight
+            | _ -> failwith "validated operator operand index is outside the binary operator"
+        let arguments = [ FlowArgument.Positional left; FlowArgument.Positional right ]
+        let constant value = Scope([ Push(LBool value, operatorSpan) ], syntheticSpan state operatorSpan)
+        match operator with
+        | FlowBinaryOperator.And | FlowBinaryOperator.Or ->
+            // Short-circuit: `a && b` is `if a { b } else { false }`; `a || b` is `if a { true } else { b }`.
+            let leftFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.BinaryLeft) left
+            let rightFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.BinaryRight) right
+            let rightScope = Scope(rightFragment.Expressions, syntheticSpan state operatorSpan)
+            let thenScope, elseScope =
+                if operator = FlowBinaryOperator.And then rightScope, constant false else constant true, rightScope
+            rememberSpan state operatorSpan
+            { Expressions = leftFragment.Expressions @ [ If([ thenScope ], [ elseScope ], operatorSpan) ]
+              CallEvents = leftFragment.CallEvents @ rightFragment.CallEvents }
+        | FlowBinaryOperator.NotEqual ->
+            let candidate, bound, _ = selectCallOutputs context state environment "equals" None arguments operatorSpan
+            let equal = lowerResolvedCall context state environment path FlowCallForm.Direct "!=" candidate bound None arguments operatorSpan binaryOperandPath
+            { equal with Expressions = equal.Expressions @ [ If([ constant false ], [ constant true ], operatorSpan) ] }
+        | _ ->
+            let leftType = inferExpression context state environment left
+            let rightType = inferExpression context state environment right
+            let primitive = operatorPrimitive operator leftType rightType operatorSpan
+            let candidate, bound, _ = operatorCall context state environment primitive left right operatorSpan
+            lowerResolvedCall context state environment path FlowCallForm.Direct (FlowBinaryOperator.symbol operator) candidate bound None arguments operatorSpan binaryOperandPath
     and private lowerResolvedCall context state environment path form requestedName candidate (bound: BoundArguments) receiver arguments callSpan argumentPathForIndex =
         let argumentFormalIndexes =
             let offset = if receiver.IsSome then 1 else 0
@@ -1791,6 +1900,9 @@ module FlowLowering =
             | FlowExpression.Equality(left, right, _) ->
                 walkExpression (extendPath path FlowAstPathSegment.EqualityLeft) left
                 walkExpression (extendPath path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Binary(_, left, right, _) ->
+                walkExpression (extendPath path FlowAstPathSegment.BinaryLeft) left
+                walkExpression (extendPath path FlowAstPathSegment.BinaryRight) right
             | FlowExpression.Compact(body, _) ->
                 walkStatements (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
@@ -1868,6 +1980,11 @@ module FlowLowering =
                 add role path span
                 walkExpression role (extendPath path FlowAstPathSegment.EqualityLeft) left
                 walkExpression role (extendPath path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Binary(operator, left, right, span) ->
+                // && and || lower to an IR if, not a call; every other operator is one call site.
+                if operator <> FlowBinaryOperator.And && operator <> FlowBinaryOperator.Or then add role path span
+                walkExpression role (extendPath path FlowAstPathSegment.BinaryLeft) left
+                walkExpression role (extendPath path FlowAstPathSegment.BinaryRight) right
             | FlowExpression.Compact(body, _) ->
                 walkStatements role (extendPath path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->

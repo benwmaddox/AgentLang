@@ -15,7 +15,10 @@ module FlowParser =
           Text: string
           Offset: int
           Line: int
-          Column: int }
+          Column: int
+          /// True when whitespace (or the source edge) sits immediately before and after the token.
+          /// Only spaced symbols act as infix operators, so `a-b`, `-1` and `List<T>` keep their meaning.
+          Spaced: bool }
 
     type private State =
         { File: string
@@ -38,6 +41,7 @@ module FlowParser =
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
+        | FlowExpression.Binary(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
         | FlowExpression.ListLiteral(_, span)
@@ -91,7 +95,10 @@ module FlowParser =
                   Text = source.Substring(startOffset, offset - startOffset)
                   Offset = startOffset
                   Line = startLine
-                  Column = startColumn }
+                  Column = startColumn
+                  Spaced =
+                    (startOffset = 0 || Char.IsWhiteSpace source[startOffset - 1])
+                    && (offset >= source.Length || Char.IsWhiteSpace source[offset]) }
         let isIdentifierStart ch = Char.IsLetter ch || ch = '_'
         let isIdentifierPart ch = Char.IsLetterOrDigit ch || ch = '_' || ch = '-' || ch = '?' || ch = '!'
         while offset < source.Length do
@@ -200,9 +207,13 @@ module FlowParser =
                     add Number startOffset startLine startColumn
                 else
                     let pair = if offset + 1 < source.Length then source.Substring(offset, 2) else ""
+                    let spacedPair =
+                        (offset = 0 || Char.IsWhiteSpace source[offset - 1])
+                        && (offset + 2 >= source.Length || Char.IsWhiteSpace source[offset + 2])
                     let symbol =
                         match pair with
                         | "->" | "::" | "=>" | "==" -> pair
+                        | "<=" | ">=" | "!=" | "&&" | "||" when spacedPair -> pair
                         | _ -> string source[offset]
                     for _ in symbol do advance ()
                     add Symbol startOffset startLine startColumn
@@ -802,21 +813,49 @@ module FlowParser =
             fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_KIND" "Match cases must form exactly the Option pair or the Result pair."
 
     and private parseExpressionState state =
-        withDepth state (fun () ->
-            let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
-            let left = parsePostfixExpressionState state
-            match current state with
-            | Some operator when operator.Text = "==" ->
-                if state.SyntaxVersion <> 2 then
-                    fail state.File operator.Line operator.Column operator.Text.Length "FLOW_SYNTAX_VERSION" "The '==' operator requires Flow/2 syntax."
+        withDepth state (fun () -> parseBinaryExpression state 1)
+
+    /// Infix operator at the cursor with its precedence level: `==` keeps its historical
+    /// spelling rules; every other operator must be a spaced Flow/2 symbol.
+    and private currentInfixOperator state =
+        match current state with
+        | Some token when token.Text = "==" -> Some(token, None, FlowBinaryOperator.equalityPrecedence)
+        | Some token when token.Kind = Symbol && token.Spaced && state.SyntaxVersion = 2 ->
+            FlowBinaryOperator.tryParse token.Text
+            |> Option.map (fun operator -> token, Some operator, FlowBinaryOperator.precedence operator)
+        | _ -> None
+
+    /// Precedence climbing over postfix expressions (C levels; see FlowBinaryOperator.precedence).
+    and private parseBinaryExpression state minimumLevel =
+        let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
+        let mutable left = parsePostfixExpressionState state
+        let mutable chained = 0
+        let mutable looping = true
+        while looping do
+            match currentInfixOperator state with
+            | Some(token, operator, level) when level >= minimumLevel ->
+                if operator.IsNone && state.SyntaxVersion <> 2 then
+                    fail state.File token.Line token.Column token.Text.Length "FLOW_SYNTAX_VERSION" "The '==' operator requires Flow/2 syntax."
+                chained <- chained + 1
+                if state.Depth + chained > maxNesting then
+                    fail state.File token.Line token.Column token.Text.Length "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxNesting}."
                 consume state |> ignore
-                let right = parsePostfixExpressionState state
-                match current state with
-                | Some following when following.Text = "==" ->
-                    fail state.File following.Line following.Column following.Text.Length "FLOW_EQUALITY_CHAIN" "Equality operators cannot be chained; parenthesize one comparison."
-                | _ -> ()
-                FlowExpression.Equality(left, right, sourceSpan state.File first (previous state))
-            | _ -> left)
+                let right = withDepth state (fun () -> parseBinaryExpression state (level + 1))
+                let span = sourceSpan state.File first (previous state)
+                left <-
+                    match operator with
+                    | None -> FlowExpression.Equality(left, right, span)
+                    | Some binary -> FlowExpression.Binary(binary, left, right, span)
+                if FlowBinaryOperator.nonAssociative level then
+                    match currentInfixOperator state with
+                    | Some(following, _, followingLevel) when followingLevel = level ->
+                        if level = FlowBinaryOperator.equalityPrecedence then
+                            fail state.File following.Line following.Column following.Text.Length "FLOW_EQUALITY_CHAIN" "Equality operators cannot be chained; parenthesize one comparison."
+                        else
+                            fail state.File following.Line following.Column following.Text.Length "FLOW_COMPARISON_CHAIN" "Comparison operators cannot be chained; parenthesize one comparison or join them with &&."
+                    | _ -> ()
+            | _ -> looping <- false
+        left
 
     /// Decodes an html"…" or html"""…""" token into alternating literal parts and
     /// hole expressions, desugared to the reserved call `%html-template` with

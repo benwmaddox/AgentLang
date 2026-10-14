@@ -154,7 +154,7 @@ module IrInterpreter =
     // itself cannot create an implementation or authorize dispatch to one.
     let private implementedPrimitiveOperations =
         set [
-            "add"; "subtract"; "multiply"; "divide"
+            "add"; "subtract"; "multiply"; "divide"; "int.remainder"
             "float.add"; "float.subtract"; "float.multiply"; "float.divide"
             "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
             "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -1053,6 +1053,10 @@ module IrInterpreter =
             | "divide", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
             | "divide", [ RuntimeInt left; RuntimeInt right ] when left = Int64.MinValue && right = -1L -> fail "RUNTIME_OVERFLOW" "Integer division overflow." (Some operation) None [] []
             | "divide", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left / right) ]
+            // C remainder: truncated toward zero, sign of the dividend; MinValue % -1 is 0 (.NET would throw).
+            | "int.remainder", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
+            | "int.remainder", [ RuntimeInt _; RuntimeInt -1L ] -> [ RuntimeInt 0L ]
+            | "int.remainder", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left % right) ]
             | "int.add-checked", [ RuntimeInt left; RuntimeInt right ] ->
                 [ RuntimeResult(IrInt, IrString, TrustedValues.addChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
             | "int.multiply-checked", [ RuntimeInt left; RuntimeInt right ] ->

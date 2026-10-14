@@ -60,9 +60,71 @@ type FlowAstPathSegment =
     | EnumScrutinee
     | EnumCaseStatement of int * int
     | TestOverrideDefinition of int
+    | BinaryLeft
+    | BinaryRight
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type FlowAstPath = FlowAstPath of FlowAstPathSegment list
+
+/// Spaced C-like infix operators other than `==` (which stays FlowExpression.Equality).
+[<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+type FlowBinaryOperator =
+    | Multiply
+    | Divide
+    | Remainder
+    | Add
+    | Subtract
+    | Less
+    | LessOrEqual
+    | Greater
+    | GreaterOrEqual
+    | NotEqual
+    | And
+    | Or
+
+module FlowBinaryOperator =
+    let symbol = function
+        | FlowBinaryOperator.Multiply -> "*"
+        | FlowBinaryOperator.Divide -> "/"
+        | FlowBinaryOperator.Remainder -> "%"
+        | FlowBinaryOperator.Add -> "+"
+        | FlowBinaryOperator.Subtract -> "-"
+        | FlowBinaryOperator.Less -> "<"
+        | FlowBinaryOperator.LessOrEqual -> "<="
+        | FlowBinaryOperator.Greater -> ">"
+        | FlowBinaryOperator.GreaterOrEqual -> ">="
+        | FlowBinaryOperator.NotEqual -> "!="
+        | FlowBinaryOperator.And -> "&&"
+        | FlowBinaryOperator.Or -> "||"
+
+    let tryParse = function
+        | "*" -> Some FlowBinaryOperator.Multiply
+        | "/" -> Some FlowBinaryOperator.Divide
+        | "%" -> Some FlowBinaryOperator.Remainder
+        | "+" -> Some FlowBinaryOperator.Add
+        | "-" -> Some FlowBinaryOperator.Subtract
+        | "<" -> Some FlowBinaryOperator.Less
+        | "<=" -> Some FlowBinaryOperator.LessOrEqual
+        | ">" -> Some FlowBinaryOperator.Greater
+        | ">=" -> Some FlowBinaryOperator.GreaterOrEqual
+        | "!=" -> Some FlowBinaryOperator.NotEqual
+        | "&&" -> Some FlowBinaryOperator.And
+        | "||" -> Some FlowBinaryOperator.Or
+        | _ -> None
+
+    /// C precedence, higher binds tighter. `==` (FlowExpression.Equality) shares level 3 with `!=`.
+    let precedence = function
+        | FlowBinaryOperator.Multiply | FlowBinaryOperator.Divide | FlowBinaryOperator.Remainder -> 6
+        | FlowBinaryOperator.Add | FlowBinaryOperator.Subtract -> 5
+        | FlowBinaryOperator.Less | FlowBinaryOperator.LessOrEqual | FlowBinaryOperator.Greater | FlowBinaryOperator.GreaterOrEqual -> 4
+        | FlowBinaryOperator.NotEqual -> 3
+        | FlowBinaryOperator.And -> 2
+        | FlowBinaryOperator.Or -> 1
+
+    let equalityPrecedence = 3
+
+    /// Comparison and equality levels do not chain.
+    let nonAssociative level = level = 3 || level = 4
 
 type FlowWordReference =
     { Name: string
@@ -78,6 +140,8 @@ type FlowExpression =
     | DotCall of FlowExpression * string * FlowArgument list * SourceSpan
     | Property of FlowExpression * string * SourceSpan
     | Equality of FlowExpression * FlowExpression * SourceSpan
+    /// Spaced infix operator (`a + b`, `a < b`, `a && b`, ...); see FlowBinaryOperator.
+    | Binary of FlowBinaryOperator * FlowExpression * FlowExpression * SourceSpan
     | If of FlowExpression * FlowStatement list * FlowStatement list * SourceSpan
     /// compact { ... }: a block whose single result may be relocated to its arena mark.
     | Compact of FlowStatement list * SourceSpan
@@ -259,6 +323,7 @@ module FlowStructure =
         | FlowExpression.DotCall(_, _, _, span)
         | FlowExpression.Property(_, _, span)
         | FlowExpression.Equality(_, _, span)
+        | FlowExpression.Binary(_, _, _, span)
         | FlowExpression.If(_, _, _, span)
         | FlowExpression.Compact(_, span)
         | FlowExpression.ListLiteral(_, span)
@@ -405,6 +470,11 @@ module FlowStructure =
                 | FlowExpression.Equality(left, right, equalitySpan) ->
                     if syntaxVersion <> 2 then
                         Diagnostics.raiseError "FLOW_SYNTAX_VERSION" "The '==' operator requires Flow/2 syntax." owner (Some equalitySpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
+                    schedule (ExpressionNode(left, depth + 1)) (expressionSpan left)
+                    schedule (ExpressionNode(right, depth + 1)) (expressionSpan right)
+                | FlowExpression.Binary(operator, left, right, operatorSpan) ->
+                    if syntaxVersion <> 2 then
+                        Diagnostics.raiseError "FLOW_SYNTAX_VERSION" $"The '{FlowBinaryOperator.symbol operator}' operator requires Flow/2 syntax." owner (Some operatorSpan) [ "Flow/2" ] [ $"Flow/{syntaxVersion}" ]
                     schedule (ExpressionNode(left, depth + 1)) (expressionSpan left)
                     schedule (ExpressionNode(right, depth + 1)) (expressionSpan right)
                 | FlowExpression.If(condition, thenBody, elseBody, _) ->
@@ -569,7 +639,12 @@ module FlowSource =
             prefix + indentContinuationLines depth (renderPostfixReceiver syntaxVersion locals receiver) + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            prefix + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals left) + " == " + indentContinuationLines depth (renderEqualityOperand syntaxVersion locals right)
+            let level = FlowBinaryOperator.equalityPrecedence
+            prefix + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level false left) + " == " + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level true right)
+        | FlowExpression.Binary(operator, left, right, span) ->
+            requireFlow2 syntaxVersion None (Some span) "Infix operator"
+            let level = FlowBinaryOperator.precedence operator
+            prefix + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level false left) + " " + FlowBinaryOperator.symbol operator + " " + indentContinuationLines depth (renderInfixOperand syntaxVersion locals level true right)
         | FlowExpression.Container(kind, typeArguments, payload, _) ->
             prefix + indentContinuationLines depth (renderContainer syntaxVersion locals kind typeArguments payload)
         | FlowExpression.ListLiteral(items, span) ->
@@ -657,16 +732,31 @@ module FlowSource =
             renderPostfixReceiver syntaxVersion locals receiver + "." + field
         | FlowExpression.Equality(left, right, span) ->
             requireFlow2 syntaxVersion None (Some span) "Equality operator"
-            renderEqualityOperand syntaxVersion locals left + " == " + renderEqualityOperand syntaxVersion locals right
+            let level = FlowBinaryOperator.equalityPrecedence
+            renderInfixOperand syntaxVersion locals level false left + " == " + renderInfixOperand syntaxVersion locals level true right
+        | FlowExpression.Binary(operator, left, right, span) ->
+            requireFlow2 syntaxVersion None (Some span) "Infix operator"
+            let level = FlowBinaryOperator.precedence operator
+            renderInfixOperand syntaxVersion locals level false left + " " + FlowBinaryOperator.symbol operator + " " + renderInfixOperand syntaxVersion locals level true right
         | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> renderExpressionAt syntaxVersion locals 0 expression
-    and private renderEqualityOperand syntaxVersion locals expression =
-        match expression with
-        | FlowExpression.Equality _ -> "(" + renderInlineExpression syntaxVersion locals expression + ")"
+    /// Minimal parentheses by C precedence: a lower-precedence operand is grouped; at equal
+    /// precedence the right operand (left-associative levels) or either operand
+    /// (non-associative comparison/equality levels) is grouped.
+    and private renderInfixOperand syntaxVersion locals parentLevel isRight expression =
+        let operandLevel =
+            match expression with
+            | FlowExpression.Equality _ -> Some FlowBinaryOperator.equalityPrecedence
+            | FlowExpression.Binary(operator, _, _, _) -> Some(FlowBinaryOperator.precedence operator)
+            | _ -> None
+        match operandLevel with
+        | Some level when level < parentLevel || (level = parentLevel && (isRight || FlowBinaryOperator.nonAssociative parentLevel)) ->
+            "(" + renderInlineExpression syntaxVersion locals expression + ")"
         | _ -> renderInlineExpression syntaxVersion locals expression
     and private renderPostfixReceiver syntaxVersion locals expression =
         if syntaxVersion = 2 then
             match expression with
             | FlowExpression.Equality _
+            | FlowExpression.Binary _
             | FlowExpression.If _
             | FlowExpression.Compact _
             | FlowExpression.MatchOption _
@@ -746,6 +836,7 @@ module FlowSource =
         | FlowExpression.DotCall(receiver, _, arguments, _) -> safeBareArmExpression receiver && List.forall safeBareArmArgument arguments
         | FlowExpression.Property(receiver, _, _) -> safeBareArmExpression receiver
         | FlowExpression.Equality(left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
+        | FlowExpression.Binary(_, left, right, _) -> safeBareArmExpression left && safeBareArmExpression right
         | FlowExpression.Container(_, _, payload, _) -> payload |> Option.forall safeBareArmExpression
         | FlowExpression.ListLiteral(items, _) -> items |> List.forall safeBareArmExpression
         | FlowExpression.If _ | FlowExpression.Compact _ | FlowExpression.MatchOption _ | FlowExpression.MatchResult _ | FlowExpression.MatchEnum _ -> false

@@ -89,6 +89,12 @@ module FlowRewrite =
                 add role path StoredCallForm.Direct "equals" span
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityLeft) left
                 visitExpression role (pathChild path FlowAstPathSegment.EqualityRight) right
+            | FlowExpression.Binary(operator, left, right, span) ->
+                // && and || lower to an if, so they bind no call; other operators bind under their symbol.
+                if operator <> FlowBinaryOperator.And && operator <> FlowBinaryOperator.Or then
+                    add role path StoredCallForm.Direct (FlowBinaryOperator.symbol operator) span
+                visitExpression role (pathChild path FlowAstPathSegment.BinaryLeft) left
+                visitExpression role (pathChild path FlowAstPathSegment.BinaryRight) right
             | FlowExpression.Compact(body, _) ->
                 visitStatements role (pathChild path (FlowAstPathSegment.CompactStatement 0)) body
             | FlowExpression.If(condition, thenStatements, elseStatements, _) ->
@@ -445,6 +451,24 @@ module FlowRewrite =
                             (pathChild newPath FlowAstPathSegment.EqualityRight) right
                     recordSite role oldPath newPath StoredCallForm.Direct "equals" StoredCallForm.Direct "equals" span |> ignore
                     FlowExpression.Equality(newLeft, newRight, span)
+                | FlowExpression.Binary(operator, left, right, span) ->
+                    let symbol = FlowBinaryOperator.symbol operator
+                    let bindsCall = operator <> FlowBinaryOperator.And && operator <> FlowBinaryOperator.Or
+                    if bindsCall && bindingMap[(role, oldPath)].Target = target then
+                        Diagnostics.raiseError "FLOW_REWRITE_OPERATOR_TARGET"
+                            $"The '{symbol}' operator is intrinsic syntax and cannot be rewritten as a renamed dictionary call."
+                            (Some owner) (Some span) [ $"unchanged '{symbol}' operator" ] [ newName ]
+                    let newLeft =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.BinaryLeft)
+                            (pathChild newPath FlowAstPathSegment.BinaryLeft) left
+                    let newRight =
+                        rewriteExpression role
+                            (pathChild oldPath FlowAstPathSegment.BinaryRight)
+                            (pathChild newPath FlowAstPathSegment.BinaryRight) right
+                    if bindsCall then
+                        recordSite role oldPath newPath StoredCallForm.Direct symbol StoredCallForm.Direct symbol span |> ignore
+                    FlowExpression.Binary(operator, newLeft, newRight, span)
                 | FlowExpression.Compact(body, span) ->
                     FlowExpression.Compact(
                         rewriteStatements role

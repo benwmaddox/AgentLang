@@ -498,3 +498,66 @@ test stdlib.random-differs?/thirty-two {
     stdlib.random-differs?(32)
     => value true
 }
+
+// Spaced C-like infix operators (lowered to the Int primitives; % is int.remainder).
+fn stdlib.op-remainder(a: Int, b: Int) -> Int {
+    a % b
+}
+
+test stdlib.op-remainder/positive {
+    stdlib.op-remainder(7, 3)
+    => value 1
+}
+
+test stdlib.op-remainder/negative-dividend {
+    stdlib.op-remainder(-7, 3)
+    => value -1
+}
+
+test stdlib.op-remainder/negative-divisor {
+    stdlib.op-remainder(7, -3)
+    => value 1
+}
+
+test stdlib.op-remainder/min-by-negative-one {
+    stdlib.op-remainder(-9223372036854775808, -1)
+    => value 0
+}
+
+fn stdlib.op-arithmetic(a: Int, b: Int) -> Int {
+    (a + b) * 2 - a / b + a % b * 10
+}
+
+test stdlib.op-arithmetic/mixed {
+    stdlib.op-arithmetic(17, 5)
+    => value 61
+}
+
+test stdlib.op-arithmetic/negative {
+    stdlib.op-arithmetic(-17, 5)
+    => value -41
+}
+
+fn stdlib.op-logic(a: Int, b: Int) -> Bool {
+    b != 0 && a / b > 2 || a <= -10
+}
+
+test stdlib.op-logic/divides {
+    stdlib.op-logic(9, 2)
+    => value true
+}
+
+test stdlib.op-logic/zero-divisor-short-circuits {
+    stdlib.op-logic(9, 0)
+    => value false
+}
+
+test stdlib.op-logic/negative {
+    stdlib.op-logic(-12, 0)
+    => value true
+}
+
+test stdlib.op-logic/small {
+    stdlib.op-logic(5, 3)
+    => value false
+}

@@ -1417,7 +1417,7 @@ module OwningStackAot =
 
         let rec checkType owner ty = buildType owner 0 ty |> ignore
         let supportedPrimitives =
-            set [ "add"; "subtract"; "multiply"; "divide"
+            set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
                   "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
                   "float.add"; "float.subtract"; "float.multiply"; "float.divide"
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -1441,7 +1441,7 @@ module OwningStackAot =
             call.InputTypes @ call.OutputTypes |> List.iter (checkType owner)
             let valid =
                 match operation, call.InputTypes, call.OutputTypes with
-                | ("add" | "subtract" | "multiply" | "divide"), [ IrInt; IrInt ], [ IrInt ] -> true
+                | ("add" | "subtract" | "multiply" | "divide" | "int.remainder"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
                 | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ IrFloat; IrFloat ], [ IrFloat ] -> true
                 | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
@@ -3352,7 +3352,8 @@ module OwningStackAot =
                                 emitCallAndCheck w "%ctx" $"call void @al_owning_store_i64(ptr %%ctx, i32 {resultStart}, i64 {result}, i32 {typeId IrInt})" failBody
                                 emitUpdateLive 8
                                 stack <- pushTypes prefix [ IrInt ]
-                            | "divide", [ left; right ] ->
+                            | ("divide" | "int.remainder"), [ left; right ] ->
+                                let remainder = primitive = "int.remainder"
                                 let leftOffset = emitOffset w operandBase left.RelativeOffset
                                 let rightOffset = emitOffset w operandBase right.RelativeOffset
                                 let a = w.Fresh "divide.left"
@@ -3373,20 +3374,27 @@ module OwningStackAot =
                                 w.Line($"{nonZero}:")
                                 let isMin = w.Fresh "divide.min"
                                 let isNegativeOne = w.Fresh "divide.negative.one"
-                                let overflow = w.Fresh "divide.overflow"
-                                w.Inst($"{isMin} = icmp eq i64 {a}, -9223372036854775808")
-                                w.Inst($"{isNegativeOne} = icmp eq i64 {b}, -1")
-                                w.Inst($"{overflow} = and i1 {isMin}, {isNegativeOne}")
-                                let valid = w.Label "divide.valid"
-                                let overflowFail = w.Label "divide.overflow.failure"
-                                let overflowId = addDiagnostic "RUNTIME_OVERFLOW" "Integer division overflow." primitive None [] []
-                                w.Inst($"br i1 {overflow}, label %%{overflowFail}, label %%{valid}")
-                                w.Line($"{overflowFail}:")
-                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {overflowId}, i32 0, i32 0)")
-                                w.Inst($"br label %%{failBody}")
-                                w.Line($"{valid}:")
                                 let result = w.Fresh "divide.result"
-                                w.Inst($"{result} = sdiv i64 {a}, {b}")
+                                if remainder then
+                                    // x % -1 is 0; dividing by 1 instead avoids srem's MIN / -1 trap.
+                                    let divisor = w.Fresh "remainder.divisor"
+                                    w.Inst($"{isNegativeOne} = icmp eq i64 {b}, -1")
+                                    w.Inst($"{divisor} = select i1 {isNegativeOne}, i64 1, i64 {b}")
+                                    w.Inst($"{result} = srem i64 {a}, {divisor}")
+                                else
+                                    let overflow = w.Fresh "divide.overflow"
+                                    w.Inst($"{isMin} = icmp eq i64 {a}, -9223372036854775808")
+                                    w.Inst($"{isNegativeOne} = icmp eq i64 {b}, -1")
+                                    w.Inst($"{overflow} = and i1 {isMin}, {isNegativeOne}")
+                                    let valid = w.Label "divide.valid"
+                                    let overflowFail = w.Label "divide.overflow.failure"
+                                    let overflowId = addDiagnostic "RUNTIME_OVERFLOW" "Integer division overflow." primitive None [] []
+                                    w.Inst($"br i1 {overflow}, label %%{overflowFail}, label %%{valid}")
+                                    w.Line($"{overflowFail}:")
+                                    w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {overflowId}, i32 0, i32 0)")
+                                    w.Inst($"br label %%{failBody}")
+                                    w.Line($"{valid}:")
+                                    w.Inst($"{result} = sdiv i64 {a}, {b}")
                                 let resultStart = emitOffset w operandBase (stackBytes info prefix)
                                 for item in List.rev values do emitDropEntry item
                                 let next = emitOffset w resultStart 8
@@ -6188,7 +6196,7 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w payload "0" failBody
                                 stack <- push prefix IrString destination extent payload resultEnd
-                            | ("add" | "subtract" | "multiply" | "divide" | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ left; right ] ->
+                            | ("add" | "subtract" | "multiply" | "divide" | "int.remainder" | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ left; right ] ->
                                 let rightOffset = right.Offset
                                 let leftOffset = left.Offset
                                 let a = w.Fresh "integer.left"
@@ -6197,7 +6205,26 @@ module OwningStackAot =
                                 emitRuntimeStatus w "%ctx" failBody
                                 w.Inst($"{b} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {rightOffset})")
                                 emitRuntimeStatus w "%ctx" failBody
-                                if operation = "divide" then
+                                if operation = "int.remainder" then
+                                    let isZero = w.Fresh "remainder.zero"
+                                    w.Inst($"{isZero} = icmp eq i64 {b}, 0")
+                                    let zeroLabel = w.Label "remainder.zero"
+                                    let nonzeroLabel = w.Label "remainder.nonzero"
+                                    let zeroError = addDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." operation instructionSpan [] []
+                                    w.Inst($"br i1 {isZero}, label %%{zeroLabel}, label %%{nonzeroLabel}")
+                                    w.Line($"{zeroLabel}:")
+                                    w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {zeroError}, i32 0, i32 0)")
+                                    w.Inst($"br label %%{failBody}")
+                                    w.Line($"{nonzeroLabel}:")
+                                    // x % -1 is 0; dividing by 1 instead avoids srem's MIN / -1 trap.
+                                    let isMinusOne = w.Fresh "remainder.minusone"
+                                    let divisor = w.Fresh "remainder.divisor"
+                                    w.Inst($"{isMinusOne} = icmp eq i64 {b}, -1")
+                                    w.Inst($"{divisor} = select i1 {isMinusOne}, i64 1, i64 {b}")
+                                    let result = w.Fresh "remainder.result"
+                                    w.Inst($"{result} = srem i64 {a}, {divisor}")
+                                    emitScalarResult IrInt result
+                                elif operation = "divide" then
                                     let isZero = w.Fresh "divide.zero"
                                     w.Inst($"{isZero} = icmp eq i64 {b}, 0")
                                     let zeroLabel = w.Label "divide.zero"

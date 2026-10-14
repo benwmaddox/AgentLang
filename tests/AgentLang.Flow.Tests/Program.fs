@@ -2490,7 +2490,7 @@ let private testFlowOutputVectors () =
                 |> List.map (function
                     | FlowExpression.Literal(_, source) | FlowExpression.Local(_, source) -> source
                     | FlowExpression.Call(_, _, source) | FlowExpression.RootCall(_, _, source) | FlowExpression.DotCall(_, _, _, source)
-                    | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source)
+                    | FlowExpression.Property(_, _, source) | FlowExpression.Equality(_, _, source) | FlowExpression.Binary(_, _, _, source)
                     | FlowExpression.If(_, _, _, source) | FlowExpression.Compact(_, source) | FlowExpression.ListLiteral(_, source) | FlowExpression.Container(_, _, _, source)
                     | FlowExpression.MatchOption(_, _, _, source) | FlowExpression.MatchResult(_, _, _, source)
                     | FlowExpression.MatchEnum(_, _, source) -> source)
@@ -5857,6 +5857,210 @@ let private testFlowRecordValidatorSyntax () =
     expectRecordError "Flow record allows at most one validator" "FLOW_RECORD_VALIDATOR_DUPLICATE"
         "record Customer { field id: Int; validate ::valid?; validate ::other?; }"
 
+let private testFlow2InfixOperators () =
+    let parse source =
+        match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" source with
+        | Ok expression -> expression
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let render = FlowSource.renderExpressionWithVersion 2
+    let roundTrip label source expected =
+        let text = source |> parse |> render
+        equal label expected text
+        equal (label + " (stable)") text (text |> parse |> render)
+
+    // Precedence and associativity in the AST.
+    match parse "1 + 2 * 3" with
+    | FlowExpression.Binary(FlowBinaryOperator.Add, FlowExpression.Literal(LInt 1L, _), FlowExpression.Binary(FlowBinaryOperator.Multiply, _, _, _), _) ->
+        check "* binds tighter than +" true
+    | other -> failwithf "unexpected precedence AST: %A" other
+    match parse "10 - 4 - 3" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, FlowExpression.Binary(FlowBinaryOperator.Subtract, _, _, _), FlowExpression.Literal(LInt 3L, _), _) ->
+        check "- is left-associative" true
+    | other -> failwithf "unexpected associativity AST: %A" other
+    match parse "a < b && b <= c || d == e" with
+    | FlowExpression.Binary(FlowBinaryOperator.Or,
+                            FlowExpression.Binary(FlowBinaryOperator.And, FlowExpression.Binary(FlowBinaryOperator.Less, _, _, _), FlowExpression.Binary(FlowBinaryOperator.LessOrEqual, _, _, _), _),
+                            FlowExpression.Equality _, _) ->
+        check "comparison > equality > && > || precedence" true
+    | other -> failwithf "unexpected logical AST: %A" other
+    match parse "1 + 2 == 3" with
+    | FlowExpression.Equality(FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _), FlowExpression.Literal(LInt 3L, _), _) ->
+        check "== binds looser than +" true
+    | other -> failwithf "unexpected equality AST: %A" other
+
+    // The spacing rule: only a symbol with whitespace on both sides is an operator.
+    match parse "a-b" with
+    | FlowExpression.Local("a-b", _) -> check "a-b stays one name" true
+    | other -> failwithf "a-b should be a name: %A" other
+    match parse "x - 1" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, FlowExpression.Local("x", _), FlowExpression.Literal(LInt 1L, _), _) -> check "x - 1 is subtraction" true
+    | other -> failwithf "x - 1 should subtract: %A" other
+    match parse "f(-1)" with
+    | FlowExpression.Call("f", [ FlowArgument.Positional(FlowExpression.Literal(LInt -1L, _)) ], _) -> check "f(-1) keeps a negative literal" true
+    | other -> failwithf "f(-1) should be a literal argument: %A" other
+    match parse "x - -1" with
+    | FlowExpression.Binary(FlowBinaryOperator.Subtract, _, FlowExpression.Literal(LInt -1L, _), _) -> check "x - -1 subtracts a negative literal" true
+    | other -> failwithf "x - -1: %A" other
+    match parse "list.empty<String>()" with
+    | FlowExpression.Container _ -> check "unspaced generic brackets are not comparisons" true
+    | other -> failwithf "generic container should parse: %A" other
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "a*b" with
+    | Ok(FlowExpression.Binary _) -> failwith "a*b must not be multiplication"
+    | _ -> check "a*b is not multiplication" true
+    match FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "a <b" with
+    | Ok(FlowExpression.Binary _) -> failwith "a <b must not be a comparison"
+    | _ -> check "a one-sided < is not a comparison" true
+    match parse "1 +\n    2" with
+    | FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _) -> check "a newline counts as operator spacing" true
+    | other -> failwithf "multi-line operator: %A" other
+
+    // Non-associative levels.
+    expectError "comparisons do not chain" "FLOW_COMPARISON_CHAIN"
+        (FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "1 < 2 < 3") |> ignore
+    expectError "equality and != do not chain" "FLOW_EQUALITY_CHAIN"
+        (FlowParser.parseExpressionWithVersion 2 "<flow2-operators>" "1 == 2 != false") |> ignore
+    expectError "Flow/1 does not gain spaced operators" "FLOW_SYNTAX_VERSION"
+        (FlowParser.parseExpressionWithVersion 1 "<flow1-operators>" "1 == 1 + 1") |> ignore
+
+    // Formatter: minimal parentheses by precedence, spaces around operators.
+    roundTrip "formatter drops redundant grouping" "(1 * 2) + 3" "1 * 2 + 3"
+    roundTrip "formatter keeps needed grouping" "(1 + 2) * 3" "(1 + 2) * 3"
+    roundTrip "formatter keeps right-operand grouping for left-associative operators" "10 - (4 - 3)" "10 - (4 - 3)"
+    roundTrip "formatter renders left chains bare" "10 - 4 - 3" "10 - 4 - 3"
+    roundTrip "formatter drops grouping a comparison under ==" "(1 < 2) == true" "1 < 2 == true"
+    roundTrip "formatter groups chained comparisons" "(a < b) < c" "(a < b) < c"
+    roundTrip "formatter renders logical precedence bare" "a && b || c && d" "a && b || c && d"
+    roundTrip "formatter groups || under &&" "a && (b || c)" "a && (b || c)"
+    roundTrip "formatter groups an operator receiver" "(a + b).identity()" "(a + b).identity()"
+    roundTrip "formatter renders != and %" "a % 2 != 0" "a % 2 != 0"
+
+    // Execution through verified IR.
+    let context = loweringContext [] Map.empty
+    let run label (body: string) =
+        let source = $"fn op.eval() -> {body}"
+        let word =
+            match FlowParser.parseWordWithVersion 2 "<flow2-operators-run>" source with
+            | Ok word -> word
+            | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+        let compiled = FlowLowering.compileWord context (WordId("flow2-op-" + label)) word
+        let invocation =
+            Compiler.compileIrBodyAgainstProgramWithSourceOrigins
+                compiled.Context.CompilerContext compiled.Program ("flow2-op-invoke-" + label) []
+                [ Call("op.eval", sourceSpan) ]
+                compiled.Context.SourceOrigins
+        IrInterpreter.executeBody (host (ResizeArray())) ("flow2-op-" + label) invocation
+    let int label expected body =
+        equal label [ IntValue expected ] (run label ("Int {\n    " + body + "\n}"))
+    let bool label expected body =
+        equal label [ BoolValue expected ] (run label ("Bool {\n    " + body + "\n}"))
+    int "1 + 2 * 3" 7L "1 + 2 * 3"
+    int "(1 + 2) * 3" 9L "(1 + 2) * 3"
+    int "10 - 4 - 3" 3L "10 - 4 - 3"
+    int "7 / 2" 3L "7 / 2"
+    int "-7 / 2 truncates" -3L "-7 / 2"
+    int "-7 % 3" -1L "-7 % 3"
+    int "7 % -3" 1L "7 % -3"
+    int "7 % 3" 1L "7 % 3"
+    int "MIN % -1" 0L "-9223372036854775808 % -1"
+    int "nested operators inside calls" 12L "int.max(2 * 3, 4) * 2"
+    equal "float arithmetic" [ FloatValue 3.75 ] (run "float" "Float {\n    1.5 * 2.0 + 3.0 / 4.0\n}")
+    bool "int <" true "1 < 2"
+    bool "int <=" true "2 <= 2"
+    bool "int >" false "1 > 2"
+    bool "int >=" true "3 >= 2"
+    bool "float <" true "1.5 < 2.5"
+    bool "float >=" false "1.5 >= 2.5"
+    bool "!= on Int" true "1 != 2"
+    bool "!= on String" false "\"a\" != \"a\""
+    bool "== with arithmetic" true "2 + 2 == 4"
+    bool "&&" false "true && false"
+    bool "||" true "false || true"
+    bool "&& short-circuits" false "1 > 2 && 1 / 0 == 1"
+    bool "|| short-circuits" true "1 < 2 || 1 / 0 == 1"
+    bool "operators in if conditions" true "if 3 % 2 == 1 && 2 * 2 >= 4 { true } else { false }"
+    expectLanguageError "% by zero is a runtime divide-by-zero" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "rem0" "Int {\n    7 % 0\n}" |> ignore)
+    expectLanguageError "/ by zero keeps its runtime error" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "div0" "Int {\n    7 / 0\n}" |> ignore)
+    expectLanguageError "&& evaluates its right side when needed" "RUNTIME_DIVIDE_BY_ZERO" (fun () -> run "and0" "Bool {\n    true && 1 / 0 == 1\n}" |> ignore)
+    expectLanguageError "+ keeps add's overflow check" "RUNTIME_OVERFLOW" (fun () -> run "ovf" "Int {\n    9223372036854775807 + 1\n}" |> ignore)
+
+    // Typing: no implicit conversions.
+    let typeError label (body: string) =
+        let diagnostic = captureLanguageError label "FLOW_OPERATOR_TYPE" (fun () -> run label body |> ignore)
+        diagnostic
+    typeError "Int + Float" "Int {\n    1 + 2.0\n}" |> ignore
+    let concat = typeError "String + String" "String {\n    \"a\" + \"b\"\n}"
+    check "String + mentions string.concat" (concat.Message.Contains("string.concat", StringComparison.Ordinal))
+    typeError "Float % Float" "Float {\n    1.0 % 2.0\n}" |> ignore
+    typeError "Bool + Bool" "Bool {\n    true + false\n}" |> ignore
+    typeError "Int && Int" "Bool {\n    1 && 2\n}" |> ignore
+    typeError "String < String" "Bool {\n    \"a\" < \"b\"\n}" |> ignore
+    typeError "Int != String" "Bool {\n    1 != \"1\"\n}" |> ignore
+    let moneyType =
+        { Name = "Money"
+          BaseType = TInt
+          Validator = None
+          SourceText = "type Money : Int { }"
+          Span = sourceSpan }
+    let moneyContext =
+        loweringContextWith Map.empty (Map.ofList [ "Money", moneyType ])
+            [ generatedEntry "money.new" (ScalarConstructor "Money") [ TInt ] [ TNamed "Money" ] Set.empty
+              generatedEntry "money.value" (ScalarAccessor "Money") [ TNamed "Money" ] [ TInt ] Set.empty ]
+            Map.empty
+    let scalarWord =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-scalar>" "fn money.bump(value: Money) -> Int {\n    value + 1\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let scalarError = captureLanguageError "nominal scalar + Int" "FLOW_OPERATOR_TYPE" (fun () -> FlowLowering.compileWord moneyContext (WordId "flow2-op-money") scalarWord |> ignore)
+    check "nominal scalar error names both types" (scalarError.Message.Contains("Money", StringComparison.Ordinal) && scalarError.Message.Contains("Int", StringComparison.Ordinal))
+    let unwrapped =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-unwrap>" "fn money.bump(value: Money) -> Int {\n    value.value() + 1\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    FlowLowering.compileWord moneyContext (WordId "flow2-op-money-ok") unwrapped |> ignore
+    check "an unwrapped nominal scalar is numeric" true
+
+    // Call bindings: each non-logical operator is one Direct site named by its symbol; && and || bind none.
+    let mixedWord =
+        match FlowParser.parseWordWithVersion 2 "<flow2-operators-bindings>" "fn op.mix(a: Int, b: Int) -> Bool {\n    a + b * 2 > 3 && a != b || a % 2 == 0\n}" with
+        | Ok word -> word
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let bound = FlowLowering.compileWordWithCallBindings context (WordId "flow2-op-mix") mixedWord
+    equal "operator call sites use operator symbols as requested names"
+        [ "!="; "%"; "*"; "+"; ">"; "equals" ]
+        (bound.CallSites |> List.map (fun site -> site.RequestedName) |> List.sort)
+    let plusSite = bound.CallSites |> List.find (fun site -> site.RequestedName = "+")
+    equal "operator binding paths descend through operands"
+        (FlowAstPath.FlowAstPath [ FlowAstPathSegment.BlockStatement 0; FlowAstPathSegment.EvaluateExpression
+                                   FlowAstPathSegment.BinaryLeft; FlowAstPathSegment.BinaryLeft; FlowAstPathSegment.BinaryLeft ])
+        plusSite.Path
+    let mixedSource = Storage.sourceObject StorageObjectKind.WordDefinition mixedWord.SourceText
+    let mixedBindings =
+        bound.CallSites
+        |> List.map (fun site ->
+            { OwnerName = mixedWord.Name
+              OwnerId = WordId "flow2-op-mix"
+              OwnerRevision = 1
+              Source = mixedSource.Reference
+              Site = site })
+        |> FlowPersistence.wordBindings
+    match FlowRewrite.rewriteWord mixedWord.Name "op.mixed" (StoredCallTarget.UserWord "unrelated-target") mixedWord mixedBindings with
+    | Ok result ->
+        check "rewrite keeps operators" (FlowSource.renderWord result.Definition |> fun text -> text.Contains("a + b * 2 > 3 && a != b || a % 2 == 0", StringComparison.Ordinal))
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+
+    // expect with == and !=.
+    let parsedTest =
+        FlowParser.parseTestWithVersion 2 "<flow2-operators-expect>" "test word.name/ops {\n    expect 1 + 2 == 3\n    expect 1 + 2 != 4\n}"
+        |> Result.defaultWith (Diagnostics.render >> failwith)
+    match parsedTest.Body with
+    | [ FlowStatement.Evaluate(FlowExpression.Call(equalName, [ FlowArgument.Positional(FlowExpression.Binary(FlowBinaryOperator.Add, _, _, _)); _ ], _))
+        FlowStatement.Evaluate(FlowExpression.Call(checkName, [ FlowArgument.Positional(FlowExpression.Binary(FlowBinaryOperator.NotEqual, _, _, _)) ], _)) ]
+        when equalName = FlowExpect.equalIntrinsic && checkName = FlowExpect.checkIntrinsic ->
+        check "expect a + b == c lowers to <expect-equal>; expect != lowers to <expect>" true
+    | other -> failwithf "unexpected expect operator body: %A" other
+    let canonical = FlowSource.renderTest parsedTest
+    check "expect operators render canonically" (canonical.Contains("    expect 1 + 2 == 3\n    expect 1 + 2 != 4\n", StringComparison.Ordinal))
+
 let private testFlow2ExpectStatements () =
     let parseV2Test source =
         FlowParser.parseTestWithVersion 2 "<flow2-expect>" source
@@ -5904,6 +6108,7 @@ let private testFlow2ExpectStatements () =
 [<EntryPoint>]
 let main _ =
     testFlow2ExpectStatements ()
+    testFlow2InfixOperators ()
     testParserLocationsAndQualification ()
     testIterativeAstDepthLimit ()
     testFlow2Frontend ()

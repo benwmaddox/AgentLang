@@ -469,6 +469,8 @@ module Storage =
         | FlowAstPathSegment.PropertyReceiver -> setNamed "propertyReceiver"
         | FlowAstPathSegment.EqualityLeft -> setNamed "equalityLeft"
         | FlowAstPathSegment.EqualityRight -> setNamed "equalityRight"
+        | FlowAstPathSegment.BinaryLeft -> setNamed "binaryLeft"
+        | FlowAstPathSegment.BinaryRight -> setNamed "binaryRight"
         | FlowAstPathSegment.IfCondition -> setNamed "ifCondition"
         | FlowAstPathSegment.IfThenStatement index -> setIndexed "ifThenStatement" index
         | FlowAstPathSegment.IfElseStatement index -> setIndexed "ifElseStatement" index
@@ -516,6 +518,8 @@ module Storage =
         | "propertyReceiver" -> FlowAstPathSegment.PropertyReceiver
         | "equalityLeft" -> FlowAstPathSegment.EqualityLeft
         | "equalityRight" -> FlowAstPathSegment.EqualityRight
+        | "binaryLeft" -> FlowAstPathSegment.BinaryLeft
+        | "binaryRight" -> FlowAstPathSegment.BinaryRight
         | "ifCondition" -> FlowAstPathSegment.IfCondition
         | "ifThenStatement" -> indexed FlowAstPathSegment.IfThenStatement
         | "ifElseStatement" -> indexed FlowAstPathSegment.IfElseStatement
@@ -685,6 +689,8 @@ module Storage =
         | FlowAstPathSegment.PropertyReceiver
         | FlowAstPathSegment.EqualityLeft
         | FlowAstPathSegment.EqualityRight
+        | FlowAstPathSegment.BinaryLeft
+        | FlowAstPathSegment.BinaryRight
         | FlowAstPathSegment.IfCondition
         | FlowAstPathSegment.ContainerPayload
         | FlowAstPathSegment.OptionScrutinee
@@ -1138,6 +1144,8 @@ module Storage =
                             | FlowAstPathSegment.PropertyReceiver
                             | FlowAstPathSegment.EqualityLeft
                             | FlowAstPathSegment.EqualityRight
+                            | FlowAstPathSegment.BinaryLeft
+                            | FlowAstPathSegment.BinaryRight
                             | FlowAstPathSegment.EnumScrutinee
                             | FlowAstPathSegment.EnumCaseStatement _ -> true
                             | _ -> false)

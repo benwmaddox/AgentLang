@@ -444,7 +444,7 @@ type NativeCompiledProgram internal
 module LlvmAot =
     let private supportedPrimitiveOperations =
         set [
-            "add"; "subtract"; "multiply"; "divide"
+            "add"; "subtract"; "multiply"; "divide"; "int.remainder"
             "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
             "equals"; "bool.and"; "bool.or"; "bool.not"
             "dup"; "drop"; "swap"
@@ -784,7 +784,7 @@ module LlvmAot =
             let outputs = call.OutputTypes
             let signatureMatches =
                 match operation, inputs, outputs with
-                | ("add" | "subtract" | "multiply" | "divide"), [ IrInt; IrInt ], [ IrInt ] -> true
+                | ("add" | "subtract" | "multiply" | "divide" | "int.remainder"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
                 | "equals", [ left; right ], [ IrBool ] -> left = right
                 | "bool.and", [ IrBool; IrBool ], [ IrBool ] -> true
@@ -1185,6 +1185,21 @@ module LlvmAot =
                 emitErrorWhen builder overflow overflowDiagnostic (FixedWord operation)
                 let result = builder.Fresh "divide.result"
                 builder.Emit($"{result} = sdiv i64 {left.Operand}, {right.Operand}")
+                [ { Type = IrInt; Operand = result } ]
+            | "int.remainder", [ left; right ] ->
+                let zero = builder.Fresh "remainder.zero"
+                builder.Emit($"{zero} = icmp eq i64 {right.Operand}, 0")
+                let zeroDiagnostic =
+                    operationDiagnostic "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero."
+                        operation None [] []
+                emitErrorWhen builder zero zeroDiagnostic (FixedWord operation)
+                // x % -1 is 0; dividing by 1 instead avoids srem's MIN / -1 trap.
+                let negOne = builder.Fresh "remainder.negative.one"
+                let divisor = builder.Fresh "remainder.divisor"
+                builder.Emit($"{negOne} = icmp eq i64 {right.Operand}, -1")
+                builder.Emit($"{divisor} = select i1 {negOne}, i64 1, i64 {right.Operand}")
+                let result = builder.Fresh "remainder.result"
+                builder.Emit($"{result} = srem i64 {left.Operand}, {divisor}")
                 [ { Type = IrInt; Operand = result } ]
             | "int.less-than", [ left; right ]
             | "int.greater-than", [ left; right ]

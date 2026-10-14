@@ -66,7 +66,7 @@ module Compiler =
         let a = TVar "a"
         let b = TVar "b"
         match name with
-        | "add" | "subtract" | "multiply" | "divide" | "int.min" | "int.max" -> [ TInt; TInt ], [ TInt ]
+        | "add" | "subtract" | "multiply" | "divide" | "int.remainder" | "int.min" | "int.max" -> [ TInt; TInt ], [ TInt ]
         | "float.add" | "float.subtract" | "float.multiply" | "float.divide" -> [ TFloat; TFloat ], [ TFloat ]
         | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal" -> [ TInt; TInt ], [ TBool ]
         | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal" -> [ TFloat; TFloat ], [ TBool ]
@@ -142,7 +142,7 @@ module Compiler =
 
     /// The initial standard vocabulary is deliberately small and boring.
     let private primitiveNames =
-            [ "add"; "subtract"; "multiply"; "divide"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
+            [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"

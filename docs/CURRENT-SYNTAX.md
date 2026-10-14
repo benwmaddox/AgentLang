@@ -167,6 +167,50 @@ fn marker.read(path: String) -> String {
 }
 ```
 
+## Operators
+
+Flow/2 has C-like binary infix operators. An operator glyph is an operator
+only when it has whitespace (space, tab or newline) on both sides:
+
+```flow
+fn order.total(count: Int, price: Int, fee: Int) -> Int {
+    count * price + fee
+}
+```
+
+Without the spaces nothing changes: `a-b` and `room-id` are names, `-1` is a
+negative literal (so `f(-1)` and `x - -1` both work), and `List<String>` or
+`option.none<Bytes>()` are generic brackets. Parentheses group:
+`(a + b) * c`.
+
+| Level (high to low) | Operators | Operands | Lowers to |
+| --- | --- | --- | --- |
+| 1 | `*` `/` `%` (left-assoc) | Int, Int | `multiply`, `divide`, `int.remainder` |
+| | `*` `/` | Float, Float | `float.multiply`, `float.divide` |
+| 2 | `+` `-` (left-assoc) | Int, Int | `add`, `subtract` |
+| | | Float, Float | `float.add`, `float.subtract` |
+| 3 | `<` `<=` `>` `>=` (do not chain) | Int, Int or Float, Float | `int.less-than` ... / `float.less-than` ... |
+| 4 | `==` `!=` (do not chain) | two values of one type | `equals`; `!=` is `equals` negated |
+| 5 | `&&` | Bool, Bool | `if a { b } else { false }` |
+| 6 | `\|\|` | Bool, Bool | `if a { true } else { b }` |
+
+- There are no implicit conversions. Int with Float, `%` on Float, and nominal
+  scalars such as `MessageId : Int` are `FLOW_OPERATOR_TYPE` errors; unwrap
+  or convert explicitly (`int.to-float`, `id.value()`). Join strings with
+  `string.concat`, not `+`.
+- `&&` and `||` short-circuit: the right side runs only when it decides the
+  result, so `b != 0 && a / b > 2` never divides by zero.
+- Int `+ - *` keep the primitives' overflow checks (`RUNTIME_OVERFLOW`); `/`
+  and `%` by zero fail with `RUNTIME_DIVIDE_BY_ZERO`. `/` truncates toward
+  zero and `%` takes the dividend's sign, as in C: `-7 % 3` is `-1`,
+  `7 % -3` is `1`, and `Int64.MinValue % -1` is `0`.
+- `a < b < c` is `FLOW_COMPARISON_CHAIN` and `a == b != c` is
+  `FLOW_EQUALITY_CHAIN`; parenthesize or join with `&&`.
+- `expect a == b` still reports both values; `expect a != b` is an ordinary
+  Bool check.
+- The formatter writes one space around each operator and only the
+  parentheses that precedence needs.
+
 ## Names
 
 A word name is a dotted path of segments, such as `campfire.views.room-page`;

@@ -49,7 +49,7 @@ module internal ArenaLifetime =
         parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1)
 
     let private owningPrimitiveSet =
-        set [ "add"; "subtract"; "multiply"; "divide"
+        set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"

@@ -107,6 +107,10 @@ Noted for after the apples-to-apples Campfire comparison.
    diagnostic. Then collapse the copied override sets in
    `applications/campfire/*-tests.flow`. `http-tests.flow` alone repeats the
    same 10 overrides in 9 blocks, many unused (user, 2026-10-14).
+6. **C-like infix operators:** done (272, user 2026-10-14). `* / % + - < <= > >=
+   == != && ||` with C precedence, each written with whitespace on both sides
+   (see CURRENT-SYNTAX "Operators"). No implicit conversions; `%` is the new
+   `int.remainder` primitive. Unary `-`/`!` and compound assignment are not added.
 
 Then the stdlib restructure in report 271's "Next".
 
