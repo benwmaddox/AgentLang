@@ -857,6 +857,7 @@ module OwningStackAot =
         | IrUnit -> "Unit"
         | IrFloat -> "Float"
         | IrString -> "String"
+        | IrBytes -> "Bytes"
         | IrList item -> $"List<{typeName program item}>"
         | IrOption item -> $"Option<{typeName program item}>"
         | IrResult(okType, errorType) -> $"Result<{typeName program okType}, {typeName program errorType}>"
@@ -933,6 +934,7 @@ module OwningStackAot =
         | IrUnit -> TUnit
         | IrFloat -> TFloat
         | IrString -> TString
+        | IrBytes -> TBytes
         | IrList item -> TList(langTypeFor program item)
         | IrOption item -> TOption(langTypeFor program item)
         | IrResult(okType, errorType) -> TResult(langTypeFor program okType, langTypeFor program errorType)
@@ -1160,11 +1162,11 @@ module OwningStackAot =
                           Cases = [] }
                     typeInfos <- Map.add ty value typeInfos
                     value
-                | IrString ->
+                | IrString | IrBytes ->
                     let value =
                         { Type = ty
                           TypeId = typeIdFor typeIds ty
-                          Name = "String"
+                          Name = IrTypes.format ty
                           PayloadBytes = -1
                           ExtentBytes = -1
                           IsDynamic = true
@@ -1839,6 +1841,12 @@ module OwningStackAot =
             | IrUnit, UnitValue -> 8, 8
             | IrFloat, FloatValue number when Double.IsFinite number -> 8, 8
             | IrFloat, FloatValue _ -> invalidArg (nameof values) "Owning-stack Float inputs must be finite."
+            | IrBytes, BytesValue data when not (isNull data) ->
+                let payload64 = 8L + int64 data.Length
+                if payload64 > int64 Int32.MaxValue then
+                    invalidArg (nameof values) "Owning-stack Bytes payload exceeds the bounded 32-bit runtime range."
+                let payload = int payload64
+                payload, alignedExtent payload
             | IrString, StringValue text when not (isNull text) ->
                 let payload64 = 8L + int64 (utf8Bytes text).Length
                 if payload64 > int64 Int32.MaxValue then
@@ -1975,6 +1983,12 @@ module OwningStackAot =
                 if not (Double.IsFinite number) then invalidArg (nameof values) "Owning-stack Float inputs must be finite."
                 writeInt64 bytes offset (BitConverter.DoubleToInt64Bits number)
                 8
+            | IrBytes, BytesValue data ->
+                if isNull data then invalidArg (nameof values) "Owning-stack Bytes inputs cannot be null."
+                writeUInt32 offset (uint32 data.Length)
+                writeUInt32 (offset + 4) 0u
+                Array.blit data 0 bytes (offset + 8) data.Length
+                alignedExtent (8 + data.Length)
             | IrString, StringValue text ->
                 if isNull text then invalidArg (nameof values) "Owning-stack String inputs cannot be null."
                 let encoded = utf8Bytes text
@@ -2117,6 +2131,18 @@ module OwningStackAot =
                     try strictUtf8.GetString(bytes, offset + 8, int count)
                     with :? DecoderFallbackException -> raise (InvalidDataException("Owning-stack String is not well-formed UTF-8."))
                 StringValue text, extentBytes, payload
+            | IrBytes ->
+                if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack Bytes header is truncated."))
+                let count = readUInt32 offset
+                if readUInt32 (offset + 4) <> 0u then raise (InvalidDataException("Owning-stack Bytes reserved header is nonzero."))
+                let payload64 = 8L + int64 count
+                if payload64 > int64 Int32.MaxValue then raise (InvalidDataException("Owning-stack Bytes payload exceeds the bounded range."))
+                let payload = int payload64
+                let extentBytes = alignedDecodedExtent payload "Bytes extent"
+                if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Bytes extent is truncated."))
+                for pad in payload .. extentBytes - 1 do
+                    if bytes[offset + pad] <> 0uy then raise (InvalidDataException("Owning-stack Bytes padding is nonzero."))
+                BytesValue(Array.sub bytes (offset + 8) (int count)), extentBytes, payload
             | IrList itemType ->
                 ensureRange offset 8 "List header"
                 let count = readUInt32 offset
@@ -2631,7 +2657,7 @@ module OwningStackAot =
             | IrBool -> 2u
             | IrUnit -> 3u
             | IrFloat -> 9u
-            | IrString -> 5u
+            | IrString | IrBytes -> 5u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -3639,7 +3665,7 @@ module OwningStackAot =
             | IrBool -> 2u
             | IrUnit -> 3u
             | IrFloat -> 9u
-            | IrString -> 5u
+            | IrString | IrBytes -> 5u
             | IrList _ -> 10u
             | IrOption _ -> 7u
             | IrResult _ -> 8u
@@ -7882,6 +7908,7 @@ module OwningStackAot =
                      | IrUnit -> "Unit"
                      | IrFloat -> "Float"
                      | IrString -> "String"
+                     | IrBytes -> "Bytes"
                      | IrList _ -> "List"
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"

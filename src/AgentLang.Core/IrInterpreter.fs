@@ -214,6 +214,7 @@ module IrInterpreter =
                 | IrFloat -> append "Float"
                 | IrBool -> append "Bool"
                 | IrString -> append "String"
+                | IrBytes -> append "Bytes"
                 | IrUnit -> append "Unit"
                 | IrNominal key -> append (typeName program key)
                 | IrList item ->
@@ -267,6 +268,7 @@ module IrInterpreter =
             | IrFloat -> TFloat
             | IrBool -> TBool
             | IrString -> TString
+            | IrBytes -> TBytes
             | IrUnit -> TUnit
             | IrList item -> TList(toLangType item)
             | IrOption item -> TOption(toLangType item)
@@ -349,7 +351,7 @@ module IrInterpreter =
             | PatternVariable _ -> false
             | PatternList item | PatternOption item -> isClosed item
             | PatternResult(okType, errorType) -> isClosed okType && isClosed errorType
-            | PatternInt | PatternFloat | PatternBool | PatternString | PatternUnit -> true
+            | PatternInt | PatternFloat | PatternBool | PatternString | PatternBytes | PatternUnit -> true
         List.forall isClosed (inputPatterns @ outputPatterns)
 
     let private validateTestDispatch (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) (dispatch: Map<IrCallTarget, IrCallTarget>) =
@@ -570,7 +572,7 @@ module IrInterpreter =
                 | IrNominal key ->
                     let name = typeName program key
                     outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes (int64 name.Length * 6L)
-                | IrInt | IrFloat | IrBool | IrString | IrUnit -> ()
+                | IrInt | IrFloat | IrBool | IrString | IrBytes | IrUnit -> ()
                 if outputBytes > maxRuntimeValueOutputBytes then
                     failValueLimit currentWord site "type-description output" $"estimated UTF-8 output bytes <= {maxRuntimeValueOutputBytes}" (string outputBytes)
             depth, outputBytes
@@ -691,7 +693,7 @@ module IrInterpreter =
                 | TResult(okType, errorType) -> pending.Push((errorType, depth + 1)); pending.Push((okType, depth + 1))
                 | TNamed name when String.IsNullOrWhiteSpace name ->
                     fail "HOST_OPERATION_VALUE_INVALID" "Host value contains an empty nominal type name." (Some currentWord) (site |> Option.bind sourceSpan) [ "declared type name" ] [ "empty" ]
-                | TInt | TFloat | TBool | TString | TUnit | TNamed _ | TVar _ -> ()
+                | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ | TVar _ -> ()
 
         let validateHostValueBudget currentWord site (roots: Value list) =
             let invalid actual =
@@ -724,6 +726,9 @@ module IrInterpreter =
                     if not (TrustedValues.isWellFormedUtf16 text) then
                         fail "STRING_INVALID_UTF16" "A String contains an unpaired surrogate and has no UTF-8 form." (Some currentWord) (site |> Option.bind sourceSpan) [ "well-formed Unicode text" ] [ "unpaired surrogate" ]
                     addBytes (int64 text.Length * 6L)
+                | BytesValue data ->
+                    if isNull data then invalid "null bytes"
+                    addBytes (int64 data.Length)
                 | FloatValue number when not (Double.IsFinite number) -> invalid "non-finite float"
                 | FloatValue _ -> ()
                 | ListValue(itemType, values) ->
@@ -877,6 +882,7 @@ module IrInterpreter =
                 | IrFloat -> TFloat
                 | IrBool -> TBool
                 | IrString -> TString
+                | IrBytes -> TBytes
                 | IrUnit -> TUnit
                 | IrList item -> TList(toLangType item)
                 | IrOption item -> TOption(toLangType item)

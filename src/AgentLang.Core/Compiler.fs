@@ -15,7 +15,7 @@ module Compiler =
 
     let private validateType allowVariables (knownTypes: Set<string>) span word typeValue =
         let rec validate = function
-            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
             | TNamed name when knownTypes.Contains name -> ()
             | TNamed name -> Diagnostics.raiseError "TYPE_UNKNOWN_NAMED_TYPE" $"Type '{name}' has not been declared." (Some word) span [ "declared record" ] [ name ]
             | TVar name when allowVariables -> ()
@@ -762,6 +762,7 @@ module Compiler =
             | TFloat -> PatternFloat
             | TBool -> PatternBool
             | TString -> PatternString
+            | TBytes -> PatternBytes
             | TUnit -> PatternUnit
             | TList item -> PatternList(pattern item)
             | TOption item -> PatternOption(pattern item)
@@ -787,6 +788,7 @@ module Compiler =
             | TFloat -> PatternFloat
             | TBool -> PatternBool
             | TString -> PatternString
+            | TBytes -> PatternBytes
             | TUnit -> PatternUnit
             | TList item -> PatternList(pattern item)
             | TOption item -> PatternOption(pattern item)
@@ -870,6 +872,7 @@ module Compiler =
             | TFloat -> IrFloat
             | TBool -> IrBool
             | TString -> IrString
+            | TBytes -> IrBytes
             | TUnit -> IrUnit
             | TList item -> IrList(convert item)
             | TOption item -> IrOption(convert item)
@@ -971,6 +974,7 @@ module Compiler =
             | TFloat -> appendText "float"
             | TBool -> appendText "bool"
             | TString -> appendText "string"
+            | TBytes -> appendText "bytes"
             | TUnit -> appendText "unit"
             | TList item -> appendText "list"; appendType item
             | TOption item -> appendText "option"; appendType item

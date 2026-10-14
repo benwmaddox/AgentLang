@@ -14,6 +14,7 @@ type LangType =
     | TFloat
     | TBool
     | TString
+    | TBytes
     | TUnit
     | TList of LangType
     | TOption of LangType
@@ -26,6 +27,7 @@ type Value =
     | FloatValue of double
     | BoolValue of bool
     | StringValue of string
+    | BytesValue of byte[]
     | UnitValue
     // Container element types are stored with the value so empty/inactive cases
     // never need to infer a type from their payload.
@@ -267,6 +269,7 @@ module Types =
         | TFloat -> "Float"
         | TBool -> "Bool"
         | TString -> "String"
+        | TBytes -> "Bytes"
         | TUnit -> "Unit"
         | TList item -> $"List<{format item}>"
         | TOption item -> $"Option<{format item}>"
@@ -279,6 +282,7 @@ module Types =
         | FloatValue value -> FloatText.format value
         | BoolValue value -> if value then "true" else "false"
         | StringValue value -> System.Text.Json.JsonSerializer.Serialize(value)
+        | BytesValue value -> "bytes:" + System.Convert.ToHexString(value).ToLowerInvariant()
         | UnitValue -> "unit"
         | ListValue(_, values) -> values |> List.map formatValue |> String.concat ", " |> sprintf "[%s]"
         | OptionValue(_, None) -> "none"
@@ -306,6 +310,7 @@ module Types =
         | FloatValue _ -> TFloat
         | BoolValue _ -> TBool
         | StringValue _ -> TString
+        | BytesValue _ -> TBytes
         | UnitValue -> TUnit
         | ListValue(itemType, _) -> TList itemType
         | OptionValue(itemType, _) -> TOption itemType

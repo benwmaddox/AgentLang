@@ -633,7 +633,7 @@ module Runtime =
                 | TNamed name -> Set.singleton name
                 | TList item | TOption item -> visit item
                 | TResult(ok, failure) -> Set.union (visit ok) (visit failure)
-                | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
+                | TInt | TFloat | TBool | TString | TBytes | TUnit | TVar _ -> Set.empty
             types |> List.fold (fun found item -> Set.union found (visit item)) Set.empty
 
         let missingHostOperationTypes (state: DictionaryState) =
@@ -670,14 +670,14 @@ module Runtime =
                             | TNamed name -> String.IsNullOrWhiteSpace name
                             | TList item | TOption item -> containsInvalidTypeName item
                             | TResult(okType, errorType) -> containsInvalidTypeName okType || containsInvalidTypeName errorType
-                            | TInt | TFloat | TBool | TString | TUnit | TVar _ -> false
+                            | TInt | TFloat | TBool | TString | TBytes | TUnit | TVar _ -> false
                         if definition.Inputs @ definition.Outputs |> List.exists containsInvalidTypeName then
                             error "HOST_OPERATION_SIGNATURE_INVALID" "Host operation signatures cannot contain empty nominal type names." (Some definition.WordName) None [ "named type" ] []
                         let rec containsVariable = function
                             | TVar _ -> true
                             | TList item | TOption item -> containsVariable item
                             | TResult(okType, errorType) -> containsVariable okType || containsVariable errorType
-                            | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> false
+                            | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ -> false
                         if definition.Inputs @ definition.Outputs |> List.exists containsVariable then
                             error "HOST_OPERATION_SIGNATURE_GENERIC" "Host operations require closed concrete input signatures." (Some definition.WordName) None [ "closed signature" ] []
                         if definition.Effects |> Set.exists (IrEffects.ofName >> Option.isNone) then
@@ -6185,7 +6185,7 @@ module Runtime =
                 | TNamed name -> Set.singleton name
                 | TList item | TOption item -> names item
                 | TResult(ok, error) -> Set.union (names ok) (names error)
-                | TInt | TFloat | TBool | TString | TUnit | TVar _ -> Set.empty
+                | TInt | TFloat | TBool | TString | TBytes | TUnit | TVar _ -> Set.empty
             match Set.difference (names typeValue) (knownTypes data) |> Set.toList |> List.tryHead with
             | Some name -> error "DISCOVERY_UNKNOWN_TYPE" $"Type query refers to undeclared nominal type '{name}'." (Some name) None [ "declared record or scalar type" ] [ name ]
             | None -> ()
@@ -6386,7 +6386,7 @@ module Runtime =
                     | TVar _ -> false
                     | TList item | TOption item -> isClosedType item
                     | TResult(okType, errorType) -> isClosedType okType && isClosedType errorType
-                    | TInt | TFloat | TBool | TString | TUnit | TNamed _ -> true
+                    | TInt | TFloat | TBool | TString | TBytes | TUnit | TNamed _ -> true
             if (expectedInputs @ expectedOutputs) |> List.exists (isClosedType >> not) then
                 error "FLOW_ENTRYPOINT_SIGNATURE_INVALID" "Flow entrypoint signatures must contain closed, non-null language types." (Some wordName) None
                     [ "closed input and output types" ] ((expectedInputs @ expectedOutputs) |> List.map (fun typ -> if isNull (box typ) then "<null>" else Types.format typ))

@@ -155,6 +155,7 @@ module ValueInspection =
                 | TFloat -> "Float"
                 | TBool -> "Bool"
                 | TString -> "String"
+                | TBytes -> "Bytes"
                 | TUnit -> "Unit"
                 | TList item -> "List<" + render (depth + 1) item + ">"
                 | TOption item -> "Option<" + render (depth + 1) item + ">"
@@ -168,6 +169,7 @@ module ValueInspection =
         | FloatValue _ -> "Float"
         | BoolValue _ -> "Bool"
         | StringValue _ -> "String"
+        | BytesValue _ -> "Bytes"
         | UnitValue -> "Unit"
         | ListValue _ -> "List"
         | OptionValue _ -> "Option"
@@ -219,6 +221,7 @@ module ValueInspection =
             | IrFloat -> TFloat
             | IrBool -> TBool
             | IrString -> TString
+            | IrBytes -> TBytes
             | IrUnit -> TUnit
             | IrList item -> TList(toLangType path (depth + 1) item)
             | IrOption item -> TOption(toLangType path (depth + 1) item)
@@ -234,7 +237,7 @@ module ValueInspection =
             if isNull (box ty) then
                 fail "VALUE_TYPE_INVALID" "Runtime value contains a null language type." path [ "closed language type" ] [ "null" ]
             match ty with
-            | TInt | TFloat | TBool | TString | TUnit -> ()
+            | TInt | TFloat | TBool | TString | TBytes | TUnit -> ()
             | TList item | TOption item -> validateType path (depth + 1) item
             | TResult(ok, error) -> validateType path (depth + 1) ok; validateType path (depth + 1) error
             | TNamed name -> nominalInfo path name |> ignore
@@ -253,6 +256,7 @@ module ValueInspection =
             | TFloat -> addKind "float"
             | TBool -> addKind "bool"
             | TString -> addKind "string"
+            | TBytes -> addKind "bytes"
             | TUnit -> addKind "unit"
             | TList item ->
                 addKind "list"

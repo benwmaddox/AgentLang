@@ -70,6 +70,7 @@ type IrType =
     | IrFloat
     | IrBool
     | IrString
+    | IrBytes
     | IrUnit
     | IrList of IrType
     | IrOption of IrType
@@ -255,6 +256,7 @@ type IrTypePattern =
     | PatternFloat
     | PatternBool
     | PatternString
+    | PatternBytes
     | PatternUnit
     | PatternList of IrTypePattern
     | PatternOption of IrTypePattern
@@ -335,6 +337,7 @@ module IrTypes =
         | IrFloat -> "Float"
         | IrBool -> "Bool"
         | IrString -> "String"
+        | IrBytes -> "Bytes"
         | IrUnit -> "Unit"
         | IrList item -> $"List<{format item}>"
         | IrOption item -> $"Option<{format item}>"
@@ -366,7 +369,7 @@ module IrVerifier =
 
     let private verifyIrType (program: IrProgram) owner site ty =
         let rec verifyType = function
-            | IrInt | IrFloat | IrBool | IrString | IrUnit -> ()
+            | IrInt | IrFloat | IrBool | IrString | IrBytes | IrUnit -> ()
             | IrList item | IrOption item -> verifyType item
             | IrResult(ok, error) -> verifyType ok; verifyType error
             | IrNominal key when program.NominalTypesByKey.ContainsKey key -> ()
@@ -396,6 +399,7 @@ module IrVerifier =
         let rec unify pattern actual =
             match pattern, actual with
             | PatternInt, IrInt | PatternFloat, IrFloat | PatternBool, IrBool
+            | PatternBytes, IrBytes -> true
             | PatternString, IrString | PatternUnit, IrUnit -> true
             | PatternVariable variable, actual ->
                 match substitutions.TryGetValue variable with
