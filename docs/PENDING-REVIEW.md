@@ -143,3 +143,18 @@ acceptable.
    addition to run time. Proven values need no runtime check, so they stay
    efficient. Compile-time evaluation also allows better error messages that
    show the failing value, validator and source.
+
+## Research: unused test overrides as failures (user, 2026-10-14; not yet coded)
+
+Question: if a test (or `test-file` block) overrides a function but no test
+in that scope ever calls the override, should that be a test failure rather
+than a diagnostic (item 5 above)?
+
+- For: an unused override is either dead setup or a sign the test no longer
+  exercises the path it was written for; failing makes that drift visible.
+- Against: shared, file-level overrides (item 5) would fail whenever one block
+  does not need them, which pushes back toward copied per-block sets.
+- To research: measure how often overrides go unused across
+  applications/campfire tests today; decide whether the scope that must use an
+  override is the test, the block, or the file; and whether a failure or a
+  warning suits agent-written tests better.
