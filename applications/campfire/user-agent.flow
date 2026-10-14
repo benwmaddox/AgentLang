@@ -129,12 +129,29 @@ fn campfire.ua.product-byte?(value: Int) -> Bool {
 // Trims NUL and Ruby spaces from both ends, like the pinned port's rubyStrip.
 fn campfire.ua.strip(value: String) -> String {
     let members = list.append(campfire.ua.ruby-spaces(), "\u0000")
-    let start = scan.run-end(value, 0, members)
-    if start == string.byte-length(value) {
+    let length = string.byte-length(value)
+    let start = if bool.not(campfire.ua.strip-byte?(scan.byte(value, 0))) {
+        0
+    } else {
+        if bool.not(campfire.ua.strip-byte?(scan.byte(value, 1))) {
+            1
+        } else {
+            scan.run-end(value, 0, members)
+        }
+    }
+    if int.greater-or-equal(start, length) {
         ""
     } else {
-        scan.between(value, start, scan.trim-end(value, members))
+        if campfire.ua.strip-byte?(scan.byte(value, subtract(length, 1))) {
+            scan.between(value, start, scan.trim-end(value, members))
+        } else {
+            scan.from(value, start)
+        }
     }
+}
+
+fn campfire.ua.strip-byte?(value: Int) -> Bool {
+    bool.or(value == 0, campfire.ua.ruby-space?(value))
 }
 
 fn campfire.ua.ruby-blank?(value: String) -> Bool {
@@ -169,9 +186,10 @@ fn campfire.ua.with-comment(value: String, name: String, version: String, index:
     }
 }
 
-// The first name character is always taken, even when it is a quote.
+// The first name character is always taken, even when it is a quote; it is never
+// a stop, so the stop search can start on it (a character boundary).
 fn campfire.ua.product-at(value: String, start: Int) -> UserAgentMatch {
-    let name-end = scan.first-stop(value, add(start, 1), ["/", " ", "\t", "\n", "\u000b", "\f", "\r"])
+    let name-end = scan.first-stop(value, start, [" ", "/", "\t", "\n", "\u000b", "\f", "\r"])
     let version-start = if scan.byte(value, name-end) == 47 {
         add(name-end, 1)
     } else {
@@ -182,7 +200,12 @@ fn campfire.ua.product-at(value: String, start: Int) -> UserAgentMatch {
 }
 
 fn campfire.ua.match-product(value: String) -> Option<UserAgentMatch> {
-    let quotes = scan.run-end(value, 0, ["'", "\""])
+    let lead = scan.byte(value, 0)
+    let quotes = if bool.or(lead == 39, lead == 34) {
+        scan.run-end(value, 0, ["'", "\""])
+    } else {
+        0
+    }
     if campfire.ua.product-byte?(scan.byte(value, quotes)) {
         option.some<UserAgentMatch>(campfire.ua.product-at(value, quotes))
     } else {
@@ -194,7 +217,17 @@ fn campfire.ua.match-product(value: String) -> Option<UserAgentMatch> {
     }
 }
 
-// Each match consumes at least one byte, so one step per byte (plus one) suffices.
+// One element per Ruby space, comma and closing parenthesis, plus eight.
+fn campfire.ua.product-ticks(value: String) -> List<String> {
+    list.concat(
+        list.concat(list.concat(string.split(value, " "), string.split(value, "\t")), list.concat(string.split(value, "\n"), string.split(value, "\u000b"))),
+        list.concat(list.concat(string.split(value, "\f"), string.split(value, "\r")), list.concat(string.split(value, ","), string.split(value, ")")))
+    )
+}
+
+// One step per product plus one. Every product but the last ends before a Ruby
+// space or a comma, or consumes a closing parenthesis, each at a distinct offset,
+// so product-ticks bounds the loop.
 fn campfire.ua.collect-step(state: UserAgentCollect, tick: String) -> UserAgentCollect {
     if state.done {
         state
@@ -217,7 +250,7 @@ fn campfire.ua.parse(user-agent: Option<String>) -> List<UserAgentProduct> {
     } else {
         value
     }
-    let collected = scan.positions(initial).fold(userAgentCollect.new(rest = initial, products = list.empty<UserAgentProduct>(), done = false), campfire.ua.collect-step)
+    let collected = campfire.ua.product-ticks(initial).fold(userAgentCollect.new(rest = initial, products = list.empty<UserAgentProduct>(), done = false), campfire.ua.collect-step)
     collected.products
 }
 

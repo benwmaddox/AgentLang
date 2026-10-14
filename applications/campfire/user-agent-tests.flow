@@ -645,3 +645,18 @@ test campfire.ua.ie-rv/version {
     campfire.ua.ie-rv(userAgentSearch.new(source = "rv:11.0)", marker = "MSIE", from = 0, found = option.none<String>(), done = false), 0).found
     => value option.some<String>("11.0")
 }
+
+test campfire.ua.strip-byte?/classes {
+    [campfire.ua.strip-byte?(0), campfire.ua.strip-byte?(32), campfire.ua.strip-byte?(65)]
+    => value [true, true, false]
+}
+
+test campfire.ua.strip/one-leading-space {
+    campfire.ua.strip(" Chrome/120")
+    => value "Chrome/120"
+}
+
+test campfire.ua.product-ticks/separators {
+    scan.join(campfire.ua.product-ticks("A/1 (x, y)"), "|")
+    => value "A/1|(x,|y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x, y)|A/1 (x| y)|A/1 (x, y|"
+}

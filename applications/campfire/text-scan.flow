@@ -51,11 +51,9 @@ fn scan.from(source: String, start: Int) -> String {
     scan.between(source, start, string.byte-length(source))
 }
 
+// True when needle occurs at offset index; costs only the needle's length.
 fn scan.at?(source: String, needle: String, index: Int) -> Bool {
-    match string.index-of(source, needle, index) {
-        none => false
-        some found => found == index
-    }
+    scan.between(source, index, add(index, string.byte-length(needle))) == needle
 }
 
 fn scan.found-or(found: Option<Int>, fallback: Int) -> Int {
@@ -178,20 +176,17 @@ fn scan.item(items: List<String>, index: Int) -> Option<String> {
     picked.found
 }
 
+// Narrows best to the first stop found inside the window [start, best), so
+// later stops only scan the shrinking window.
 fn scan.stop-step(state: ScanStops, stop: String) -> ScanStops {
-    match string.index-of(state.source, stop, state.start) {
+    match string.index-of(scan.between(state.source, state.start, state.best), stop, 0) {
         none => state
-        some found => {
-            if int.less-than(found, state.best) {
-                scanStops.new(source = state.source, start = state.start, best = found)
-            } else {
-                state
-            }
-        }
+        some found => scanStops.new(source = state.source, start = state.start, best = add(state.start, found))
     }
 }
 
 // The first offset at or after start holding any of the stops, else the length.
+// List the most frequent stop first.
 fn scan.first-stop(source: String, start: Int, stops: List<String>) -> Int {
     let found = stops.fold(scanStops.new(source = source, start = start, best = string.byte-length(source)), scan.stop-step)
     found.best
