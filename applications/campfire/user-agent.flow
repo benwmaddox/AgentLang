@@ -1,0 +1,1270 @@
+// User-Agent recognition and Ruby-version comparison, adapted from 37signals'
+// Campfire user_agent.rs at pinned source revision
+// 6dae2fd3c1a2dce61ca11beb731bcce2b42b67ad (useragent gem 0.16.11).
+//
+// Copyright (c) 37signals, LLC. Released under the MIT License; the full
+// notice is in tests/AgentLang.Campfire.Browser.Tests/Fixtures/MIT-LICENSE.37signals.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, subject to the conditions in that file;
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+//
+// Offsets are UTF-8 byte offsets; every cut lands next to an ASCII delimiter.
+// Loops are folds over lists whose length bounds the loop (see text-scan.flow).
+// Case-insensitive comparisons fold ASCII A-Z plus U+212A KELVIN SIGN (to k),
+// the only character whose Ruby/.NET lowercase is an ASCII letter; every needle
+// is ASCII, so this matches the pinned behavior.
+
+record UserAgentProduct {
+    name: String
+    version: String
+    comment: Option<List<String>>
+}
+
+record UserAgentMatch {
+    consumed: Int
+    product: UserAgentProduct
+}
+
+record UserAgentCollect {
+    rest: String
+    products: List<UserAgentProduct>
+    done: Bool
+}
+
+record UserAgentNamed {
+    lowered: String
+    found: Option<UserAgentProduct>
+}
+
+record UserAgentExact {
+    name: String
+    found: Bool
+}
+
+record UserAgentNth {
+    target: Int
+    index: Int
+    found: Option<UserAgentProduct>
+}
+
+record UserAgentSearch {
+    source: String
+    marker: String
+    from: Int
+    found: Option<String>
+    done: Bool
+}
+
+record RubyVersionSegment {
+    numeric: Bool
+    text: String
+}
+
+record RubyVersionScan {
+    source: String
+    index: Int
+    segments: List<RubyVersionSegment>
+    done: Bool
+}
+
+enum UserAgentKind {
+    base
+    edge
+    internet-explorer
+    opera
+    wechat-browser
+    vivaldi
+    chrome
+    itunes
+    playstation
+    podcast-addict
+    webkit
+    gecko
+    windows-media-player
+    apple-core-media
+    libavformat
+}
+
+// ---------------------------------------------------------------- classes
+
+fn campfire.ua.lower(value: String) -> String {
+    string.to-lower-ascii(string.replace(value, "K", "k"))
+}
+
+fn campfire.ua.ruby-space?(value: Int) -> Bool {
+    bool.or(value == 32, bool.and(int.greater-or-equal(value, 9), int.less-or-equal(value, 13)))
+}
+
+fn campfire.ua.ruby-spaces() -> List<String> {
+    [" ", "\t", "\n", "\u000b", "\f", "\r"]
+}
+
+fn campfire.ua.digits-dots() -> List<String> {
+    list.append(scan.digits(), ".")
+}
+
+fn campfire.ua.digits-underscores() -> List<String> {
+    list.append(scan.digits(), "_")
+}
+
+fn campfire.ua.letter?(value: Int) -> Bool {
+    bool.or(
+        bool.and(int.greater-or-equal(value, 65), int.less-or-equal(value, 90)),
+        bool.and(int.greater-or-equal(value, 97), int.less-or-equal(value, 122))
+    )
+}
+
+fn campfire.ua.alnum-dash() -> List<String> {
+    list.concat(
+        list.concat(scan.digits(), ["-", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]),
+        ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+    )
+}
+
+fn campfire.ua.product-byte?(value: Int) -> Bool {
+    bool.and(int.greater-or-equal(value, 0), bool.and(bool.not(value == 47), bool.not(campfire.ua.ruby-space?(value))))
+}
+
+// Trims NUL and Ruby spaces from both ends, like the pinned port's rubyStrip.
+fn campfire.ua.strip(value: String) -> String {
+    let members = list.append(campfire.ua.ruby-spaces(), "\u0000")
+    let start = scan.run-end(value, 0, members)
+    if start == string.byte-length(value) {
+        ""
+    } else {
+        scan.between(value, start, scan.trim-end(value, members))
+    }
+}
+
+fn campfire.ua.ruby-blank?(value: String) -> Bool {
+    scan.remove-all(value, campfire.ua.ruby-spaces()) == ""
+}
+
+// .NET String.IsNullOrWhiteSpace: only U+0009-000D, U+0020, U+0085, U+00A0,
+// U+1680, U+2000-200A, U+2028, U+2029, U+202F, U+205F and U+3000.
+fn campfire.ua.unicode-blank?(value: String) -> Bool {
+    let unicode-spaces = ["\u0085", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "　"]
+    scan.remove-all(scan.remove-all(value, campfire.ua.ruby-spaces()), unicode-spaces) == ""
+}
+
+// ---------------------------------------------------------------- parsing
+
+fn campfire.ua.matched(consumed: Int, name: String, version: String, comment: Option<List<String>>) -> UserAgentMatch {
+    userAgentMatch.new(consumed = consumed, product = userAgentProduct.new(name = name, version = version, comment = comment))
+}
+
+fn campfire.ua.with-comment(value: String, name: String, version: String, index: Int) -> UserAgentMatch {
+    if bool.and(campfire.ua.ruby-space?(scan.byte(value, index)), scan.byte(value, add(index, 1)) == 40) {
+        match string.index-of(value, ")", add(index, 2)) {
+            none => campfire.ua.matched(index, name, version, option.none<List<String>>())
+            some close => campfire.ua.matched(add(close, 1), name, version, option.some<List<String>>(scan.split-ruby(scan.between(value, add(index, 2), close), "; ")))
+        }
+    } else {
+        if scan.at?(value, ",gzip(gfe)", index) {
+            campfire.ua.matched(add(index, 10), name, version, option.none<List<String>>())
+        } else {
+            campfire.ua.matched(index, name, version, option.none<List<String>>())
+        }
+    }
+}
+
+// The first name character is always taken, even when it is a quote.
+fn campfire.ua.product-at(value: String, start: Int) -> UserAgentMatch {
+    let name-end = scan.first-stop(value, add(start, 1), ["/", " ", "\t", "\n", "\u000b", "\f", "\r"])
+    let version-start = if scan.byte(value, name-end) == 47 {
+        add(name-end, 1)
+    } else {
+        name-end
+    }
+    let version-end = scan.first-stop(value, version-start, [" ", "\t", "\n", "\u000b", "\f", "\r", ","])
+    campfire.ua.with-comment(value, scan.between(value, start, name-end), scan.between(value, version-start, version-end), version-end)
+}
+
+fn campfire.ua.match-product(value: String) -> Option<UserAgentMatch> {
+    let quotes = scan.run-end(value, 0, ["'", "\""])
+    if campfire.ua.product-byte?(scan.byte(value, quotes)) {
+        option.some<UserAgentMatch>(campfire.ua.product-at(value, quotes))
+    } else {
+        if int.greater-than(quotes, 0) {
+            option.some<UserAgentMatch>(campfire.ua.product-at(value, subtract(quotes, 1)))
+        } else {
+            option.none<UserAgentMatch>()
+        }
+    }
+}
+
+// Each match consumes at least one byte, so one step per byte (plus one) suffices.
+fn campfire.ua.collect-step(state: UserAgentCollect, tick: String) -> UserAgentCollect {
+    if state.done {
+        state
+    } else {
+        match campfire.ua.match-product(state.rest) {
+            none => userAgentCollect.new(rest = state.rest, products = state.products, done = true)
+            some found => userAgentCollect.new(rest = campfire.ua.strip(scan.from(state.rest, found.consumed)), products = list.append(state.products, found.product), done = false)
+        }
+    }
+}
+
+// Blankness is tested on the stripped header, but parsing starts from the raw value.
+fn campfire.ua.parse(user-agent: Option<String>) -> List<UserAgentProduct> {
+    let value = match user-agent {
+        none => ""
+        some header => header
+    }
+    let initial = if campfire.ua.strip(value) == "" {
+        "Mozilla/4.0 (compatible)"
+    } else {
+        value
+    }
+    let collected = scan.positions(initial).fold(userAgentCollect.new(rest = initial, products = list.empty<UserAgentProduct>(), done = false), campfire.ua.collect-step)
+    collected.products
+}
+
+// ---------------------------------------------------------------- products
+
+fn campfire.ua.nth-step(state: UserAgentNth, product: UserAgentProduct) -> UserAgentNth {
+    if state.index == state.target {
+        userAgentNth.new(target = state.target, index = add(state.index, 1), found = option.some<UserAgentProduct>(product))
+    } else {
+        userAgentNth.new(target = state.target, index = add(state.index, 1), found = state.found)
+    }
+}
+
+fn campfire.ua.nth(products: List<UserAgentProduct>, index: Int) -> Option<UserAgentProduct> {
+    let state = products.fold(userAgentNth.new(target = index, index = 0, found = option.none<UserAgentProduct>()), campfire.ua.nth-step)
+    state.found
+}
+
+fn campfire.ua.first(products: List<UserAgentProduct>) -> Option<UserAgentProduct> {
+    campfire.ua.nth(products, 0)
+}
+
+fn campfire.ua.last-step(last: Option<UserAgentProduct>, product: UserAgentProduct) -> Option<UserAgentProduct> {
+    option.some<UserAgentProduct>(product)
+}
+
+fn campfire.ua.last(products: List<UserAgentProduct>) -> Option<UserAgentProduct> {
+    products.fold(option.none<UserAgentProduct>(), campfire.ua.last-step)
+}
+
+fn campfire.ua.name-is?(product: Option<UserAgentProduct>, name: String) -> Bool {
+    match product {
+        none => false
+        some found => found.name == name
+    }
+}
+
+fn campfire.ua.version-is?(product: Option<UserAgentProduct>, version: String) -> Bool {
+    match product {
+        none => false
+        some found => found.version == version
+    }
+}
+
+fn campfire.ua.version-of(product: Option<UserAgentProduct>) -> Option<String> {
+    match product {
+        none => option.none<String>()
+        some found => option.some<String>(found.version)
+    }
+}
+
+fn campfire.ua.comments-of(product: Option<UserAgentProduct>) -> List<String> {
+    match product {
+        none => list.empty<String>()
+        some found => {
+            match found.comment {
+                none => list.empty<String>()
+                some comments => comments
+            }
+        }
+    }
+}
+
+fn campfire.ua.comment-of(product: Option<UserAgentProduct>) -> Option<List<String>> {
+    match product {
+        none => option.none<List<String>>()
+        some found => found.comment
+    }
+}
+
+fn campfire.ua.named-step(state: UserAgentNamed, product: UserAgentProduct) -> UserAgentNamed {
+    match state.found {
+        some _ => state
+        none => {
+            if campfire.ua.lower(product.name) == state.lowered {
+                userAgentNamed.new(lowered = state.lowered, found = option.some<UserAgentProduct>(product))
+            } else {
+                state
+            }
+        }
+    }
+}
+
+// First product whose name matches ignoring ASCII case.
+fn campfire.ua.named(products: List<UserAgentProduct>, name: String) -> Option<UserAgentProduct> {
+    let state = products.fold(userAgentNamed.new(lowered = campfire.ua.lower(name), found = option.none<UserAgentProduct>()), campfire.ua.named-step)
+    state.found
+}
+
+fn campfire.ua.has-named?(products: List<UserAgentProduct>, name: String) -> Bool {
+    match campfire.ua.named(products, name) {
+        none => false
+        some _ => true
+    }
+}
+
+fn campfire.ua.exact-step(state: UserAgentExact, product: UserAgentProduct) -> UserAgentExact {
+    userAgentExact.new(name = state.name, found = bool.or(state.found, product.name == state.name))
+}
+
+fn campfire.ua.has-exact?(products: List<UserAgentProduct>, name: String) -> Bool {
+    let state = products.fold(userAgentExact.new(name = name, found = false), campfire.ua.exact-step)
+    state.found
+}
+
+fn campfire.ua.commented-step(found: Option<UserAgentProduct>, product: UserAgentProduct) -> Option<UserAgentProduct> {
+    match found {
+        some _ => found
+        none => {
+            match scan.item(campfire.ua.comments-of(option.some<UserAgentProduct>(product)), 0) {
+                none => found
+                some _ => option.some<UserAgentProduct>(product)
+            }
+        }
+    }
+}
+
+fn campfire.ua.commented-application?(kind: UserAgentKind) -> Bool {
+    match kind {
+        base => false
+        edge => false
+        internet-explorer => false
+        opera => false
+        wechat-browser => false
+        vivaldi => true
+        chrome => true
+        itunes => true
+        playstation => false
+        podcast-addict => false
+        webkit => true
+        gecko => false
+        windows-media-player => false
+        apple-core-media => true
+        libavformat => false
+    }
+}
+
+// Some browser classes use the first product with a non-empty comment.
+fn campfire.ua.application(kind: UserAgentKind, products: List<UserAgentProduct>) -> Option<UserAgentProduct> {
+    if campfire.ua.commented-application?(kind) {
+        products.fold(option.none<UserAgentProduct>(), campfire.ua.commented-step)
+    } else {
+        campfire.ua.first(products)
+    }
+}
+
+fn campfire.ua.joined-comment(comment: Option<List<String>>, separator: String) -> String {
+    match comment {
+        none => ""
+        some comments => scan.join(comments, separator)
+    }
+}
+
+fn campfire.ua.comments-step(comments: List<String>, product: UserAgentProduct) -> List<String> {
+    list.concat(comments, campfire.ua.comments-of(option.some<UserAgentProduct>(product)))
+}
+
+fn campfire.ua.all-comments(products: List<UserAgentProduct>) -> List<String> {
+    products.fold(list.empty<String>(), campfire.ua.comments-step)
+}
+
+// ---------------------------------------------------------------- markers
+
+// Occurrences of state.marker in order; the first that yields a version wins.
+// Markers never overlap themselves, so splitting on one bounds the steps.
+fn campfire.ua.capture-step(state: UserAgentSearch, tick: String) -> UserAgentSearch {
+    if state.done {
+        state
+    } else {
+        match string.index-of(state.source, state.marker, state.from) {
+            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            some found => {
+                let start = add(found, string.byte-length(state.marker))
+                let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
+                if int.greater-than(end, start) {
+                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(scan.between(state.source, start, end)), done = true)
+                } else {
+                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.capture-after(value: String, marker: String) -> Option<String> {
+    let state = string.split(value, marker).fold(userAgentSearch.new(source = value, marker = marker, from = 0, found = option.none<String>(), done = false), campfire.ua.capture-step)
+    state.found
+}
+
+// "Trident" followed, later on the same line, by "rv:" at least one byte after it.
+fn campfire.ua.trident-step(state: UserAgentSearch, tick: String) -> UserAgentSearch {
+    if state.done {
+        state
+    } else {
+        match string.index-of(state.source, "Trident", state.from) {
+            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            some trident => {
+                let start = add(trident, 7)
+                let finish = scan.found-or(string.index-of(state.source, "\n", start), string.byte-length(state.source))
+                let rv = scan.found-or(string.index-of(state.source, "rv:", start), -1)
+                if bool.and(int.greater-or-equal(rv, add(start, 1)), int.less-or-equal(add(rv, 3), finish)) {
+                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>("rv:"), done = true)
+                } else {
+                    userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.trident-rv?(comment: String) -> Bool {
+    let state = string.split(comment, "Trident").fold(userAgentSearch.new(source = comment, marker = "Trident", from = 0, found = option.none<String>(), done = false), campfire.ua.trident-step)
+    match state.found {
+        none => false
+        some _ => true
+    }
+}
+
+// "AppleWebKit/<digits and dots>" at the start of a comment, ignoring case.
+fn campfire.ua.webkit-comment-version(comment: String) -> Option<String> {
+    let lowered = campfire.ua.lower(comment)
+    if string.starts-with(lowered, "applewebkit/") {
+        let end = scan.run-end(lowered, 12, campfire.ua.digits-dots())
+        if end == 12 {
+            option.none<String>()
+        } else {
+            option.some<String>(scan.between(lowered, 12, end))
+        }
+    } else {
+        option.none<String>()
+    }
+}
+
+fn campfire.ua.webkit-comment-step(found: Option<String>, comment: String) -> Option<String> {
+    match found {
+        some _ => found
+        none => campfire.ua.webkit-comment-version(comment)
+    }
+}
+
+fn campfire.ua.first-webkit-comment-version(comments: List<String>) -> Option<String> {
+    comments.fold(option.none<String>(), campfire.ua.webkit-comment-step)
+}
+
+fn campfire.ua.ios-at(value: String, after-device: Int) -> Option<String> {
+    if scan.at?(value, "OS ", after-device) {
+        let start = add(after-device, 3)
+        let end = scan.run-end(value, start, campfire.ua.digits-underscores())
+        if bool.and(int.greater-than(end, start), scan.at?(value, " like Mac OS X", end)) {
+            option.some<String>(scan.between(value, start, end))
+        } else {
+            option.none<String>()
+        }
+    } else {
+        option.none<String>()
+    }
+}
+
+fn campfire.ua.after-device(value: String, start: Int) -> Int {
+    if scan.at?(value, "iPhone ", start) {
+        add(start, 7)
+    } else {
+        if scan.at?(value, "iPod ", start) {
+            add(start, 5)
+        } else {
+            start
+        }
+    }
+}
+
+fn campfire.ua.ios-step(state: UserAgentSearch, tick: String) -> UserAgentSearch {
+    if state.done {
+        state
+    } else {
+        match string.index-of(state.source, "CPU ", state.from) {
+            none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+            some cpu => {
+                let start = add(cpu, 4)
+                match campfire.ua.ios-at(state.source, campfire.ua.after-device(state.source, start)) {
+                    some version => userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(version), done = true)
+                    none => userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                }
+            }
+        }
+    }
+}
+
+// "CPU [iPhone |iPod ]OS <digits/underscores> like Mac OS X".
+fn campfire.ua.ios-version(value: String) -> Option<String> {
+    let state = string.split(value, "CPU ").fold(userAgentSearch.new(source = value, marker = "CPU ", from = 0, found = option.none<String>(), done = false), campfire.ua.ios-step)
+    state.found
+}
+
+// ---------------------------------------------------------------- kinds
+
+fn campfire.ua.internet-explorer?(products: List<UserAgentProduct>) -> Bool {
+    match campfire.ua.comment-of(campfire.ua.first(products)) {
+        none => false
+        some comments => bool.or(scan.contains?(scan.item(comments, 1), "MSIE"), campfire.ua.trident-rv?(scan.join(comments, "; ")))
+    }
+}
+
+fn campfire.ua.wechat-step(found: Bool, product: UserAgentProduct) -> Bool {
+    bool.or(found, string.contains(campfire.ua.lower(product.name), "micromessenger"))
+}
+
+fn campfire.ua.playstation?(products: List<UserAgentProduct>) -> Bool {
+    let comment = scan.item(campfire.ua.comments-of(campfire.ua.first(products)), 0)
+    bool.or(scan.contains?(comment, "PLAYSTATION 3"), bool.or(scan.contains?(comment, "PlayStation Vita"), scan.contains?(comment, "PlayStation 4")))
+}
+
+fn campfire.ua.podcast-addict?(products: List<UserAgentProduct>) -> Bool {
+    bool.and(campfire.ua.name-is?(campfire.ua.nth(products, 0), "Podcast"), bool.and(campfire.ua.name-is?(campfire.ua.nth(products, 1), "Addict"), campfire.ua.name-is?(campfire.ua.nth(products, 2), "-")))
+}
+
+fn campfire.ua.webkit-step(found: Bool, product: UserAgentProduct) -> Bool {
+    if found {
+        true
+    } else {
+        if campfire.ua.lower(product.name) == "applewebkit" {
+            true
+        } else {
+            match campfire.ua.first-webkit-comment-version(campfire.ua.comments-of(option.some<UserAgentProduct>(product))) {
+                none => false
+                some _ => true
+            }
+        }
+    }
+}
+
+fn campfire.ua.media-player-step(found: Bool, product: UserAgentProduct) -> Bool {
+    bool.or(found, bool.or(product.name == "NSPlayer", bool.or(product.name == "Windows-Media-Player", product.name == "WMFSDK")))
+}
+
+fn campfire.ua.windows-media-player?(products: List<UserAgentProduct>) -> Bool {
+    let first = campfire.ua.first(products)
+    bool.and(
+        products.fold(false, campfire.ua.media-player-step),
+        bool.not(bool.or(campfire.ua.version-is?(first, "4.1.0.3856"), bool.or(campfire.ua.version-is?(first, "7.10.0.3059"), campfire.ua.version-is?(first, "7.0.0.1956"))))
+    )
+}
+
+fn campfire.ua.libavformat?(products: List<UserAgentProduct>) -> Bool {
+    bool.or(campfire.ua.has-exact?(products, "Lavf"), bool.and(campfire.ua.has-exact?(products, "NSPlayer"), campfire.ua.version-is?(campfire.ua.first(products), "4.1.0.3856")))
+}
+
+fn campfire.ua.kind-after-podcast(products: List<UserAgentProduct>) -> UserAgentKind {
+    if products.fold(false, campfire.ua.webkit-step) {
+        UserAgentKind.webkit()
+    } else {
+        if campfire.ua.name-is?(campfire.ua.first(products), "Mozilla") {
+            UserAgentKind.gecko()
+        } else {
+            if campfire.ua.windows-media-player?(products) {
+                UserAgentKind.windows-media-player()
+            } else {
+                if campfire.ua.has-exact?(products, "AppleCoreMedia") {
+                    UserAgentKind.apple-core-media()
+                } else {
+                    if campfire.ua.libavformat?(products) {
+                        UserAgentKind.libavformat()
+                    } else {
+                        UserAgentKind.base()
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.kind-after-wechat(products: List<UserAgentProduct>) -> UserAgentKind {
+    if campfire.ua.has-exact?(products, "Vivaldi") {
+        UserAgentKind.vivaldi()
+    } else {
+        if bool.or(campfire.ua.has-exact?(products, "Chrome"), campfire.ua.has-exact?(products, "CriOS")) {
+            UserAgentKind.chrome()
+        } else {
+            if campfire.ua.has-exact?(products, "iTunes") {
+                UserAgentKind.itunes()
+            } else {
+                if campfire.ua.playstation?(products) {
+                    UserAgentKind.playstation()
+                } else {
+                    if campfire.ua.podcast-addict?(products) {
+                        UserAgentKind.podcast-addict()
+                    } else {
+                        campfire.ua.kind-after-podcast(products)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The first matching browser class in the gem's order wins.
+fn campfire.ua.kind(products: List<UserAgentProduct>) -> UserAgentKind {
+    if campfire.ua.name-is?(campfire.ua.last(products), "Edge") {
+        UserAgentKind.edge()
+    } else {
+        if campfire.ua.internet-explorer?(products) {
+            UserAgentKind.internet-explorer()
+        } else {
+            if bool.or(campfire.ua.name-is?(campfire.ua.first(products), "Opera"), campfire.ua.name-is?(campfire.ua.last(products), "OPR")) {
+                UserAgentKind.opera()
+            } else {
+                if products.fold(false, campfire.ua.wechat-step) {
+                    UserAgentKind.wechat-browser()
+                } else {
+                    campfire.ua.kind-after-wechat(products)
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- browser names
+
+fn campfire.ua.normalized-webkit-os(value: String) -> String {
+    match campfire.ua.ios-version(value) {
+        none => value
+        some version => string.concat("iOS ", string.replace(version, "_", "."))
+    }
+}
+
+fn campfire.ua.normalized-at(comments: List<String>, index: Int) -> Option<String> {
+    match scan.item(comments, index) {
+        none => option.none<String>()
+        some comment => option.some<String>(campfire.ua.normalized-webkit-os(comment))
+    }
+}
+
+fn campfire.ua.ios-comment-step(found: Option<String>, comment: String) -> Option<String> {
+    match found {
+        some _ => found
+        none => {
+            match campfire.ua.ios-version(comment) {
+                none => found
+                some _ => option.some<String>(comment)
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-os(products: List<UserAgentProduct>) -> Option<String> {
+    match campfire.ua.comment-of(campfire.ua.application(UserAgentKind.webkit(), products)) {
+        none => option.none<String>()
+        some comments => {
+            if scan.contains?(scan.item(comments, 0), "Windows NT") {
+                campfire.ua.normalized-at(comments, 0)
+            } else {
+                let third = scan.item(comments, 2)
+                let android = scan.contains?(scan.item(comments, 1), "Android")
+                let missing = match third {
+                    none => true
+                    some _ => false
+                }
+                if bool.or(missing, android) {
+                    campfire.ua.normalized-at(comments, 1)
+                } else {
+                    match comments.fold(option.none<String>(), campfire.ua.ios-comment-step) {
+                        some comment => option.some<String>(campfire.ua.normalized-webkit-os(comment))
+                        none => campfire.ua.normalized-at(comments, 2)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.android-step(found: Bool, comment: String) -> Bool {
+    bool.or(found, string.contains(comment, "Android"))
+}
+
+// Safari unless the WebKit OS is Android or the platform is BlackBerry: a first
+// comment of BB10, or of BlackBerry when no comment mentions Android.
+fn campfire.ua.webkit-safari?(products: List<UserAgentProduct>) -> Bool {
+    if scan.contains?(campfire.ua.webkit-os(products), "Android") {
+        false
+    } else {
+        let comments = campfire.ua.comments-of(campfire.ua.application(UserAgentKind.webkit(), products))
+        let android = comments.fold(false, campfire.ua.android-step)
+        match scan.item(comments, 0) {
+            none => true
+            some first => {
+                if string.contains(first, "Windows") {
+                    true
+                } else {
+                    bool.not(bool.or(first == "BB10", bool.and(bool.not(android), first == "BlackBerry")))
+                }
+            }
+        }
+    }
+}
+
+// The gecko browser name: the first listed product present, else the first product.
+fn campfire.ua.gecko-browser(products: List<UserAgentProduct>) -> Option<String> {
+    if campfire.ua.has-named?(products, "PaleMoon") {
+        option.some<String>("PaleMoon")
+    } else {
+        if campfire.ua.has-named?(products, "Firefox") {
+            option.some<String>("Firefox")
+        } else {
+            if campfire.ua.has-named?(products, "Camino") {
+                option.some<String>("Camino")
+            } else {
+                if campfire.ua.has-named?(products, "Iceweasel") {
+                    option.some<String>("Iceweasel")
+                } else {
+                    if campfire.ua.has-named?(products, "Seamonkey") {
+                        option.some<String>("Seamonkey")
+                    } else {
+                        match campfire.ua.first(products) {
+                            none => option.none<String>()
+                            some product => option.some<String>(product.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.family-of-name(name: Option<String>) -> BrowserFamily {
+    match name {
+        none => BrowserFamily.other()
+        some text => {
+            let lowered = campfire.ua.lower(text)
+            if lowered == "safari" {
+                BrowserFamily.safari()
+            } else {
+                if lowered == "chrome" {
+                    BrowserFamily.chrome()
+                } else {
+                    if lowered == "firefox" {
+                        BrowserFamily.firefox()
+                    } else {
+                        if lowered == "opera" {
+                            BrowserFamily.opera()
+                        } else {
+                            BrowserFamily.other()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Only the five guarded browser names map to a family; every other gem name
+// (Edge, Iron, Vivaldi, iTunes, Android, ...) is other.
+fn campfire.ua.family(kind: UserAgentKind, products: List<UserAgentProduct>) -> BrowserFamily {
+    match kind {
+        base => {
+            match campfire.ua.first(products) {
+                none => BrowserFamily.other()
+                some product => campfire.ua.family-of-name(option.some<String>(product.name))
+            }
+        }
+        edge => BrowserFamily.other()
+        internet-explorer => BrowserFamily.internet-explorer()
+        opera => BrowserFamily.opera()
+        wechat-browser => BrowserFamily.other()
+        vivaldi => BrowserFamily.other()
+        chrome => {
+            if campfire.ua.has-named?(products, "Iron") {
+                BrowserFamily.other()
+            } else {
+                BrowserFamily.chrome()
+            }
+        }
+        itunes => BrowserFamily.other()
+        playstation => BrowserFamily.other()
+        podcast-addict => BrowserFamily.other()
+        webkit => {
+            if campfire.ua.webkit-safari?(products) {
+                BrowserFamily.safari()
+            } else {
+                BrowserFamily.other()
+            }
+        }
+        gecko => campfire.ua.family-of-name(campfire.ua.gecko-browser(products))
+        windows-media-player => BrowserFamily.other()
+        apple-core-media => BrowserFamily.other()
+        libavformat => BrowserFamily.other()
+    }
+}
+
+// ---------------------------------------------------------------- versions
+
+fn campfire.ua.msie-first?(msie: Option<Int>, rv: Option<Int>) -> Bool {
+    match msie {
+        none => false
+        some at => {
+            match rv {
+                none => true
+                some other => int.less-than(at, other)
+            }
+        }
+    }
+}
+
+// One step of the gem's IE scan: the earlier of "MSIE" and "rv:" from state.from.
+// Each unsuccessful step moves past one occurrence of one marker.
+fn campfire.ua.ie-step(state: UserAgentSearch, tick: String) -> UserAgentSearch {
+    if bool.or(state.done, int.greater-or-equal(state.from, string.byte-length(state.source))) {
+        userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = state.found, done = true)
+    } else {
+        let msie = string.index-of(state.source, "MSIE", state.from)
+        let rv = string.index-of(state.source, "rv:", state.from)
+        if campfire.ua.msie-first?(msie, rv) {
+            let after = add(scan.found-or(msie, 0), 4)
+            let start = add(after, 1)
+            let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
+            if bool.and(campfire.ua.ruby-space?(scan.byte(state.source, after)), int.greater-than(end, start)) {
+                userAgentSearch.new(source = state.source, marker = state.marker, from = after, found = option.some<String>(scan.between(state.source, start, end)), done = true)
+            } else {
+                userAgentSearch.new(source = state.source, marker = state.marker, from = after, found = option.none<String>(), done = false)
+            }
+        } else {
+            match rv {
+                none => userAgentSearch.new(source = state.source, marker = state.marker, from = state.from, found = option.none<String>(), done = true)
+                some at => {
+                    let start = add(at, 3)
+                    let end = scan.run-end(state.source, start, campfire.ua.digits-dots())
+                    if int.greater-than(end, start) {
+                        userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.some<String>(scan.between(state.source, start, end)), done = true)
+                    } else {
+                        userAgentSearch.new(source = state.source, marker = state.marker, from = start, found = option.none<String>(), done = false)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.ie-version(comment: String) -> Option<String> {
+    let ticks = list.concat(string.split(comment, "MSIE"), string.split(comment, "rv:"))
+    let state = ticks.fold(userAgentSearch.new(source = comment, marker = "MSIE", from = 0, found = option.none<String>(), done = false), campfire.ua.ie-step)
+    state.found
+}
+
+fn campfire.ua.opera-mini-step(found: Option<String>, comment: String) -> Option<String> {
+    match found {
+        some _ => found
+        none => campfire.ua.capture-after(comment, "Opera Mini/")
+    }
+}
+
+fn campfire.ua.opera-version(products: List<UserAgentProduct>) -> Option<String> {
+    let first = campfire.ua.first(products)
+    if string.contains(campfire.ua.joined-comment(campfire.ua.comment-of(first), "; "), "Opera Mini") {
+        match campfire.ua.comments-of(first).fold(option.none<String>(), campfire.ua.opera-mini-step) {
+            none => option.some<String>("")
+            some version => option.some<String>(version)
+        }
+    } else {
+        match campfire.ua.named(products, "Version") {
+            some product => option.some<String>(product.version)
+            none => {
+                match campfire.ua.named(products, "OPR") {
+                    some product => option.some<String>(product.version)
+                    none => campfire.ua.version-of(first)
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.playstation-marker(os: String) -> Option<String> {
+    if string.contains(os, "PLAYSTATION 3") {
+        option.some<String>("PLAYSTATION 3 ")
+    } else {
+        if string.contains(os, "PlayStation 4") {
+            option.some<String>("PlayStation 4 ")
+        } else {
+            if string.contains(os, "PlayStation Vita") {
+                option.some<String>("PlayStation Vita ")
+            } else {
+                option.none<String>()
+            }
+        }
+    }
+}
+
+fn campfire.ua.playstation-version(products: List<UserAgentProduct>) -> Option<String> {
+    let first = campfire.ua.first(products)
+    let silk = bool.and(bool.not(scan.contains?(scan.item(campfire.ua.comments-of(first), 0), "PLAYSTATION 3")), campfire.ua.name-is?(campfire.ua.last(products), "Silk"))
+    if silk {
+        campfire.ua.version-of(campfire.ua.last(products))
+    } else {
+        let os = campfire.ua.joined-comment(campfire.ua.comment-of(first), " ")
+        match campfire.ua.playstation-marker(os) {
+            none => option.none<String>()
+            some marker => {
+                match scan.last(scan.split-ruby(os, marker)) {
+                    none => option.some<String>("")
+                    some part => option.some<String>(part)
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-build-version(build: String) -> String {
+    if build == "85.7" {
+        "1.0"
+    } else {
+        if bool.or(build == "85.8.5", build == "85.8.2") {
+            "1.0.3"
+        } else {
+            if build == "124" {
+                "1.2"
+            } else {
+                if build == "125.2" {
+                    "1.2.2"
+                } else {
+                    if build == "125.4" {
+                        "1.2.3"
+                    } else {
+                        if bool.or(build == "125.5.5", bool.or(build == "125.5.6", build == "125.5.7")) {
+                            "1.2.4"
+                        } else {
+                            campfire.ua.webkit-build-version-312(build)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-build-version-312(build: String) -> String {
+    if bool.or(build == "312.1.1", build == "312.1") {
+        "1.3"
+    } else {
+        if bool.or(build == "312.5", bool.or(build == "312.5.1", build == "312.5.2")) {
+            "1.3.1"
+        } else {
+            if bool.or(build == "312.8", build == "312.8.1") {
+                "1.3.2"
+            } else {
+                if bool.or(build == "412", bool.or(build == "412.6", build == "412.6.2")) {
+                    "2.0"
+                } else {
+                    campfire.ua.webkit-build-version-412(build)
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-build-version-412(build: String) -> String {
+    if build == "412.7" {
+        "2.0.1"
+    } else {
+        if bool.or(build == "416.11", build == "416.12") {
+            "2.0.2"
+        } else {
+            if bool.or(build == "417.9", build == "418") {
+                "2.0.3"
+            } else {
+                if bool.or(bool.or(build == "418.8", build == "418.9"), bool.or(build == "418.9.1", build == "419")) {
+                    "2.0.4"
+                } else {
+                    if build == "425.13" {
+                        "2.2"
+                    } else {
+                        if build == "534.52.7" {
+                            "5.1.2"
+                        } else {
+                            ""
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-version(products: List<UserAgentProduct>) -> Option<String> {
+    match campfire.ua.named(products, "Version") {
+        some product => option.some<String>(product.version)
+        none => {
+            let ios = match campfire.ua.webkit-os(products) {
+                none => option.none<String>()
+                some os => campfire.ua.capture-after(os, "iOS ")
+            }
+            let safari = campfire.ua.webkit-safari?(products)
+            match ios {
+                some version => {
+                    if safari {
+                        option.some<String>(version)
+                    } else {
+                        option.some<String>(campfire.ua.webkit-build-version(campfire.ua.webkit-build(products)))
+                    }
+                }
+                none => option.some<String>(campfire.ua.webkit-build-version(campfire.ua.webkit-build(products)))
+            }
+        }
+    }
+}
+
+fn campfire.ua.webkit-build(products: List<UserAgentProduct>) -> String {
+    match campfire.ua.named(products, "AppleWebKit") {
+        some product => product.version
+        none => {
+            match campfire.ua.first-webkit-comment-version(campfire.ua.all-comments(products)) {
+                none => ""
+                some version => version
+            }
+        }
+    }
+}
+
+fn campfire.ua.chrome-version(products: List<UserAgentProduct>) -> Option<String> {
+    match campfire.ua.named(products, "CriOs") {
+        some product => option.some<String>(product.version)
+        none => campfire.ua.version-of(campfire.ua.named(products, "Chrome"))
+    }
+}
+
+fn campfire.ua.gecko-version(products: List<UserAgentProduct>) -> Option<String> {
+    let named = match campfire.ua.gecko-browser(products) {
+        none => option.none<String>()
+        some name => campfire.ua.version-of(campfire.ua.named(products, name))
+    }
+    match named {
+        none => campfire.ua.version-of(campfire.ua.first(products))
+        some version => {
+            if campfire.ua.ruby-blank?(version) {
+                campfire.ua.version-of(campfire.ua.first(products))
+            } else {
+                option.some<String>(version)
+            }
+        }
+    }
+}
+
+fn campfire.ua.version(kind: UserAgentKind, products: List<UserAgentProduct>) -> Option<String> {
+    match kind {
+        base => campfire.ua.version-of(campfire.ua.first(products))
+        edge => campfire.ua.version-of(campfire.ua.last(products))
+        internet-explorer => {
+            match campfire.ua.ie-version(campfire.ua.joined-comment(campfire.ua.comment-of(campfire.ua.first(products)), "; ")) {
+                none => option.some<String>("")
+                some version => option.some<String>(version)
+            }
+        }
+        opera => campfire.ua.opera-version(products)
+        wechat-browser => campfire.ua.version-of(campfire.ua.named(products, "MicroMessenger"))
+        vivaldi => campfire.ua.version-of(campfire.ua.last(products))
+        chrome => campfire.ua.chrome-version(products)
+        itunes => campfire.ua.version-of(campfire.ua.named(products, "iTunes"))
+        playstation => campfire.ua.playstation-version(products)
+        podcast-addict => option.none<String>()
+        webkit => campfire.ua.webkit-version(products)
+        gecko => campfire.ua.gecko-version(products)
+        windows-media-player => campfire.ua.version-of(campfire.ua.first(products))
+        apple-core-media => campfire.ua.version-of(campfire.ua.application(kind, products))
+        libavformat => {
+            if campfire.ua.has-named?(products, "NSPlayer") {
+                option.none<String>()
+            } else {
+                campfire.ua.version-of(campfire.ua.first(products))
+            }
+        }
+    }
+}
+
+// Blank versions (by .NET's Unicode whitespace rule) are absent.
+fn campfire.ua.present-version(version: Option<String>) -> Option<String> {
+    match version {
+        none => option.none<String>()
+        some text => {
+            if campfire.ua.unicode-blank?(text) {
+                option.none<String>()
+            } else {
+                option.some<String>(text)
+            }
+        }
+    }
+}
+
+fn campfire.ua.bot-step(found: Bool, comment: String) -> Bool {
+    bool.or(found, string.contains(campfire.ua.lower(comment), "bot"))
+}
+
+// No application, any comment containing "bot" in any case, a Chrome-Lighthouse
+// product, or a case-sensitive "bot" in the application name.
+fn campfire.ua.bot?(kind: UserAgentKind, products: List<UserAgentProduct>) -> Bool {
+    match campfire.ua.application(kind, products) {
+        none => true
+        some application => bool.or(
+            campfire.ua.all-comments(products).fold(false, campfire.ua.bot-step),
+            bool.or(campfire.ua.has-named?(products, "Chrome-Lighthouse"), string.contains(application.name, "bot"))
+        )
+    }
+}
+
+// ---------------------------------------------------------------- public words
+
+fn campfire.browser.from-user-agent(user-agent: Option<String>) -> BrowserInfo {
+    effects none
+    doc "Normalizes a raw User-Agent header with the pinned useragent-gem 0.16.11 behavior that Campfire's allow_browser policy needs. Unknown browser names are other; blank or missing versions are none."
+
+    let products = campfire.ua.parse(user-agent)
+    let kind = campfire.ua.kind(products)
+    browserInfo.new(
+        family = campfire.ua.family(kind, products),
+        version = campfire.ua.present-version(campfire.ua.version(kind, products)),
+        is-bot = campfire.ua.bot?(kind, products)
+    )
+}
+
+// ---------------------------------------------------------------- Ruby Version
+
+fn campfire.ua.comparable-version?(value: String) -> Bool {
+    let digits = scan.run-end(value, 0, scan.digits())
+    bool.and(int.greater-than(digits, 0), bool.or(digits == string.byte-length(value), scan.byte(value, digits) == 46))
+}
+
+fn campfire.ua.normalized-integer(digits: String) -> String {
+    let trimmed = scan.from(digits, scan.run-end(digits, 0, ["0"]))
+    if trimmed == "" {
+        "0"
+    } else {
+        trimmed
+    }
+}
+
+// Integer runs, and a final letter-led [A-Za-z0-9-] run that reaches the end;
+// every other byte is skipped. Each step advances at least one byte.
+fn campfire.ua.version-scan-step(state: RubyVersionScan, tick: String) -> RubyVersionScan {
+    let current = scan.byte(state.source, state.index)
+    if bool.or(state.done, current == -1) {
+        rubyVersionScan.new(source = state.source, index = state.index, segments = state.segments, done = true)
+    } else {
+        if bool.and(int.greater-or-equal(current, 48), int.less-or-equal(current, 57)) {
+            let end = scan.run-end(state.source, state.index, scan.digits())
+            rubyVersionScan.new(source = state.source, index = end, segments = list.append(state.segments, rubyVersionSegment.new(numeric = true, text = campfire.ua.normalized-integer(scan.between(state.source, state.index, end)))), done = false)
+        } else {
+            if bool.and(campfire.ua.letter?(current), scan.run-end(state.source, add(state.index, 1), campfire.ua.alnum-dash()) == string.byte-length(state.source)) {
+                rubyVersionScan.new(source = state.source, index = state.index, segments = list.append(state.segments, rubyVersionSegment.new(numeric = false, text = scan.from(state.source, state.index))), done = true)
+            } else {
+                rubyVersionScan.new(source = state.source, index = add(state.index, 1), segments = state.segments, done = false)
+            }
+        }
+    }
+}
+
+fn campfire.ua.version-segments(value: String) -> List<RubyVersionSegment> {
+    if campfire.ua.ruby-blank?(value) {
+        list.empty<RubyVersionSegment>()
+    } else {
+        if campfire.ua.comparable-version?(value) {
+            let state = scan.positions(value).fold(rubyVersionScan.new(source = value, index = 0, segments = list.empty<RubyVersionSegment>(), done = false), campfire.ua.version-scan-step)
+            state.segments
+        } else {
+            list.singleton<RubyVersionSegment>(rubyVersionSegment.new(numeric = false, text = value))
+        }
+    }
+}
+
+fn campfire.ua.compare-segment(left: RubyVersionSegment, right: RubyVersionSegment) -> Int {
+    if bool.and(left.numeric, right.numeric) {
+        let left-length = string.byte-length(left.text)
+        let right-length = string.byte-length(right.text)
+        if left-length == right-length {
+            scan.compare-bytes(left.text, right.text)
+        } else {
+            if int.less-than(left-length, right-length) {
+                -1
+            } else {
+                1
+            }
+        }
+    } else {
+        if left.numeric {
+            1
+        } else {
+            if right.numeric {
+                -1
+            } else {
+                scan.compare-bytes(left.text, right.text)
+            }
+        }
+    }
+}
+
+fn campfire.ua.segment-at(segments: List<RubyVersionSegment>, index: Int) -> RubyVersionSegment {
+    let state = segments.fold(rubyVersionPick.new(target = index, index = 0, found = rubyVersionSegment.new(numeric = true, text = "0")), campfire.ua.segment-pick-step)
+    state.found
+}
+
+record RubyVersionPick {
+    target: Int
+    index: Int
+    found: RubyVersionSegment
+}
+
+fn campfire.ua.segment-pick-step(state: RubyVersionPick, segment: RubyVersionSegment) -> RubyVersionPick {
+    if state.index == state.target {
+        rubyVersionPick.new(target = state.target, index = add(state.index, 1), found = segment)
+    } else {
+        rubyVersionPick.new(target = state.target, index = add(state.index, 1), found = state.found)
+    }
+}
+
+// The first non-zero comparison among the first six segments (missing ones are 0).
+fn campfire.ua.compare-segments(left: List<RubyVersionSegment>, right: List<RubyVersionSegment>) -> Int {
+    let orders = [
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 0), campfire.ua.segment-at(right, 0)),
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 1), campfire.ua.segment-at(right, 1)),
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 2), campfire.ua.segment-at(right, 2)),
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 3), campfire.ua.segment-at(right, 3)),
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 4), campfire.ua.segment-at(right, 4)),
+        campfire.ua.compare-segment(campfire.ua.segment-at(left, 5), campfire.ua.segment-at(right, 5))
+    ]
+    orders.fold(0, campfire.ua.first-order)
+}
+
+fn campfire.ua.first-order(order: Int, next: Int) -> Int {
+    if order == 0 {
+        next
+    } else {
+        order
+    }
+}
+
+fn campfire.browser.version-compare(left: String, right: String) -> Int {
+    effects none
+    doc "Returns -1, 0 or 1 like the pinned useragent gem Version#<=>, including its first-six-segment limit and its -1 for an unequal non-comparable left side."
+
+    if campfire.ua.comparable-version?(left) {
+        campfire.ua.compare-segments(campfire.ua.version-segments(left), campfire.ua.version-segments(right))
+    } else {
+        if left == right {
+            0
+        } else {
+            -1
+        }
+    }
+}
+
+fn campfire.browser.version-at-least?(version: String, minimum: String) -> Bool {
+    effects none
+    doc "True when the pinned Ruby Version comparison says version is at least minimum."
+
+    int.greater-or-equal(campfire.browser.version-compare(version, minimum), 0)
+}
