@@ -4710,7 +4710,8 @@ enum {
   AL_STDLIB_STRING_INDEX_OF = 17,
   AL_STDLIB_STRING_SLICE = 18,
   AL_STDLIB_STRING_BYTE_AT = 19,
-  AL_STDLIB_INT_PARSE = 20
+  AL_STDLIB_INT_PARSE = 20,
+  AL_STDLIB_STRING_TO_LOWER_ASCII = 21
 };
 
 typedef struct {
@@ -5092,15 +5093,15 @@ static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
 static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
                                    const al_stdlib_argument *arguments,
                                    uint32_t error_id, uint32_t lengths[4]) {
-  static const char *const shapes[21] = {
+  static const char *const shapes[22] = {
       "----", "t---", "t---", "t---", "tt--", "tii-", "tt--", "tt--",
       "t---", "t---", "t---", "t---", "t---", "t---", "tt--", "ttii",
-      "tt--", "tti-", "tii-", "ti--", "t---"};
+      "tt--", "tti-", "tii-", "ti--", "t---", "t---"};
   uint32_t i;
   uint32_t ignored;
-  if (op < 1 || op > 20) {
+  if (op < 1 || op > 21) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
-                          (uint32_t)op, 20u);
+                          (uint32_t)op, 21u);
     return 0;
   }
   for (i = 0u; i < 4u; ++i) {
@@ -5353,6 +5354,15 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
       al_stdlib_none(w);
     else
       al_stdlib_some_int(w, (int64_t)x[index]);
+    return 1;
+  }
+  case AL_STDLIB_STRING_TO_LOWER_ASCII: {
+    uint32_t i;
+    al_stdlib_begin_text(w, n[0]);
+    for (i = 0u; i < n[0]; ++i)
+      al_stdlib_put_byte(w, (uint8_t)(x[i] >= 'A' && x[i] <= 'Z' ? x[i] + 32u
+                                                                : x[i]));
+    al_stdlib_pad(w);
     return 1;
   }
   case AL_STDLIB_INT_PARSE: {

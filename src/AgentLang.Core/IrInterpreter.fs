@@ -169,7 +169,7 @@ module IrInterpreter =
             "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
-            "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"
+            "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii"
         ]
 
     let private implementedPrimitiveIds =
@@ -1098,7 +1098,7 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
-            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "int.parse"), _ ->
+            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "int.parse" | "string.to-lower-ascii"), _ ->
                 // Standard library slice 1 (report 272): pure byte, text and crypto primitives.
                 let some itemType value = RuntimeOption(itemType, Some value)
                 let none itemType = RuntimeOption(itemType, None)
@@ -1201,6 +1201,9 @@ module IrInterpreter =
                     let textBytes = utf8.GetBytes text
                     if index < 0L || index >= int64 textBytes.Length then [ none IrInt ]
                     else [ some IrInt (RuntimeInt(int64 textBytes[int index])) ]
+                | "string.to-lower-ascii", [ RuntimeString text ] ->
+                    // ASCII A-Z only: every other scalar value is unchanged.
+                    [ RuntimeString(String(text.ToCharArray() |> Array.map (fun ch -> if ch >= 'A' && ch <= 'Z' then char (int ch + 32) else ch))) ]
                 | "int.parse", [ RuntimeString text ] ->
                     let digits = if text.StartsWith "-" then text.Substring 1 else text
                     let mutable parsed = 0L

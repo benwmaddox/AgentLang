@@ -86,6 +86,7 @@ module Compiler =
         | "string.slice" -> [ TString; TInt; TInt ], [ TOption TString ]
         | "string.byte-at" -> [ TString; TInt ], [ TOption TInt ]
         | "int.parse" -> [ TString ], [ TOption TInt ]
+        | "string.to-lower-ascii" -> [ TString ], [ TString ]
         | "bytes.from-utf8" -> [ TString ], [ TBytes ]
         | "bytes.to-utf8" -> [ TBytes ], [ TOption TString ]
         | "bytes.length" -> [ TBytes ], [ TInt ]
@@ -151,7 +152,7 @@ module Compiler =
               "string.length"; "string.byte-length"; "string.char-length"; "string.trim"; "string.to-lower"; "string.to-upper"; "int.abs"; "int.min"; "int.max"; "int.to-float"; "float.to-int"
               "float.round"; "int.to-string"; "float.to-string"; "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
               "dup"; "drop"; "swap"; "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
-              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse" ]
+              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "int.parse"; "string.to-lower-ascii" ]
         names
         |> List.map (fun name ->
             let inputs, outputs = builtinSignature name

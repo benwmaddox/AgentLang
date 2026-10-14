@@ -457,3 +457,17 @@ test stdlib.parse/leading-zero {
     stdlib.parse("007")
     => value 7
 }
+
+fn stdlib.lower(text: String) -> String {
+    string.to-lower-ascii(text)
+}
+
+test stdlib.lower/mixed {
+    stdlib.lower("Mozilla/5.0 (Windows NT; Win64) ÉCOLE")
+    => value "mozilla/5.0 (windows nt; win64) École"
+}
+
+test stdlib.lower/empty {
+    stdlib.lower("")
+    => value ""
+}
