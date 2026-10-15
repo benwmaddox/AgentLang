@@ -1,0 +1,2396 @@
+{
+  "archiveFile": "282-linux-concurrency-sweep-evidence.zip",
+  "archiveSha256": "a86cf29cc544e459687712df1d24714413ad95040271d881d3dae77d0b8c555a",
+  "archiveSizeBytes": 173234,
+  "entryCount": 399,
+  "entries": [
+    {
+      "archivePath": "PLAN.md",
+      "sourcePath": ".agentlang/linux-sweep-282/PLAN.md",
+      "sha256": "a7c7f41d26b9917a26578fa8547ae687b273459a5c14b3907e755b300ccb8536",
+      "sizeBytes": 2595
+    },
+    {
+      "archivePath": "tools/sweep-lifetime.sh",
+      "sourcePath": ".agentlang/linux-sweep-282/sweep-lifetime.sh",
+      "sha256": "067e6c0251c369ca51c160162a24d6086ba756e474859ea0089d8a92167487dc",
+      "sizeBytes": 14228
+    },
+    {
+      "archivePath": "tools/run-sweep.sh",
+      "sourcePath": ".agentlang/linux-sweep-282/run-sweep.sh",
+      "sha256": "bbe855106c0500bdbd7933aa7a56a70cbf444d4ce3239f2cc1011bbb8a27687f",
+      "sizeBytes": 1611
+    },
+    {
+      "archivePath": "tools/cleanup-native.sh",
+      "sourcePath": ".agentlang/linux-sweep-282/cleanup-native.sh",
+      "sha256": "e9b1be69ee843e5cc8bcea954e29d2318fe9161da70018a622b49247195d412c",
+      "sizeBytes": 482
+    },
+    {
+      "archivePath": "tools/aggregate.py",
+      "sourcePath": ".agentlang/linux-sweep-282/aggregate.py",
+      "sha256": "358481dc12f6677cc024f47a51fe93bf3051195cc6cf2f9c17ee9638db84b70b",
+      "sizeBytes": 2970
+    },
+    {
+      "archivePath": "aggregate-s1.json",
+      "sourcePath": ".agentlang/linux-sweep-282/aggregate-s1.json",
+      "sha256": "914fa5fb28d964e03defe75806a5ead863ed31ceae8e23b63a5ec58089ea5999",
+      "sizeBytes": 8358
+    },
+    {
+      "archivePath": "aggregate-s1.md",
+      "sourcePath": ".agentlang/linux-sweep-282/aggregate-s1.md",
+      "sha256": "0ca8c9c7b95c0dc6281a4751e5b2ac747e45e96db0e3f02af1e5b629dbd9d09e",
+      "sizeBytes": 3981
+    },
+    {
+      "archivePath": "sweep-s1.log",
+      "sourcePath": ".agentlang/linux-sweep-282/sweep-s1.log",
+      "sha256": "c52c09c977b1cf38e016c3d3f74c0fdb1bbf75b9a253863e3411ab2e077b0d64",
+      "sizeBytes": 3950
+    },
+    {
+      "archivePath": "s1-console.log",
+      "sourcePath": ".agentlang/linux-sweep-282/s1-console.log",
+      "sha256": "571c902051249b560bebd7c1ec241257089e0a95e0720133a9c3278749f2fc59",
+      "sizeBytes": 60534
+    },
+    {
+      "archivePath": "contamination-screen.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/contamination-screen.txt",
+      "sha256": "df3ddad4059ee1c5bc19990030788ba51061d4059cbdfc6ea0be7bca53e69aa7",
+      "sizeBytes": 167
+    },
+    {
+      "archivePath": "flowbin.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/flowbin.txt",
+      "sha256": "807421aa91fa63f32debb7606198ff0ca762c7694e4ac0b5258384fbdc691241",
+      "sizeBytes": 167
+    },
+    {
+      "archivePath": "tools/seal_282.py",
+      "sourcePath": ".agentlang/linux-sweep-282/seal_282.py",
+      "sha256": "60e947e5e7197b2f3155708fc1c2e89ed2993c1a4b2d859a6b51af96176fc40d",
+      "sizeBytes": 3276
+    },
+    {
+      "archivePath": "tools/secret_scan.py",
+      "sourcePath": ".agentlang/lang-281/secret_scan.py",
+      "sha256": "ea7574d42b6885f56346dcf934a4f465c76ffd6cbb2940dee18a5d5b17023587",
+      "sizeBytes": 1597
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/affinity.txt",
+      "sha256": "9976f37e7b8c95d0c09f0411a54974ae4ee72ae3b8a4698853927be1ba26ab76",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/cache-env.txt",
+      "sha256": "162d510d16428038811976c1ab27b6cc6682066457af6f5138c1d57c9ea4fec1",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/cells.jsonl",
+      "sha256": "19dcbacd218d212ee689996dc1d76fff7af56cbb70828af67381ae6b416192bc",
+      "sizeBytes": 1361
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/client-time-c128.txt",
+      "sha256": "783be0ed539cb9b925e5b00a6896d4f7063d4165bca223345da29ddc9110fb57",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/client-time-c16.txt",
+      "sha256": "057e2cc04324a86eda548051c898f2cf40b957a57343b65c076c4aea83106b95",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/client-time-c32.txt",
+      "sha256": "e40c5dbdf171225a18d56590c40d9fc9bec436d807d9bed512d5cc57efb115f8",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/client-time-c64.txt",
+      "sha256": "0ae3d8aa03c364aac15cfb01408dd8ee9524027f0fc80cd2453380e2666a7249",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/driver.log",
+      "sha256": "feb0bb9be55a099de6bf1da7ba183612cfee716b20d128df8cfb989d9f922d14",
+      "sizeBytes": 3095
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/measure-c128.json",
+      "sha256": "c207e42a8d87a0eca0055baef2b564300875cbc2fbe517c3f187f21271bda119",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/measure-c16.json",
+      "sha256": "cff2822d36986a43e4feeea3b5e32f3149bb7f455b2ae1a1e61164488ed24895",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/measure-c32.json",
+      "sha256": "a51bc498a2f1c9e521df91b46edf4099fd00df15a1b60ace18003dc92a550971",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/measure-c64.json",
+      "sha256": "d321ab9c2725cd41639ddfc38ff4e1cbc729e9bfbd17782b4a7cb5e36366d200",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/procs-ready.txt",
+      "sha256": "cc86313faae340255467e018085e8ff1c03a39c8cdf39a81675a605f1e08909b",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/pss.txt",
+      "sha256": "3341ab64c9b9dabe146ff01d6e02fed9372d0e2a4ca2199b806fb981b4714fa3",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/server.log",
+      "sha256": "c29d7ad9a6259a78caedf2a10838dbe8111f98c3f00ae2debb07e905d89968dd",
+      "sizeBytes": 628
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/warmup-c128.json",
+      "sha256": "1d29ef7ab6b31bb5f86e0cd870282cd14cdbed13aac074c809279f91924b312d",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/warmup-c16.json",
+      "sha256": "25bcd5225a335959cb9daf693b248eb753b5079f8348f961b53bf2de965d3eed",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/warmup-c32.json",
+      "sha256": "68593669b369c5546432de96ac0b3b9d58343def133a3b046feb108b9c337a56",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r1/warmup-c64.json",
+      "sha256": "fcf442086f472cea40658578423b26eb0782b869a01046ebee03afdb7bf49f5e",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/affinity.txt",
+      "sha256": "36057934ee298eff47440bf537d2ceb7206f9f53b0d99bf0dde649997cf20c4e",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/cache-env.txt",
+      "sha256": "162d510d16428038811976c1ab27b6cc6682066457af6f5138c1d57c9ea4fec1",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/cells.jsonl",
+      "sha256": "4dd0568a1395a518e7566ebfa24478b6ba71740a5e09200696461859e39997dd",
+      "sizeBytes": 1360
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/client-time-c128.txt",
+      "sha256": "13d7b5290430d64901609082c23f87aac7d182291d90c0f5e1ae40cfccd379b7",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/client-time-c16.txt",
+      "sha256": "13021198aac7cf05bad55e1b7009814a8698deba2c66ed833ec5048da24de346",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/client-time-c32.txt",
+      "sha256": "c0840ac38c1f3e2b110284e3f5f2c15565fdcda100ce6c24406c1d900b2f607a",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/client-time-c64.txt",
+      "sha256": "a69d6e13f1a269d27117afe48b966ba17ae0825fc1d87e738755ee1d26866ec5",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/driver.log",
+      "sha256": "ab55f9c337f4d63378248ed03a65b0b87b5ccd4f41407804a814fe01fbf005a0",
+      "sizeBytes": 3095
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/measure-c128.json",
+      "sha256": "e5adb35de84a05f235ef71dfc056b50e3467249bbd841e886feebc1c064974fb",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/measure-c16.json",
+      "sha256": "f5f4b1d2cd64ced37d7666b31c9fb60e508c9b60f7012a8742adb33859dbafdd",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/measure-c32.json",
+      "sha256": "eadc4c4cf1fb64d5368d0b7f6c7a85fdc340071d18707c12263f888b4b872056",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/measure-c64.json",
+      "sha256": "47076c4d46b0cbeb31a4901cdc57720b7b345488b7231137623d6268b74b9438",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/procs-ready.txt",
+      "sha256": "711a45f7b8a296073c3db7056a24773aff6ff9a8a694399e0c4692994aa38c84",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/pss.txt",
+      "sha256": "a60072aa8ee3425a47a09d83362589795ff58366b68032f58ecb8f72042443cc",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/server.log",
+      "sha256": "db7ddce52ec00c913725595eb0bad51a612ca2d42b71593c9727dc4a9c87bf19",
+      "sizeBytes": 628
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/warmup-c128.json",
+      "sha256": "a1642f9ffd8d12eeed964a6f340f210cc1a89815d66e31974fcdf8df80a7dbb6",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/warmup-c16.json",
+      "sha256": "2c0209dcdf083d05166ec697ba711f4fbf55667e6ec1003ce9d137c1e8a6cc4b",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/warmup-c32.json",
+      "sha256": "99cfebfbc476bc031752f008086893fdb451b7403debe0b239a1a132ff67519b",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r2/warmup-c64.json",
+      "sha256": "b8fcb0d3a96905d92abe83ac05d6338efee2be0033c4eec0d80e7d7717f02624",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/affinity.txt",
+      "sha256": "bbc928b60d54be8684792c718eeaf1d5086b6dcf6fe071e30011b22f8b038490",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/cache-env.txt",
+      "sha256": "162d510d16428038811976c1ab27b6cc6682066457af6f5138c1d57c9ea4fec1",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/cells.jsonl",
+      "sha256": "68d0b29b90a87d795ff6ce40776f49bcb2eaeee17231670d6b6997d6c24b76af",
+      "sizeBytes": 1359
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/client-time-c128.txt",
+      "sha256": "228565d2e8548369096d41afb30d5db12de0214b365dd2ee74524b9b506c874a",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/client-time-c16.txt",
+      "sha256": "af04a41c0502dc3fe9fa9471ddb82e72b23682eb7d2280d3ffa7db7d18a24df1",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/client-time-c32.txt",
+      "sha256": "59b0c3a6f9251453f70258560e5ff8434d7afd66f2c18e1910276f8c0b442cdb",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/client-time-c64.txt",
+      "sha256": "16047dccb9685934256d6d1c78796c7ce42ae455cedd832c60adb45b54f6790a",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/driver.log",
+      "sha256": "de4a74bee424227dc26f421e93d8ff4e8b96828ff9d5c31580edd52f299ba7b5",
+      "sizeBytes": 3094
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/measure-c128.json",
+      "sha256": "2c150ca866cd8ed63e06f2f3bd5ab6ed1929deaf08485bb6fb1728c115a41575",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/measure-c16.json",
+      "sha256": "1ea897e9d685768916e322d6a573fd4fb9b6e5f37bd952b5a78c7a03293fb3eb",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/measure-c32.json",
+      "sha256": "35e5e7e802904d493d4c10630f3f4619229ffc29cfb5b86f10f2546a86135ede",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/measure-c64.json",
+      "sha256": "ac3aaf402a7cca1253c5634f39be33ed680a1519874ae587c3f1d1bf3720e5b2",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/procs-ready.txt",
+      "sha256": "07556b571e8bc028c9aaab201916cc5abda633ff2d66dd1e8fa8df6cb8405eb9",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/pss.txt",
+      "sha256": "6c71aa1ced34e8283435c9d6af2ea0bee098190fe6b7bdd432066e1141605a88",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/server.log",
+      "sha256": "d1f7463c42ea7c5b3a55cec9d6d2cbc381dbed06a022b46dd64b93f27f655e74",
+      "sizeBytes": 628
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/warmup-c128.json",
+      "sha256": "f53330fb7763fb325c407f7a44eb07b83bf94b05ffa28208a12cf5010ec0cbc2",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/warmup-c16.json",
+      "sha256": "d4a4f426421cd5d85f3422289726dfa53391606234ac12cf92c7989670d8571c",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/warmup-c32.json",
+      "sha256": "00e4f71e2d2bdc5cae1eab1b9b10d067306d6680af10036c4e36ae98be95a27f",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-flow-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-off-r3/warmup-c64.json",
+      "sha256": "fd83bfb359b7ceb75a1a5722f3fd285a910e5d166af9dcb823abc0a6cdcf9840",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/affinity.txt",
+      "sha256": "7e5bc6a208e95849f926720872685a42ba45d327a349ce23732534a504f89fcb",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/cache-env.txt",
+      "sha256": "cf436d5d304afab49ffcc8ced61a763c5929530a76bd20a7d723e9abaa407c2f",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/cells.jsonl",
+      "sha256": "32513933363e7621d9d6bc8c1820917c394f788c540f4eb2543b805decb9a4d6",
+      "sizeBytes": 1352
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/client-time-c128.txt",
+      "sha256": "9a67fa9068244ace9ee3ae620a84f6aabff508031d229528a668fac126fe2e7c",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/client-time-c16.txt",
+      "sha256": "b4f1c08c55c67b5e5e61fd9ff1550ca0543eaeeaf638b0dd430b141ac7a644c4",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/client-time-c32.txt",
+      "sha256": "21cd8e7d88bfc020018eea0f6dc9a595d135de116f08bd8c4c394abbc3e15094",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/client-time-c64.txt",
+      "sha256": "480d0e258c86c29eeb82cdb453668ed38365841651c430a22444658b936597f2",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/driver.log",
+      "sha256": "a92ea24d15a6751cd87c6051658f9b573c64ca535f2bee49181fc5717df78ab3",
+      "sizeBytes": 3086
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/measure-c128.json",
+      "sha256": "8d0dc37a4b91f0dce8adf6ec4c98a97722c9d28b8ab041e1c13c897e2d9deaa5",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/measure-c16.json",
+      "sha256": "9580cc7b851e05924fb4d0d692bf2914b94ed78aa51904b878e1bfeed2edfd2e",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/measure-c32.json",
+      "sha256": "f49a71bbaafa5178e872a9ae2094aee74bd29365a5aeac3853cc64cbea2af61d",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/measure-c64.json",
+      "sha256": "1be53d94dd0362bc2c0d00ca57107e421770185769d4459a471942b2fb37e9f6",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/procs-ready.txt",
+      "sha256": "e0de9c28b36d223582845edf78d459698d08f1db372670ed705dd186537896be",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/pss.txt",
+      "sha256": "104ee0dc982834bc76d72fef74c088da98df109855035fc613e6737ca8400715",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/server.log",
+      "sha256": "e85031f5ed476868ff3d13dc1b75b4e0b6f1cca76cbb329b987bc85d2f7b2152",
+      "sizeBytes": 637
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/warmup-c128.json",
+      "sha256": "f492a1a15b79c54049afb0eae583bcf7060d2dcc78ff88148e496ddb03c07a0d",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/warmup-c16.json",
+      "sha256": "5f7dbb80ef9dd21a6b963af9c6a6698f61970fe118dd3c64f050820a6bae34af",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/warmup-c32.json",
+      "sha256": "872d42aa9bdbb2d4805f6bc15717dac0293578f43cade5bab230798aea8d3675",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r1/warmup-c64.json",
+      "sha256": "227d18dfad25f313631b2354813f236ba74de15aec6b6f708f3296b0eca752dd",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/affinity.txt",
+      "sha256": "7de3ac76bc1c1354e247ffd0a9d0325134354f7474d241615cc4560fdd094347",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/cache-env.txt",
+      "sha256": "cf436d5d304afab49ffcc8ced61a763c5929530a76bd20a7d723e9abaa407c2f",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/cells.jsonl",
+      "sha256": "b243ec6c442e65554ea7f20e617846b1691381799ad905dff9c5d5c618cbc6f5",
+      "sizeBytes": 1356
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/client-time-c128.txt",
+      "sha256": "1b65f0803f36f3ae1dd1a8b2df511d0b1e514fd6cce32a84bf85d8b6a2d6affd",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/client-time-c16.txt",
+      "sha256": "e19f8f8a2a2ee475fc2654a9c4e32f5b6aa30e459d0a182a3481b03b93e1d89a",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/client-time-c32.txt",
+      "sha256": "499ba0d1b8ff9a3fa3bb9121911ae4b1cdc0bacc71fc574e361e85355e0159ca",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/client-time-c64.txt",
+      "sha256": "22ab4d2cd48c518fb6f56f954d95ae399e5a2d8df5fb344b851c24e516e6a650",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/driver.log",
+      "sha256": "3691c44f42ecbee1f5da14554b52fb1a76a38fce1e57b3c70fa119544f647c3d",
+      "sizeBytes": 3090
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/measure-c128.json",
+      "sha256": "4bcf9db16bb6739ba4be1c67179e5d2e0264bbc234881f0e8bafe7f2d2a59b37",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/measure-c16.json",
+      "sha256": "00725a10803c21d85df830460714f9b13d6fabad9268a3ed9de2db85f0dde30e",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/measure-c32.json",
+      "sha256": "7b8d68eb6d5604ad2ef044f3512665b2a3ed461b9a922bc00236dda504719d3f",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/measure-c64.json",
+      "sha256": "013d2d40b7a2c8607f15ba094f6c28553a26afdd2e1c84ee62beb354b70f87ed",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/procs-ready.txt",
+      "sha256": "a3fa4fceef41b504f495a339bd7aea0deca8f02d768e3a8218ff73ef7b6fc355",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/pss.txt",
+      "sha256": "8004da76280c428d9612338fd14ea56ac12c62778baf6a3dba43833551a41c0d",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/server.log",
+      "sha256": "738e9f5902dea51b366c6956b4433c7c3a4b55178bdee223b31eeee26ff242fb",
+      "sizeBytes": 637
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/warmup-c128.json",
+      "sha256": "95e879fd4adc970c7b0caf642efd2e5796f7a3f2d7b7963bb41dd93261306c82",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/warmup-c16.json",
+      "sha256": "cc71775a4457a0ecb1154a476512ffb7702c4a2233a3564c9ef0b133c9ffb81e",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/warmup-c32.json",
+      "sha256": "b6fd18069c39bef04217f3187fd03a63d58dda1a3180c2fadfd058fe5d45a5a8",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r2/warmup-c64.json",
+      "sha256": "1c958e334141dadc0f6d4e59a1be3cc27618101c6ec0d6f18f4258a0a4846606",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/affinity.txt",
+      "sha256": "c4a1389ac9de95a170aeb832f0a5defdcc777010ce5bcc1d110bbb68ecf2643a",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/cache-env.txt",
+      "sha256": "cf436d5d304afab49ffcc8ced61a763c5929530a76bd20a7d723e9abaa407c2f",
+      "sizeBytes": 117
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/cells.jsonl",
+      "sha256": "c32a2714424e6bc38848dc7f0ccf198a9ef81361e06a3cf12203992feb367ade",
+      "sizeBytes": 1355
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/client-time-c128.txt",
+      "sha256": "8dc0ce52d2ebeca755619cda70d843b2e26ba05d656fc00ed54937599a7d347b",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/client-time-c16.txt",
+      "sha256": "7b34242af57e723d138c6fb103fa66c9e7889616d3f5e8e1e35f6cc57038e7e6",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/client-time-c32.txt",
+      "sha256": "b8f200975bc7a8e8781ea32547863d96a85922bacf53dd2cf4053850cfccc6b2",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/client-time-c64.txt",
+      "sha256": "03d43c68fe1801b51c1350f8f9502b87b3082af37daf17c5a0bf16ed64515385",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/driver.log",
+      "sha256": "d03c3a7e0392ecf1122e4fa5530e0d21fb0771e28feccd4c0da6330f9f396bb3",
+      "sizeBytes": 3089
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/measure-c128.json",
+      "sha256": "cd2189488483300bdf790dcb6b6056649f3f78105fb3760ce20fc2dcfa419e82",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/measure-c16.json",
+      "sha256": "7120b5f4e06036082a0bab3fb3d5544acb95c0f6399058d133ae378c4af7a63c",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/measure-c32.json",
+      "sha256": "7ddc3e52ecf712a787b5bcda46775f9c2009206560e8080a0c55f957057bc098",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/measure-c64.json",
+      "sha256": "c69de2ea36e21f8ae8550bcab3ffbaa23b9e9445cfe22d081ae19437c41babf4",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/procs-ready.txt",
+      "sha256": "326e0639243382860745da5f90fb1eba8b838fdbe1ab33cb64eace6445b5dab0",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/pss.txt",
+      "sha256": "36aeb795164da13fa3dfeac8eb2c9cd97fae99cfd06257360eb0ef25841f3582",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/server.log",
+      "sha256": "4088d5c0bf9c63f4740584005559de76a64fddad44f3d9a1a55b3f96d475c69a",
+      "sizeBytes": 637
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/warmup-c128.json",
+      "sha256": "ba00b9cb96f8857232ce984a56f37c1239811af48693bbefe811fbf5012bf39c",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/warmup-c16.json",
+      "sha256": "72c24c6eb3c640f061492373f13756de85b25bbd96917fd9dfb0ddcf90e816d4",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/warmup-c32.json",
+      "sha256": "1e9d9cd6e16172d5eea45d10c83eb4ed0ee10d65d3ce861542a0a3042b5d5720",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-flow-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-flow-on-r3/warmup-c64.json",
+      "sha256": "5c815e315836211232fb67818b7d4af714f19821a6ed110d2cb0c3861f53216c",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/affinity.txt",
+      "sha256": "293528d797f4798b2bb63ab41a87881d7e9ecf3874591e43718427a00959f189",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/cells.jsonl",
+      "sha256": "158e85ce5d225e1e53cc83466c4983fdbe92dd96828eebcac226150c3879fa31",
+      "sizeBytes": 1371
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/client-time-c128.txt",
+      "sha256": "8331c5216908d329b3e1f619e4665a538d526805e9943266a6950e722fed1959",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/client-time-c16.txt",
+      "sha256": "c108851285e48c1f177dce088115410bc1ef4d3b8007b7780feb3ff76b7f1415",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/client-time-c32.txt",
+      "sha256": "0850e44bcc30b24e1fd4ec2dfe75f5a964fdc2c60904a98e2443baf0bee7f464",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/client-time-c64.txt",
+      "sha256": "52dd854fd35e750033e5d5c9205ae3a5fe25612e57add9eb1b68bc4b4823e90e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/driver.log",
+      "sha256": "37cf2cb4909884d6c1f9ce995ffe93287e8089255f59dcbf383f1c343ea52d07",
+      "sizeBytes": 3165
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/measure-c128.json",
+      "sha256": "645f80a6846c02e3a8e0e68a97f6fbd2ddbe5f410e486785e9a2cca1d418c4c6",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/measure-c16.json",
+      "sha256": "1806b7f7363fc8ffa2d5587b46ce79f68ba9e0c0463979c3a84320434ce2bc1f",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/measure-c32.json",
+      "sha256": "95c599c3d20688e210095c03248e59f6673e2b857899805862915125bfd5c321",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/measure-c64.json",
+      "sha256": "29cba738b1ccc2e402d627a1d455afa71f4f31814fc10f1b8f4da4689a6b278b",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/procs-ready.txt",
+      "sha256": "0d735d49e457e90679fe201b521afee71c32bd9003f506972c33d25bcd108b60",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/pss.txt",
+      "sha256": "7b9c3f3dbc4799973bda878f6b4424c4e94956a6a985153f80b4a58b2e583320",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/warmup-c128.json",
+      "sha256": "365c3b85f494f87051ffadab31e7d43e1c9fc2c8588ba6ab91ff616350552384",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/warmup-c16.json",
+      "sha256": "68408846f74d68d2a4322c54d94a21107f24076c39e7e82ddcb0392051f80eef",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/warmup-c32.json",
+      "sha256": "e73eb3a30edb43a51ff31e44576150c083fb85821709331bfc6d414f52072ff6",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r1/warmup-c64.json",
+      "sha256": "e17c1d61f74fd2083cb5b9aa57b88da521226c51826c54e1aa658c15d0e9252c",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/affinity.txt",
+      "sha256": "b6ccdf7c5c58f46ff2a170a4cbb2567711a45cc6a45a3fc36eab48d60055b350",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/cells.jsonl",
+      "sha256": "3fb8fa6f80b5159724bdba8a7e71548975f34a3be16f2fbda09cd357c96c6c96",
+      "sizeBytes": 1370
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/client-time-c128.txt",
+      "sha256": "b20cba87618f44b1e9a721c45618a73f7eb6277294eaadb18c168cbdef1eeb01",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/client-time-c16.txt",
+      "sha256": "a696d923a02c777fad5eda7a4cbe5fb95dd00b6df28bd6b3ed3da85f4b7ced1e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/client-time-c32.txt",
+      "sha256": "cc04b79003ece1bbe0b7f9fc77990ba810796c99640fcf61380fa4f44f6c6e74",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/client-time-c64.txt",
+      "sha256": "b99907863211a35368837f5b0ab9e953ac71912b2f9dbe4e954d2627d219b034",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/driver.log",
+      "sha256": "c215d7681c8a60d817dde14eb96c15047a2690bb180a64f5b045aeb8cab9aacc",
+      "sizeBytes": 3164
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/measure-c128.json",
+      "sha256": "89ac700cb7feda8102369e4c303989e7518c363fbf30f7074ca113a5342586ee",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/measure-c16.json",
+      "sha256": "ebee8cf33710af589470a657c7a5eb2f71af7b7bf5b411095780d09220573440",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/measure-c32.json",
+      "sha256": "8e58516285845bc04cad3a69b9eb98dbd3cd9b2d9ceeffe2f8999ef6a140c8c3",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/measure-c64.json",
+      "sha256": "5037ec5890e3aafe51ce4043934d616e5eb8db8b6adbd114398035ad41a28f37",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/procs-ready.txt",
+      "sha256": "1dd628a50759ec31c0a524b62075e17353be840360f026db9efbf24594e7ceb3",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/pss.txt",
+      "sha256": "9d3a7c6adfdb693a16eede8251d47bbebdfdf2b9b3e50a3b7bed3fef5cea9ebf",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/warmup-c128.json",
+      "sha256": "07ab56a47c70f1bd3e98812b12f4567b07e68c9523e091fa2f8272ec8c54583a",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/warmup-c16.json",
+      "sha256": "ff23820fa8f0e79dc4494dcf0435ee040809517e728e25d0f6d5f800d768186f",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/warmup-c32.json",
+      "sha256": "7d06f67b10c346b2efb47aad3cd667790d68602a1958d3942930b8726d2ea630",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r2/warmup-c64.json",
+      "sha256": "b556dd0f17d93d95a3b7c155668863f70cdce903edbe97fa63499de0b934bb5a",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/affinity.txt",
+      "sha256": "727fd6369a0503a9de1fbeae7e11c8e97ebea5576641ef4a38ab9ab98b8edaf7",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/cells.jsonl",
+      "sha256": "a391326da8a60a5bc1ab3c68a314686f76c9e8687f74c35631a0e16d1aeccd7f",
+      "sizeBytes": 1369
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/client-time-c128.txt",
+      "sha256": "2a12f811add0b62dcbecaeb0f4dcc589be94eb803c61cd12e7ac43d82983bc91",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/client-time-c16.txt",
+      "sha256": "25b9a9ab4e632cb0f6da2d29fa6afd34d306df84e308cc90e0f1a5490df67d23",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/client-time-c32.txt",
+      "sha256": "8e39e762c63f6cab7e54e539b26c68f67726a66c14d8656d149350a1a3f9d2a1",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/client-time-c64.txt",
+      "sha256": "059ff29a03f601f3521b2d61621cbb78bd5b6c52c3e6e3e9733cc81a56f946bd",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/driver.log",
+      "sha256": "b3e34ef567c899bf840e4e0e498033d568da73a1e1f2c27cf5fe957176acf205",
+      "sizeBytes": 3163
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/measure-c128.json",
+      "sha256": "be1843a3500ecb0e2215f63026be96895c582709e0418beca5700672af304a3b",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/measure-c16.json",
+      "sha256": "bb308757679d5249ffff6f26dc52b514bf96b622ff60df2d5e0b519709f7d18b",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/measure-c32.json",
+      "sha256": "4ba3726681e97922ec37422e299bbac1592d13631902ea3c9af9cb7f3f47df93",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/measure-c64.json",
+      "sha256": "4b381b8f3aaa402be9f6e2179bd3ac6eea52e77ce63467f9eaadee6ac6c7cdf1",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/procs-ready.txt",
+      "sha256": "31da738f76e72cd34d4f7e9146912c2ff994e71023d96144acfa749159bc2805",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/pss.txt",
+      "sha256": "7d92048a1385aa196e670d93a0956f81169991580418803020cb7478e4d361f6",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/warmup-c128.json",
+      "sha256": "04456663f5f088d94a31ca0ad0b0d52173e6e165100a381f5d5879961a9e0681",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/warmup-c16.json",
+      "sha256": "04b22b605a9968fb9d75dbb585180ddbd80afb2cbb4f25bff00e03a5b2ad7cf6",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/warmup-c32.json",
+      "sha256": "ab9da9aa0a74354958fffc85038eb7f8ddcdcd55ffd622e5ee2d83f7434972c9",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-off-r3/warmup-c64.json",
+      "sha256": "272104cb88b7289ae0418e620eaee9953bffc9d9e3ae48fdf8558f570e277551",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/affinity.txt",
+      "sha256": "f13b0fe2b8c211d6722fef42c984048b3ee221fdf7e3c628bc8291d761ccd1f3",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/cells.jsonl",
+      "sha256": "4bec82be5fe0e64473ac19b12f25484ef7a3ffd72e25d96f37cb3c4cc82e4b56",
+      "sizeBytes": 1364
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/client-time-c128.txt",
+      "sha256": "f125424557067558303659b949d73c7d8120798fe7d21dffcc22d5467dfdf8a7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/client-time-c16.txt",
+      "sha256": "177a0e5724dc7072d694749e2d05a74626a6ba3cda407d341f485fc85666da7d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/client-time-c32.txt",
+      "sha256": "d6b3af4025e1dc041d46222013cc4044b5149edc5361a8ed252fa2afaa02cd41",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/client-time-c64.txt",
+      "sha256": "059af12dd0b293b497a69cf13cb749be79a719e83a14efcf23f60092850a639c",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/driver.log",
+      "sha256": "eda487450984ef9b66d3ad4fa454edd9ffc597dac5a488e41980451c6c3c14e3",
+      "sizeBytes": 3160
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/measure-c128.json",
+      "sha256": "69166fde19f174da7cdeac8de991abccf236d1dba3c9154208e1a162c7f11dda",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/measure-c16.json",
+      "sha256": "d656e082f3736680c5ae7f6078c6079ba44a32bc56a60b8c6c8ace79333efd31",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/measure-c32.json",
+      "sha256": "8f3a669ebb08ed190f49ab096d9b70f408d7defe63b4f586181a81ad454b6bcb",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/measure-c64.json",
+      "sha256": "111d7cc5a89836466be7c8661800fcae253064ae52911cb521b558d5ab30acfa",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/procs-ready.txt",
+      "sha256": "a9c1daae54b10a65b0cf29536011b0d9768c4e4abc8980b7b61e6c6898696401",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/pss.txt",
+      "sha256": "141cc0a7a4c5acc9539ebb0edbce75205d799e23c74a48a6a9ecfc86102f7e51",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/warmup-c128.json",
+      "sha256": "e36bdae911b1908fd18a47e3c8cfafb6b83c29ef88e3365917e1ad4ca0a2063c",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/warmup-c16.json",
+      "sha256": "a3e6d0b2a99612044e3d49d6b80c046d072e775058ef081798b685da0bf7b259",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/warmup-c32.json",
+      "sha256": "d11428bbbdc9a05195b614ff9cc41b9f10c0c1490f369524f099f8abd5478441",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r1/warmup-c64.json",
+      "sha256": "fc5feb42cda572629aba50b2415842f833f6efdda6902aff421c45e782b11a09",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/affinity.txt",
+      "sha256": "163b4992019cc81a9c641b3ea57a5a0d8adb475a4a0790739e7c2db1f475d180",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/cells.jsonl",
+      "sha256": "766668bd2cc766aa08c1b8b9156440f82a1e903f6eb2bee52a971fff12956aa3",
+      "sizeBytes": 1364
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/client-time-c128.txt",
+      "sha256": "4af17b86c69fb39593db4af60bb9aa34fe9fb980dc7adf684ba67d4c94b5020c",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/client-time-c16.txt",
+      "sha256": "baacf20255149a731483f65af30dc3a243b6f9807d31bd4e657529935a764827",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/client-time-c32.txt",
+      "sha256": "044dbff5ac9415a9d70b947cca0ebd1140cf55139b0c93e0a5ba2c7be73c9126",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/client-time-c64.txt",
+      "sha256": "bfb2db348f6e5116f2eac84aa85c7b9c164104401bbc414fd4c7703c23872793",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/driver.log",
+      "sha256": "b3ebfc17d803b8acfd430685f0ae3d1e747d9a0c01599f7bb3d4bbe9bf3a5258",
+      "sizeBytes": 3160
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/measure-c128.json",
+      "sha256": "1ffb79ed07e71f1cc37858de32196a939c198f4a09b4b5b9703a175802ae473b",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/measure-c16.json",
+      "sha256": "8d1e29946fe7e670837f20cf61054865d1acca86c8dabe062ec3d88ad78fd23b",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/measure-c32.json",
+      "sha256": "10fad9aaad121ad7e20ce6601f909e4caac5ac540711be1de5b17abe8d9ef5fd",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/measure-c64.json",
+      "sha256": "5a984f8327424b77b39d5cb0e23eb51fd2059adab4fa0b146953ef4a56660c5d",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/procs-ready.txt",
+      "sha256": "0d9e17ddbdc3d4b0b9ecca27b2e28e9132d1514c500f8cbce584ce648c1eb17e",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/pss.txt",
+      "sha256": "c18c02eb441c6e0c6d3e85af67ba9280ad4ea7a7406bacfa21d2bdb63456b3e2",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/warmup-c128.json",
+      "sha256": "f1f71663c361dacbf7b2c56113c887c80a34b10a86aacf9147bcca65b99ce4d6",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/warmup-c16.json",
+      "sha256": "3c3c85df7014561a56982e8decc3bc57ac6aa6b2a2c3bb7843e431b023fb1a20",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/warmup-c32.json",
+      "sha256": "8c51981edd061c923cf2cd286d6bb49b8a9671329810d47ac30211ea6dd8ff77",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r2/warmup-c64.json",
+      "sha256": "098bd4643d742e020418bf0b989788860d597db6f4b29335b493728971ebcae5",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/affinity.txt",
+      "sha256": "9f9c4d6d780ed065e5653497e110aa16c2f494bc3cb808602129f513df3ca09a",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/cells.jsonl",
+      "sha256": "d681593ee6b809134947b63145a3ba618aabb08aa52e324208509baeac7215b7",
+      "sizeBytes": 1365
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/client-time-c128.txt",
+      "sha256": "bc2ffbe080e5b2eb9b1877be1ab437843a5b4496858e56d6ae7bdc345e4b2414",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/client-time-c16.txt",
+      "sha256": "7d1ffa716e0e0b072ea1aad6bb4f48f5759777d3c5a1d34e4b98b33a55b5b001",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/client-time-c32.txt",
+      "sha256": "575e00e480f9a641e0c51de6e4fd1fb0ab25a6c6b697ded273b31a5403a92c57",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/client-time-c64.txt",
+      "sha256": "9882bb5d114804cc92fadde619c769eae4111b66ceec312c6452de8b1ec87cd7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/driver.log",
+      "sha256": "5048d26fe6bada84b90b4a7ae8348a2ac40e12c6a03e61d6753aa9e23c2667a7",
+      "sizeBytes": 3161
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/measure-c128.json",
+      "sha256": "422972d388ee9c95d53e46b23b88e8a820fd99b43f05497b3a9c85a954cc4b2d",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/measure-c16.json",
+      "sha256": "b751ef8cdc8be71716134bfb63a1b3e93b52b9dd583546ca22eab84cf24f4cde",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/measure-c32.json",
+      "sha256": "d9d521866c7d185435adf7ae232cc012d344997034e0e7b5e2112582a03c9570",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/measure-c64.json",
+      "sha256": "d3f4230daceb137808e69b7bd52c920d025488531e12ffb82e4f77afb6baba5d",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/procs-ready.txt",
+      "sha256": "251aa0829a1c0302ccda1b6e899a74bb0193a169951fd053a8a49cb93835e3e4",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/pss.txt",
+      "sha256": "04075ee90b759e481f1f57c9dc60c50dbb20ff1b6525d7082130c54c7196aa40",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/warmup-c128.json",
+      "sha256": "98a750326f99c1e6fbb1ef111cdd886d0a3fd809bcd0e9d0dc7a9159b9cbafb4",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/warmup-c16.json",
+      "sha256": "ac8185d1db5b01168c7b8d3c03d3be6875fb3bdb2b5f3469284dcf43f0f18980",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/warmup-c32.json",
+      "sha256": "ceb1096f00ba8665b59bbd051647cadff1be3eabb47764c00362604c0f5f09b7",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rails-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rails-on-r3/warmup-c64.json",
+      "sha256": "5463ad26023299ea83529aab3205f85730bef7e137045f90265e950dff29628d",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/affinity.txt",
+      "sha256": "c38f7eb222801340af81a1bc1abdde4c3c6b233dc5b1ae16ba44c91f0c9c0c26",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/cache-env.txt",
+      "sha256": "f1a4a198571e6e6dc1d8a1fdd8e36ecfb9048292d1a926801606395decee7906",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/cells.jsonl",
+      "sha256": "7549d388beafe66b1f0083bb15af9116400b84d0cb063e565bf10fcc8ecaec5a",
+      "sizeBytes": 1355
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/client-time-c128.txt",
+      "sha256": "fd8d35bfd4caac46005676c5cbf1c5f1dc5197481aaa9b3b5deb989dc2060bbe",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/client-time-c16.txt",
+      "sha256": "2f676be73cc6840f234ca38af6a496522ba484d9151063483a382f77e05fe033",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/client-time-c32.txt",
+      "sha256": "fddb18456c87b6fa9454506163c2887636e6a0d841cf80a58921dec713e3251f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/client-time-c64.txt",
+      "sha256": "244a076ea7cfa0410ac4d9d3d44a699d34565a2859107364f7ac7ed9b4d64f88",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/driver.log",
+      "sha256": "c2da95742f16185ede3de559e7efc3fdf4f16b1d95f480c440f55eef2842818f",
+      "sizeBytes": 3049
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/measure-c128.json",
+      "sha256": "2b7cd3d272525a382aae6698f02f915b67e7b5d299e074e1d6895146c2739820",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/measure-c16.json",
+      "sha256": "576d33add8c294591cbf992df3fd3b16b8ea6331b476712b7dd10548ad6b5f1f",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/measure-c32.json",
+      "sha256": "52cb29d1301b187cccfc4d1aa32b81b043310cf8c28cdfa350f16629c6f81354",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/measure-c64.json",
+      "sha256": "4ca24e0b20272d7d19f8edc363fbc1fbd72eb2371f03b06f54bcab4eb8acf0e7",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/procs-ready.txt",
+      "sha256": "7af33fe435c2db185e02b4633aba70fc6a02f9a550f96d9822510d868a5ed64a",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/pss.txt",
+      "sha256": "f86c9395fc99c0cb584a76d69d695f9a1785483742ebaa196ad57ff9ea1e19cd",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/warmup-c128.json",
+      "sha256": "3a249f2e4bd31be61abfcab8abe8cab3890a2096ec13b8dd2956d9b6d69987a2",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/warmup-c16.json",
+      "sha256": "8374e0eb1aaaf520a2255bc84e87c3fa46498e198580a9a1a5574028bfaeae49",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/warmup-c32.json",
+      "sha256": "930f9f76c985729ceecfe19bdd65cce2346a6b35eb66c3e3167337ed870dea37",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r1/warmup-c64.json",
+      "sha256": "4bd30e1649b18e363beb12e826a0489176d9f290f75d98ac9de2dfa35ddae069",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/affinity.txt",
+      "sha256": "bced4e19cadf6dfefc3d6c1602ea9990fc1f47dbaede2de148f71f739517f277",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/cache-env.txt",
+      "sha256": "51475537954f75dfe260cf50cb8b4d82a17aa22e5cacc2b07a281f06d51fca3e",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/cells.jsonl",
+      "sha256": "ac0919e964dafdc81d116b668085f487de82350fb3f36fa83572ef6c8263ee22",
+      "sizeBytes": 1358
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/client-time-c128.txt",
+      "sha256": "07ab057a5121dc39a550e89111562a768071b6c08c50543686e3347cad660dd4",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/client-time-c16.txt",
+      "sha256": "27759fc526bc8a33c6363f61896a281d99f2e326e733ab256cb7aed3e04e1a8f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/client-time-c32.txt",
+      "sha256": "c5f8f5b2cf4f4e5d78e8fd19e5801e8f64e8e44b733459db7a8120c6081560c6",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/client-time-c64.txt",
+      "sha256": "63da9abac681303de836866451280ac932d3df394d54db6686893d9f21b19e3d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/driver.log",
+      "sha256": "88c041790c946dc6210fd3777fbd66f29452fb0cc7d6050a7bc0bb2965a778f7",
+      "sizeBytes": 3052
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/measure-c128.json",
+      "sha256": "4a3d28c3b82483f4c48b9438f9bec6f9b19c781f7695920e2833bdcb373398b6",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/measure-c16.json",
+      "sha256": "a1b2f32f6f4b038bde0ab1fa46cf8bd985c34b4636d46f227da3c7586d99b0aa",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/measure-c32.json",
+      "sha256": "e8c8eec028dcef1638c4797e279780284848b80764bc1bf6c096dd6f95ce4a79",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/measure-c64.json",
+      "sha256": "4aa4f168653022219729896b7497f466d71bd8cf69201c71b4ecbd63cfaafd5e",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/procs-ready.txt",
+      "sha256": "fbfc18039a6483de925678731ba7d1d9915d0276d4894f63484e5ce6cb8ac105",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/pss.txt",
+      "sha256": "f7347e124248bfc49153246bb8b872f07cbb580072a5b16713df32fad6811a7c",
+      "sizeBytes": 175
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/warmup-c128.json",
+      "sha256": "60bae585b36a0f11ee0758b932b449d8024e494843b915b947f13169291586de",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/warmup-c16.json",
+      "sha256": "6284d4cd833bb0c750300830d9c5d28ad7dfee550a2a38fbaf16a83436e08363",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/warmup-c32.json",
+      "sha256": "27248c7a77a8f50bf45e12d421079919e5f8e7e71479f7f5aefa00b635c1ce85",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r2/warmup-c64.json",
+      "sha256": "80dc62f30bbebac7f01fd80d6c7750cc2e0f815a628f58f7a42f6e9a3e440ec2",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/affinity.txt",
+      "sha256": "14d2d4308eb279f283369891b30e6de59bd219004232d2321795a9a609c3c5d8",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/cache-env.txt",
+      "sha256": "b6f3081876c359f669aa7174a5dbc9b2af5a82ed849e074f9d3c4ec839c9585d",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/cells.jsonl",
+      "sha256": "aaf009561f45c2dd52a35e65ead34bf394b0a19c30e6240a60b78e0eeaf8d44f",
+      "sizeBytes": 1355
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/client-time-c128.txt",
+      "sha256": "5d0f9c22b6dbc01414f604090e8ccbf362b34aee432e7543134f29f1b4567d01",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/client-time-c16.txt",
+      "sha256": "1c9313c3bcebd7809cc1162d4910d0a0302bd454ee025cce9a4f29e11ad68492",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/client-time-c32.txt",
+      "sha256": "74b02293d2719e9a1aff7c5f288a0d3a7f4667f32338fc989ef441f5de5bd10e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/client-time-c64.txt",
+      "sha256": "5af6b8463e9cda58faf426ffc3569398352234e1a70536b8c8adb837d4bed8df",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/driver.log",
+      "sha256": "d9ecc9d6be383a741761227e1cecb21e22e814ccf04d422807b19529aece5e43",
+      "sizeBytes": 3049
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/measure-c128.json",
+      "sha256": "8285cfed34ec7dc889b4edc34b891670f5acdafbe7c8f0cd6a4893d925802221",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/measure-c16.json",
+      "sha256": "984d562edc659bd0d89cdec9e2f4ddd71e5065ae12154ec74466bf6b507a68e7",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/measure-c32.json",
+      "sha256": "540962913520de9f48484b70925d741249f0f021ce034f44dca6ceec7aeb66ee",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/measure-c64.json",
+      "sha256": "8efcda80bb582bd1acf06c81ae686323b581182a9123bdfec52abfe90a6c8706",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/procs-ready.txt",
+      "sha256": "a69766094a1fb6b8a03c85a7115c14690bd43da1f74b43c5b808c5ab121db66c",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/pss.txt",
+      "sha256": "05e23caeb689177622cfb300f9e558392b3f2d3cf9999b21e5f71e7cf07870a5",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/warmup-c128.json",
+      "sha256": "9abf7807ab60362e85e2ee52ca258e14512988d7a90aa7747d699f023afe1fdc",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/warmup-c16.json",
+      "sha256": "3fc29004b1b886952652d2606d8aeef6c84e057d074ad83c194d8107b03eda35",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/warmup-c32.json",
+      "sha256": "8cad17495dba1e7b1b498736541ad3e6da1bc93eb34957f8e51149973e7a891b",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-rust-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-off-r3/warmup-c64.json",
+      "sha256": "7c7d70eb38f5f6a7a0a982f5a83b818058b7839dd45308319802a14648c76c37",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/affinity.txt",
+      "sha256": "83219c4363f6131f0ef12666d5eda371e8a47efc53491a0d167136cd6d080e28",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/cache-env.txt",
+      "sha256": "2550138a567635fc56d52d4ab88afaacd9b0442e53be9ff3bdc740744a70bfab",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/cells.jsonl",
+      "sha256": "46ae1db9f75e608bfe5c2f54dc41afcf9333feab069c9a69ba1426443ab3e97c",
+      "sizeBytes": 1349
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/client-time-c128.txt",
+      "sha256": "a88d271cf2e5cc54c2ec9c743a79313be0bd2f9d94f205771aa687b4f7a9c2b9",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/client-time-c16.txt",
+      "sha256": "d2a7755ce1dbe9386c2bc9839084ef763f2d935f3bdebb918086474b27c7f9e6",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/client-time-c32.txt",
+      "sha256": "b01f2bc72bc55592b711edb220c2c7b14d92bd277b73dbc073d1dfd9c685920b",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/client-time-c64.txt",
+      "sha256": "f49c52908882e16aff85317a3c73bc1cf8025cbb2adcef96084d9899e128f732",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/driver.log",
+      "sha256": "2b52ab7606eba4c403e40af819998ebdf9cfb4b3be931625bfbf9da62f1e52a4",
+      "sizeBytes": 3042
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/measure-c128.json",
+      "sha256": "d22013cff13c460ae2cef723ba2727b2df272728d1eedc7ab26b605e70a688ef",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/measure-c16.json",
+      "sha256": "7f95ae68e025987b184c13f229484a71613a8b03cb33bfadbcdd00475e06b956",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/measure-c32.json",
+      "sha256": "8e7c923e26496764a492b5aa284b992e890576118f98abfcb17c3ad6f6960f2d",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/measure-c64.json",
+      "sha256": "05efce54294f2c411e38d8fd5aa25162962bbd6ff16ad28eb9a39827591428b9",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/procs-ready.txt",
+      "sha256": "112f919eacac3ba428ea2fbe66f5cb5f40e1ce808794e91cc16ac73d7dbbe945",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/pss.txt",
+      "sha256": "6bef433660ac6124aaa3322e7025b7d71df05ba2f32c53b4fb47fdd472b4f3eb",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/warmup-c128.json",
+      "sha256": "4f0e1f941ccdd60e94826e3de640123bba1404f51cf6fba672fa650c4c7ebf02",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/warmup-c16.json",
+      "sha256": "13274b4604cb3777750be7194108e831d983e1613deded8130c4e5e609c87141",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/warmup-c32.json",
+      "sha256": "78157625fbf5134e60e649eb3a6d28a9f5e36a2f1aa0937e49bede6bb3db9c8f",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r1/warmup-c64.json",
+      "sha256": "2aee1888acbf65e9ea4184ee202864266e659c422a979c392ee429453ee283e6",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/affinity.txt",
+      "sha256": "239e677aac4ab6d5a1d7cfc0285d216151b1b5c80f9cf28b63b044b53bc12ff3",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/cache-env.txt",
+      "sha256": "f7c66d66b79a1b2e82e2dc5118d38cf1a2498c949e54cbdbcb8c92000f78bc8f",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/cells.jsonl",
+      "sha256": "06e0a17f3d0877e4ce02658723919828ec0c73232edb779be39aeb823399d9e2",
+      "sizeBytes": 1349
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/client-time-c128.txt",
+      "sha256": "596af4860e1922c67f4d8cb80e95b1918b93ff0b992caf3ac38086d79586e91c",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/client-time-c16.txt",
+      "sha256": "e65464bd8e64a28081eb851e6b7147382397babc7de9282c346b22c41a90ca15",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/client-time-c32.txt",
+      "sha256": "5dd1505efeb87e2ea3c5a6f24e040d8119114eb2e0da9a1b8c96eca23e90a711",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/client-time-c64.txt",
+      "sha256": "e5fa34acd4d07505742f36af8a9f5092526e57e79aa06dbe886d4a6e7e38a57d",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/driver.log",
+      "sha256": "dfaaecf61dbfa5c44cac6f8e299e5cae19ba270878853de7306d5f3f31f3a21f",
+      "sizeBytes": 3042
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/measure-c128.json",
+      "sha256": "c9a0724048ccfe2b2c7ddc7bb9f3bd7c2e3e23aad68c395a6991e5121ef8b19f",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/measure-c16.json",
+      "sha256": "0f16445a236b3ff77f87d1ebbd80776548c6173dcd728f08269b2c3f255df1ed",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/measure-c32.json",
+      "sha256": "f39b9c7e5dd7006a0a667007520c4991c93a79402ea38cc54749beb500c3a24d",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/measure-c64.json",
+      "sha256": "95547aa39fd07531f6774bb6c75eb0c38d0e4e622e18600ae3e77931ef5f35a7",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/procs-ready.txt",
+      "sha256": "cdd9a7d288db4196fb38f43ec154cd7a3e4bd3d676b0eabff6d360dda5bc98b3",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/pss.txt",
+      "sha256": "240aa9251867636ce64146653dfcd866ee414ebf0b159d6e89d38ce8a0681fc7",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/warmup-c128.json",
+      "sha256": "1001884bb168fda1c3448ee572563785493ddb07197c6e9195969d6fc5ec24f1",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/warmup-c16.json",
+      "sha256": "4da09bf4ac000c87e02e4b7a678a099830ac7015878325d8797c901574bab88e",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/warmup-c32.json",
+      "sha256": "1d2a4b693d5a078369f46e43eb9e750aeb4dab9d5d68dfa8d2299fa2310797ee",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r2/warmup-c64.json",
+      "sha256": "426efb4f8534ac9d4e9ddcd18ebf63de783933b78c9bccc870016f72248d8cde",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/affinity.txt",
+      "sha256": "d551d39d0a38ca9fa5d6ad3bfe7c3e67eb706f5be91bfa574265994e0b7cfede",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/cache-env.txt",
+      "sha256": "524e6bf7b3c2c3949cc797a53cef0825383117c295fc8da45828262604640155",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/cells.jsonl",
+      "sha256": "ae3518973032fee9264101007d274621172a93d78cea0669271e7c519ff5dc08",
+      "sizeBytes": 1348
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/client-time-c128.txt",
+      "sha256": "fdc4c175912de8060932839706e05c347e05319a56aa1807b520087f2fe6087d",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/client-time-c16.txt",
+      "sha256": "90d37267c5e57bf37168359eda7581e9373469ab13d34a3a9ec52d25de587315",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/client-time-c32.txt",
+      "sha256": "fc491b007667afd80bfeac0427c7e3428bc7bf5848ae4ad9583437206d3d5137",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/client-time-c64.txt",
+      "sha256": "c3e774bbe22cdf2f36bce8059bf2ed0f49fc88c18cc6825f41f0c497b247b2f6",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/driver.log",
+      "sha256": "0cb829dc981c813ed840a7cf640257916b1af530b4d2bdfbdaea2908ed777a52",
+      "sizeBytes": 3041
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/measure-c128.json",
+      "sha256": "3bae913c28151e6c6d50d9f5621d04eb38ebf40b41ee30802c1fb4ffa59e812d",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/measure-c16.json",
+      "sha256": "bd5d44ae3895259a59f05421c8aa61538ad6bf19379f8c0546eaba5be77feb00",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/measure-c32.json",
+      "sha256": "7f61d019c40bbd3f5d5f73afad2d73eee88e333688339566f54b7f320236fb0d",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/measure-c64.json",
+      "sha256": "cf2d14e1d7eae67295c375fdb7924dfc4d4695009a87e737fca15c490d01e65a",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/procs-ready.txt",
+      "sha256": "72c4d2cec73f2f3314dec42a8e209999d15bb6755641f7c84a58d1f99fa28c34",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/pss.txt",
+      "sha256": "dc95c83677d7e7283678aa2c161a6997fc32ce1fb47d583e769177a1a4b9a044",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/warmup-c128.json",
+      "sha256": "7ce9e82561b612f62a4145cf608d281f221c09293e9912515cf48c6ac70ae8f9",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/warmup-c16.json",
+      "sha256": "e35aef9f24a9142269cb9347182fea6891da4281498b9c36e744f984587c75b2",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/warmup-c32.json",
+      "sha256": "0a89c75d0826cd11aa66e655744734c65b580ab5111acd5678a3730ddaf3de79",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "runs/s1-rust-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/s1-rust-on-r3/warmup-c64.json",
+      "sha256": "eb4d0d13878b34aebf9b73ed8d023dc8df42f2d4610791743b9f848658364bf9",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "runs/shake-flow-off/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/affinity.txt",
+      "sha256": "f392a65820500f3e905a1595d870f86549bdb85f4471fe0c90a5844c4431760b",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/shake-flow-off/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/cache-env.txt",
+      "sha256": "162d510d16428038811976c1ab27b6cc6682066457af6f5138c1d57c9ea4fec1",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "runs/shake-flow-off/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/cells.jsonl",
+      "sha256": "314791426ec7e9889007e8fb8b04e2c7c8b1804502a46dab33c2416dc18b5be8",
+      "sizeBytes": 339
+    },
+    {
+      "archivePath": "runs/shake-flow-off/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/client-time-c16.txt",
+      "sha256": "d3bbb6704636463563131c750ddc79080455a89ed793512bfe698f944bbadb34",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/shake-flow-off/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/driver.log",
+      "sha256": "9286994589054d881914872083b7cf543840170ac74b0d46aeab3f874376a5af",
+      "sizeBytes": 1331
+    },
+    {
+      "archivePath": "runs/shake-flow-off/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/measure-c16.json",
+      "sha256": "bc25e25eeadb5ec40ea93d5a00ea136b1a276cb4e8d01372fcb2319c86048267",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "runs/shake-flow-off/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/procs-ready.txt",
+      "sha256": "c07eb22f30b5b046e99be555c525003c13e9c9c856813491c7c20255ad271c29",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "runs/shake-flow-off/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/pss.txt",
+      "sha256": "15d8070d58b0ab234378629d308d47ca8ee420c25b39771781d574145af2615d",
+      "sizeBytes": 50
+    },
+    {
+      "archivePath": "runs/shake-flow-off/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-flow-off/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/server.log",
+      "sha256": "cadc92a58b5f28d78ae1602fdc797f611e949fa8b50b521bd969ad410531c689",
+      "sizeBytes": 623
+    },
+    {
+      "archivePath": "runs/shake-flow-off/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-flow-off/warmup-c16.json",
+      "sha256": "c9859faa18874c66350f5ec7ccce89d7db43dd07731a91ff1c521df343013eb7",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/shake-rust-on/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/affinity.txt",
+      "sha256": "467a51e42e7bb916021f05d6b9e9b5b57803106b18ce51f68d1c433f260d18c3",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "runs/shake-rust-on/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/cache-env.txt",
+      "sha256": "4f86339b994eda89ba7fec86c5c6666f3877e4375ac65d129b1f6263e4bcd83b",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "runs/shake-rust-on/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/cells.jsonl",
+      "sha256": "d81b7260677a709898aba844c9b1ee4fcf565cc5340421d57138571e95df5ffe",
+      "sizeBytes": 675
+    },
+    {
+      "archivePath": "runs/shake-rust-on/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/client-time-c16.txt",
+      "sha256": "0a4ac770466d0c0ce328e804bfd63b7a120b262f074fcba24c18a0b18a1e0ed3",
+      "sizeBytes": 17
+    },
+    {
+      "archivePath": "runs/shake-rust-on/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/client-time-c64.txt",
+      "sha256": "cfad3b5a5614e866bf493ba260714674cd0beaa6edb372d14de82dd56ce529aa",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "runs/shake-rust-on/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "runs/shake-rust-on/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/driver.log",
+      "sha256": "ceea3ce2e5206526ed5453132d9fa412640c1bcd0f517a02e963460f1c9144ff",
+      "sizeBytes": 1872
+    },
+    {
+      "archivePath": "runs/shake-rust-on/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/measure-c16.json",
+      "sha256": "fd0043e9ba8e2786f83f5dfd83ff54d8068f35bdced94042bff424b6fb9a2a22",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/shake-rust-on/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/measure-c64.json",
+      "sha256": "15db6d1cff0348f88bb70e59c0d33df8ace8c46d44161384d106edc20614394c",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "runs/shake-rust-on/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/procs-ready.txt",
+      "sha256": "3420ce3c15a61e8cc19420c52647686e35b50a62e4aeae1076c31a6d74627d94",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "runs/shake-rust-on/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/pss.txt",
+      "sha256": "11f330cdae9783f08e3f780ccfe4f25feb783186d3298500700f28cb86d52404",
+      "sizeBytes": 86
+    },
+    {
+      "archivePath": "runs/shake-rust-on/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "runs/shake-rust-on/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/warmup-c16.json",
+      "sha256": "eaabeb5830ffc7fbbad0f159fa2cfedfffbf3419f59105d2caeafacd53bf06b1",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "runs/shake-rust-on/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/shake-rust-on/warmup-c64.json",
+      "sha256": "32ba13b834cb3430ab0c7bf597584afcf837b30821ba63d37cc0df81e8316f88",
+      "sizeBytes": 317
+    }
+  ]
+}
