@@ -47,17 +47,23 @@ fn campfire.views.rails-message(context: MessageContext, message: MessageWithCre
 
 fn campfire.views.rails-message-boosted(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>) -> Html {
     effects none
-    doc "campfire.views.rails-message-presented with the body escaped as text."
+    doc "campfire.views.rails-message-presented with the body escaped as text inside the Action Text layout."
     let body = match message.body {
         none => Html.new("")
         some text => Html.new(text)
     }
-    campfire.views.rails-message-presented(context, message, boost-views, body)
+    campfire.views.rails-message-presented(context, message, boost-views, campfire.views.rich-text-layout(body))
+}
+
+fn campfire.views.rich-text-layout(content: Html) -> Html {
+    effects none
+    doc "Action Text's layout around rendered rich text (layouts/action_text/contents/_content), as message_presentation returns it for a text message."
+    html"<div class=\"lexxy-content\">\n  {content}\n</div>\n"
 }
 
 fn campfire.views.rails-message-presented(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>, body: Html) -> Html {
     effects none
-    doc "body is the message's presentation (what Rails' message_presentation puts inside the lexxy-content layout). One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
+    doc "body is the message's whole presentation, as Rails' message_presentation returns it (the rich-text layout for a text message, the sound markup for a sound). One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
 
     let id = int.to-string(MessageId.value(message.id))
     let creator-id = int.to-string(UserId.value(message.creator-id))
@@ -163,10 +169,7 @@ fn campfire.views.rails-message-presented(context: MessageContext, message: Mess
 
           </div>
           <div id="presentation_message_{message.client-message-id}" dir="auto" data-reply-target="body" data-messages-target="body">
-  <div class="lexxy-content">
   {body}
-</div>
-
 </div>
 
           <turbo-frame id="boosting_message_{message.client-message-id}">

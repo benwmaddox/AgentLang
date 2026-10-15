@@ -279,6 +279,11 @@ test rich-html.email-like?/shapes {
 }
 
 fn rich-html.text-ok?(stack: String, text: String) -> Bool {
+    doc "rich-html.text-ok-for? with no links allowed."
+    rich-html.text-ok-for?(stack, text, false)
+}
+
+fn rich-html.text-ok-for?(stack: String, text: String, links-allowed: Bool) -> Bool {
     doc "Text a parser keeps in place and auto_link leaves alone: only whitespace directly in table structure; nothing that looks like a URL or e-mail address."
     let parent = rich-html.top(stack)
     let in-table = parent == "table" || parent == "thead" || parent == "tbody" || parent == "tfoot" || parent == "tr"
@@ -286,7 +291,7 @@ fn rich-html.text-ok?(stack: String, text: String) -> Bool {
     if in-table && bool.not(blank) {
         false
     } else {
-        bool.not(string.contains(text, "://")) && bool.not(string.contains(string.to-lower-ascii(text), "www.")) && bool.not(rich-html.email-like?(text))
+        (links-allowed || (bool.not(string.contains(text, "://")) && bool.not(string.contains(string.to-lower-ascii(text), "www.")))) && bool.not(rich-html.email-like?(text))
     }
 }
 
@@ -298,6 +303,11 @@ test rich-html.text-ok?/links-and-tables {
 
 fn rich-html.canonical?(text: String) -> Bool {
     doc "True when text is safe, canonical rich text that Rails' message pipeline returns unchanged (see the file comment). Anything uncertain is false."
+    rich-html.scan(text, false)
+}
+
+fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
+    doc "The canonical-text check. With links-allowed, text may contain URLs (rich-html.present links them); everything else is as strict."
 
     let length = string.byte-length(text)
     var ok = true
@@ -313,7 +323,7 @@ fn rich-html.canonical?(text: String) -> Bool {
         if byte == 60 {
             // Flush the text run before this tag.
             let run = match string.slice(text, text-start, at - text-start) { none => ""; some s => s }
-            ok = ok && rich-html.text-ok?(stack, run)
+            ok = ok && rich-html.text-ok-for?(stack, run, links-allowed)
             let closing = string.byte-at-or(text, at + 1, 0) == 47
             var name-end = if closing { at + 2 } else { at + 1 }
             let name-scan = name-end
@@ -373,7 +383,7 @@ fn rich-html.canonical?(text: String) -> Bool {
                         value-end = k + 1
                     }
                     let value = match string.slice(text, attr-end + 2, value-end - attr-end - 2) { none => ""; some s => s }
-                    if string.byte-at-or(text, value-end, 0) != 34 || string.contains(value, " ") {
+                    if string.byte-at-or(text, value-end, 0) != 34 || string.contains(value, " ") || string.contains(value, "\n") || string.contains(value, "<") || string.contains(value, ">") {
                         ok = false
                         break
                     }
@@ -410,7 +420,7 @@ fn rich-html.canonical?(text: String) -> Bool {
         }
     }
     let tail = match string.slice(text, text-start, length - text-start) { none => ""; some s => s }
-    ok && stack == "" && rich-html.text-ok?(stack, tail)
+    ok && stack == "" && rich-html.text-ok-for?(stack, tail, links-allowed)
 }
 
 test rich-html.canonical?/editor-markup {
@@ -439,4 +449,268 @@ test rich-html.canonical?/refuses-unsafe-or-noncanonical {
     expect bool.not(rich-html.canonical?("<pre>\nx</pre>"))
     expect bool.not(rich-html.canonical?("a > b"))
     expect bool.not(rich-html.canonical?("<figure><p>x</p></figure>"))
+}
+
+fn rich-html.without-figure(text: String) -> Option<String> {
+    doc "Rails' SanitizeTags strips the disallowed <figure> Lexxy wraps a table in and keeps its children. This handles exactly that shape: the whole text is one top-level <figure ...>...</figure> with no other figure inside. Returns the children, or none for any other text."
+    let length = string.byte-length(text)
+    let open-end = match string.index-of(text, ">", 0) { none => -1; some at => at }
+    let shaped = string.starts-with(text, "<figure") && string.ends-with(text, "</figure>") && open-end > 0
+    let after-name = string.byte-at-or(text, 7, 0)
+    if bool.not(shaped) || (after-name != 62 && after-name != 32) {
+        option.none<String>()
+    } else {
+        let inner = match string.slice(text, open-end + 1, length - open-end - 1 - 9) { none => ""; some s => s }
+        if string.contains(inner, "<figure") || string.contains(inner, "</figure>") {
+            option.none<String>()
+        } else {
+            option.some<String>(inner)
+        }
+    }
+}
+
+test rich-html.without-figure/lexxy-table {
+    expect rich-html.without-figure("<figure class=\"lexxy-content__table-wrapper\"><table><tbody> <tr><td><p>x</p></td></tr> </tbody></table></figure>") == option.some<String>("<table><tbody> <tr><td><p>x</p></td></tr> </tbody></table>")
+    expect rich-html.without-figure("<p>x</p>") == option.none<String>()
+    expect rich-html.without-figure("<figure><figure>x</figure></figure>") == option.none<String>()
+    expect rich-html.without-figure("<figures>x</figures>") == option.none<String>()
+}
+
+// ------------------------------------------------------------------ auto_link
+//
+// rails_autolink 1.1.8's auto_link(html, html: { target: "_blank" }), as
+// MessagesHelper#message_presentation applies it to the rendered rich text.
+// It runs regular expressions over the serialized HTML; on canonical text
+// (rich-html.structure-ok?) a match is never inside a tag, so "already
+// linked" reduces to "inside an open <a>". URLs are linked first, then e-mail
+// addresses. Cases whose exact Ruby behaviour this does not reproduce are
+// refused (none), never guessed: a non-ASCII character where a URL ends (Ruby
+// strips by Unicode word class), and '&' or "'" in an e-mail address.
+
+fn rich-html.ascii-word?(byte: Int) -> Bool {
+    (byte >= 97 && byte <= 122) || (byte >= 65 && byte <= 90) || (byte >= 48 && byte <= 57) || byte == 95
+}
+
+test rich-html.ascii-word?/classes {
+    expect rich-html.ascii-word?(95) && rich-html.ascii-word?(90) && bool.not(rich-html.ascii-word?(45))
+}
+
+fn rich-html.url-char?(byte: Int) -> Bool {
+    doc "AUTO_LINK_RE's [^ \\t\\r\\n\\v\\f<\\u00A0\"] on a byte (raw U+00A0 never occurs in canonical text)."
+    byte != 32 && byte != 9 && byte != 13 && byte != 10 && byte != 11 && byte != 12 && byte != 60 && byte != 34
+}
+
+test rich-html.url-char?/stops {
+    expect rich-html.url-char?(97) && bool.not(rich-html.url-char?(32)) && bool.not(rich-html.url-char?(60))
+}
+
+fn rich-html.url-start(text: String, at: Int) -> Int {
+    doc "When an AUTO_LINK_RE match can begin at this byte: the index just after its prefix ('<scheme>://' or 'www.' plus one word character), else -1. Schemes compare case-insensitively."
+    let schemes = ["ed2k", "ftp", "http", "https", "irc", "mailto", "news", "gopher", "nntp", "telnet", "webcal", "xmpp", "callto", "feed", "svn", "urn", "aim", "rsync", "tag", "ssh", "sftp", "rtsp", "afs", "file"]
+    let rest = string.to-lower-ascii(match string.slice(text, at, if string.byte-length(text) - at < 10 { string.byte-length(text) - at } else { 10 }) { none => ""; some s => s })
+    var found = -1
+    for scheme in schemes {
+        if found < 0 && string.starts-with(rest, string.concat(scheme, "://")) {
+            found = at + string.byte-length(scheme) + 3
+        }
+    }
+    if found < 0 && string.starts-with(rest, "www.") && rich-html.ascii-word?(string.byte-at-or(text, at + 4, 0)) {
+        found = at + 5
+    }
+    found
+}
+
+test rich-html.url-start/prefixes {
+    expect rich-html.url-start("see https://x", 4) == 12
+    expect rich-html.url-start("HTTP://x", 0) == 7
+    expect rich-html.url-start("www.example", 0) == 5
+    expect rich-html.url-start("www.-x", 0) == -1 && rich-html.url-start("plain", 0) == -1
+}
+
+fn rich-html.count-byte(text: String, byte: Int) -> Int {
+    var count = 0
+    for index in 0..string.byte-length(text) {
+        if string.byte-at-or(text, index, 0) == byte {
+            count = count + 1
+        }
+    }
+    count
+}
+
+test rich-html.count-byte/parens {
+    expect rich-html.count-byte("a(b)(c", 40) == 2
+}
+
+fn rich-html.html-escape(text: String) -> String {
+    doc "ERB::Util.html_escape: & < > \" ' as &amp; &lt; &gt; &quot; &#39;."
+    string.html-escape(text)
+}
+
+test rich-html.html-escape/quote {
+    expect rich-html.html-escape("a'b") == "a&#39;b"
+}
+
+fn rich-html.link-url(href: String, scheme-given: Bool) -> Option<String> {
+    doc "The link for one AUTO_LINK_RE match: rails_autolink strips trailing punctuation (keeping a closing bracket that balances an opening one), keeps a trailing &gt; outside the link, and adds http:// to www. matches. None when the URL ends in a non-ASCII character."
+    var url = href
+    var trailing = ""
+    var refused = false
+    let steps = string.byte-length(href)
+    for step in 0..steps {
+        let length = string.byte-length(url)
+        let last = string.byte-at-or(url, length - 1, 0)
+        if length == 0 || rich-html.ascii-word?(last) || last == 47 || last == 45 || last == 61 || last == 59 {
+            break
+        }
+        if last >= 128 {
+            refused = true
+            break
+        }
+        let without = match string.slice(url, 0, length - 1) { none => ""; some s => s }
+        let opening = if last == 41 { 40 } else if last == 93 { 91 } else if last == 125 { 123 } else { 0 }
+        if opening != 0 && rich-html.count-byte(without, opening) > rich-html.count-byte(without, last) {
+            break
+        }
+        trailing = string.concat(match string.slice(url, length - 1, 1) { none => ""; some s => s }, trailing)
+        url = without
+    }
+    if refused {
+        option.none<String>()
+    } else {
+        let gt = string.ends-with(url, "&gt;")
+        let shown = if gt { match string.slice(url, 0, string.byte-length(url) - 4) { none => url; some s => s } } else { url }
+        let target = if scheme-given { shown } else { string.concat("http://", shown) }
+        option.some<String>(string.join(["<a target=\"_blank\" href=\"", target, "\">", shown, "</a>", rich-html.html-escape(trailing), if gt { "&gt;" } else { "" }]))
+    }
+}
+
+test rich-html.link-url/punctuation {
+    expect rich-html.link-url("https://example.com/docs", true) == option.some<String>("<a target=\"_blank\" href=\"https://example.com/docs\">https://example.com/docs</a>")
+    expect rich-html.link-url("https://x.y/a.", true) == option.some<String>("<a target=\"_blank\" href=\"https://x.y/a\">https://x.y/a</a>.")
+    expect rich-html.link-url("https://x.y/(a)", true) == option.some<String>("<a target=\"_blank\" href=\"https://x.y/(a)\">https://x.y/(a)</a>")
+    expect rich-html.link-url("www.x.y,", false) == option.some<String>("<a target=\"_blank\" href=\"http://www.x.y\">www.x.y</a>,")
+    expect rich-html.link-url("https://x.y/✅", true) == option.none<String>()
+}
+
+fn rich-html.link-text-run(run: String) -> Option<String> {
+    doc "A text run (no tags) with every AUTO_LINK_RE match linked, or none when one is refused."
+    let length = string.byte-length(run)
+    var out = ""
+    var copied = 0
+    var at = 0
+    var refused = false
+    let steps = length + 1
+    for step in 0..steps {
+        if at >= length || refused {
+            break
+        }
+        let body = rich-html.url-start(run, at)
+        if body < 0 {
+            at = at + 1
+        } else {
+            var end = body
+            for k in body..length {
+                if bool.not(rich-html.url-char?(string.byte-at-or(run, k, 0))) {
+                    break
+                }
+                end = k + 1
+            }
+            let www = bool.not(string.contains(string.to-lower-ascii(match string.slice(run, at, body - at) { none => ""; some s => s }), "://"))
+            if end == body {
+                // AUTO_LINK_RE needs at least one URL character after the prefix.
+                at = at + 1
+            } else {
+                let linked = rich-html.link-url(match string.slice(run, at, end - at) { none => ""; some s => s }, bool.not(www))
+                if linked == option.none<String>() {
+                    refused = true
+                } else {
+                    out = string.join([out, match string.slice(run, copied, at - copied) { none => ""; some s => s }, match linked { none => ""; some text => text }])
+                    copied = end
+                    at = end
+                }
+            }
+        }
+    }
+    if refused {
+        option.none<String>()
+    } else {
+        option.some<String>(string.concat(out, match string.slice(run, copied, length - copied) { none => ""; some s => s }))
+    }
+}
+
+test rich-html.link-text-run/two-links {
+    expect rich-html.link-text-run("Docs are at https://example.com/docs and the old ones at http://example.org/docs") == option.some<String>("Docs are at <a target=\"_blank\" href=\"https://example.com/docs\">https://example.com/docs</a> and the old ones at <a target=\"_blank\" href=\"http://example.org/docs\">http://example.org/docs</a>")
+    expect rich-html.link-text-run("no links") == option.some<String>("no links")
+    expect rich-html.link-text-run("bare https:// x") == option.some<String>("bare https:// x")
+}
+
+fn rich-html.link(text: String) -> Option<String> {
+    doc "auto_link over canonical text: every text run outside an <a> element gets its URLs linked. Tags are copied as they are (canonical attribute values hold no '>')."
+    let length = string.byte-length(text)
+    var out = ""
+    var at = 0
+    var anchors = 0
+    var refused = false
+    let steps = length + 1
+    for step in 0..steps {
+        if at >= length || refused {
+            break
+        }
+        if string.byte-at-or(text, at, 0) == 60 {
+            let close = match string.index-of(text, ">", at) { none => length - 1; some end => end }
+            let tag = match string.slice(text, at, close + 1 - at) { none => ""; some s => s }
+            if string.starts-with(tag, "<a ") || tag == "<a>" {
+                anchors = anchors + 1
+            } else if tag == "</a>" {
+                anchors = anchors - 1
+            }
+            out = string.concat(out, tag)
+            at = close + 1
+        } else {
+            let next = match string.index-of(text, "<", at) { none => length; some lt => lt }
+            let run = match string.slice(text, at, next - at) { none => ""; some s => s }
+            if anchors > 0 {
+                out = string.concat(out, run)
+            } else {
+                let linked = rich-html.link-text-run(run)
+                if linked == option.none<String>() {
+                    refused = true
+                } else {
+                    out = string.concat(out, match linked { none => ""; some piece => piece })
+                }
+            }
+            at = next
+        }
+    }
+    if refused { option.none<String>() } else { option.some<String>(out) }
+}
+
+test rich-html.link/outside-anchors {
+    expect rich-html.link("<p>see https://a.b/c and <a href=\"https://a.b/d\">https://a.b/d</a></p>") == option.some<String>("<p>see <a target=\"_blank\" href=\"https://a.b/c\">https://a.b/c</a> and <a href=\"https://a.b/d\">https://a.b/d</a></p>")
+}
+
+fn rich-html.present(text: String) -> Option<String> {
+    doc "Rich text as Rails' sanitize-then-auto_link leaves it, when the text is canonical apart from URL text: the text itself when nothing needs linking, else the linked text. None for anything else (the caller escapes)."
+    if rich-html.canonical?(text) {
+        option.some<String>(text)
+    } else if rich-html.scan(text, true) {
+        rich-html.link(text)
+    } else {
+        option.none<String>()
+    }
+}
+
+test rich-html.present/links {
+    expect rich-html.present("<p>hi</p>") == option.some<String>("<p>hi</p>")
+    expect rich-html.present("<p>Docs at https://example.com/docs</p>") == option.some<String>("<p>Docs at <a target=\"_blank\" href=\"https://example.com/docs\">https://example.com/docs</a></p>")
+    expect rich-html.present("<script>x</script>") == option.none<String>()
+}
+
+test rich-html.scan/links-allowed {
+    expect rich-html.scan("<p>see https://x.y</p>", true) && bool.not(rich-html.scan("<p>see https://x.y</p>", false))
+    expect bool.not(rich-html.scan("<p title=\"a>b\">x</p>", true))
+}
+
+test rich-html.text-ok-for?/links {
+    expect rich-html.text-ok-for?("/p", "https://x.y", true) && bool.not(rich-html.text-ok-for?("/p", "https://x.y", false))
 }

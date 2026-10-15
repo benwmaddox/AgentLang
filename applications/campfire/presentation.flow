@@ -1,0 +1,28 @@
+// Message presentation (MessagesHelper#message_presentation) from a stored Action Text body,
+// matched to Rails' output (docs/EQUAL-PAGES-PLAN.md). Pure: no database, no host operations,
+// so the Rails oracle corpus can test it directly.
+
+fn campfire.presentation.body(stored: Option<String>) -> Html {
+    doc "A stored message body as Rails' message_presentation shows it: a stored body that is already safe, canonical rich text (rich-html.canonical?) is inserted as is, which is what Rails renders for it; anything else is escaped as text until the full Flow pipeline exists (docs/EQUAL-PAGES-PLAN.md)."
+    match stored {
+        none => campfire.views.rich-text-layout(Html.new(""))
+        some text => {
+            // Message#content_type: a canonical body without markup whose text is '/play <name>' is a sound.
+            let sound = if rich-html.canonical?(text) && bool.not(string.contains(text, "<")) && bool.not(string.contains(text, "&")) { campfire.sounds.command(text) } else { option.none<Sound>() }
+            match sound {
+                some found => campfire.views.sound(found)
+                none => {
+                    // SanitizeTags strips Lexxy's table <figure> wrapper and keeps the table.
+                    let shown = match rich-html.without-figure(text) { none => text; some inner => inner }
+                    campfire.views.rich-text-layout(match rich-html.present(shown) { some safe => html.raw(safe); none => Html.new(text) })
+                }
+            }
+        }
+    }
+}
+
+test campfire.presentation.body/kinds {
+    expect Html.value(campfire.presentation.body(option.some<String>("<p>hi</p>"))) == "<div class=\"lexxy-content\">\n  <p>hi</p>\n</div>\n"
+    expect Html.value(campfire.presentation.body(option.none<String>())) == "<div class=\"lexxy-content\">\n  \n</div>\n"
+    expect string.starts-with(Html.value(campfire.presentation.body(option.some<String>("/play bell"))), "<div class=\"sound\"")
+}

@@ -75,8 +75,10 @@ Noted for after the apples-to-apples Campfire comparison.
     subtraction and `a-b` is one kebab-case name. The lexer and formatter
     enforce this.
 - **CLI file workflow.** `agentlang test|check|fmt FILE.flow...` exists (basic
-  version, added 2026-10-13). It uses a fresh in-memory project, maps
-  diagnostics to file lines, and gives the exit code CI needs. Possible next
+  version, added 2026-10-13). It uses a fresh in-memory project in which
+  all given files are defined in one batch, so names resolve across files in
+  any order (user, 2026-10-15); it maps diagnostics back to the file and line
+  that hold them, and gives the exit code CI needs. Possible next
   steps: `agentlang run FILE word args`, watch mode, project manifests.
 - **Language card.** A one-page, current summary for people and AI agents:
   syntax, stdlib list, naming rules and one complete web example.

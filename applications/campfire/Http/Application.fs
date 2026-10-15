@@ -73,7 +73,7 @@ module Application =
                   "sign-out.flow"; "sign-out-tests.flow"
                   "user-agent.flow"; "user-agent-tests.flow"
                   "browser-policy.flow"; "browser-tests.flow"
-                  "views.flow"; "layout.flow"; "emoji.flow"; "message.flow"; "views-tests.flow"
+                  "views.flow"; "layout.flow"; "emoji.flow"; "sounds.flow"; "message.flow"; "views-tests.flow"
                   "http-login.flow"; "http.flow"; "http-login-tests.flow"; "http-tests.flow"; "http-logout-tests.flow"
                   "http-room-read-tests.flow" ])
             for name in

@@ -588,13 +588,53 @@ exits 1 with --check when a file is not canonical."""
                             else Console.Write(formatted)
                     exitCode
                 else
-                    let mutable defined = true
-                    for file in files do
-                        let source = File.ReadAllText file
-                        let response = engine.Dispatch("define", flowArgs source)
-                        if not (response["ok"].GetValue<bool>()) then
-                            printDiagnostic file (source.Split('\n')) response
-                            defined <- false
+                    // All files form one project and are defined in one batch, so names
+                    // resolve across files in any order (as FlowApp builds an app). A
+                    // diagnostic is reported against the file that holds it.
+                    let sources = files |> Seq.map (fun file -> file, File.ReadAllText file) |> Seq.toList
+                    let separator = "\n\n"
+                    let starts =
+                        // 1-based line in the combined document where each file begins.
+                        sources
+                        |> List.scan (fun line (_, source: string) -> line + (source |> Seq.filter ((=) '\n') |> Seq.length) + 2) 1
+                        |> List.take sources.Length
+                    let combined = sources |> List.map snd |> String.concat separator
+                    let response = engine.Dispatch("define", flowArgs combined)
+                    let defined = response["ok"].GetValue<bool>()
+                    if not defined then
+                        let error = response["error"]
+                        let span = if isNull error then null else error["span"]
+                        let spanFile = if isNull span then "" else (try span["file"].GetValue<string>() with _ -> "")
+                        let spanLine = if isNull span then 1 else (try span["line"].GetValue<int>() with _ -> 1)
+                        let owner =
+                            if spanFile.StartsWith("<flow:", StringComparison.Ordinal) then
+                                let body = spanFile.Substring(6)
+                                let stop = body.IndexOfAny([| '/'; '>' |])
+                                if stop > 0 then Some(body.Substring(0, stop)) else None
+                            else None
+                        let holds (source: string) (name: string) =
+                            source.Split('\n')
+                            |> Array.exists (fun text ->
+                                let trimmed = text.TrimStart()
+                                [ "fn "; "type "; "record "; "enum " ]
+                                |> List.exists (fun keyword ->
+                                    trimmed.StartsWith(keyword + name + "(", StringComparison.Ordinal)
+                                    || trimmed.StartsWith(keyword + name + " ", StringComparison.Ordinal)
+                                    || trimmed.StartsWith(keyword + name + ":", StringComparison.Ordinal)))
+                        let byOwner = owner |> Option.bind (fun name -> sources |> List.tryFind (fun (_, source) -> holds source name))
+                        match byOwner with
+                        | Some(file, source) -> printDiagnostic file (source.Split('\n')) response
+                        | None ->
+                            // A span in the combined document: find the file that holds the line.
+                            let index = starts |> List.findIndexBack (fun start -> start <= spanLine)
+                            let file, source = sources[index]
+                            if spanFile = "<flow-project>" && not (isNull span) then
+                                let adjusted = spanLine - starts[index] + 1
+                                let column = try span["column"].GetValue<int>() with _ -> 1
+                                let code = try error["code"].GetValue<string>() with _ -> "error"
+                                let message = try error["message"].GetValue<string>() with _ -> responseText response
+                                Console.Error.WriteLine($"{file}:{adjusted}:{column}: error {code}: {message}")
+                            else printDiagnostic file (source.Split('\n')) response
                     if not defined then 1
                     elif command = "check" then
                         if not json then Console.WriteLine($"ok: {files.Count} file(s) checked")
