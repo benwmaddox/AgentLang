@@ -173,6 +173,10 @@ host and the .NET hosts (stdlib plan step 5).
   which neither the stdlib nor BCrypt/libcrypto provide), the login rate
   limiter and `sessions.start`; only GET/HEAD `/rooms/<id>` is routed, as in the
   native host.
+- Results (2026-10-14): parity PASS on Windows and Linux (14 cases, CSRF
+  tokens 320/320 valid, loadgen room_show contract 0 invalid); Linux smoke in
+  lb273 (4 pinned workers, 16 clients, 10 s): 1126 req/s, 3.62 ms CPU/req,
+  p50 10.9 ms, p99 35.7 ms, PSS 171 MB.
 
 ## Benchmark protocol (Linux)
 
