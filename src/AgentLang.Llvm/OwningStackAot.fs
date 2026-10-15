@@ -4660,6 +4660,9 @@ module OwningStackAot =
             w.Inst($"br label %%{joinLabel}")
             w.Line($"{joinLabel}:")
             emitUpdateLive w extent "0" failLabel
+            // The same record-build event as an arena construction; no source
+            // range, since the payload is written from a register, not copied.
+            emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId ty}, i32 {cursor}, i32 {extent}, i32 {extent}, i32 0, i32 0)" failLabel
             { Type = ty; Offset = cursor; Extent = extent; Payload = extent; OwnerEnd = next; Register = None }
 
         let emitFrameFunction (registerAbi: bool) symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =

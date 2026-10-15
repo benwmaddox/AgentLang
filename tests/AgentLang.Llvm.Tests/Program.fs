@@ -3179,11 +3179,11 @@ let private testOwningRefinedStringSlice () =
         && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
         && validMailboxTurn.Context.CallDepth = 0u)
     // The external MailboxState owner String is 24 bytes in UTF-16 form and
-    // the turn String is 16 bytes. The verified body has one 8-byte marker
-    // field copy in MailboxContinuation construction; admission adds no payload
-    // copy or move.
+    // the turn String is 16 bytes. The verified body stores its 8-byte marker
+    // field from a register in MailboxContinuation construction (report 280:
+    // no copy); admission adds no payload copy or move.
     let expectedStringMailboxInputCopyBytes = uint64 ((mailboxStringBytes "owner").Length + (mailboxStringBytes "turn").Length)
-    let expectedStringMailboxBodyDeepCopyBytes = 8UL
+    let expectedStringMailboxBodyDeepCopyBytes = 0UL
     check ($"refined String mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedStringMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedStringMailboxInputCopyBytes})") (
         validMailboxTurn.Context.DeepCopyBytes = expectedStringMailboxBodyDeepCopyBytes
         && validMailboxTurn.Context.MoveBytes = 0UL
@@ -3408,10 +3408,10 @@ let private testOwningNominalStringSlice () =
         // The callback imports a 16-byte dynamic MailboxState owner and a
         // 16-byte turn. `dup` of the imported state deep-copies its full 16-byte
         // owner range; the field accessor, nominal unwrap and String length
-        // read are zero-copy. MailboxContinuation construction copies its
-        // 8-byte marker field.
+        // read are zero-copy. MailboxContinuation construction stores its
+        // 8-byte marker field from a register (report 280: no copy).
         let expectedMailboxInputCopyBytes = uint64 (nulBytes.Length + turnBytes.Length)
-        let expectedMailboxBodyDeepCopyBytes = uint64 (nulBytes.Length + 8)
+        let expectedMailboxBodyDeepCopyBytes = uint64 nulBytes.Length
         check ($"{optimization} direct mailbox callback imports and roundtrips a nominal String owner (status={validTurn.Status}, output-types={validTurn.Outputs |> List.map (fun output -> output.TypeIndex)}, expected-types={outputTypeIndexes}, depth={validTurn.Context.CallDepth}, input={validTurn.Context.InputCopyBytes}, deep={validTurn.Context.DeepCopyBytes}, move={validTurn.Context.MoveBytes})") (
             validTurn.Status = 0
             && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validTurn.Outputs = outputTypeIndexes

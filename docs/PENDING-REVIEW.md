@@ -188,9 +188,9 @@ object without LTO. Plan, in order:
    paths. Diagnostic builds keep calling the checked C. Add a TrustedGenerated
    O2 pass to the native parity harnesses so the inline code is tested, not
    only benched.
-3. `inline` attribute on `fn` (user approved, 2026-10-14): a hint that the
-   backend emits a small word's body at the call site instead of a native call
-   (`campfire.ua.byte`, `digit?` and similar helpers).
+3. Done (280): `inline fn` (docs/CURRENT-SYNTAX.md) marks the register-ABI
+   body `alwaysinline` at O2 when its emitted body is at most 400 LLVM
+   instructions; O0 never inlines. Six `campfire.ua` helpers carry it.
 4. O0 frame bookkeeping: every IR temporary gets its own stack slot at O0, so
    large words exceed the 64 KB per-frame screen (lean user-agent.flow had to
    be split for this). Reuse slots or emit the bookkeeping as SSA values so
@@ -218,20 +218,45 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
 4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
    passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
    Leaner small-op path or fused common sequences.
-5. **Word calls pass arguments through the arena** (~23 ns/call after
-   scalars-in-registers). Register calling for scalars, and the approved
-   `inline` attribute.
+5. Done (280). **Word calls**: internal words have a register ABI
+   (`@word.reg`): Int/Bool/Float/Unit arguments and results are i64 values,
+   other arguments their four descriptor fields as parameters (no argument
+   array), Option<Int/Bool/Float> results a tag+payload pair; `@word` stays a
+   descriptor adapter for validators and list callbacks. Trusted builds enter
+   and leave frames inline (same depth limit and `RUNTIME_CALL_DEPTH`) and
+   skip re-checking callee results. Measured below.
 6. **OpenSSL per-call setup** ~0.8 us x ~41 HMACs/page: per-worker cached
    digest/HMAC objects (user approved; thread-local, no sharing).
-7. **`Option` results through the arena**: keep small Options in registers
-   when matched immediately; then decide whether `string.byte-at-or` stays.
+7. Done (280). **`Option` in registers**: `string.byte-at`, `option.some`/
+   `none` of Int/Bool/Float and word results are a register tag+payload;
+   `match` reads it (or, trusted, an arena Option<scalar> inline) with no
+   locate call; any other consumer materializes the canonical layout.
+   `string.byte-at-or` stays: existing code uses it and it is still slightly
+   faster (1.3 vs 1.8-2.0 ns/byte), but `match string.byte-at` is now fine.
 8. **Memory**: Flow PSS 171 MB vs Rust 85 MB; likely generous per-worker
    arena and buffer reservations. Measure and right-size.
 9. **Worker context copied per request** (276 deviation): borrow it from a
    protected region below the arena mark instead.
 10. **Missing native `list.get` / `list.count`** (forces loop helpers).
 
+280 results (trusted O2, Windows, min of 3000 runs, 999-byte input, before ->
+after; another agent's test suites ran on the machine meanwhile):
+
+| Loop body | Before | After |
+| --- | ---: | ---: |
+| call `fn small(Int, Int) -> Int` | 23.9-24.7 ns | 2.6-2.9 ns |
+| same word marked `inline fn` | - | 1.2-1.3 ns |
+| `campfire.ua.digit-end(text, 200)` (String arg) | 121-123 ns | 32 ns; 21.6 ns with inline helpers |
+| `match string.byte-at` | 93-94 ns | 1.8-2.0 ns (`byte-at-or` 1.3 ns) |
+| `match` on a word's `Option<Int>` result | - | 4.7-5.7 ns |
+| lean User-Agent, typical Chrome UA | 33.7-36.7 us | 26.3-27.3 us; 25.3-25.6 us with inline helpers |
+
+Per step on the small-word loop: register calling 24 -> ~3.6-4.2 ns (C frame
+calls still out of line); inline frame enter/leave -> 2.6 ns (digit-end loop
+38.6 -> 32-34 ns); descriptor fields as parameters and skipping proven
+argument/result checks were within timer noise (0.1 us) on every probe.
+
 Measured reference points: sum loop 0.52 ns/iteration; small-word call loop
-23 ns/iteration; lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
+23 ns/iteration (2.6 ns after 280); lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
 BCrypt) / 1.22 us (Linux, OpenSSL one-shot); stdlib ops: concat/encode ~72 ns,
 slice/xor ~125 ns, mask one CSRF token ~247 ns.
