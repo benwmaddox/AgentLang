@@ -259,7 +259,9 @@ type IrFunction =
       FunctionDeclaredEffects: Set<IrEffect>
       FunctionInferredEffects: Set<IrEffect>
       LocalNames: Map<LocalSlot, string>
-      FunctionBody: IrBlock }
+      FunctionBody: IrBlock
+      /// `inline fn` (report 280): a backend hint; interpretation ignores it.
+      FunctionInline: bool }
 
 type IrProgram =
     { NominalTypesByKey: Map<ProgramTypeKey, IrNominalDefinition>
@@ -1259,7 +1261,8 @@ module IrVerifier =
               FunctionDeclaredEffects = body.BodyDeclaredEffects
               FunctionInferredEffects = body.BodyInferredEffects
               LocalNames = body.BodyLocalNames
-              FunctionBody = body.BodyBlock }
+              FunctionBody = body.BodyBlock
+              FunctionInline = false }
         body.BodyInputTypes @ body.BodyOutputTypes |> List.iter (verifyIrType program (Some body.BodyName) None)
         for KeyValue(slot, name) in body.BodyLocalNames do
             let (LocalSlot value) = slot

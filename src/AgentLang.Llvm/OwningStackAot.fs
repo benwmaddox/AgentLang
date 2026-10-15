@@ -3777,7 +3777,10 @@ module OwningStackAot =
         (nativeHostProfile: OwningNativeHostProfile option)
         (runtimeProfile: OwningRuntimeProfile)
         (target: OwningTarget)
-        (hostExportNames: string list option) =
+        (hostExportNames: string list option)
+        (inlineWords: bool) =
+        // inlineWords: honor `inline fn` (alwaysinline). Off at O0, where the
+        // always-inliner would still grow the 64 KB-screened native frames.
         let body = info.Body
         let bodies = info.Bodies
         if bodies.Length <> entryAnalyses.Length then
@@ -4485,7 +4488,176 @@ module OwningStackAot =
                     w.Line($"{join}:")
                 | _ -> ()
 
-        let emitFrameFunction symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =
+        // Register calling (report 280). An internal word's body is `@sym.reg`:
+        // Int/Bool/Float/Unit inputs arrive as `i64 %arg.reg.N` parameters and its
+        // results of those types leave through `ptr %results.reg` (two i64 slots
+        // per output position), never through arena descriptors. Other values keep
+        // their descriptor at the same position. `@sym` stays the descriptor-ABI
+        // adapter for callers that need it (validators, list callbacks).
+        let isAbiRegisterType ty = ty = IrInt || ty = IrBool || ty = IrFloat || ty = IrUnit
+        let registerSymbol (symbol: string) = symbol + ".reg"
+        /// Largest `inline fn` body (emitted LLVM instructions) that is inlined.
+        let inlineInstructionLimit = 600
+        let hasRegisterResults (outputTypes: IrType list) = outputTypes |> List.exists (fun ty -> isAbiRegisterType ty || (match ty with IrOption item -> item = IrInt || item = IrBool || item = IrFloat | _ -> false))
+        let registerParameters (inputTypes: IrType list) (outputTypes: IrType list) =
+            [ for index, ty in List.indexed inputTypes do
+                if isAbiRegisterType ty then $", i64 %%arg.reg.{index}"
+              if hasRegisterResults outputTypes then ", ptr %results.reg" ]
+            |> String.concat ""
+        let registerResultSlot (w: OwningLlvmWriter) resultsReg index part =
+            let pointer = w.Fresh "results.reg.slot"
+            w.Inst($"{pointer} = getelementptr inbounds i64, ptr {resultsReg}, i32 {2 * index + part}")
+            pointer
+        let allocateRegisterResults (w: OwningLlvmWriter) (outputTypes: IrType list) =
+            if hasRegisterResults outputTypes then
+                let array = w.Fresh "call.results.reg"
+                w.Inst($"{array} = alloca [{2 * outputTypes.Length} x i64], align 8")
+                Some array
+            else None
+        // Trusted builds enter and leave word frames inline; the diagnostic
+        // runtime keeps its C helpers (events, detailed profiling).
+        let emitEnterFrame (w: OwningLlvmWriter) (failEnter: string) =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic ->
+                let entered = w.Fresh "frame.entered"
+                w.Inst($"{entered} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 %%depth.error)")
+                let enteredOkay = w.Fresh "frame.enter.ok"
+                let enterContinue = w.Label "frame.enter.continue"
+                w.Inst($"{enteredOkay} = icmp eq i32 {entered}, 0")
+                w.Inst($"br i1 {enteredOkay}, label %%{enterContinue}, label %%{failEnter}")
+                w.Line($"{failEnter}:")
+                w.Inst("ret i32 1")
+                w.Line($"{enterContinue}:")
+            | OwningRuntimeProfile.TrustedGenerated ->
+                let status = emitContextLoad w "%ctx" 19
+                let statusOkay = w.Fresh "frame.status.ok"
+                let depthLabel = w.Label "frame.depth"
+                let deepLabel = w.Label "frame.too.deep"
+                let enterContinue = w.Label "frame.enter.continue"
+                w.Inst($"{statusOkay} = icmp eq i32 {status}, 0")
+                w.Inst($"br i1 {statusOkay}, label %%{depthLabel}, label %%{failEnter}")
+                w.Line($"{failEnter}:")
+                w.Inst("ret i32 1")
+                w.Line($"{depthLabel}:")
+                let depthPointer = emitContextFieldPointer w "%ctx" 24
+                let depth = w.Fresh "frame.depth"
+                w.Inst($"{depth} = load i32, ptr {depthPointer}, align 4")
+                let tooDeep = w.Fresh "frame.depth.exceeded"
+                w.Inst($"{tooDeep} = icmp uge i32 {depth}, 66")
+                w.Inst($"br i1 {tooDeep}, label %%{deepLabel}, label %%{enterContinue}")
+                w.Line($"{deepLabel}:")
+                w.Inst("call void @al_owning_set_failure(ptr %ctx, i32 1, i32 %depth.error, i32 0, i32 0)")
+                w.Inst("ret i32 1")
+                w.Line($"{enterContinue}:")
+                let deeper = w.Fresh "frame.depth.next"
+                w.Inst($"{deeper} = add i32 {depth}, 1")
+                w.Inst($"store i32 {deeper}, ptr {depthPointer}, align 4")
+        let emitLeaveFrame (w: OwningLlvmWriter) =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> w.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+            | OwningRuntimeProfile.TrustedGenerated ->
+                let depthPointer = emitContextFieldPointer w "%ctx" 24
+                let depth = w.Fresh "frame.leave.depth"
+                w.Inst($"{depth} = load i32, ptr {depthPointer}, align 4")
+                let positive = w.Fresh "frame.leave.positive"
+                w.Inst($"{positive} = icmp ugt i32 {depth}, 0")
+                let decremented = w.Fresh "frame.leave.decremented"
+                w.Inst($"{decremented} = sub i32 {depth}, 1")
+                let next = w.Fresh "frame.leave.next"
+                w.Inst($"{next} = select i1 {positive}, i32 {decremented}, i32 0")
+                w.Inst($"store i32 {next}, ptr {depthPointer}, align 4")
+                let returnsPointer = emitContextFieldPointer w "%ctx" 18
+                let returns = w.Fresh "frame.returns"
+                w.Inst($"{returns} = load i32, ptr {returnsPointer}, align 4")
+                let returned = w.Fresh "frame.returns.next"
+                w.Inst($"{returned} = add i32 {returns}, 1")
+                w.Inst($"store i32 {returned}, ptr {returnsPointer}, align 4")
+
+        // Option<Int/Bool/Float> in registers (report 280): an LLVM { i64, i64 }
+        // of tag (0 = some, 1 = none, as in the arena layout) and payload bits.
+        let optionLlvmType = "{ i64, i64 }"
+        let isRegisterOption ty =
+            match ty with
+            | IrOption item -> item = IrInt || item = IrBool || item = IrFloat
+            | _ -> false
+        let optionItem ty =
+            match ty with
+            | IrOption item -> item
+            | _ -> invalidOp "A register Option entry has a non-Option type."
+        let isAbiResultRegister ty = isAbiRegisterType ty || isRegisterOption ty
+        let emitMakeOption (w: OwningLlvmWriter) tag payload =
+            let partial = w.Fresh "option.reg.tag"
+            w.Inst($"{partial} = insertvalue {optionLlvmType} undef, i64 {tag}, 0")
+            let value = w.Fresh "option.reg"
+            w.Inst($"{value} = insertvalue {optionLlvmType} {partial}, i64 {payload}, 1")
+            value
+        let emitOptionParts (w: OwningLlvmWriter) value =
+            let tag = w.Fresh "option.reg.tag.value"
+            w.Inst($"{tag} = extractvalue {optionLlvmType} {value}, 0")
+            let payload = w.Fresh "option.reg.payload"
+            w.Inst($"{payload} = extractvalue {optionLlvmType} {value}, 1")
+            tag, payload
+        /// Reads an arena Option<scalar> as (tag, payload); the payload is read
+        /// only for Some (0 otherwise). Diagnostic builds use the checked loads.
+        let emitArenaOptionParts (w: OwningLlvmWriter) (entry: OwningDynamicStackEntry) failLabel =
+            let loadAt offset name =
+                match runtimeProfile with
+                | OwningRuntimeProfile.Diagnostic ->
+                    let value = w.Fresh $"option.arena.{name}"
+                    w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {offset})")
+                    emitRuntimeStatus w "%ctx" failLabel
+                    value
+                | OwningRuntimeProfile.TrustedGenerated ->
+                    let dataField = w.Fresh "option.arena.data.field"
+                    w.Inst($"{dataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                    let data = w.Fresh "option.arena.data"
+                    w.Inst($"{data} = load ptr, ptr {dataField}, align 8")
+                    let pointer = w.Fresh $"option.arena.{name}.pointer"
+                    w.Inst($"{pointer} = getelementptr inbounds i8, ptr {data}, i32 {offset}")
+                    let value = w.Fresh $"option.arena.{name}"
+                    w.Inst($"{value} = load i64, ptr {pointer}, align 8")
+                    value
+            let tag = loadAt entry.Offset "tag"
+            let isSome = w.Fresh "option.arena.is.some"
+            w.Inst($"{isSome} = icmp eq i64 {tag}, 0")
+            let before = w.CurrentBlock
+            let someLabel = w.Label "option.arena.some"
+            let joinLabel = w.Label "option.arena.join"
+            w.Inst($"br i1 {isSome}, label %%{someLabel}, label %%{joinLabel}")
+            w.Line($"{someLabel}:")
+            let payloadOffset = emitOffset w entry.Offset "8"
+            let loaded = loadAt payloadOffset "payload"
+            let someEnd = w.CurrentBlock
+            w.Inst($"br label %%{joinLabel}")
+            w.Line($"{joinLabel}:")
+            let payload = w.Fresh "option.arena.payload.value"
+            w.Inst($"{payload} = phi i64 [ {loaded}, %%{someEnd} ], [ 0, %%{before} ]")
+            tag, payload
+        /// Gives a register Option arena bytes in its canonical layout.
+        let emitMaterializeOption (w: OwningLlvmWriter) owner span ty tag payload failLabel =
+            let cursor = emitContextLoad w "%ctx" 2
+            let isSome = w.Fresh "option.store.is.some"
+            w.Inst($"{isSome} = icmp eq i64 {tag}, 0")
+            let extent = w.Fresh "option.store.extent"
+            w.Inst($"{extent} = select i1 {isSome}, i32 16, i32 8")
+            let next = emitOffset w cursor extent
+            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an Option value." owner span [] []
+            emitReserve w next reserveError failLabel
+            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {tag}, i32 {typeId ty})")
+            emitRuntimeStatus w "%ctx" failLabel
+            let someLabel = w.Label "option.store.some"
+            let joinLabel = w.Label "option.store.join"
+            w.Inst($"br i1 {isSome}, label %%{someLabel}, label %%{joinLabel}")
+            w.Line($"{someLabel}:")
+            let payloadOffset = emitOffset w cursor "8"
+            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {payloadOffset}, i64 {payload}, i32 {typeId (optionItem ty)})")
+            emitRuntimeStatus w "%ctx" failLabel
+            w.Inst($"br label %%{joinLabel}")
+            w.Line($"{joinLabel}:")
+            emitUpdateLive w extent "0" failLabel
+            { Type = ty; Offset = cursor; Extent = extent; Payload = extent; OwnerEnd = next; Register = None }
+
+        let emitFrameFunction (registerAbi: bool) symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =
             let plan = buildDynamicFunctionPlan block
             let w = OwningLlvmWriter()
             let failBody = w.Label "frame.failure"
@@ -4493,7 +4665,10 @@ module OwningStackAot =
             let frameParameters =
                 if nativeHostProfile.IsSome then "ptr %ctx, ptr %provider.context, ptr %arguments, ptr %results, i32 %depth.error"
                 else "ptr %ctx, ptr %arguments, ptr %results, i32 %depth.error"
-            w.Line($"define internal i32 {symbol}({frameParameters}) {{")
+            if registerAbi then
+                w.Line($"define internal i32 {registerSymbol symbol}({frameParameters}{registerParameters inputTypes outputTypes}) {{")
+            else
+                w.Line($"define internal i32 {symbol}({frameParameters}) {{")
             w.Line("entry:")
             let activePointers = Dictionary<int, string>()
             let offsetPointers = Dictionary<int, string>()
@@ -4537,18 +4712,14 @@ module OwningStackAot =
             let baselineOperands = emitContextLoad w "%ctx" 4
             let baselineLocals = emitContextLoad w "%ctx" 8
             let baselineReservations = emitContextLoad w "%ctx" 6
-            let entered = w.Fresh "frame.entered"
-            w.Inst($"{entered} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 %%depth.error)")
-            let enteredOkay = w.Fresh "frame.enter.ok"
-            let enterContinue = w.Label "frame.enter.continue"
-            w.Inst($"{enteredOkay} = icmp eq i32 {entered}, 0")
-            w.Inst($"br i1 {enteredOkay}, label %%{enterContinue}, label %%{failEnter}")
-            w.Line($"{failEnter}:")
-            w.Inst("ret i32 1")
-            w.Line($"{enterContinue}:")
+            emitEnterFrame w failEnter
 
             let argumentEntries = ResizeArray<OwningDynamicStackEntry>()
             for index, argumentType in inputTypes |> List.indexed do
+              if registerAbi && isAbiRegisterType argumentType then
+                let poison = "%__unmaterialized.scalar"
+                argumentEntries.Add { Type = argumentType; Offset = poison; Extent = poison; Payload = poison; OwnerEnd = poison; Register = Some $"%%arg.reg.{index}" }
+              else
                 let argumentPointer = emitDescriptorElementPointer w "%arguments" index
                 let argument, actualType = emitLoadDescriptor w argumentPointer argumentType
                 let typeValid = w.Fresh "argument.type.valid"
@@ -4669,7 +4840,7 @@ module OwningStackAot =
                 | "int.to-float" | "float.to-int" | "float.round" | "int.to-string" | "float.to-string"
                 | "add" | "subtract" | "multiply" | "divide" | "int.remainder"
                 | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
-                | "string.byte-at-or" -> true
+                | "string.byte-at-or" | "string.byte-at" -> true
                 | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
                 | _ -> false
             /// Instructions that accept register entries anywhere on the stack.
@@ -4677,16 +4848,23 @@ module OwningStackAot =
             let registerAware (operation: IrOperation) =
                 match operation with
                 | IrOperation.Constant _ | IrOperation.LoadLocal _ | IrOperation.StoreLocal _ | IrOperation.AssignLocal _
-                | IrOperation.Break | IrOperation.Continue | IrOperation.If _ | IrOperation.ForRange _ -> true
+                | IrOperation.Break | IrOperation.Continue | IrOperation.If _ | IrOperation.ForRange _
+                | IrOperation.MakeRecord _ -> true
+                | IrOperation.OptionNone item | IrOperation.OptionSome item -> isRegisterOption (IrOption item)
+                | IrOperation.MatchOption _ -> true
                 | IrOperation.Call call ->
                     match call.ResolvedTarget with
                     | PrimitiveTarget(PrimitiveId operation) -> primitiveRegisterAware operation call.InputTypes
+                    | UserWordTarget _ -> true
                     | _ -> false
                 | _ -> false
             /// Give a register entry arena bytes, for consumers that need an address.
             let materializeEntry owner span (entry: OwningDynamicStackEntry) =
                 match entry.Register with
                 | None -> entry
+                | Some value when isRegisterOption entry.Type ->
+                    let tag, payload = emitOptionParts w value
+                    emitMaterializeOption w owner span entry.Type tag payload failBody
                 | Some value ->
                     let cursor = emitContextLoad w "%ctx" 2
                     let next = emitOffset w cursor "8"
@@ -4700,7 +4878,13 @@ module OwningStackAot =
                 entries |> List.map (materializeEntry owner span)
             /// Scalars leave a branch as registers so every join can phi an i64.
             let normalizeBranch (entries: OwningDynamicStackEntry list) =
-                entries |> List.map (fun entry -> if isRegisterType entry.Type then registerEntry entry.Type (scalarValue entry) else entry)
+                entries
+                |> List.map (fun entry ->
+                    if isRegisterType entry.Type then registerEntry entry.Type (scalarValue entry)
+                    elif isRegisterOption entry.Type && entry.Register.IsNone then
+                        let tag, payload = emitArenaOptionParts w entry failBody
+                        registerEntry entry.Type (emitMakeOption w tag payload)
+                    else entry)
             /// Merge normalized branch stacks at a join label.
             let joinBranches (branches: (OwningDynamicStackEntry list * string) list) (prefixName: string) =
                 let firstStack = branches |> List.head |> fst
@@ -4717,6 +4901,8 @@ module OwningStackAot =
                         merged
                     if isRegisterType first.Type then
                         yield registerEntry first.Type (phi "i64" (fun item -> item.Register.Value) "scalar")
+                    elif isRegisterOption first.Type then
+                        yield registerEntry first.Type (phi optionLlvmType (fun item -> item.Register.Value) "option")
                     else
                         yield
                             { Type = first.Type
@@ -4736,6 +4922,8 @@ module OwningStackAot =
                 w.Inst($"store i32 {typeId source.Type}, ptr {pointerFor typePointers flagId}, align 4")
                 emitDescriptorTransfer w source failBody
             let emitStoreLocal (binding: OwningDynamicLocalBinding) (source: OwningDynamicStackEntry) =
+                // Option locals live in the arena; a register Option gets bytes here.
+                let source = if isRegisterOption source.Type then materializeEntry owner None source else source
                 if isRegisterType source.Type then
                     let flagId = binding.FlagId
                     let value = scalarValue source
@@ -5333,6 +5521,13 @@ module OwningStackAot =
                             let final, _ = emitLoadDescriptor w accumulator accumulatorType
                             stack <- prefix @ [ final ]
                         | _ -> invalidOp "Unreachable list traversal case."
+                    | IrOperation.OptionNone itemType when isRegisterOption (IrOption itemType) ->
+                        stack <- stack @ [ registerEntry (IrOption itemType) (emitMakeOption w "1" "0") ]
+                    | IrOperation.OptionSome itemType when isRegisterOption (IrOption itemType) ->
+                        let values, prefix = pop 1
+                        let payload = scalarValue (List.head values)
+                        emitDropEntry stack (stack.Length - 1)
+                        stack <- prefix @ [ registerEntry (IrOption itemType) (emitMakeOption w "0" payload) ]
                     | IrOperation.OptionNone itemType ->
                         let sumType = IrOption itemType
                         let cursor = emitContextLoad w "%ctx" 2
@@ -5704,25 +5899,49 @@ module OwningStackAot =
                             match scrutinee.Type with
                             | IrOption item -> item
                             | _ -> invalidOp "Verified dynamic Option match has a non-Option scrutinee."
-                        let caseIndexPointer = w.Fresh "option.case.index.pointer"
-                        let location = w.Fresh "option.case.location"
-                        w.Inst($"{caseIndexPointer} = alloca i32, align 4")
-                        w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                        // Branches start from arena-backed values (as for If).
+                        let prefix = materializeAll currentOwner instructionSpan prefix
                         let locateError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate the checked active Option payload." currentOwner instructionSpan [] []
-                        let locateStatus = w.Fresh "option.case.location.status"
-                        w.Inst($"{locateStatus} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex scrutinee.Type}, i32 {scrutinee.Offset}, i32 {scrutinee.Extent}, i32 {locateError}, ptr {caseIndexPointer}, ptr {location})")
-                        emitStatusResult w locateStatus failBody
-                        let caseIndex = w.Fresh "option.case.index"
-                        w.Inst($"{caseIndex} = load i32, ptr {caseIndexPointer}, align 4")
-                        let loadCaseLocation index name =
-                            let pointer = w.Fresh $"option.{name}.pointer"
-                            let value = w.Fresh $"option.{name}"
-                            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
-                            w.Inst($"{value} = load i32, ptr {pointer}, align 4")
-                            value
-                        let payloadOffset = loadCaseLocation 0 "payload.offset"
-                        let payloadBytes = loadCaseLocation 1 "payload.bytes"
-                        let payloadExtent = loadCaseLocation 2 "payload.extent"
+                        // Option<Int/Bool/Float> (report 280): a register Option, or in
+                        // trusted builds an arena one read inline, matches on its tag
+                        // and binds the payload as an i64 without a runtime locate call.
+                        let registerParts =
+                            match scrutinee.Register with
+                            | Some value -> Some(emitOptionParts w value)
+                            | None when isRegisterOption scrutinee.Type && runtimeProfile = OwningRuntimeProfile.TrustedGenerated ->
+                                Some(emitArenaOptionParts w scrutinee failBody)
+                            | None -> None
+                        let caseIndex, payloadEntry =
+                            match registerParts with
+                            | Some(tag, payload) ->
+                                let caseIndex = w.Fresh "option.case.index"
+                                w.Inst($"{caseIndex} = trunc i64 {tag} to i32")
+                                caseIndex, registerEntry itemType payload
+                            | None ->
+                                let caseIndexPointer = w.Fresh "option.case.index.pointer"
+                                let location = w.Fresh "option.case.location"
+                                w.Inst($"{caseIndexPointer} = alloca i32, align 4")
+                                w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                                let locateStatus = w.Fresh "option.case.location.status"
+                                w.Inst($"{locateStatus} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex scrutinee.Type}, i32 {scrutinee.Offset}, i32 {scrutinee.Extent}, i32 {locateError}, ptr {caseIndexPointer}, ptr {location})")
+                                emitStatusResult w locateStatus failBody
+                                let caseIndex = w.Fresh "option.case.index"
+                                w.Inst($"{caseIndex} = load i32, ptr {caseIndexPointer}, align 4")
+                                let loadCaseLocation index name =
+                                    let pointer = w.Fresh $"option.{name}.pointer"
+                                    let value = w.Fresh $"option.{name}"
+                                    w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                                    w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                                    value
+                                let payloadOffset = loadCaseLocation 0 "payload.offset"
+                                let payloadBytes = loadCaseLocation 1 "payload.bytes"
+                                let payloadExtent = loadCaseLocation 2 "payload.extent"
+                                caseIndex,
+                                { Type = itemType
+                                  Offset = payloadOffset
+                                  Extent = payloadExtent
+                                  Payload = payloadBytes
+                                  OwnerEnd = scrutinee.OwnerEnd; Register = None }
                         emitDropEntry stack (stack.Length - 1)
                         stack <- prefix
                         let someLabel = w.Label "option.some"
@@ -5736,14 +5955,9 @@ module OwningStackAot =
                         let someBinding = localBinding someLocal locals
                         w.Line($"{someLabel}:")
                         removeLocal someBinding.FlagId
-                        let somePayload =
-                            { Type = itemType
-                              Offset = payloadOffset
-                              Extent = payloadExtent
-                              Payload = payloadBytes
-                              OwnerEnd = scrutinee.OwnerEnd; Register = None }
-                        emitDescriptorBounds w somePayload (Some(string (typeId itemType))) failBody
-                        emitStoreLocal someBinding somePayload
+                        if payloadEntry.Register.IsNone then
+                            emitDescriptorBounds w payloadEntry (Some(string (typeId itemType))) failBody
+                        emitStoreLocal someBinding payloadEntry
                         let someStack = emitBlock currentOwner env prefix locals someBlock |> normalizeBranch
                         removeLocal someBinding.FlagId
                         let somePredecessor = w.CurrentBlock
@@ -5877,9 +6091,14 @@ module OwningStackAot =
                     | IrOperation.MakeRecord(call, key, _) ->
                         emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let values, prefix = pop call.InputTypes.Length
+                        let values = values |> List.map (fun value -> if isRegisterOption value.Type then materializeEntry currentOwner instructionSpan value else value)
                         let recordType = IrNominal key
                         let layout = typeInfo recordType
-                        let recordPayload = values |> List.fold (fun total item -> emitOffset w total item.Payload) "0"
+                        // Register fields (report 280) are stored straight into the
+                        // record: no separate arena copy of the scalar first.
+                        let itemExtent (item: OwningDynamicStackEntry) = if item.Register.IsSome then "8" else item.Extent
+                        let itemPayload (item: OwningDynamicStackEntry) = if item.Register.IsSome then "8" else item.Payload
+                        let recordPayload = values |> List.fold (fun total item -> emitOffset w total (itemPayload item)) "0"
                         let outputExtent =
                             let mutable index = 0
                             let mutable total = "0"
@@ -5887,7 +6106,7 @@ module OwningStackAot =
                                 let fieldLayout = typeInfo fieldType
                                 let item = values[index]
                                 if fieldLayout.IsDynamic || fieldLayout.PayloadBytes <> 0 then
-                                    total <- emitOffset w total item.Extent
+                                    total <- emitOffset w total (itemExtent item)
                                 index <- index + 1
                             if layout.MinimumPayloadBytes = 0 && not layout.IsDynamic then "8" else total
                         let cursor = emitContextLoad w "%ctx" 2
@@ -5902,8 +6121,14 @@ module OwningStackAot =
                             let fieldLayout = typeInfo fieldType
                             if fieldLayout.IsDynamic || fieldLayout.PayloadBytes <> 0 then
                                 let destination = emitOffset w recordStart outputOffset
-                                emitCopyRange w destination item.Offset item.Extent item.Payload (typeId fieldType) failBody
-                                outputOffset <- emitOffset w outputOffset item.Extent
+                                match item.Register with
+                                | Some value ->
+                                    w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {destination}, i64 {value}, i32 {typeId fieldType})")
+                                    emitRuntimeStatus w "%ctx" failBody
+                                    emitUpdateLive w "8" "0" failBody
+                                | None ->
+                                    emitCopyRange w destination item.Offset item.Extent item.Payload (typeId fieldType) failBody
+                                outputOffset <- emitOffset w outputOffset (itemExtent item)
                             inputIndex <- inputIndex + 1
                         if layout.MinimumPayloadBytes = 0 && not layout.IsDynamic then
                             w.Inst($"call void @al_owning_store_token(ptr %%ctx, i32 {recordStart}, i32 {typeId recordType})")
@@ -6117,13 +6342,14 @@ module OwningStackAot =
                                 emitStatusResult w writeStatus failBody
                                 emitUpdateLive w resultPayload "0" failBody
                                 stack <- push prefix IrString cursor resultExtent resultPayload resultEnd
-                            | "string.byte-at-or", [ text; index; fallback ] ->
+                            | ("string.byte-at-or" | "string.byte-at") as byteOperation, (text :: index :: fallbackOperand) ->
                                 // Inline: bounds check against the String header, then one byte
                                 // load from the data stack. Negative indexes fail the unsigned check.
-                                // Diagnostic builds first check the three operands are initialized.
+                                // Diagnostic builds first check the operands are initialized.
+                                // string.byte-at yields a register Option (report 280).
                                 match runtimeProfile with
                                 | OwningRuntimeProfile.Diagnostic ->
-                                    for operand in [ text; index; fallback ] |> List.filter (fun entry -> entry.Register.IsNone) |> List.map (fun entry -> entry.Offset) do
+                                    for operand in text :: index :: fallbackOperand |> List.filter (fun entry -> entry.Register.IsNone) |> List.map (fun entry -> entry.Offset) do
                                         let status = w.Fresh "byte.check.status"
                                         w.Inst($"{status} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {operand}, i32 8)")
                                         emitStatusResult w status failBody
@@ -6150,7 +6376,10 @@ module OwningStackAot =
                                         w.Inst($"{value} = load i64, ptr {pointer}, align 8")
                                         value
                                 let indexValue = inlineScalar index "index"
-                                let fallbackValue = inlineScalar fallback "fallback"
+                                let fallbackValue =
+                                    match fallbackOperand with
+                                    | [ fallback ] -> inlineScalar fallback "fallback"
+                                    | _ -> "0"
                                 let inside = w.Fresh "byte.inside"
                                 w.Inst($"{inside} = icmp ult i64 {indexValue}, {count}")
                                 let safeIndex = w.Fresh "byte.safe.index"
@@ -6165,7 +6394,13 @@ module OwningStackAot =
                                 w.Inst($"{widened} = zext i8 {raw} to i64")
                                 let result = w.Fresh "byte.result"
                                 w.Inst($"{result} = select i1 {inside}, i64 {widened}, i64 {fallbackValue}")
-                                emitScalarResult IrInt result
+                                if byteOperation = "string.byte-at" then
+                                    let tag = w.Fresh "byte.option.tag"
+                                    w.Inst($"{tag} = select i1 {inside}, i64 0, i64 1")
+                                    dropInputs ()
+                                    stack <- prefix @ [ registerEntry (IrOption IrInt) (emitMakeOption w tag result) ]
+                                else
+                                    emitScalarResult IrInt result
                             | operation, arguments when OwningStdlib.operations.ContainsKey operation ->
                                 // Standard library slice 1: one runtime dispatcher sizes then writes
                                 // each result (String, Bytes, Option or List) at the cursor.
@@ -6729,30 +6964,53 @@ module OwningStackAot =
                                     emitScalarResult IrInt result
                             | _ -> invalidOp $"Verified dynamic primitive '{operation}' signature is not implemented."
                         | UserWordTarget(id, revision) ->
+                            // Register calling (report 280): scalars travel as i64
+                            // values; only other values get descriptors.
                             let values, prefix = pop call.InputTypes.Length
+                            // Option arguments travel as descriptors.
+                            let values = values |> List.map (fun value -> if isRegisterOption value.Type then materializeEntry currentOwner instructionSpan value else value)
                             let argumentArray =
-                                if values.IsEmpty then "null"
+                                if values |> List.forall (fun value -> isAbiRegisterType value.Type) then "null"
                                 else
                                     let array = w.Fresh "call.arguments"
                                     w.Inst($"{array} = alloca [{values.Length} x %%AlOwningDescriptor], align 4")
                                     for index, value in values |> List.indexed do
-                                        let pointer = emitDescriptorElementPointer w array index
-                                        emitStoreDescriptor w pointer value
-                                        emitDescriptorTransfer w value failBody
+                                        if not (isAbiRegisterType value.Type) then
+                                            let pointer = emitDescriptorElementPointer w array index
+                                            emitStoreDescriptor w pointer value
+                                            emitDescriptorTransfer w value failBody
                                     array
+                            let registerArguments =
+                                values
+                                |> List.filter (fun value -> isAbiRegisterType value.Type)
+                                |> List.map (fun value -> $", i64 {scalarValue value}")
+                                |> String.concat ""
                             let resultArray =
-                                if call.OutputTypes.IsEmpty then "null"
+                                if call.OutputTypes |> List.forall isAbiResultRegister then "null"
                                 else
                                     let array = w.Fresh "call.results"
                                     w.Inst($"{array} = alloca [{call.OutputTypes.Length} x %%AlOwningDescriptor], align 4")
                                     array
+                            let resultsReg = allocateRegisterResults w call.OutputTypes
+                            let resultsArgument = resultsReg |> Option.map (fun array -> $", ptr {array}") |> Option.defaultValue ""
                             let callError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." call.ResolvedName instructionSpan [] []
                             let callStatus = w.Fresh "callee.status"
                             let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
-                            w.Inst($"{callStatus} = call i32 {symbolFor id}(ptr %%ctx, {hiddenHostContext}ptr {argumentArray}, ptr {resultArray}, i32 {callError})")
+                            w.Inst($"{callStatus} = call i32 {registerSymbol (symbolFor id)}(ptr %%ctx, {hiddenHostContext}ptr {argumentArray}, ptr {resultArray}, i32 {callError}{registerArguments}{resultsArgument})")
                             emitStatusResult w callStatus failBody
                             let resultEntries = ResizeArray<OwningDynamicStackEntry>()
                             for index, outputType in call.OutputTypes |> List.indexed do
+                              if isAbiRegisterType outputType then
+                                let value = w.Fresh "callee.result.reg"
+                                w.Inst($"{value} = load i64, ptr {registerResultSlot w resultsReg.Value index 0}, align 8")
+                                resultEntries.Add(registerEntry outputType value)
+                              elif isRegisterOption outputType then
+                                let tag = w.Fresh "callee.result.option.tag"
+                                w.Inst($"{tag} = load i64, ptr {registerResultSlot w resultsReg.Value index 0}, align 8")
+                                let payload = w.Fresh "callee.result.option.payload"
+                                w.Inst($"{payload} = load i64, ptr {registerResultSlot w resultsReg.Value index 1}, align 8")
+                                resultEntries.Add(registerEntry outputType (emitMakeOption w tag payload))
+                              else
                                 let pointer = emitDescriptorElementPointer w resultArray index
                                 let resultEntry, actualType = emitLoadDescriptor w pointer outputType
                                 let typeValid = w.Fresh "callee.result.type.valid"
@@ -6858,16 +7116,46 @@ module OwningStackAot =
             let emittedStack = emitBlock owner plan.RootEnvironment initialStack rootBindings block
             if (emittedStack |> List.map (fun item -> item.Type)) <> outputTypes then
                 invalidOp $"Verified dynamic function '{owner}' output shape changed during emission."
+            // Register-ABI results are read as i64 values before any rewind.
+            let registerOutputs =
+                if registerAbi then
+                    emittedStack
+                    |> List.mapi (fun index output ->
+                        if isAbiRegisterType output.Type then Some(index, scalarValue output, None)
+                        elif isRegisterOption output.Type then
+                            let tag, payload =
+                                match output.Register with
+                                | Some value -> emitOptionParts w value
+                                | None -> emitArenaOptionParts w output failBody
+                            Some(index, tag, Some payload)
+                        else None)
+                    |> List.choose id
+                else []
             emitClearEnvironment plan.RootEnvironment
             if analysis.FunctionExit.AllowRewind then
                 emitArenaRewind w baselineCursor failBody
-            // Register results get arena bytes for the caller's descriptors.
-            let emittedStack = materializeAll owner None emittedStack
-            for index, output in emittedStack |> List.indexed do
-                let pointer = emitDescriptorElementPointer w "%results" index
-                emitStoreDescriptor w pointer output
-                emitDescriptorTransfer w output failBody
-            w.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+            if registerAbi then
+                for index, value, payload in registerOutputs do
+                    let slot = registerResultSlot w "%results.reg" index 0
+                    w.Inst($"store i64 {value}, ptr {slot}, align 8")
+                    match payload with
+                    | Some payload ->
+                        let payloadSlot = registerResultSlot w "%results.reg" index 1
+                        w.Inst($"store i64 {payload}, ptr {payloadSlot}, align 8")
+                    | None -> ()
+                for index, output in emittedStack |> List.indexed do
+                    if not (isAbiResultRegister output.Type) then
+                        let pointer = emitDescriptorElementPointer w "%results" index
+                        emitStoreDescriptor w pointer output
+                        emitDescriptorTransfer w output failBody
+            else
+                // Register results get arena bytes for the caller's descriptors.
+                let emittedStack = materializeAll owner None emittedStack
+                for index, output in emittedStack |> List.indexed do
+                    let pointer = emitDescriptorElementPointer w "%results" index
+                    emitStoreDescriptor w pointer output
+                    emitDescriptorTransfer w output failBody
+            emitLeaveFrame w
             w.Inst("ret i32 0")
 
             w.Line($"{failBody}:")
@@ -6882,7 +7170,74 @@ module OwningStackAot =
             let reservedDelta = emitSub w currentReserved baselineReservations
             w.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {totalDelta}, i32 {localDelta})")
             w.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {reservedDelta})")
-            w.Inst("call void @al_owning_leave_frame(ptr %ctx)")
+            emitLeaveFrame w
+            w.Inst("ret i32 1")
+            w.Line("}")
+            w.Line("")
+            w.Text
+
+        /// The descriptor-ABI `@sym` of a register-ABI word: decodes scalar
+        /// argument descriptors, calls `@sym.reg`, and gives scalar results
+        /// arena bytes (validators and list callbacks call through this).
+        let emitRegisterAdapter symbol owner (inputTypes: IrType list) (outputTypes: IrType list) =
+            let w = OwningLlvmWriter()
+            let failLabel = w.Label "adapter.failure"
+            let frameParameters =
+                if nativeHostProfile.IsSome then "ptr %ctx, ptr %provider.context, ptr %arguments, ptr %results, i32 %depth.error"
+                else "ptr %ctx, ptr %arguments, ptr %results, i32 %depth.error"
+            w.Line($"define internal i32 {symbol}({frameParameters}) {{")
+            w.Line("entry:")
+            let registerArguments =
+                [ for index, argumentType in List.indexed inputTypes do
+                    if isAbiRegisterType argumentType then
+                        let argumentPointer = emitDescriptorElementPointer w "%arguments" index
+                        let argument, actualType = emitLoadDescriptor w argumentPointer argumentType
+                        let typeValid = w.Fresh "adapter.argument.type.valid"
+                        let typeOkay = w.Label "adapter.argument.type.ok"
+                        let typeInvalid = w.Label "adapter.argument.type.invalid"
+                        w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId argumentType}")
+                        w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{typeInvalid}")
+                        w.Line($"{typeInvalid}:")
+                        if nativeHostProfile.IsSome then
+                            w.Inst("call void @al_owning_set_failure(ptr %ctx, i32 5, i32 0, i32 0, i32 0)")
+                        w.Inst($"br label %%{failLabel}")
+                        w.Line($"{typeOkay}:")
+                        emitDescriptorBounds w argument (Some(string (typeId argumentType))) failLabel
+                        let value = w.Fresh "adapter.argument"
+                        w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {argument.Offset})")
+                        emitRuntimeStatus w "%ctx" failLabel
+                        yield $", i64 {value}" ]
+                |> String.concat ""
+            let resultsReg = allocateRegisterResults w outputTypes
+            let resultsArgument = resultsReg |> Option.map (fun array -> $", ptr {array}") |> Option.defaultValue ""
+            let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
+            let status = w.Fresh "adapter.status"
+            w.Inst($"{status} = call i32 {registerSymbol symbol}(ptr %%ctx, {hiddenHostContext}ptr %%arguments, ptr %%results, i32 %%depth.error{registerArguments}{resultsArgument})")
+            emitStatusResult w status failLabel
+            for index, outputType in List.indexed outputTypes do
+                if isAbiRegisterType outputType then
+                    let value = w.Fresh "adapter.result"
+                    w.Inst($"{value} = load i64, ptr {registerResultSlot w resultsReg.Value index 0}, align 8")
+                    let cursor = emitContextLoad w "%ctx" 2
+                    let next = emitOffset w cursor "8"
+                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a scalar value." owner None [] []
+                    emitReserve w next reserveError failLabel
+                    w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {value}, i32 {typeId outputType})")
+                    emitRuntimeStatus w "%ctx" failLabel
+                    emitUpdateLive w "8" "0" failLabel
+                    let entry = { Type = outputType; Offset = cursor; Extent = "8"; Payload = "8"; OwnerEnd = next; Register = None }
+                    emitStoreDescriptor w (emitDescriptorElementPointer w "%results" index) entry
+                    emitDescriptorTransfer w entry failLabel
+                elif isRegisterOption outputType then
+                    let tag = w.Fresh "adapter.option.tag"
+                    w.Inst($"{tag} = load i64, ptr {registerResultSlot w resultsReg.Value index 0}, align 8")
+                    let payload = w.Fresh "adapter.option.payload"
+                    w.Inst($"{payload} = load i64, ptr {registerResultSlot w resultsReg.Value index 1}, align 8")
+                    let entry = emitMaterializeOption w owner None outputType tag payload failLabel
+                    emitStoreDescriptor w (emitDescriptorElementPointer w "%results" index) entry
+                    emitDescriptorTransfer w entry failLabel
+            w.Inst("ret i32 0")
+            w.Line($"{failLabel}:")
             w.Inst("ret i32 1")
             w.Line("}")
             w.Line("")
@@ -6895,14 +7250,24 @@ module OwningStackAot =
             diagnosticRole <- if mailboxMode then Some entryRoles[index] else None
             let frameSourceMap =
                 Map.fold (fun merged site source -> Map.add site source merged) program.SourceMap currentBody.BodySourceMap
-            let entryFrame = emitFrameFunction symbol currentBody.BodyName currentBody.BodyInputTypes currentBody.BodyOutputTypes currentBody.BodyBlock analysis frameSourceMap
+            let entryFrame = emitFrameFunction false symbol currentBody.BodyName currentBody.BodyInputTypes currentBody.BodyOutputTypes currentBody.BodyBlock analysis frameSourceMap
             diagnosticRole <- None
             frameTexts.Add(entryFrame)
             entryFrameTexts.Add((symbol, entryFrame))
             writer.Line(entryFrame)
         for fn in functions do
             let functionAnalysis = functionAnalyses.TryFind fn.FunctionId |> Option.defaultValue { ScopeExits = Map.empty; FunctionExit = { AllowRewind = false; Reason = "missing interprocedural proof" } }
-            let functionText = emitFrameFunction (symbolFor fn.FunctionId) fn.FunctionName fn.InputTypes fn.OutputTypes fn.FunctionBody functionAnalysis program.SourceMap
+            let body = emitFrameFunction true (symbolFor fn.FunctionId) fn.FunctionName fn.InputTypes fn.OutputTypes fn.FunctionBody functionAnalysis program.SourceMap
+            // `inline fn` is a hint: honored for small bodies (counted in emitted
+            // LLVM instructions) by marking the register-ABI body alwaysinline.
+            let body =
+                let instructionCount = body.Split('\n') |> Array.filter (fun line -> line.StartsWith("  ", StringComparison.Ordinal)) |> Array.length
+                if inlineWords && fn.FunctionInline && instructionCount <= inlineInstructionLimit then
+                    let lineEnd = body.IndexOf('\n')
+                    body.Substring(0, lineEnd).Replace(") {", ") alwaysinline {") + body.Substring(lineEnd)
+                else body
+            // One text per word: the frame screen measures the adapter and body together.
+            let functionText = emitRegisterAdapter (symbolFor fn.FunctionId) fn.FunctionName fn.InputTypes fn.OutputTypes + body
             frameTexts.Add(functionText)
             writer.Line(functionText)
 
@@ -7750,11 +8115,11 @@ module OwningStackAot =
             (entryFrameAllocaBytes |> Map.toList) @ functionFrameBounds |> Map.ofList
         writer.Text, diagnostics.ToArray(), metadataPerFrameBytes, metadataPeakBoundBytes, 8192, entryFrameTexts |> List.ofSeq, allFrameAllocaBytes, mailboxCallbackAllocaBytes
 
-    let private emitModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) (runtimeProfile: OwningRuntimeProfile) =
+    let private emitModule (info: OwningProgramInfo) (bodyAnalysis: ArenaLifetimeBodyAnalysis) (functionAnalyses: Map<WordId, ArenaLifetimeBodyAnalysis>) (runtimeProfile: OwningRuntimeProfile) (optimization: LlvmOptimization) =
         // Fixed and dynamic layouts both use explicit arena descriptors. The old
         // packed fixed emitter remains historical code and is never selected.
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile OwningTarget.WindowsX64 None
+            emitDynamicModule info [ bodyAnalysis ] functionAnalyses false None runtimeProfile OwningTarget.WindowsX64 None (optimization <> LlvmOptimization.O0)
         llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes
 
     let private writeEmbeddedResource (assembly: Reflection.Assembly) resourceName outputPath =
@@ -8124,7 +8489,7 @@ module OwningStackAot =
         let checkedBody = IrVerifier.verifyBody (VerifiedIrBody.program verifiedBody) (VerifiedIrBody.inspect verifiedBody)
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
-        let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes = emitModule programInfo bodyAnalysis functionAnalyses runtimeProfile
+        let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes = emitModule programInfo bodyAnalysis functionAnalyses runtimeProfile optimization
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native.ll")
@@ -8179,7 +8544,7 @@ module OwningStackAot =
         let bodyAnalysis = ArenaLifetime.analyzeBody checkedBody
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedBody)
         let llvmIr, diagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes, _, _, _ =
-            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile OwningTarget.WindowsX64 None
+            emitDynamicModule programInfo [ bodyAnalysis ] functionAnalyses false (Some profile) runtimeProfile OwningTarget.WindowsX64 None (optimization <> LlvmOptimization.O0)
         let fullDirectory = Path.GetFullPath outputDirectory
         Directory.CreateDirectory fullDirectory |> ignore
         let llvmIrPath = Path.Combine(fullDirectory, "owning-stack-native-host.ll")
@@ -8457,7 +8822,7 @@ module OwningStackAot =
             bodies |> List.map (fun verified -> ArenaLifetime.analyzeBody (IrVerifier.verifyBody program (VerifiedIrBody.inspect verified)))
         let functionAnalyses = ArenaLifetime.analyzeProgram program
         let llvmIr, diagnostics, _, _, _, _, _, _ =
-            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some names)
+            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some names) true
         llvmIr, (diagnostics |> Array.map (fun info -> info.Diagnostic))
 
     let compileMailboxWithProfile
@@ -8479,7 +8844,7 @@ module OwningStackAot =
         let functionAnalyses = ArenaLifetime.analyzeProgram (VerifiedIrBody.program verifiedInit)
         let (llvmIr, internalDiagnostics, metadataPerFrameBytes, metadataPeakBoundBytes, scannerScratchBytes,
              emittedEntryFrames, backendMetadataPerFrameBytes, callbackMetadataPerEntryBytes) =
-            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile OwningTarget.WindowsX64 None
+            emitDynamicModule programInfo entryAnalyses functionAnalyses true None runtimeProfile OwningTarget.WindowsX64 None (optimization <> LlvmOptimization.O0)
         let roles = [ "initialize"; "begin"; "resume" ]
         if emittedEntryFrames.Length <> roles.Length then
             invalidOp "Owning mailbox emitter did not produce exactly three entry frames."

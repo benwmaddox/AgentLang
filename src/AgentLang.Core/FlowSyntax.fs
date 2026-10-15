@@ -202,6 +202,8 @@ type FlowParameter =
 
 type FlowWordDefinition =
     { Name: string
+      /// `inline fn`: a backend hint to emit the body at each call site (report 280).
+      Inline: bool
       Parameters: FlowParameter list
       Outputs: LangType list
       Effects: Set<string>
@@ -612,6 +614,13 @@ module FlowStructure =
 module FlowSource =
     open System.Text.Json
 
+    /// A word's stored Flow source starts with the `inline` modifier (report 280).
+    let declaresInline (sourceText: string) =
+        not (isNull sourceText)
+        && sourceText.StartsWith("inline", System.StringComparison.Ordinal)
+        && sourceText.Length > 6
+        && System.Char.IsWhiteSpace sourceText[6]
+
     // Markup stays readable in canonical source ("<li>" rather than "<li>").
     // Quotes, backslashes and control characters are still escaped, and the
     // output is valid JSON that the parser reads back unchanged.
@@ -938,7 +947,8 @@ module FlowSource =
             | [ output ] -> Types.format output
             | values -> "(" + (values |> List.map Types.format |> String.concat ", ") + ")"
         let keyword = if definition.SyntaxVersion = 1 then "word" else "fn"
-        lines.Add($"{keyword} {definition.Name}({parameters}) -> {outputs} {{")
+        let modifier = if definition.Inline then "inline " else ""
+        lines.Add($"{modifier}{keyword} {definition.Name}({parameters}) -> {outputs} {{")
         let metadata = ResizeArray<string>()
         if definition.SyntaxVersion = 1 || definition.EffectsDeclared then metadata.Add("    effects " + effects)
         if not (System.String.IsNullOrEmpty definition.Documentation) then metadata.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))

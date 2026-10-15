@@ -1252,6 +1252,10 @@ module FlowParser =
             | Some "fn" when state.SyntaxVersion = 1 -> tokenError state "FLOW_SYNTAX_VERSION" "The 'fn' declaration requires Flow/2 syntax."
             | Some "word" when state.SyntaxVersion = 2 -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
             | _ -> ()
+            // `inline fn` (report 280): a backend hint, parsed only before `fn`.
+            let inlineToken =
+                if state.SyntaxVersion = 2 && peek state = Some "inline" && peekAt state 1 = Some "fn" then Some(consume state)
+                else None
             let wordToken = expect state expectedKeyword
             let name, nameSpan = parseWordName state
             expect state "(" |> ignore
@@ -1318,16 +1322,18 @@ module FlowParser =
                 withLexicalLocals state (parameters |> Seq.map (fun parameter -> parameter.Name) |> Set.ofSeq) (fun () ->
                     parseBlockBody state)
             let endToken = expect state "}"
-            let span = sourceSpan state.File wordToken (Some endToken)
+            let firstToken = inlineToken |> Option.defaultValue wordToken
+            let span = sourceSpan state.File firstToken (Some endToken)
             let definition =
                 { Name = name
+                  Inline = inlineToken.IsSome
                   Parameters = List.ofSeq parameters
                   Outputs = outputs
                   Effects = declaredEffects
                   EffectsDeclared = effects.IsSome
                   Documentation = documentation
                   Body = body
-                  SourceText = sourceSlice state wordToken endToken
+                  SourceText = sourceSlice state firstToken endToken
                   Span = span
                   SyntaxVersion = state.SyntaxVersion }
             FlowStructure.validateWordNesting definition
@@ -1841,6 +1847,7 @@ module FlowParser =
                 | Some "word" when state.SyntaxVersion = 1 -> words.Add(parseWordState state)
                 | Some "word" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'word' declaration requires Flow/1 syntax; use 'fn' in Flow/2."
                 | Some "fn" when state.SyntaxVersion = 2 -> words.Add(parseWordState state)
+                | Some "inline" when state.SyntaxVersion = 2 && peekAt state 1 = Some "fn" -> words.Add(parseWordState state)
                 | Some "fn" -> tokenError state "FLOW_SYNTAX_VERSION" "The 'fn' declaration requires Flow/2 syntax."
                 | Some "override" -> tokenError state "FLOW_TEST_OVERRIDE_SCOPE" "A replacement declaration is allowed only inside a test-file wrapper."
                 | Some "test-file" ->

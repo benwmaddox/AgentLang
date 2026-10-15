@@ -352,6 +352,7 @@ let private testIterativeAstDepthLimit () =
         |> List.fold (fun inner _ -> FlowExpression.Call("int.abs", [ FlowArgument.Positional inner ], sourceSpan)) (FlowExpression.Literal(LInt 1L, sourceSpan))
     let hostWord body =
         { Name = "host-built.depth"
+          Inline = false
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty
@@ -3795,6 +3796,7 @@ let private testFlowCallBindingSources () =
     let duplicateSpan = span "<host-flow-ast>" 4 7 12
     let transientWord: FlowWordDefinition =
         { Name = "call-binding.same-span"
+          Inline = false
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty

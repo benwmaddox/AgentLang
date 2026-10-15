@@ -1819,7 +1819,8 @@ module Compiler =
                       FunctionDeclaredEffects = declaredEffects
                       FunctionInferredEffects = inferredEffects
                       LocalNames = localNames
-                      FunctionBody = block }
+                      FunctionBody = block
+                      FunctionInline = FlowSource.declaresInline entry.Definition.SourceText }
                 functions.Add(ownerId, functionValue)
                 coverage.Add(ownerId, IrVerifier.coverageObligationsWithTypes nominalTypes wordSources block)
         let program =
