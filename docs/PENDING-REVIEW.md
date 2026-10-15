@@ -218,11 +218,35 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
 4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
    passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
    Leaner small-op path or fused common sequences.
+   **Done (279), trusted builds:** one `al_owning_stdlib_call` per op of up to
+   four arguments. It validates each argument once (bounds plus header/extent
+   in trusted builds), takes Int arguments by value, sizes formula results
+   without a plan walk, then reserves, writes and does the accounting itself.
+   Stdlib calls no longer materialize register scalars elsewhere on the stack.
+   `bytes.length` is an inline header load. Byte loops write directly. The
+   Diagnostic profile keeps plan/reserve/write with full scans.
+   Measured (Windows, trusted O2, one op per loop iteration, ns, including
+   ~1-2 ns of loop and arena release; before -> after): concat 63 -> 18-19,
+   xor 76 -> 18-19, slice 63 -> 18-21, url-encode 62 -> 26-27, hex 75 -> 30,
+   bytes.length 15 -> 2, SHA-256 180 -> 150, HMAC 300 -> 250, url-decode
+   205 -> 150-180. The csrf-ops harness: mask 274 -> 177-189, xor-with-match
+   136 -> 72. The rest is `match` on the Option and the `string.byte-length`
+   call (items 5 and 7). Noise between runs is ±10-25%; other agents loaded the machine.
 5. **Word calls pass arguments through the arena** (~23 ns/call after
    scalars-in-registers). Register calling for scalars, and the approved
    `inline` attribute.
 6. **OpenSSL per-call setup** ~0.8 us x ~41 HMACs/page: per-worker cached
    digest/HMAC objects (user approved; thread-local, no sharing).
+   **Done (279):** on Linux, each thread lazily fetches SHA-256 (`EVP_MD_fetch`)
+   with one reused `EVP_MD_CTX`. It also keeps one `EVP_MAC_CTX` per HMAC
+   digest (SHA-256, SHA-1), with the digest set once and re-keyed per call by
+   `EVP_MAC_init`. If an entry point is missing or a fetch fails, it falls back
+   to the one-shot calls. PBKDF2 and AES-GCM are unchanged. WSL, OpenSSL 3.0.13,
+   1,000-call loops, same IR: HMAC-SHA256 (32-byte key, 25-byte message)
+   0.88-0.91 -> 0.37 us; SHA-256 (25 bytes) 0.29-0.30 -> 0.12 us. The
+   known-answer probes (RFC 4231 case 2 with SHA-256 and SHA-1, empty key,
+   a second key on the same thread, SHA-256 of "") match the openssl CLI.
+   Windows BCrypt is unchanged.
 7. **`Option` results through the arena**: keep small Options in registers
    when matched immediately; then decide whether `string.byte-at-or` stays.
 8. **Memory**: Flow PSS 171 MB vs Rust 85 MB; likely generous per-worker

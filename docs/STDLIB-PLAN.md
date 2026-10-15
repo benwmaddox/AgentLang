@@ -191,7 +191,7 @@ Slice 1 (report 272) landed as native primitives so the ports can start now:
 | Primitive | Long-term home | Why |
 | --- | --- | --- |
 | Bytes kind, bytes.length / concat / slice / xor / equal-constant-time? | native | value representation and constant-time compare |
-| crypto.sha256 / hmac-sha256 / pbkdf2-sha256, crypto.random-bytes | native | OS library since 275: BCryptHash / BCryptDeriveKeyPBKDF2 (pseudo-handles) on Windows, EVP_Digest / HMAC / PKCS5_PBKDF2_HMAC on Linux; random: BCryptGenRandom / getrandom |
+| crypto.sha256 / hmac-sha256 / pbkdf2-sha256, crypto.random-bytes | native | OS library since 275: BCryptHash / BCryptDeriveKeyPBKDF2 (pseudo-handles) on Windows, per-worker EVP_MD / EVP_MAC contexts (279; PKCS5_PBKDF2_HMAC) on Linux; random: BCryptGenRandom / getrandom |
 | bytes.from-utf8 / to-utf8 | native | UTF-8 validity is a runtime invariant |
 | base64.*, hex.encode | Flow later | needs byte access, a byte builder and bit operations in Flow |
 | string.split / index-of / slice / byte-at / to-lower-ascii, int.parse | Flow later | expressible once Flow has loops or efficient recursion over bytes |
