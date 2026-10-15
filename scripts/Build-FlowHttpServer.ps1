@@ -80,7 +80,9 @@ else {
     $wslScript = '/mnt/' + $repo.Substring(0, 1).ToLowerInvariant() + $repo.Substring(2).Replace('\', '/') + '/scripts/build-flow-http-linux.sh'
     $linuxOut = "`$HOME/linuxbench/flowhttp/$LinuxName"
     $ErrorActionPreference = 'Continue' # compiler warnings on stderr are not failures
-    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > /tmp/build-flow-http-linux.sh && bash /tmp/build-flow-http-linux.sh '$wslStage' $linuxOut $trusted $Optimization" 2>&1
+    # A per-build staging name: concurrent builds must not overwrite each other's script.
+    $stagedScript = "/tmp/build-flow-http-linux-$([Guid]::NewGuid().ToString('N')).sh"
+    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > $stagedScript && bash $stagedScript '$wslStage' $linuxOut $trusted $Optimization; rc=`$?; rm -f $stagedScript; exit `$rc" 2>&1
     if ($LASTEXITCODE -ne 0) { throw "WSL build failed: $($result -join [Environment]::NewLine)" }
     $result | Select-Object -Last 1 | ForEach-Object { $_.Replace('built ', '') }
 }
