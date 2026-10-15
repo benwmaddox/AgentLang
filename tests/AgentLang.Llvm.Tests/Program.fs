@@ -2452,8 +2452,14 @@ let private testOwningRefinedIntSlice () =
                 result.Decode() |> ignore
                 None
             with LanguageException diagnostic -> Some diagnostic
-        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
-            use native = compileOwningNative toolchain ("owning-inline-depth-" + label) optimization body
+        // Trusted O2 enters and leaves word frames inline (report 280): same limit.
+        let builds =
+            [ LlvmOptimization.O0, None; LlvmOptimization.O2, None; LlvmOptimization.O2, Some OwningRuntimeProfile.TrustedGenerated ]
+        for optimization, trusted in builds do
+            use native =
+                match trusted with
+                | None -> compileOwningNative toolchain ("owning-inline-depth-" + label) optimization body
+                | Some profile -> OwningStackAot.compileWithRuntimeProfile toolchain optimization profile (Path.Combine(artifactRoot, "owning-inline-depth-" + label, "trusted")) body
             if finalIndex = 63 then
                 let result = native.Execute([], 4096, 16)
                 check ($"{optimization} {label} inline operation permits interpreter depth 64") (not result.Values.IsEmpty || deepOutputTypes.IsEmpty)
@@ -2482,6 +2488,15 @@ let private testOwningRefinedIntSlice () =
         [ Call("PlainDepthId.raw", span (name + ".agent") 2) ])
         [ Push(LInt 1L, span "owning-inline-unwrap-entry.agent" 2); Call("PlainDepthId.create", span "owning-inline-unwrap-entry.agent" 3) ]
         [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    // Int in, Int out through every frame: register calling at the depth limit.
+    runInlineDepthCase "register-int" 63 [ TInt ] [ TInt ] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("add", span (name + ".agent") 3) ])
+        [ Push(LInt 5L, span "owning-inline-register-entry.agent" 2) ] []
+    runInlineDepthCase "register-int-too-deep" 64 [ TInt ] [ TInt ] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("add", span (name + ".agent") 3) ])
+        [ Push(LInt 5L, span "owning-inline-register-entry.agent" 2) ] []
     runInlineDepthCase "primitive" 63 [] [] (fun name ->
         [ Push(LBool true, span (name + ".agent") 2)
           Call("bool.not", span (name + ".agent") 3)
@@ -2802,11 +2817,11 @@ let private testOwningRefinedIntSlice () =
         && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
         && validMailboxTurn.Context.CallDepth = 0u)
     // The raw callback imports the 8-byte state and 16-byte turn once. In the
-    // verified begin body, MailboxContinuation construction copies its one
-    // 8-byte marker field. Admission only reads the imported root and adds no
-    // payload copy or move.
+    // verified begin body, MailboxContinuation construction stores its one
+    // 8-byte marker field straight from a register (report 280: no copy).
+    // Admission only reads the imported root and adds no payload copy or move.
     let expectedIntMailboxInputCopyBytes = uint64 (8 + (mailboxStringBytes "turn").Length)
-    let expectedIntMailboxBodyDeepCopyBytes = 8UL
+    let expectedIntMailboxBodyDeepCopyBytes = 0UL
     check ($"refined Int mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedIntMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedIntMailboxInputCopyBytes})") (
         validMailboxTurn.Context.DeepCopyBytes = expectedIntMailboxBodyDeepCopyBytes
         && validMailboxTurn.Context.MoveBytes = 0UL

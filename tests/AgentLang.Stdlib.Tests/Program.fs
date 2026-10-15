@@ -18,6 +18,8 @@ open AgentLang.Llvm
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "stdlib.flow")
 let private slice2Path = Path.Combine(__SOURCE_DIRECTORY__, "stdlib2.flow")
+// Word calls (report 280): register calling, Option registers, inline fn.
+let private callsPath = Path.Combine(__SOURCE_DIRECTORY__, "calls.flow")
 let private assertionCount = ref 0
 
 let private check label condition =
@@ -34,6 +36,11 @@ let private typeOf (text: string) =
     | "Bytes" -> TBytes
     | "Json" -> TJson
     | "List<String>" -> TList TString
+    | "Float" -> TFloat
+    | "Unit" -> TUnit
+    | "Option<Int>" -> TOption TInt
+    | "Option<Bool>" -> TOption TBool
+    | "Option<Float>" -> TOption TFloat
     | other -> failwith $"stdlib.flow boundary type {other} is not covered by the parity harness."
 
 /// Literal call arguments: "quoted strings" with \n \" \\ escapes, and Ints.
@@ -76,7 +83,7 @@ let private parseArguments (text: string) : Value list option =
     if ok then Some(List.ofSeq values) else None
 
 let private run () =
-    let source = File.ReadAllText sourcePath + Environment.NewLine + File.ReadAllText slice2Path
+    let source = File.ReadAllText sourcePath + Environment.NewLine + File.ReadAllText slice2Path + Environment.NewLine + File.ReadAllText callsPath
     let runBase =
         match Environment.GetEnvironmentVariable "AGENTLANG_STDLIB_RUN_ROOT" with
         | null | "" -> Path.Combine(repo, ".agentlang", "stdlib-272", "runs")
@@ -92,7 +99,7 @@ let private run () =
     let defined = engine.Dispatch("define", args)
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
     let signatures =
-        Regex.Matches(source, @"(?m)^fn ([^\s(]+)\(([^)]*)\) -> ([^{]+?) \{")
+        Regex.Matches(source, @"(?m)^(?:inline )?fn ([^\s(]+)\(([^)]*)\) -> ([^{(]+?) \{")
         |> Seq.map (fun m ->
             let inputs =
                 if String.IsNullOrWhiteSpace m.Groups[2].Value then []
@@ -135,13 +142,21 @@ let private run () =
                     natives[word] <- OwningStackAot.compileWithRuntimeProfile toolchain level profile directory body
                     // Names the build directory, so a word can be rebuilt elsewhere (the Linux probe).
                     File.WriteAllText(Path.Combine(directory, "word.txt"), word)
-                let interpreted =
-                    match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
-                    | Ok value -> value.Values
-                    | Error diagnostic -> failwith $"Interpreter rejected {word}: {diagnostic.Code} {diagnostic.Message}"
-                let native = natives[word].Execute(values, 1 <<< 20, 1 <<< 20).Values
                 let label = JsonSerializer.Serialize(values |> List.map Types.formatValue)
-                check $"{word} {label}/{optimization}: native {native |> List.map Types.formatValue} = interpreter {interpreted |> List.map Types.formatValue}" (native = interpreted)
+                match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
+                | Ok value ->
+                    let interpreted = value.Values
+                    let native = natives[word].Execute(values, 1 <<< 20, 1 <<< 20).Values
+                    check $"{word} {label}/{optimization}: native {native |> List.map Types.formatValue} = interpreter {interpreted |> List.map Types.formatValue}" (native = interpreted)
+                | Error diagnostic when word.StartsWith("calls.", StringComparison.Ordinal) ->
+                    // calls.flow error tests: native fails with the interpreter's code.
+                    let nativeCode =
+                        try
+                            natives[word].Execute(values, 1 <<< 20, 1 <<< 20) |> ignore
+                            "<no error>"
+                        with :? OwningStackExecutionException as failure -> failure.Diagnostic.Code
+                    check $"{word} {label}/{optimization}: native error {nativeCode} = interpreter {diagnostic.Code}" (nativeCode = diagnostic.Code)
+                | Error diagnostic -> failwith $"Interpreter rejected {word}: {diagnostic.Code} {diagnostic.Message}"
         finally
             for native in natives.Values do (native :> IDisposable).Dispose()
 
@@ -150,7 +165,7 @@ let private run () =
     receipt["assertionCount"] <- JsonValue.Create(assertionCount.Value)
     receipt["nativeCases"] <- JsonValue.Create(cases.Length)
     let pins = JsonArray()
-    for path in [ sourcePath; slice2Path; Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stdlib2.h"); Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
+    for path in [ sourcePath; slice2Path; callsPath; Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stdlib2.h"); Path.Combine(__SOURCE_DIRECTORY__, "Program.fs"); Path.Combine(repo, "src/AgentLang.Llvm/native/owning_stack_runtime.c"); Path.Combine(repo, "src/AgentLang.Llvm/OwningStackAot.fs"); Path.Combine(repo, "src/AgentLang.Core/IrInterpreter.fs") ] do
         let pin = JsonObject()
         pin["path"] <- JsonValue.Create(Path.GetRelativePath(repo, path).Replace('\\', '/'))
         pin["sha256"] <- JsonValue.Create(hash path)
