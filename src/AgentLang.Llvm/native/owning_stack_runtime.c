@@ -4842,14 +4842,31 @@ static void al_stdlib_put_byte(al_stdlib_writer *w, uint8_t value) {
 }
 
 static void al_stdlib_put_u64(al_stdlib_writer *w, uint64_t value) {
-  uint32_t i;
-  for (i = 0u; i < 8u; ++i)
-    al_stdlib_put_byte(w, (uint8_t)(value >> (i * 8u)));
+  if (w->base != 0) {
+    al_owning_write_u32_le(w->base, (uint32_t)w->extent, (uint32_t)value);
+    al_owning_write_u32_le(w->base, (uint32_t)w->extent + 4u,
+                           (uint32_t)(value >> 32));
+  }
+  w->extent += 8u;
 }
 
 static void al_stdlib_pad(al_stdlib_writer *w) {
-  while ((w->extent & 7u) != 0u)
-    al_stdlib_put_byte(w, 0u);
+  const uint32_t pad = (uint32_t)(8u - (w->extent & 7u)) & 7u;
+  uint32_t i;
+  if (w->base != 0)
+    for (i = 0u; i < pad; ++i)
+      w->base[w->extent + i] = 0u;
+  w->extent += pad;
+}
+
+/* Where the next `length` bytes go in the write pass (0 in the plan pass);
+ * the caller fills them and the extent advances past them. Byte loops then
+ * run without a per-byte plan/write branch. */
+static uint8_t *al_stdlib_reserve_bytes(al_stdlib_writer *w,
+                                        uint32_t length) {
+  uint8_t *at = w->base != 0 ? w->base + w->extent : 0;
+  w->extent += length;
+  return at;
 }
 
 /* A String or Bytes header; the caller writes the content and the pad. */
@@ -4952,17 +4969,21 @@ static void al_stdlib_base64_encode(al_stdlib_writer *w, const uint8_t *data,
   const uint32_t rest = length % 3u;
   uint32_t encoded = full * 4u;
   uint32_t i;
+  uint8_t *out;
   if (rest != 0u)
     encoded += url_safe ? rest + 1u : 4u;
   al_stdlib_begin_text(w, encoded);
-  for (i = 0u; i < full; ++i) {
-    const uint32_t v = ((uint32_t)data[i * 3u] << 16) |
-                       ((uint32_t)data[i * 3u + 1u] << 8) |
-                       (uint32_t)data[i * 3u + 2u];
-    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 18) & 63u]);
-    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 12) & 63u]);
-    al_stdlib_put_byte(w, (uint8_t)alphabet[(v >> 6) & 63u]);
-    al_stdlib_put_byte(w, (uint8_t)alphabet[v & 63u]);
+  out = al_stdlib_reserve_bytes(w, full * 4u);
+  if (out != 0) {
+    for (i = 0u; i < full; ++i) {
+      const uint32_t v = ((uint32_t)data[i * 3u] << 16) |
+                         ((uint32_t)data[i * 3u + 1u] << 8) |
+                         (uint32_t)data[i * 3u + 2u];
+      out[i * 4u] = (uint8_t)alphabet[(v >> 18) & 63u];
+      out[i * 4u + 1u] = (uint8_t)alphabet[(v >> 12) & 63u];
+      out[i * 4u + 2u] = (uint8_t)alphabet[(v >> 6) & 63u];
+      out[i * 4u + 3u] = (uint8_t)alphabet[v & 63u];
+    }
   }
   if (rest != 0u) {
     uint32_t v = (uint32_t)data[full * 3u] << 16;
@@ -4997,9 +5018,13 @@ static int32_t al_stdlib_matches_at(const uint8_t *text, uint32_t length,
   return 1;
 }
 
+/* A String/Bytes argument is (offset, extent); an Int argument's value is
+ * loaded once into `value` (from the arena, or passed in a register by
+ * al_owning_stdlib_call). */
 typedef struct {
   uint32_t offset;
   uint32_t extent;
+  int64_t value;
 } al_stdlib_argument;
 
 static const uint8_t *al_stdlib_data(const al_owning_stack_context *ctx,
@@ -5009,23 +5034,57 @@ static const uint8_t *al_stdlib_data(const al_owning_stack_context *ctx,
 
 static int64_t al_stdlib_int(const al_owning_stack_context *ctx,
                              al_stdlib_argument argument) {
-  return (int64_t)al_owning_read_u64_le(ctx->stack_data, argument.offset);
+  (void)ctx;
+  return argument.value;
+}
+
+/* One String/Bytes argument. The diagnostic profile scans it in full
+ * (initialization, header, zero pad). Trusted generated code built it with
+ * verified code (report 268), so only the bounds and the header/extent
+ * agreement are checked: every later read stays inside [offset, offset +
+ * extent) below the cursor. */
+static int32_t al_stdlib_text_argument(al_owning_stack_context *ctx,
+                                       uint32_t offset, uint32_t extent,
+                                       uint32_t error_id, uint32_t *length) {
+#if AL_OWNING_TRUSTED_GENERATED
+  uint32_t count;
+  if ((offset & 7u) != 0u || offset > ctx->cursor_bytes ||
+      extent > ctx->cursor_bytes - offset || extent < 8u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, extent,
+                          ctx->cursor_bytes);
+    return 0;
+  }
+  count = al_owning_read_u32_le(ctx->stack_data, offset);
+  if (((8ull + count + 7ull) & ~7ull) != (uint64_t)extent) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, count,
+                          extent);
+    return 0;
+  }
+  *length = count;
+  return 1;
+#else
+  uint32_t ignored;
+  return al_owning_string_scan_stack_exact(ctx, offset, extent, error_id,
+                                           length, &ignored);
+#endif
 }
 
 /* Validates the arguments an operation reads and returns String/Bytes byte
- * counts. 't' = String or Bytes, 'i' = Int, '-' = unused. */
+ * counts; loads Int arguments that live in the arena. 't' = String or Bytes,
+ * 'i' = Int, '-' = unused. */
+static const char *const al_stdlib_shapes[AL_STDLIB_LAST + 1] = {
+    "--------", "t-------", "t-------", "t-------", "tt------", "tii-----",
+    "tt------", "tt------", "t-------", "t-------", "t-------", "t-------",
+    "t-------", "t-------", "tt------", "ttii----", "tt------", "tti-----",
+    "tii-----", "ti------", "t-------", "t-------", "i-------",
+    AL_STDLIB_SLICE2_SHAPES};
+
 static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
-                                   const al_stdlib_argument *arguments,
+                                   al_stdlib_argument *arguments,
                                    uint32_t error_id,
                                    uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS]) {
-  static const char *const shapes[AL_STDLIB_LAST + 1] = {
-      "--------", "t-------", "t-------", "t-------", "tt------", "tii-----",
-      "tt------", "tt------", "t-------", "t-------", "t-------", "t-------",
-      "t-------", "t-------", "tt------", "ttii----", "tt------", "tti-----",
-      "tii-----", "ti------", "t-------", "t-------", "i-------",
-      AL_STDLIB_SLICE2_SHAPES};
+  const char *const *const shapes = al_stdlib_shapes;
   uint32_t i;
-  uint32_t ignored;
   if (op < 1 || op > AL_STDLIB_LAST) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
                           (uint32_t)op, (uint32_t)AL_STDLIB_LAST);
@@ -5034,9 +5093,8 @@ static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
   for (i = 0u; i < AL_STDLIB_MAX_ARGUMENTS; ++i) {
     lengths[i] = 0u;
     if (shapes[op][i] == 't') {
-      if (!al_owning_string_scan_stack_exact(ctx, arguments[i].offset,
-                                             arguments[i].extent, error_id,
-                                             &lengths[i], &ignored))
+      if (!al_stdlib_text_argument(ctx, arguments[i].offset,
+                                   arguments[i].extent, error_id, &lengths[i]))
         return 0;
     } else if (shapes[op][i] == 'i') {
       if ((arguments[i].offset & 7u) != 0u ||
@@ -5046,6 +5104,8 @@ static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
                               arguments[i].offset, ctx->cursor_bytes);
         return 0;
       }
+      arguments[i].value =
+          (int64_t)al_owning_read_u64_le(ctx->stack_data, arguments[i].offset);
     }
   }
   return 1;
@@ -5053,14 +5113,13 @@ static int32_t al_stdlib_arguments(al_owning_stack_context *ctx, int32_t op,
 
 #include "owning_stdlib2.h"
 
-static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
-                              const al_stdlib_argument *a, const uint32_t *n,
-                              al_stdlib_writer *w, uint32_t error_id) {
-  const uint8_t *x = al_stdlib_data(ctx, a[0]);
-  /* Plan pass fast path: results whose size is a formula of the input sizes
-   * are sized without walking the bytes. Large inputs fall through to the
-   * general path, which owns the overflow checks. */
-  if (w->base == 0 && n[0] < (1u << 28) && n[1] < (1u << 28)) {
+/* Plan pass fast path: results whose size is a formula of the input sizes
+ * are sized without walking the bytes. Large inputs fall through to the
+ * general path, which owns the overflow checks. Returns 1 when sized. */
+static int32_t al_stdlib_formula(const al_owning_stack_context *ctx,
+                                 int32_t op, const al_stdlib_argument *a,
+                                 const uint32_t *n, al_stdlib_writer *w) {
+  if (n[0] < (1u << 28) && n[1] < (1u << 28)) {
     uint64_t length = UINT64_MAX;
     int32_t option = 0; /* 0: plain value, 1: Some(value), 2: None */
     switch (op) {
@@ -5093,6 +5152,13 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
       length = inside ? (uint64_t)count : 0u;
       break;
     }
+    case AL_STDLIB_SHA256:
+    case AL_STDLIB_HMAC_SHA256:
+      length = 32u;
+      break;
+    case AL_STDLIB_HMAC_SHA1:
+      length = 20u;
+      break;
     default:
       break;
     }
@@ -5108,6 +5174,15 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
       return 1;
     }
   }
+  return 0;
+}
+
+static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
+                              const al_stdlib_argument *a, const uint32_t *n,
+                              al_stdlib_writer *w, uint32_t error_id) {
+  const uint8_t *x = al_stdlib_data(ctx, a[0]);
+  if (w->base == 0 && al_stdlib_formula(ctx, op, a, n, w))
+    return 1;
   switch (op) {
   case AL_STDLIB_RANDOM_BYTES: {
     /* Same bound as the interpreter: 0..65536 bytes. Plan only sizes; the
@@ -5163,11 +5238,20 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
       al_stdlib_none(w);
     } else {
       const uint8_t *y = al_stdlib_data(ctx, a[1]);
+      uint8_t *out;
       uint32_t i;
       al_stdlib_some(w);
       al_stdlib_begin_text(w, n[0]);
-      for (i = 0u; i < n[0]; ++i)
-        al_stdlib_put_byte(w, (uint8_t)(x[i] ^ y[i]));
+      out = al_stdlib_reserve_bytes(w, n[0]);
+      if (out != 0) {
+        /* 16-byte chunks, then the tail; the result never overlaps x/y. */
+        for (i = 0u; n[0] - i >= 16u; i += 16u)
+          *(al_owning_chunk16 *)(void *)(out + i) =
+              *(const al_owning_chunk16 *)(const void *)(x + i) ^
+              *(const al_owning_chunk16 *)(const void *)(y + i);
+        for (; i < n[0]; ++i)
+          out[i] = (uint8_t)(x[i] ^ y[i]);
+      }
       al_stdlib_pad(w);
     }
     return 1;
@@ -5200,11 +5284,14 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
     uint32_t i;
     if ((uint64_t)n[0] * 2u > (uint64_t)INT32_MAX)
       break;
+    uint8_t *out;
     al_stdlib_begin_text(w, n[0] * 2u);
-    for (i = 0u; i < n[0]; ++i) {
-      al_stdlib_put_byte(w, (uint8_t)digits[x[i] >> 4]);
-      al_stdlib_put_byte(w, (uint8_t)digits[x[i] & 15u]);
-    }
+    out = al_stdlib_reserve_bytes(w, n[0] * 2u);
+    if (out != 0)
+      for (i = 0u; i < n[0]; ++i) {
+        out[i * 2u] = (uint8_t)digits[x[i] >> 4];
+        out[i * 2u + 1u] = (uint8_t)digits[x[i] & 15u];
+      }
     al_stdlib_pad(w);
     return 1;
   }
@@ -5320,10 +5407,12 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
   }
   case AL_STDLIB_STRING_TO_LOWER_ASCII: {
     uint32_t i;
+    uint8_t *out;
     al_stdlib_begin_text(w, n[0]);
-    for (i = 0u; i < n[0]; ++i)
-      al_stdlib_put_byte(w, (uint8_t)(x[i] >= 'A' && x[i] <= 'Z' ? x[i] + 32u
-                                                                : x[i]));
+    out = al_stdlib_reserve_bytes(w, n[0]);
+    if (out != 0)
+      for (i = 0u; i < n[0]; ++i)
+        out[i] = (uint8_t)(x[i] >= 'A' && x[i] <= 'Z' ? x[i] + 32u : x[i]);
     al_stdlib_pad(w);
     return 1;
   }
@@ -5372,9 +5461,9 @@ int32_t al_owning_stdlib_plan(al_owning_stack_context *ctx, int32_t op,
                               uint32_t e7, uint32_t error_id,
                               uint32_t *out_payload_bytes,
                               uint32_t *out_extent_bytes) {
-  const al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
-      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3},
-      {o4, e4}, {o5, e5}, {o6, e6}, {o7, e7}};
+  al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
+      {o0, e0, 0}, {o1, e1, 0}, {o2, e2, 0}, {o3, e3, 0},
+      {o4, e4, 0}, {o5, e5, 0}, {o6, e6, 0}, {o7, e7, 0}};
   uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
   al_stdlib_writer w;
   w.base = 0;
@@ -5408,9 +5497,9 @@ int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
                                uint32_t o5, uint32_t e5, uint32_t o6,
                                uint32_t e6, uint32_t o7, uint32_t e7,
                                uint32_t error_id) {
-  const al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
-      {o0, e0}, {o1, e1}, {o2, e2}, {o3, e3},
-      {o4, e4}, {o5, e5}, {o6, e6}, {o7, e7}};
+  al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS] = {
+      {o0, e0, 0}, {o1, e1, 0}, {o2, e2, 0}, {o3, e3, 0},
+      {o4, e4, 0}, {o5, e5, 0}, {o6, e6, 0}, {o7, e7, 0}};
   uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
   uint32_t i;
   al_stdlib_writer w;
@@ -5449,6 +5538,110 @@ int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
   return 0;
 }
 
+/* One call for an operation of up to four arguments (report 279): the
+ * arguments are validated once, Int arguments arrive as values (no arena
+ * slot), the result is sized (by formula when one exists), reserved at the
+ * cursor and written, and the live/copy accounting is done here. Returns
+ * (payload << 32) | extent, or -1 with the context failed. The result starts
+ * at the cursor the caller saw before the call. Each argument is one u64: a
+ * String/Bytes is offset | extent << 32, an Int is its value. */
+int64_t al_owning_stdlib_call(al_owning_stack_context *ctx, int32_t op,
+                              uint64_t a0, uint64_t a1, uint64_t a2,
+                              uint64_t a3, uint32_t error_id,
+                              uint32_t reserve_error_id) {
+  al_stdlib_argument arguments[AL_STDLIB_MAX_ARGUMENTS];
+  uint32_t lengths[AL_STDLIB_MAX_ARGUMENTS];
+  uint64_t packed[4];
+  const char *shape;
+  uint32_t slot;
+  uint32_t cursor;
+  uint64_t end;
+  al_stdlib_writer w;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return -1;
+  if (op < 1 || op > AL_STDLIB_LAST || al_stdlib_shapes[op][4] != '-') {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                          (uint32_t)op, (uint32_t)AL_STDLIB_LAST);
+    return -1;
+  }
+  shape = al_stdlib_shapes[op];
+  packed[0] = a0;
+  packed[1] = a1;
+  packed[2] = a2;
+  packed[3] = a3;
+  /* Field by field: an aggregate initializer with zeros becomes memset. */
+  for (slot = 0u; slot < AL_STDLIB_MAX_ARGUMENTS; ++slot) {
+    arguments[slot].offset = 0u;
+    arguments[slot].extent = 0u;
+    arguments[slot].value = 0;
+    lengths[slot] = 0u;
+  }
+  for (slot = 0u; slot < 4u; ++slot) {
+    if (shape[slot] == 't') {
+      arguments[slot].offset = (uint32_t)packed[slot];
+      arguments[slot].extent = (uint32_t)(packed[slot] >> 32);
+      if (!al_stdlib_text_argument(ctx, arguments[slot].offset,
+                                   arguments[slot].extent, error_id,
+                                   &lengths[slot]))
+        return -1;
+    } else if (shape[slot] == 'i') {
+      arguments[slot].value = (int64_t)packed[slot];
+    }
+  }
+  w.base = 0;
+  w.extent = 0u;
+  w.payload = 0u;
+  if (!al_stdlib_formula(ctx, op, arguments, lengths, &w) &&
+      !al_stdlib_emit(ctx, op, arguments, lengths, &w, error_id))
+    return -1;
+  if (w.extent > INT32_MAX || w.payload > INT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_DIAGNOSTIC, error_id,
+                          UINT32_MAX, ctx->stack_capacity_bytes);
+    return -1;
+  }
+  cursor = ctx->cursor_bytes;
+  end = (uint64_t)cursor + w.extent;
+  if (end > ctx->stack_capacity_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_STACK_CAPACITY,
+                          reserve_error_id,
+                          end > UINT32_MAX ? UINT32_MAX : (uint32_t)end,
+                          ctx->stack_capacity_bytes);
+    return -1;
+  }
+#if AL_OWNING_TRUSTED_GENERATED && !AL_OWNING_DETAILED_PROFILE
+  /* al_owning_reserve_to without the (trusted no-op) poison fill. */
+  (void)reserve_error_id;
+  ctx->cursor_bytes = (uint32_t)end;
+  if (ctx->cursor_bytes > ctx->peak_cursor_bytes)
+    ctx->peak_cursor_bytes = ctx->cursor_bytes;
+#else
+  if (al_owning_reserve_to(ctx, (uint32_t)end, reserve_error_id) != 0)
+    return -1;
+#endif
+  {
+    const uint64_t planned_extent = w.extent;
+    const uint64_t planned_payload = w.payload;
+    /* Every argument lies below the old cursor, so the destination cannot
+     * overlap one. */
+    w.base = ctx->stack_data + cursor;
+    w.extent = 0u;
+    w.payload = 0u;
+    if (!al_stdlib_emit(ctx, op, arguments, lengths, &w, error_id))
+      return -1;
+    if (w.extent != planned_extent || w.payload != planned_payload) {
+      al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
+                            (uint32_t)w.extent, (uint32_t)planned_extent);
+      return -1;
+    }
+  }
+  al_owning_mark(ctx, cursor, (uint32_t)w.extent, 1, 0);
+  ctx->deep_copy_bytes += (uint32_t)w.extent;
+  al_owning_update_live(ctx, (int32_t)w.payload, 0);
+  if (ctx->status != AL_OWNING_STATUS_OK)
+    return -1;
+  return (int64_t)((w.payload << 32) | w.extent);
+}
+
 /* Int and Bool results: bytes.length and bytes.equal-constant-time?. */
 int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
                                 uint32_t o0, uint32_t e0, uint32_t o1,
@@ -5461,6 +5654,7 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
   for (slot = 0u; slot < AL_STDLIB_MAX_ARGUMENTS; ++slot) {
     arguments[slot].offset = 0u;
     arguments[slot].extent = 0u;
+    arguments[slot].value = 0;
   }
   arguments[0].offset = o0;
   arguments[0].extent = e0;
