@@ -117,10 +117,25 @@ Unix-microseconds clock primitive.
   byte-identical; Linux x64 without dllexport/dllimport/BCrypt) and
   `OwningStackAot.emitHostModule`, one module with named entry exports
   (`flow_http_handle`, `flow_http_worker_init`) sharing one layout.
-- The worker context is the worker-init result; the worker keeps its bytes
-  and passes them as the handle entry's second input (copied into the arena
-  per request, validated like any input). Zero-copy borrowing of an in-arena
-  root below the request mark is not done.
+- The worker context is the worker-init result. Since 281 the worker keeps it
+  at the bottom of its arena, [0, extent): a protected prefix below every
+  request's mark. `flow_http_handle` borrows it in place (entry flag
+  `BorrowsLastInput`; the shim calls `al_owning_adopt_protected_input`, which
+  reserves the prefix without poisoning it, measures the value against its
+  type and marks it initialized, then releases only down to the prefix), so
+  requests no longer copy it. The Campfire context is 240 bytes, so this
+  saves little time (< 0.1% of a room request).
+- Worker buffers are lazy reservations (Linux `mmap` `MAP_NORESERVE`, no
+  memset; Windows commits on first touch): arena `--arena-mb` (32), input
+  (128 KB head + `--max-body-kb`), response `--retained-mb` (4). Only touched
+  pages are resident. At shutdown each worker logs `peak-arena-bytes` (cursor
+  high-water, which includes the 16 MB host-output reservation of a host
+  call), `peak-response-bytes` and `peak-input-bytes`. Response bodies of
+  16 KB or more are sent straight from the response buffer (one gather send
+  with the head); only what the socket does not take is copied.
+- Profiling: `-Profile` on the build scripts keeps frame pointers in the
+  generated words and adds debug info to the C; every emit writes
+  `symbols.tsv` (`agentlang_word_NNNN` -> Flow word) next to `module.ll`.
 - Host: `flow_http_host.c`. Linux: one SO_REUSEPORT socket and epoll loop
   per worker. Windows: workers accept from one shared listening socket with
   WSAPoll (no SO_REUSEPORT). `--pin` pins worker i to the i-th CPU of the

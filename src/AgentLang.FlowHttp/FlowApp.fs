@@ -140,8 +140,21 @@ module FlowApp =
         // The handle shim leads: the host profile checks the head entry
         // against the manifest's entry word and boundary types.
         OwningStackAot.emitHostModule runtimeProfile target (OwningNativeHostProfile.AppHost(hostManifest app))
-            [ { ExportName = "flow_http_handle"; EntryWord = $"{app.App}.handle"; Body = handleBody }
-              { ExportName = "flow_http_worker_init"; EntryWord = $"{app.App}.worker-init"; Body = initBody } ]
+            [ { ExportName = "flow_http_handle"; EntryWord = $"{app.App}.handle"; Body = handleBody; BorrowsLastInput = true }
+              { ExportName = "flow_http_worker_init"; EntryWord = $"{app.App}.worker-init"; Body = initBody; BorrowsLastInput = false } ]
+
+    /// Word symbol map of the module emitNative emits (agentlang_word_NNNN -> word).
+    let nativeSymbolsText (app: FlowApp) =
+        let initInputs, initOutputs = workerInitSignature app
+        let handleInputs, handleOutputs = handleSignature app
+        let initBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.worker-init", initInputs, initOutputs)
+        let handleBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.handle", handleInputs, handleOutputs)
+        let builder = StringBuilder()
+        OwningStackAot.hostModuleSymbols (OwningNativeHostProfile.AppHost(hostManifest app))
+            [ { ExportName = "flow_http_handle"; EntryWord = $"{app.App}.handle"; Body = handleBody; BorrowsLastInput = true }
+              { ExportName = "flow_http_worker_init"; EntryWord = $"{app.App}.worker-init"; Body = initBody; BorrowsLastInput = false } ]
+        |> List.iter (fun (symbol, name, revision) -> builder.Append($"{symbol}\t{name}\t{revision}\n") |> ignore)
+        builder.ToString()
 
     let diagnosticsText (diagnostics: Diagnostic array) =
         let builder = StringBuilder()

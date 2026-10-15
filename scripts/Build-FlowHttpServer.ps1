@@ -19,7 +19,9 @@ param(
     [ValidateSet('trusted', 'diagnostic')] [string] $RuntimeProfile = 'trusted',
     [ValidateSet('O0', 'O2')] [string] $Optimization = 'O2',
     [Parameter(Mandatory)] [string] $OutDir,
-    [string] $LinuxName = ''
+    [string] $LinuxName = '',
+    # Linux only: frame pointers and debug info for perf (see build-flow-http-linux.sh).
+    [switch] $Profile
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -80,7 +82,7 @@ else {
     $wslScript = '/mnt/' + $repo.Substring(0, 1).ToLowerInvariant() + $repo.Substring(2).Replace('\', '/') + '/scripts/build-flow-http-linux.sh'
     $linuxOut = "`$HOME/linuxbench/flowhttp/$LinuxName"
     $ErrorActionPreference = 'Continue' # compiler warnings on stderr are not failures
-    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > /tmp/build-flow-http-linux.sh && bash /tmp/build-flow-http-linux.sh '$wslStage' $linuxOut $trusted $Optimization" 2>&1
+    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > /tmp/build-flow-http-linux.sh && bash /tmp/build-flow-http-linux.sh '$wslStage' $linuxOut $trusted $Optimization $(if ($Profile) { '1' } else { '0' })" 2>&1
     if ($LASTEXITCODE -ne 0) { throw "WSL build failed: $($result -join [Environment]::NewLine)" }
     $result | Select-Object -Last 1 | ForEach-Object { $_.Replace('built ', '') }
 }

@@ -121,9 +121,36 @@ test campfire.server.avatar-token/shape {
 
 test campfire.server.message-row/validation {
     let row = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.int-param(5), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
-    expect match campfire.server.message-row(row, "tok") { none => ""; some message => message.creator-avatar-token } == "tok"
+    expect match campfire.server.message-row(row, bytes.from-utf8("key"), 1, "tok") { none => ""; some message => message.creator-avatar-token } == "tok"
     let broken = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.null-param(), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
-    expect campfire.server.message-row(broken, "tok") == option.none<MessageWithCreator>()
+    expect campfire.server.message-row(broken, bytes.from-utf8("key"), 1, "tok") == option.none<MessageWithCreator>()
+    let derived = match campfire.server.message-row(row, bytes.from-utf8("key"), 2, "tok") { none => ""; some message => message.creator-avatar-token }
+    expect derived == campfire.server.avatar-token(bytes.from-utf8("key"), 1)
+    let short = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1)])
+    expect campfire.server.message-row(short, bytes.from-utf8("key"), 1, "tok") == option.none<MessageWithCreator>()
+}
+
+test campfire.server.value-int/kinds {
+    expect campfire.server.value-int(db.int-param(4)) == option.some<Int>(4)
+    expect campfire.server.value-int(db.text-param("4")) == option.none<Int>()
+    expect campfire.server.value-int(db.null-param()) == option.none<Int>()
+}
+
+test campfire.server.value-text/kinds {
+    expect campfire.server.value-text(db.text-param("t")) == option.some<String>("t")
+    expect campfire.server.value-text(db.int-param(4)) == option.some<String>("4")
+    expect campfire.server.value-text(db.null-param()) == option.none<String>()
+    expect campfire.server.value-text(db.blob-param(bytes.from-utf8("b"))) == option.none<String>()
+}
+
+test campfire.server.int-or-zero/values {
+    expect campfire.server.int-or-zero(option.some<Int>(3)) == 3
+    expect campfire.server.int-or-zero(option.none<Int>()) == 0
+}
+
+test campfire.server.text-or-empty/values {
+    expect campfire.server.text-or-empty(option.some<String>("x")) == "x"
+    expect campfire.server.text-or-empty(option.none<String>()) == ""
 }
 
 test campfire.server.message-page/tokens-per-creator {

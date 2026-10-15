@@ -791,6 +791,51 @@ int32_t al_owning_copy_external_bounded(
 }
 #endif
 
+/* A borrowed entry input (multi-entry host modules, opt-in per export): the
+ * host keeps one value at arena [0, extent) across invocations, below every
+ * invocation's mark (the protected prefix). Called right after al_owning_begin
+ * (cursor 0), it reserves exactly that prefix without poisoning it, measures the
+ * value in place against its type (never copied) and marks it initialized (the
+ * diagnostic profile's bitmaps were cleared by al_owning_begin). The shim then
+ * releases only down to the prefix, so neither the call nor diagnostic
+ * poisoning ever rewrites it. */
+int32_t al_owning_adopt_protected_input(al_owning_stack_context *ctx,
+                                        const al_owning_layout *layout,
+                                        uint32_t type_index,
+                                        uint32_t extent_bytes, uint32_t type_id,
+                                        uint32_t error_id,
+                                        uint32_t *out_payload_bytes) {
+  uint32_t payload = 0u;
+  uint32_t measured = 0u;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 1;
+  if (out_payload_bytes == 0 || ctx->stack_data == 0 || extent_bytes == 0u ||
+      (extent_bytes & 7u) != 0u || ctx->cursor_bytes != 0u ||
+      extent_bytes > ctx->stack_capacity_bytes) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INVALID_REQUEST, error_id,
+                          extent_bytes, ctx->cursor_bytes);
+    return 1;
+  }
+  if (al_owning_measure_external_value(ctx, layout, type_index,
+                                       ctx->stack_data, extent_bytes, 0u,
+                                       error_id, &payload, &measured) != 0)
+    return 1;
+  if (measured != extent_bytes || payload > (uint32_t)INT32_MAX) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INVALID_REQUEST, error_id,
+                          measured, extent_bytes);
+    return 1;
+  }
+  ctx->cursor_bytes = extent_bytes;
+  if (extent_bytes > ctx->peak_cursor_bytes)
+    ctx->peak_cursor_bytes = extent_bytes;
+  al_owning_mark(ctx, 0u, extent_bytes, 1, 0);
+  al_owning_update_live(ctx, (int32_t)payload, 0);
+  al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, 0u, extent_bytes,
+                  payload, 0u, 0u, 0u);
+  *out_payload_bytes = payload;
+  return ctx->status == AL_OWNING_STATUS_OK ? 0 : 1;
+}
+
 int32_t AL_OWNING_PROFILE_IMPL(al_owning_copy_constant)(
     al_owning_stack_context *ctx, uint32_t destination_offset,
     const uint8_t *source, uint32_t source_length, uint32_t payload_bytes,

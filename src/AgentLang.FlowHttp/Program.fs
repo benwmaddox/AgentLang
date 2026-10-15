@@ -9,7 +9,8 @@ let private usage =
     "usage: AgentLang.FlowHttp emit --app <name> --source <file.flow> [--source ...] --target windows-x64|linux-x64 [--profile trusted|diagnostic] --out <dir>"
 
 /// emit: compiles the stdlib and app sources and writes <out>/module.ll (the
-/// two-entry owning module for the target) and <out>/diagnostics.tsv.
+/// two-entry owning module for the target), <out>/diagnostics.tsv and <out>/symbols.tsv
+/// (agentlang_word_NNNN -> Flow word, for profilers).
 let private emit (args: string list) =
     let mutable app = ""
     let mutable target = OwningTarget.WindowsX64
@@ -34,6 +35,7 @@ let private emit (args: string list) =
     let ir, diagnostics = FlowApp.emitNative flowApp profile target
     File.WriteAllText(Path.Combine(out, "module.ll"), ir, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "diagnostics.tsv"), FlowApp.diagnosticsText diagnostics, UTF8Encoding(false))
+    File.WriteAllText(Path.Combine(out, "symbols.tsv"), FlowApp.nativeSymbolsText flowApp, UTF8Encoding(false))
     try Directory.Delete(project, true) with _ -> ()
     printfn "emitted %s (%s, %s, context %s)" (Path.Combine(out, "module.ll")) target.Triple (if profile = OwningRuntimeProfile.TrustedGenerated then "trusted" else "diagnostic") flowApp.ContextType
 

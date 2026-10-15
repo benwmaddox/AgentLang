@@ -3,6 +3,7 @@
  * The generated module exports two owning-stack entries:
  *   flow_http_worker_init(config: List<HttpHeader>) -> Context   once per worker
  *   flow_http_handle(request: HttpRequest, context) -> HttpResponse  per request
+ * (the context is kept at the bottom of the worker arena and borrowed, not copied)
  * Each worker thread owns its listening socket (Linux: SO_REUSEPORT; Windows:
  * workers accept from one shared listening socket, the only shared kernel
  * object), its connections, arena, SQLite connection and context bytes. The
@@ -37,7 +38,9 @@ typedef SOCKET fh_socket;
 #include <sched.h>
 #include <signal.h>
 #include <sys/epoll.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <time.h>
 #include <unistd.h>
 typedef int fh_socket;
@@ -115,12 +118,14 @@ typedef struct fh_worker {
   uint8_t *input;
   uint32_t input_capacity;
   uint8_t *retained;
-  uint8_t *context;
   uint32_t context_bytes;
   fh_connection *connections[FH_MAX_CONNECTIONS];
   uint32_t connection_count;
   uint64_t requests;
   uint64_t failures;
+  uint32_t peak_arena;    /* largest per-request arena cursor high-water */
+  uint32_t peak_response; /* largest encoded HttpResponse */
+  uint32_t peak_input;    /* largest encoded request + context */
 } fh_worker;
 
 /* ---------------------------------------------------------------- utility */
@@ -142,23 +147,27 @@ static int64_t fh_now_microseconds(void) {
 #endif
 }
 
+/* Worker buffers (arena, input, retained output) are reservations sized for
+ * the largest legal request, committed lazily: fresh pages read as zero and
+ * only the pages a request actually touches become resident (Windows commits
+ * on first touch too). Resident size is therefore each buffer's high-water
+ * mark, reported per worker at shutdown. */
 static void *fh_alloc(size_t bytes) {
 #if defined(_WIN32)
   return VirtualAlloc(NULL, bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 #else
-  void *p = 0;
-  if (posix_memalign(&p, 64, bytes) != 0) return 0;
-  memset(p, 0, bytes);
-  return p;
+  void *p = mmap(0, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+  return p == MAP_FAILED ? 0 : p;
 #endif
 }
 
-static void fh_free(void *p) {
+static void fh_free(void *p, size_t bytes) {
   if (p == 0) return;
 #if defined(_WIN32)
+  (void)bytes;
   VirtualFree(p, 0, MEM_RELEASE);
 #else
-  free(p);
+  munmap(p, bytes);
 #endif
 }
 
@@ -265,12 +274,18 @@ static int fh_worker_init(fh_worker *worker) {
     fh_log(reason);
     return 0;
   }
-  /* The context lives in the worker for its lifetime; every request gets it
-   * as its second input. */
+  /* The context lives in the worker's arena for its lifetime, at [0, extent):
+   * the protected prefix below every request's mark. flow_http_handle borrows
+   * it in place as its second input (extent in the extents table) instead of
+   * copying it into each request. */
   worker->context_bytes = (uint32_t)ctx.retained_copy_bytes;
-  worker->context = (uint8_t *)malloc(worker->context_bytes ? worker->context_bytes : 1u);
-  if (worker->context == 0) return 0;
-  memcpy(worker->context, worker->retained, worker->context_bytes);
+  if (worker->context_bytes == 0u || (worker->context_bytes & 7u) != 0u ||
+      worker->context_bytes > worker->options->arena_bytes / 2u) {
+    fh_log("worker-init result has an unusable extent\n");
+    return 0;
+  }
+  memcpy(worker->stack, worker->retained, worker->context_bytes);
+  memset(worker->retained, 0, worker->context_bytes);
   return 1;
 }
 
@@ -306,6 +321,44 @@ static void fh_out_append(fh_connection *c, const void *data, uint32_t length) {
   if (!fh_out_reserve(c, length)) { c->close_after_write = 1; return; }
   memcpy(c->out + c->out_used, data, length);
   c->out_used += length;
+}
+
+#define FH_DIRECT_BODY_BYTES 16384u
+
+/* Queues a response body. A large body is sent straight from the worker's
+ * retained buffer together with the pending output (one gather send) when the
+ * connection is not already waiting to write; only the part the socket does
+ * not take is copied into the connection's buffer, since the retained buffer
+ * is reused by the next request. */
+static void fh_out_body(fh_connection *c, const uint8_t *body, uint32_t length) {
+  uint32_t pending = c->out_used - c->out_sent;
+  long sent;
+  if (length < FH_DIRECT_BODY_BYTES || c->want_write) { fh_out_append(c, body, length); return; }
+#if defined(_WIN32)
+  {
+    WSABUF buffers[2];
+    DWORD count = 0;
+    buffers[0].buf = (char *)c->out + c->out_sent; buffers[0].len = pending;
+    buffers[1].buf = (char *)body; buffers[1].len = length;
+    sent = WSASend(c->socket, buffers, 2, &count, 0, 0, 0) == 0 ? (long)count : -1;
+  }
+#else
+  {
+    struct iovec buffers[2];
+    buffers[0].iov_base = c->out + c->out_sent; buffers[0].iov_len = pending;
+    buffers[1].iov_base = (void *)body; buffers[1].iov_len = length;
+    sent = (long)sendmsg(c->socket, &(struct msghdr){.msg_iov = buffers, .msg_iovlen = 2}, MSG_NOSIGNAL);
+  }
+#endif
+  /* Errors other than would-block surface on the next fh_flush. */
+  if (sent < 0) sent = 0;
+  if ((uint32_t)sent < pending) {
+    c->out_sent += (uint32_t)sent;
+    fh_out_append(c, body, length);
+    return;
+  }
+  c->out_used = c->out_sent = 0u;
+  fh_out_append(c, body + ((uint32_t)sent - pending), length - ((uint32_t)sent - pending));
 }
 
 static void fh_simple_response(fh_connection *c, int status, const char *body, int close) {
@@ -366,7 +419,7 @@ static int fh_write_response(fh_connection *c, const uint8_t *value, uint32_t ex
   if (r.failed) { c->out_used = mark; return 0; }
   n = snprintf(line, sizeof(line), "content-length: %u\r\n%s\r\n", body_length, close ? "connection: close\r\n" : "");
   fh_out_append(c, line, (uint32_t)n);
-  if (!head_only) fh_out_append(c, body, body_length);
+  if (!head_only) fh_out_body(c, body, body_length);
   return 1;
 }
 
@@ -460,9 +513,9 @@ static long fh_handle_one(fh_worker *worker, fh_connection *c) {
     return (long)(head_length + body_length);
   }
 
-  /* Encode HttpRequest, then append the worker's context. */
+  /* Encode HttpRequest; the context is borrowed from the arena prefix. */
   w.data = worker->input;
-  w.capacity = worker->input_capacity - worker->context_bytes;
+  w.capacity = worker->input_capacity;
   w.used = 0u;
   w.failed = 0;
   fh_put_bytes(&w, method, method_length);
@@ -484,16 +537,18 @@ static long fh_handle_one(fh_worker *worker, fh_connection *c) {
   if (w.failed) { fh_simple_response(c, 413, "request too large", 1); return -1; }
   extents[0] = w.used;
   extents[1] = worker->context_bytes;
-  memcpy(worker->input + w.used, worker->context, worker->context_bytes);
 
   fh_context_reset(worker, &ctx);
   /* The cache epoch covers the whole handle call: cache.get copies a hit into
    * the arena inside it; the response is then in the worker's own buffer. */
   fh_cache_enter((uint32_t)worker->index);
-  status = flow_http_handle(&ctx, &worker->provider, worker->input, w.used + worker->context_bytes, extents, 2u,
+  status = flow_http_handle(&ctx, &worker->provider, worker->input, w.used, extents, 2u,
                             worker->retained, worker->options->retained_bytes);
   fh_cache_leave((uint32_t)worker->index);
   ++worker->requests;
+  if (ctx.peak_cursor_bytes > worker->peak_arena) worker->peak_arena = ctx.peak_cursor_bytes;
+  if (ctx.retained_copy_bytes > worker->peak_response) worker->peak_response = (uint32_t)ctx.retained_copy_bytes;
+  if (w.used > worker->peak_input) worker->peak_input = w.used;
   if (status != 0 || ctx.status != 0 ||
       !fh_write_response(c, worker->retained, (uint32_t)ctx.retained_copy_bytes,
                          method_length == 4u && memcmp(method, "HEAD", 4) == 0, !keep_alive)) {
@@ -687,7 +742,7 @@ static void *fh_worker_main(void *argument)
   worker->poison_bitmap = (uint8_t *)fh_alloc(options->arena_bytes / 8u);
   if (worker->init_bitmap == 0 || worker->poison_bitmap == 0) { worker->state = -1; goto done; }
 #endif
-  worker->input_capacity = FH_MAX_HEADER_BYTES * 2u + options->max_body_bytes + options->retained_bytes;
+  worker->input_capacity = FH_MAX_HEADER_BYTES * 2u + options->max_body_bytes;
   worker->input = (uint8_t *)fh_alloc(worker->input_capacity);
   worker->retained = (uint8_t *)fh_alloc(options->retained_bytes);
   if (worker->stack == 0 || worker->input == 0 || worker->retained == 0) { worker->state = -1; goto done; }
@@ -897,12 +952,19 @@ int main(int argc, char **argv) {
     failures += workers[i].failures;
     if (fh_db_prepared_count(workers[i].db) > max_prepared) max_prepared = fh_db_prepared_count(workers[i].db);
     fh_db_close(workers[i].db);
-    fh_free(workers[i].stack);
-    fh_free(workers[i].init_bitmap);
-    fh_free(workers[i].poison_bitmap);
-    fh_free(workers[i].input);
-    fh_free(workers[i].retained);
-    if (workers[i].context) { memset(workers[i].context, 0, workers[i].context_bytes); free(workers[i].context); }
+    if (workers[i].requests > 0u) {
+      char line[200];
+      snprintf(line, sizeof(line), "worker %d: requests=%llu peak-arena-bytes=%u peak-response-bytes=%u peak-input-bytes=%u context-bytes=%u\n",
+               i, (unsigned long long)workers[i].requests, workers[i].peak_arena, workers[i].peak_response,
+               workers[i].peak_input, workers[i].context_bytes);
+      fh_log(line);
+    }
+    if (workers[i].stack && workers[i].context_bytes) memset(workers[i].stack, 0, workers[i].context_bytes); /* keys */
+    fh_free(workers[i].stack, options.arena_bytes);
+    fh_free(workers[i].init_bitmap, options.arena_bytes / 8u);
+    fh_free(workers[i].poison_bitmap, options.arena_bytes / 8u);
+    fh_free(workers[i].input, workers[i].input_capacity);
+    fh_free(workers[i].retained, options.retained_bytes);
   }
 #if defined(_WIN32)
   fh_close_socket(shared_listener);

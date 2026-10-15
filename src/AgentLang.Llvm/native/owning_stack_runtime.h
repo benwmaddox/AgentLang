@@ -183,6 +183,12 @@ int32_t al_owning_copy_external_bounded(
     const uint8_t *source, uint32_t source_length, uint32_t source_offset,
     uint32_t payload_bytes, uint32_t extent_bytes, uint32_t type_id,
     uint32_t error_id);
+int32_t al_owning_adopt_protected_input(al_owning_stack_context *ctx,
+                                        const al_owning_layout *layout,
+                                        uint32_t type_index,
+                                        uint32_t extent_bytes, uint32_t type_id,
+                                        uint32_t error_id,
+                                        uint32_t *out_payload_bytes);
 int32_t al_owning_copy_constant(al_owning_stack_context *ctx,
                                 uint32_t destination_offset,
                                 const uint8_t *source, uint32_t source_length,

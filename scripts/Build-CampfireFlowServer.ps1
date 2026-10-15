@@ -16,7 +16,8 @@ param(
     [ValidateSet('trusted', 'diagnostic')] [string] $RuntimeProfile = 'trusted',
     [ValidateSet('O0', 'O2')] [string] $Optimization = 'O2',
     [Parameter(Mandatory)] [string] $OutDir,
-    [string] $LinuxName = 'campfire'
+    [string] $LinuxName = 'campfire',
+    [switch] $Profile
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -30,4 +31,4 @@ $shared = @(
 $sources = @($shared | ForEach-Object { Join-Path $campfire $_ })
 $sources += @(Get-ChildItem -LiteralPath (Join-Path $campfire 'server') -Filter '*.flow' | Sort-Object Name | ForEach-Object FullName)
 & (Join-Path $PSScriptRoot 'Build-FlowHttpServer.ps1') -App 'campfire.server' -Source $sources -Target $Target `
-    -RuntimeProfile $RuntimeProfile -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName
+    -RuntimeProfile $RuntimeProfile -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile
