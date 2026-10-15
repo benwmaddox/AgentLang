@@ -252,11 +252,136 @@ extern int EVP_DecryptUpdate(void *, uint8_t *, int *, const uint8_t *, int)
 extern int EVP_DecryptFinal_ex(void *, uint8_t *, int *) __attribute__((weak));
 extern int EVP_CIPHER_CTX_ctrl(void *, int, int, void *) __attribute__((weak));
 
+/* Per-worker OpenSSL 3 objects (user approved, report 279). The one-shot
+ * EVP_Digest / HMAC() fetch the algorithm and allocate a context on every
+ * call (~0.8 us). Each thread instead fetches SHA-256 and HMAC once, keeps
+ * one digest context and one HMAC context per digest, and re-keys them per
+ * call. The objects are thread-local: never shared across threads, no locks.
+ * They live as long as the worker thread. If any entry point is missing or a
+ * fetch fails, the thread keeps using the one-shot calls below.
+ * OSSL_PARAM mirrors struct ossl_param_st (openssl/core.h). */
+typedef struct {
+  const char *key;
+  unsigned int data_type;
+  void *data;
+  unsigned long data_size;
+  unsigned long return_size;
+} al_ossl_param;
+#define AL_OSSL_PARAM_UTF8_STRING 4u
+extern void *EVP_MD_fetch(void *, const char *, const char *)
+    __attribute__((weak));
+extern void EVP_MD_free(void *) __attribute__((weak));
+extern void *EVP_MD_CTX_new(void) __attribute__((weak));
+extern void EVP_MD_CTX_free(void *) __attribute__((weak));
+extern int EVP_DigestInit_ex2(void *, const void *, const al_ossl_param *)
+    __attribute__((weak));
+extern int EVP_DigestUpdate(void *, const void *, unsigned long)
+    __attribute__((weak));
+extern int EVP_DigestFinal_ex(void *, uint8_t *, unsigned int *)
+    __attribute__((weak));
+extern void *EVP_MAC_fetch(void *, const char *, const char *)
+    __attribute__((weak));
+extern void EVP_MAC_free(void *) __attribute__((weak));
+extern void *EVP_MAC_CTX_new(void *) __attribute__((weak));
+extern void EVP_MAC_CTX_free(void *) __attribute__((weak));
+extern int EVP_MAC_CTX_set_params(void *, const al_ossl_param *)
+    __attribute__((weak));
+extern int EVP_MAC_init(void *, const uint8_t *, unsigned long,
+                        const al_ossl_param *) __attribute__((weak));
+extern int EVP_MAC_update(void *, const uint8_t *, unsigned long)
+    __attribute__((weak));
+extern int EVP_MAC_final(void *, uint8_t *, unsigned long *, unsigned long)
+    __attribute__((weak));
+
+typedef struct {
+  int32_t state; /* 0 untried, 1 ready, -1 one-shot fallback */
+  void *sha256;  /* EVP_MD */
+  void *digest;  /* EVP_MD_CTX */
+  void *hmac[2]; /* EVP_MAC_CTX: [0] HMAC-SHA256, [1] HMAC-SHA1 */
+} al_os_crypto_cache;
+
+static _Thread_local al_os_crypto_cache al_os_cache;
+
+static void *al_os_hmac_context(void *mac, const char *digest_name) {
+  al_ossl_param params[2];
+  void *context = EVP_MAC_CTX_new(mac);
+  if (context == 0)
+    return 0;
+  params[0].key = "digest";
+  params[0].data_type = AL_OSSL_PARAM_UTF8_STRING;
+  params[0].data = (void *)digest_name;
+  params[0].data_size = 0u;
+  while (digest_name[params[0].data_size] != '\0')
+    ++params[0].data_size;
+  params[0].return_size = ~0ul; /* OSSL_PARAM_UNMODIFIED */
+  params[1].key = 0;
+  params[1].data_type = 0u;
+  params[1].data = 0;
+  params[1].data_size = 0u;
+  params[1].return_size = 0u;
+  if (EVP_MAC_CTX_set_params(context, params) != 1) {
+    EVP_MAC_CTX_free(context);
+    return 0;
+  }
+  return context;
+}
+
+/* The calling thread's cache, created on first use; 0 means one-shot. */
+static al_os_crypto_cache *al_os_crypto_cached(void) {
+  al_os_crypto_cache *cache = &al_os_cache;
+  void *mac;
+  if (cache->state == 1)
+    return cache;
+  if (cache->state < 0)
+    return 0;
+  cache->state = -1;
+  if (EVP_MD_fetch == 0 || EVP_MD_free == 0 || EVP_MD_CTX_new == 0 ||
+      EVP_MD_CTX_free == 0 || EVP_DigestInit_ex2 == 0 ||
+      EVP_DigestUpdate == 0 || EVP_DigestFinal_ex == 0 ||
+      EVP_MAC_fetch == 0 || EVP_MAC_free == 0 || EVP_MAC_CTX_new == 0 ||
+      EVP_MAC_CTX_free == 0 || EVP_MAC_CTX_set_params == 0 ||
+      EVP_MAC_init == 0 || EVP_MAC_update == 0 || EVP_MAC_final == 0)
+    return 0;
+  cache->sha256 = EVP_MD_fetch(0, "SHA256", 0);
+  cache->digest = EVP_MD_CTX_new();
+  mac = EVP_MAC_fetch(0, "HMAC", 0);
+  if (mac != 0) {
+    /* Each context holds its own reference to the HMAC algorithm. */
+    cache->hmac[0] = al_os_hmac_context(mac, "SHA256");
+    cache->hmac[1] = al_os_hmac_context(mac, "SHA1");
+    EVP_MAC_free(mac);
+  }
+  if (cache->sha256 == 0 || cache->digest == 0 || cache->hmac[0] == 0 ||
+      cache->hmac[1] == 0) {
+    if (cache->sha256 != 0)
+      EVP_MD_free(cache->sha256);
+    if (cache->digest != 0)
+      EVP_MD_CTX_free(cache->digest);
+    if (cache->hmac[0] != 0)
+      EVP_MAC_CTX_free(cache->hmac[0]);
+    if (cache->hmac[1] != 0)
+      EVP_MAC_CTX_free(cache->hmac[1]);
+    cache->sha256 = cache->digest = cache->hmac[0] = cache->hmac[1] = 0;
+    return 0;
+  }
+  cache->state = 1;
+  return cache;
+}
+
 static int32_t al_os_sha256(const uint8_t *data, uint32_t length,
                             uint8_t out[32]) {
   uint8_t zero[1];
   unsigned int produced = 0u;
+  al_os_crypto_cache *cache = al_os_crypto_cached();
   zero[0] = 0u;
+  if (cache != 0)
+    return EVP_DigestInit_ex2(cache->digest, cache->sha256, 0) == 1 &&
+                   EVP_DigestUpdate(cache->digest,
+                                    length != 0u ? data : zero, length) == 1 &&
+                   EVP_DigestFinal_ex(cache->digest, out, &produced) == 1 &&
+                   produced == 32u
+               ? 1
+               : -1;
   if (EVP_Digest == 0 || EVP_sha256 == 0)
     return -1;
   return EVP_Digest(length != 0u ? data : zero, length, out, &produced,
@@ -271,13 +396,29 @@ static int32_t al_os_hmac(int32_t sha1, const uint8_t *key,
                           uint32_t length, uint8_t *out) {
   uint8_t zero[1];
   unsigned int produced = 0u;
+  al_os_crypto_cache *cache;
   zero[0] = 0u;
-  if (HMAC == 0 || EVP_sha1 == 0 || EVP_sha256 == 0 || key_length > 0x7fffffffu)
+  if (key_length > 0x7fffffffu)
     return -1;
   if (key_length == 0u) {
     key = zero;
     key_length = 1u;
   }
+  cache = al_os_crypto_cached();
+  if (cache != 0) {
+    void *context = cache->hmac[sha1 ? 1 : 0];
+    unsigned long written = 0u;
+    return EVP_MAC_init(context, key, key_length, 0) == 1 &&
+                   EVP_MAC_update(context, length != 0u ? data : zero,
+                                  length) == 1 &&
+                   EVP_MAC_final(context, out, &written, sha1 ? 20u : 32u) ==
+                       1 &&
+                   written == (sha1 ? 20u : 32u)
+               ? 1
+               : -1;
+  }
+  if (HMAC == 0 || EVP_sha1 == 0 || EVP_sha256 == 0)
+    return -1;
   return HMAC(sha1 ? EVP_sha1() : EVP_sha256(), key, (int)key_length,
               length != 0u ? data : zero, length, out, &produced) != 0 &&
                  produced == (sha1 ? 20u : 32u)
