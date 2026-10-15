@@ -2309,6 +2309,7 @@ let rec private codeUnitSafeValueData (value: Value) : obj =
             "codeUnitsHex", box (codeUnitsHexFromString text) ]
     | UnitValue -> jsonObject [ "type", box "Unit" ]
     | BytesValue data -> jsonObject [ "type", box "Bytes"; "hex", box (bytesHex data) ]
+    | JsonTextValue text -> jsonObject [ "type", box "Json"; "codeUnitsHex", box (codeUnitsHexFromString text) ]
     | ListValue(elementType, items) ->
         jsonObject [
             "type", box "List"
