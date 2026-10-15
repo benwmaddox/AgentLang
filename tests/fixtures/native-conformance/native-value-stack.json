@@ -2179,7 +2179,7 @@
       "n8CompletedExercisesBeforeFailure": 8,
       "n8PartialExerciseBytes": 0,
       "n8FailingTailBytes": 24,
-      "n8FailureNote": "Report 280: with scalars in registers all eight exercises fit 448 bytes; the first rejected reservation is the 24-byte post-exercise tail that reaches the 464-byte peak.",
+      "n8FailureNote": "Report 280: Int arguments, results and record fields no longer take arena bytes, so pre-exercise is the returned Leaf+Envelope (8+16), post-exercise the State record (8+16), and an exercise 48 (was 64). All eight exercises fit 448 bytes; the rejected reservation is the 24-byte State record that would reach the 464-byte peak.",
       "sourceDerivedN8FirstRejectedReservationBytes": 464,
       "n1FitsLegacyCapacity": true,
       "n8ExceedsLegacyCapacity": true,
