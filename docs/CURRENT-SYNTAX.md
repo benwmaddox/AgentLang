@@ -268,6 +268,11 @@ fn sum-evens(values: List<Int>, limit: Int) -> Int {
   iteration's allocations, as it does for `compact { }`. When the body passes an
   allocation to an effect that may keep it, iterations are not reclaimed. The
   loop still runs correctly, but its memory grows.
+- **Accumulating a list.** When a loop's only use of a List `var` is
+  `items = list.append(items, x)`, each append costs one copy of `x`, not of
+  the list, so building n elements is linear in time and memory. Reading
+  `items` any other way in the loop body (or in a nested loop) falls back to
+  copying the list on each append.
 - Loops and `var` are supported by the interpreter and the owning-stack
   backend. The older arena LLVM backend rejects them
   (`IR_LLVM_LOOP_UNSUPPORTED`).
@@ -451,6 +456,9 @@ first time the program uses `Html`, `html.raw` or a template.
   (`string.html-fragment?`):
   - a literal is checked at compile time (`REFINEMENT_LITERAL_INVALID`);
   - any other value is checked when it is called (`REFINEMENT_FAILED`).
+  - native code skips the check when the text is provably Html already:
+    `Html.value` of an Html value (also through `let`), a literal fragment, or
+    `string.concat` of those.
 
   It is the only way run-time markup becomes Html, so it is easy to find in
   review. Programs cannot redefine it.

@@ -40,7 +40,8 @@ let private words =
       "native.lists.concat-adjacent"; "native.lists.append-aliased"; "tag.text"; "native.lists.retag"
       "native.acc.ints"; "native.acc.strings"; "native.acc.records"; "native.acc.aliases"; "native.acc.snapshots"
       "native.acc.break"; "native.acc.branches"; "native.acc.with-text"; "native.acc.rows"; "native.acc.kept"
-      "native.lists.get"; "native.lists.get-int"; "native.lists.get-pair"; "native.lists.count" ]
+      "native.lists.get"; "native.lists.get-int"; "native.lists.get-pair"; "native.lists.count"
+      "native.lists.get-bool"; "native.lists.get-float"; "native.lists.get-flags"; "native.lists.get-nested" ]
 
 let private wordArgs (name: string) =
     let args = JsonObject()
@@ -206,7 +207,7 @@ let private run () =
             | error -> error.GetType().Name
         check $"tags/{optimization}: runtime construction is still validated ({rejection})" (rejection = "REFINEMENT_FAILED")
 
-        // Loop accumulation (report 278): `v = list.append(v, x)` in a loop. Every
+        // Loop accumulation: `v = list.append(v, x)` in a loop. Every
         // shape must equal the interpreter; aliases and snapshots stay unchanged.
         let ints n = ListValue(TInt, [ for i in 0L .. n - 1L -> IntValue i ])
         let accInts, _ = execute optimization "native.acc.ints" [ TInt ] [ TList TInt ] [ IntValue 5L ]
@@ -245,6 +246,25 @@ let private run () =
         for values in [ []; [ "a" ]; [ "a"; "b"; "c" ] ] do
             let counted, _ = execute optimization "native.lists.count" [ TList TString ] [ TInt ] [ strings values ]
             check $"list.count {values.Length}/{optimization}" (counted = [ IntValue(int64 values.Length) ])
+
+    // list.get over fixed-stride (Bool, Float, Int/Bool record) and measured
+    // (nested list) element layouts, in O0, O2 and trusted O2.
+    let flags = ListValue(TNamed "Flags", [ for i in 1L .. 4L -> RecordValue("Flags", Map.ofList [ "size", IntValue(i * 10L); "on", BoolValue(i % 2L = 0L) ]) ])
+    let getCases =
+        [ "native.lists.get-bool", TBool, ListValue(TBool, [ BoolValue true; BoolValue false; BoolValue true ])
+          "native.lists.get-float", TFloat, ListValue(TFloat, [ FloatValue 1.5; FloatValue -2.25; FloatValue 1e300 ])
+          "native.lists.get-flags", TNamed "Flags", flags
+          "native.lists.get-nested", TList TInt, ListValue(TList TInt, [ ListValue(TInt, []); ListValue(TInt, [ IntValue 1L; IntValue 2L ]); ListValue(TInt, [ IntValue 3L ]) ]) ]
+    for word, itemType, values in getCases do
+        let body = engine.ExportVerifiedFlowEntryPoint(word, [ TList itemType; TInt ], [ TOption itemType ])
+        use trusted = OwningStackAot.compileWithRuntimeProfile toolchain LlvmOptimization.O2 OwningRuntimeProfile.TrustedGenerated (Path.Combine(runRoot, "native", "trusted-get", word)) body
+        let items = match values with ListValue(_, items) -> items | _ -> []
+        for index in [ -1L; 0L; 1L; int64 items.Length - 1L; int64 items.Length ] do
+            let expected = [ OptionValue(itemType, (if index >= 0L && index < int64 items.Length then Some items[int index] else None)) ]
+            for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+                let got, _ = execute optimization word [ TList itemType; TInt ] [ TOption itemType ] [ values; IntValue index ]
+                check $"{word} {index}/{optimization}" (got = expected)
+            check $"{word} {index}/trusted O2" (trusted.Execute([ values; IntValue index ], 1_048_576, 1_048_576).Values = expected)
 
     // Accumulation is linear: copied/moved bytes and peak arena double (not
     // quadruple) when the element count doubles, in every profile. Trusted O0 and

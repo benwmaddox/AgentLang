@@ -211,10 +211,23 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
    C into Flow at once: cookie decrypt + JSON, generic `db.query` rows with
    loop-based accessors, worker context copied into every request. Also
    compare measurement scopes (cgroup on Linux vs process CPU on Windows).
-2. **`html.raw` re-validates already-validated markup** (cache agent's probe:
-   costs about as much as rendering). Trusted inputs should skip it.
-3. **`list.append` in loops is O(n^2)** (same probe, similar size). Needs an
-   amortized append / builder for loop accumulation.
+2. ~~**`html.raw` re-validates already-validated markup**~~ **Done (278).**
+   The owning backend skips the check when the String is provably valid Html:
+   `Html.value` of Html (directly or through `let`s), literal fragments, and
+   `string.concat` of those. Untrusted Strings, vars and parameters are still
+   checked (tests: `AgentLang.OwningTemplates.Tests`, reraw cases). Trusted O2,
+   21 KB page: `html.raw(Html.value(page))` 46.2 -> 27.5-31.1 us, equal to the
+   page alone (27.0-32.2 us). A String from `cache.get` is not provable and is
+   still checked.
+3. ~~**`list.append` in loops is O(n^2)**~~ **Done (278).** A loop-carried
+   `var` built only by `v = list.append(v, x)` is a loop accumulator: each
+   append copies the element once onto a pending run, and the loop latch moves
+   the run next to the list (which stays at the loop mark). Trusted O2, 10,000
+   appends: Int 20.96 ms -> 0.39 ms, String 40.1 ms -> 0.48 ms; copied bytes
+   400 MB -> 80 KB, peak arena 240 KB -> 80 KB; 5k -> 10k scales 2.0x in time,
+   copies and peak (`AgentLang.OwningListBuild.Tests`). The diagnostic profile
+   is linear in bytes but its per-instruction self-check still re-reads every
+   live local, so its time grows with the list.
 4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
    passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
    Leaner small-op path or fused common sequences.
@@ -229,7 +242,12 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
    arena and buffer reservations. Measure and right-size.
 9. **Worker context copied per request** (276 deviation): borrow it from a
    protected region below the arena mark instead.
-10. **Missing native `list.get` / `list.count`** (forces loop helpers).
+10. ~~**Missing native `list.get` / `list.count`**~~ **Done (278).** Both
+    run natively with interpreter parity: `count` reads the header; `get` uses
+    a fixed stride for fixed-size elements, else one measure per earlier
+    element, and copies the element into the Option. 200 Strings, trusted O2:
+    count 6.2 -> 3.2 us, get [150] 5.9 -> 5.6 us (about 3.2 us of each is
+    input staging).
 
 Measured reference points: sum loop 0.52 ns/iteration; small-word call loop
 23 ns/iteration; lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,

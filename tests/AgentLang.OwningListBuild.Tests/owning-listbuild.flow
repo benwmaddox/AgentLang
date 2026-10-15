@@ -387,6 +387,51 @@ test native.lists.get-pair/negative {
     => value option.none<Pair>()
 }
 
+record Flags {
+    field size: Int
+    field on: Bool
+}
+
+fn native.lists.get-bool(values: List<Bool>, index: Int) -> Option<Bool> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-bool/second {
+    native.lists.get-bool([true, false], 1)
+    => value option.some<Bool>(false)
+}
+
+fn native.lists.get-float(values: List<Float>, index: Int) -> Option<Float> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-float/second {
+    native.lists.get-float([1.5, 2.5], 1)
+    => value option.some<Float>(2.5)
+}
+
+fn native.lists.get-flags(values: List<Flags>, index: Int) -> Option<Flags> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-flags/outside {
+    native.lists.get-flags([flags.new(1, true)], 1)
+    => value option.none<Flags>()
+}
+
+fn native.lists.get-nested(values: List<List<Int>>, index: Int) -> Option<List<Int>> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-nested/second {
+    native.lists.get-nested([[1], [2, 3]], 1)
+    => value option.some<List<Int>>([2, 3])
+}
+
 fn native.lists.count(values: List<String>) -> Int {
     effects none
     list.count(values)

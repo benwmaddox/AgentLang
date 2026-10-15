@@ -85,6 +85,14 @@ fn native.tpl.reraw-var(text: String, extra: String) -> String {
     html.text(html.raw(markup))
 }
 
+fn native.tpl.reraw-mixed(text: String, markup: String) -> String {
+    effects none
+    doc "A proven html.raw in a callee does not exempt this word's own html.raw of a parameter."
+
+    let checked = html.raw(markup)
+    string.concat(native.tpl.reraw(text), html.text(checked))
+}
+
 fn native.tpl.fragment?(text: String) -> Bool {
     effects none
     string.html-fragment?(text)
@@ -118,6 +126,11 @@ test native.tpl.reraw/same {
 test native.tpl.reraw-open/fails {
     native.tpl.reraw-open("a")
     => error REFINEMENT_FAILED
+}
+
+test native.tpl.reraw-mixed/ok {
+    native.tpl.reraw-mixed("a", "<i>b</i>")
+    => value "<p>a</p><br><p>a</p><i>b</i>"
 }
 
 test native.tpl.reraw-extra/ok {

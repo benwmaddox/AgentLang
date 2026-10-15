@@ -46,7 +46,7 @@ let private run () =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "native.tpl.item"; "native.tpl.list"; "native.tpl.card"; "native.tpl.braces"; "native.tpl.empty"; "native.tpl.only-hole"; "native.tpl.raw"; "native.tpl.reraw"; "native.tpl.reraw-open"; "native.tpl.reraw-extra"; "native.tpl.reraw-var"; "native.tpl.fragment?"; "native.tpl.names"; "native.tpl.pair"; "native.tpl.escaped" ] do
+    for name in [ "native.tpl.item"; "native.tpl.list"; "native.tpl.card"; "native.tpl.braces"; "native.tpl.empty"; "native.tpl.only-hole"; "native.tpl.raw"; "native.tpl.reraw"; "native.tpl.reraw-open"; "native.tpl.reraw-extra"; "native.tpl.reraw-var"; "native.tpl.reraw-mixed"; "native.tpl.fragment?"; "native.tpl.names"; "native.tpl.pair"; "native.tpl.escaped" ] do
         let args = JsonObject()
         args["word"] <- JsonValue.Create(name)
         let response = engine.Dispatch("commit", args)
@@ -169,7 +169,7 @@ let private run () =
             else
                 check $"raw {label}/{o}: interpreter rejects with REFINEMENT_FAILED" (interpreted = Error "REFINEMENT_FAILED")
                 check $"raw {label}/{o}: native rejects" (nativeOutcome = Error "REFINEMENT_FAILED")
-        // html.raw of markup that is already Html (report 278) skips the check; Html
+        // html.raw of markup that is already Html skips the check; Html
         // joined with a String that is not a proven fragment is still checked.
         let compiledIr word =
             File.ReadAllText(Path.Combine(runRoot, "native", string optimization, word, "owning-stack-native.ll"))
@@ -201,6 +201,15 @@ let private run () =
                 check $"{word} {JsonSerializer.Serialize extra}/{o}: native" (outcome program inputs = expected)
         check $"reraw-extra/{o}: an untrusted String keeps its check" (fragmentChecks (compiledIr "native.tpl.reraw-extra") = 1)
         check $"reraw-var/{o}: a var keeps its check" (fragmentChecks (compiledIr "native.tpl.reraw-var") = 1)
+        // The proof is per instruction: an entry word's html.raw of a parameter keeps
+        // its check even when a callee's html.raw is proven.
+        use rerawMixed = native "native.tpl.reraw-mixed" [ TString; TString ] [ TString ]
+        check $"reraw-mixed/{o}: the entry word's own html.raw is checked" (fragmentChecks (compiledIr "native.tpl.reraw-mixed") >= 1)
+        for markup, ok in [ "<i>b</i>", true; "<b", false; "</p>", false ] do
+            let inputs = [ StringValue "a"; StringValue markup ]
+            let expected = if ok then Ok [ StringValue("<p>a</p><br><p>a</p>" + markup) ] else Error "REFINEMENT_FAILED"
+            check $"reraw-mixed {JsonSerializer.Serialize markup}/{o}: interpreter" (interpret "native.tpl.reraw-mixed" [ TString; TString ] [ TString ] inputs = expected)
+            check $"reraw-mixed {JsonSerializer.Serialize markup}/{o}: native" (outcome rerawMixed inputs = expected)
         // string.html-fragment? parity: F# checker, interpreter and C checker.
         let corpus =
             [ "", true; "text", true; "<p>a</p>", true; "<p>", false; "</p>", false; "<br>", true; "<br/>", true; "<img src=x alt='y'>", true

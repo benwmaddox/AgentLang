@@ -375,9 +375,12 @@ type internal OwningProgramInfo =
       ValidatedScalarValidators: Map<IrType, IrResolvedCall>
       ValidatedScalarConstructors: Map<IrType, IrGeneratedTarget>
       /// WrapScalar sites whose input is a literal the type's pure validator
-      /// accepted at compile time, or a value already valid for the type
-      /// (provenValidatedWrapSites); their runtime validator call is omitted.
+      /// accepted at compile time; their runtime validator call is omitted.
       ProvenRefinedLiteralSites: Set<SourceSiteId>
+      /// WrapScalar instructions (by reference) in reachable function bodies
+      /// whose input is already valid for the type (provenValidatedWrapSites);
+      /// their runtime validator call is omitted too.
+      ProvenValidWraps: HashSet<IrInstruction>
       Layouts: OwningStackTypeLayout list }
 
 type internal OwningDiagnosticInfo =
@@ -1062,7 +1065,7 @@ module OwningStackAot =
     ///   element), so concatenated fragments are fragments.
     /// Anything else (a parameter, a var, a match binding, another call) keeps
     /// its run-time check.
-    let private provenValidatedWrapSites (isHtmlKey: ProgramTypeKey -> bool) (body: IrBlock) =
+    let private provenValidatedWrapSites (isHtmlKey: ProgramTypeKey -> bool) (body: IrBlock) : HashSet<IrInstruction> =
         // A tag is the set of validated types the String is known to satisfy.
         // HtmlKeys stands for every Html-validated type.
         let fragmentTag = set [ None ]
@@ -1092,7 +1095,7 @@ module OwningStackAot =
         let mutable slotTags = Map.empty<LocalSlot, Set<ProgramTypeKey option>>
         let mutable changed = true
         let mutable rounds = 0
-        let proven = HashSet<SourceSiteId>()
+        let proven = HashSet<IrInstruction>(HashIdentity.Reference)
         while changed && rounds < 16 do
             rounds <- rounds + 1
             proven.Clear()
@@ -1118,7 +1121,7 @@ module OwningStackAot =
                             stack <- stack @ [ tagFor key ]
                         | IrOperation.WrapScalar(_, key, Some _) ->
                             match pop 1 with
-                            | [ tag ] when satisfies tag key -> proven.Add instruction.Site |> ignore
+                            | [ tag ] when satisfies tag key -> proven.Add instruction |> ignore
                             | _ -> ()
                             stack <- stack @ [ Set.empty ]
                         | IrOperation.Call call when call.ResolvedTarget = PrimitiveTarget(PrimitiveId "string.concat") ->
@@ -2004,13 +2007,17 @@ module OwningStackAot =
             // Only function bodies: their sites are owner-qualified and unique, while
             // detached entry bodies number sites from zero and may share ids.
             for fn in reachableFunctions do visit fn.FunctionBody
-            // Values already valid for the type (html.raw(Html.value(page)) and
-            // Html built from Html) are retagged without re-running the validator.
+            Set.ofSeq found
+        // Values already valid for the type (html.raw(Html.value(page)) and Html
+        // built from Html) are retagged without re-running the validator. Keyed
+        // by instruction, so no other body's site id can match.
+        let provenValidWraps =
             let isHtmlKey key =
                 validatedScalarValidators.TryFind(IrNominal key) |> Option.exists (Some >> IrHtml.isHtmlValidator)
+            let found = HashSet<IrInstruction>(HashIdentity.Reference)
             for fn in reachableFunctions do
-                for site in provenValidatedWrapSites isHtmlKey fn.FunctionBody do found.Add site |> ignore
-            Set.ofSeq found
+                for instruction in provenValidatedWrapSites isHtmlKey fn.FunctionBody do found.Add instruction |> ignore
+            found
         { Program = program
           Body = body
           Bodies = bodies
@@ -2020,6 +2027,7 @@ module OwningStackAot =
           ValidatedScalarValidators = validatedScalarValidators
           ValidatedScalarConstructors = validatedScalarConstructors
           ProvenRefinedLiteralSites = provenRefinedLiteralSites
+          ProvenValidWraps = provenValidWraps
           Layouts = typeLayouts }
 
     let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
@@ -6371,7 +6379,7 @@ module OwningStackAot =
                                 invalidOp "Validated scalar wrap diverged from its frozen type validator during emission."
                             // A literal proven at compile time by the same pure validator
                             // is retagged without re-running it.
-                            if not (info.ProvenRefinedLiteralSites.Contains instruction.Site) then
+                            if not (info.ProvenRefinedLiteralSites.Contains instruction.Site || info.ProvenValidWraps.Contains instruction) then
                                 emitFrozenValidatorCall w scalarType frozenValidator input true instructionSpan failBody
                         | None -> ()
                         stack <- push prefix (IrNominal key) input.Offset input.Extent input.Payload input.OwnerEnd
