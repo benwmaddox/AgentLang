@@ -384,35 +384,52 @@ test campfire.server.boosts-of/filters {
     expect list.count(campfire.server.boosts-of([boost], 6)) == 0
 }
 
-fn campfire.server.presentation(message: MessageWithCreator) -> Html {
-    doc "campfire.presentation.body of the message's stored body."
-    campfire.presentation.body(message.body)
+fn campfire.server.presentation(message: MessageWithCreator, users: List<MentionUser>) -> Html {
+    doc "campfire.presentation.body-with of the message's stored body and the mention users loaded for its page."
+    campfire.presentation.body-with(message.body, users)
+}
+
+fn campfire.server.page-mention-users(messages: List<MessageWithCreator>, avatar-key: Bytes) -> List<MentionUser> {
+    effects db.read
+    doc "Every user these messages mention, loaded in one query."
+    var ids = list.empty<Int>()
+    for message in messages {
+        for id in campfire.presentation.mentioned-user-ids(message.body) {
+            ids = list.append(ids, id)
+        }
+    }
+    campfire.server.mention-users(ids, avatar-key)
+}
+
+test campfire.server.page-mention-users/none {
+    expect campfire.server.test-fixture() == 0
+    expect list.count(campfire.server.page-mention-users(list.empty<MessageWithCreator>(), bytes.from-utf8("k"))) == 0
 }
 
 test campfire.server.presentation/canonical-or-escaped {
     let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.some<String>("<p>hi</p>"))
-    expect campfire.views.text(campfire.server.presentation(message)) == "<div class=\"lexxy-content\">\n  <p>hi</p>\n</div>\n"
+    expect campfire.views.text(campfire.server.presentation(message, list.empty<MentionUser>())) == "<div class=\"lexxy-content\">\n  <p>hi</p>\n</div>\n"
     let unsafe = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.some<String>("<script>x</script>"))
-    expect campfire.views.text(campfire.server.presentation(unsafe)) == "<div class=\"lexxy-content\">\n  &lt;script&gt;x&lt;/script&gt;\n</div>\n"
+    expect campfire.views.text(campfire.server.presentation(unsafe, list.empty<MentionUser>())) == "<div class=\"lexxy-content\">\n  &lt;script&gt;x&lt;/script&gt;\n</div>\n"
     let bell = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.some<String>("/play bell"))
-    expect string.starts-with(campfire.views.text(campfire.server.presentation(bell)), "<div class=\"sound\"")
+    expect string.starts-with(campfire.views.text(campfire.server.presentation(bell, list.empty<MentionUser>())), "<div class=\"sound\"")
 }
 
-fn campfire.server.render-message(context: MessageContext, message: MessageWithCreator, boosts: List<BoostView>) -> String {
+fn campfire.server.render-message(context: MessageContext, message: MessageWithCreator, boosts: List<BoostView>, users: List<MentionUser>) -> String {
     doc "messages/_message with the message's own boosts and its presentation."
-    campfire.views.text(campfire.views.rails-message-presented(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message)))
+    campfire.views.text(campfire.views.rails-message-presented(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, users)))
 }
 
 test campfire.server.render-message/boost-markup {
     let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.none<String>())
     let context = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
-    let text = campfire.server.render-message(context, message, [boostView.new(id = 9, message-id = 5, booster-id = 2, booster-name = "Bo", booster-avatar-url = "/users/t2/avatar?v=1", content = "👀")])
+    let text = campfire.server.render-message(context, message, [boostView.new(id = 9, message-id = 5, booster-id = 2, booster-name = "Bo", booster-avatar-url = "/users/t2/avatar?v=1", content = "👀")], list.empty<MentionUser>())
     expect string.contains(text, "<div id=\"boost_9\"")
     expect string.contains(text, "class=\"txt-small txt-medium\"")
     expect string.contains(text, "aria-label=\"Bo boosted 👀\"")
 }
 
-fn campfire.server.write-messages(cache: WorkerCache, context: MessageContext, keys: List<PageKey>, loaded: List<MessageWithCreator>, boosts: List<BoostView>) -> StreamedPage {
+fn campfire.server.write-messages(cache: WorkerCache, context: MessageContext, keys: List<PageKey>, loaded: List<MessageWithCreator>, boosts: List<BoostView>, users: List<MentionUser>) -> StreamedPage {
     effects store.read, response.write
     doc "Writes each message's fragment to the response stream in page order: a hit straight from the store, a miss rendered from the loaded rows. Returns the rendered fragments and their keys for storing afterwards; written is false when a fragment could not be written."
     var written = true
@@ -427,7 +444,7 @@ fn campfire.server.write-messages(cache: WorkerCache, context: MessageContext, k
             } else {
                 let text = match found {
                     none => ""
-                    some message => campfire.server.render-message(context, message, boosts)
+                    some message => campfire.server.render-message(context, message, boosts, users)
                 }
                 written = written && response.write(text)
                 rendered = list.append(rendered, text)
@@ -468,7 +485,7 @@ fn campfire.server.stream-room-page(chrome: PageChrome, keys: List<PageKey>, cac
             let context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
             let frame = campfire.server.page-frame(chrome)
             let head = response.write(frame.head)
-            let page = campfire.server.write-messages(cache, context, keys, loaded, boosts)
+            let page = campfire.server.write-messages(cache, context, keys, loaded, boosts, campfire.server.page-mention-users(loaded, avatar-key))
             let tail = response.write(frame.tail)
             if head && page.written && tail {
                 result.ok<Int, DbError>(campfire.server.store-fragments(cache, page))
@@ -599,9 +616,10 @@ fn campfire.server.whole-room-page(chrome: PageChrome, messages: List<MessageWit
     }
     let boosts = match campfire.server.boosts-for(ids, context.avatar-key) { error failure => list.empty<BoostView>(); ok found => found }
     let message-context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
+    let users = campfire.server.page-mention-users(messages, context.avatar-key)
     var rendered = list.empty<Html>()
     for message in messages {
-        rendered = list.append(rendered, campfire.views.rails-message-presented(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message)))
+        rendered = list.append(rendered, campfire.views.rails-message-presented(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, users)))
     }
     campfire.views.text(campfire.views.page(chrome, rendered))
 }
@@ -697,11 +715,11 @@ test campfire.server.write-messages/hits-and-misses-in-order {
     expect worker-cache.put(cache, campfire.server.fragment-key(1, 5), "<one>")
     let message = messageWithCreator.new(id = MessageId.new(2), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 6, client-message-id = "c2", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("two"))
     let context = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
-    let page = campfire.server.write-messages(cache, context, [pageKey.new(id = 1, updated-at-ms = 5), pageKey.new(id = 2, updated-at-ms = 6)], [message], list.empty<BoostView>())
+    let page = campfire.server.write-messages(cache, context, [pageKey.new(id = 1, updated-at-ms = 5), pageKey.new(id = 2, updated-at-ms = 6)], [message], list.empty<BoostView>(), list.empty<MentionUser>())
     expect page.written
     expect page.rendered-keys == [campfire.server.fragment-key(2, 6)]
     expect response.written(0) == string.concat("<one>", campfire.views.text(campfire.views.rails-message(context, message)))
-    let missing = campfire.server.write-messages(cache, context, [pageKey.new(id = 3, updated-at-ms = 1)], list.empty<MessageWithCreator>(), list.empty<BoostView>())
+    let missing = campfire.server.write-messages(cache, context, [pageKey.new(id = 3, updated-at-ms = 1)], list.empty<MessageWithCreator>(), list.empty<BoostView>(), list.empty<MentionUser>())
     expect bool.not(missing.written)
 }
 

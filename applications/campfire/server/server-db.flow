@@ -769,6 +769,31 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
     }
 }
 
+fn campfire.server.mention-users(ids: List<Int>, avatar-key: Bytes) -> List<MentionUser> {
+    effects db.read
+    doc "The users these ids name, as mentions render them (name, bio, fresh avatar path), in one query. Missing users are left out (Rails renders a missing attachable as nothing)."
+    if list.count(ids) == 0 {
+        list.empty<MentionUser>()
+    } else {
+        match db.query("SELECT id, name, COALESCE(bio, ''), updated_at FROM users WHERE id IN (SELECT value FROM json_each($ids))", [db.text-param(campfire.server.id-list(ids))]) {
+            error failure => list.empty<MentionUser>()
+            ok rows => {
+                var users = list.empty<MentionUser>()
+                for row in rows {
+                    let id = campfire.server.int-or-zero(db.optional-int(row, 0))
+                    let stamp = campfire.server.text-or-empty(db.optional-text(row, 3))
+                    users = list.append(users, mentionUser.new(
+                        id = id,
+                        name = campfire.server.text-or-empty(db.optional-text(row, 1)),
+                        bio = campfire.server.text-or-empty(db.optional-text(row, 2)),
+                        avatar-url = string.join(["/users/", campfire.server.avatar-token(avatar-key, id), "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")])))
+                }
+                users
+            }
+        }
+    }
+}
+
 fn campfire.server.last-page-with-creators(room-id: RoomId, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
     effects db.read, db.write
     doc "The room's newest forty messages, oldest first, with creators and avatar tokens, read in one deferred transaction (campfire.messages.last-page-with-creators)."

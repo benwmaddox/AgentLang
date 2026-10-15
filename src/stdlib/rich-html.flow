@@ -714,3 +714,233 @@ test rich-html.scan/links-allowed {
 test rich-html.text-ok-for?/links {
     expect rich-html.text-ok-for?("/p", "https://x.y", true) && bool.not(rich-html.text-ok-for?("/p", "https://x.y", false))
 }
+
+// ----------------------------------------------------- start-tag tokenizer
+//
+// The HTML5 tokenizer's tag states (tag name, attribute name/value, after
+// value, self-closing), for reading one start tag exactly as an HTML5 parser
+// does: '>' inside a quoted value does not stop the tag, an attribute name may
+// contain '"' or "'" (a parse error the spec tolerates), names are
+// lower-cased, the first of duplicate attributes wins. Character references
+// in values: &amp; &lt; &gt; &quot; &apos; &nbsp; and numeric ones are
+// decoded; any other named reference makes the tag unreadable (ok = false),
+// since this library carries no full entity table.
+
+record HtmlAttribute {
+    name: String
+    value: String
+}
+
+record HtmlTag {
+    name: String
+    attributes: List<HtmlAttribute>
+    stop: Int
+    valid: Bool
+}
+
+fn rich-html.space?(byte: Int) -> Bool {
+    byte == 32 || byte == 9 || byte == 10 || byte == 12 || byte == 13
+}
+
+test rich-html.space?/kinds {
+    expect rich-html.space?(9) && bool.not(rich-html.space?(65))
+}
+
+fn rich-html.ascii-char(code: Int) -> String {
+    doc "The printable ASCII character with this code (32-126), else empty."
+    let table = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+    if code < 32 || code > 126 { "" } else { match string.slice(table, code - 32, 1) { none => ""; some c => c } }
+}
+
+test rich-html.ascii-char/table {
+    expect rich-html.ascii-char(39) == "'" && rich-html.ascii-char(65) == "A" && rich-html.ascii-char(126) == "~" && rich-html.ascii-char(200) == ""
+}
+
+fn rich-html.char-ref(text: String, at: Int) -> List<String> {
+    doc "The character reference starting at this '&' in an attribute value: [decoded text, length consumed]; ['&', '1'] when it is not a reference; ['', '0'] when it is a named reference this library cannot decode."
+    let rest = match string.slice(text, at, if string.byte-length(text) - at < 12 { string.byte-length(text) - at } else { 12 }) { none => ""; some s => s }
+    let names = ["&amp;", "&lt;", "&gt;", "&quot;", "&apos;", "&nbsp;"]
+    let values = ["&", "<", ">", "\"", "'", " "]
+    var found = ["&", "1"]
+    for name, index in names {
+        if string.starts-with(rest, name) {
+            found = [match list.get(values, index) { none => ""; some value => value }, int.to-string(string.byte-length(name))]
+        }
+    }
+    if string.starts-with(rest, "&#") {
+        let hex = string.byte-at-or(rest, 2, 0) == 120 || string.byte-at-or(rest, 2, 0) == 88
+        let start = if hex { 3 } else { 2 }
+        var value = 0
+        var digits = 0
+        let limit = string.byte-length(rest)
+        for k in start..limit {
+            let byte = string.byte-at-or(rest, k, 0)
+            let digit = if byte >= 48 && byte <= 57 { byte - 48 } else if hex && byte >= 97 && byte <= 102 { byte - 87 } else if hex && byte >= 65 && byte <= 70 { byte - 55 } else { -1 }
+            if digit < 0 {
+                break
+            }
+            value = value * (if hex { 16 } else { 10 }) + digit
+            digits = digits + 1
+        }
+        let terminated = string.byte-at-or(rest, start + digits, 0) == 59
+        if digits > 0 && terminated && rich-html.ascii-char(value) != "" {
+            // Printable ASCII only; other code points are refused (no encoder in this library).
+            found = [rich-html.ascii-char(value), int.to-string(start + digits + 1)]
+        } else {
+            found = ["", "0"]
+        }
+    } else if found == ["&", "1"] && rich-html.ascii-word?(string.byte-at-or(rest, 1, 0)) {
+        // &name...: a named reference we cannot decode (or a bare ampersand followed by a word, which HTML keeps; refuse both).
+        found = ["", "0"]
+    }
+    found
+}
+
+test rich-html.char-ref/kinds {
+    expect rich-html.char-ref("&quot;x", 0) == ["\"", "6"]
+    expect rich-html.char-ref("&#39;", 0) == ["'", "5"]
+    expect rich-html.char-ref("& x", 0) == ["&", "1"]
+    expect rich-html.char-ref("&copy;", 0) == ["", "0"]
+}
+
+fn rich-html.tag(text: String, at: Int) -> HtmlTag {
+    doc "The start tag beginning at this '<', read with the HTML5 tokenizer's tag states. ok is false when it has no stop or holds a reference this library cannot decode."
+    let length = string.byte-length(text)
+    var name = ""
+    var attributes = list.empty<HtmlAttribute>()
+    var state = 0
+    var attr-name = ""
+    var attr-value = ""
+    var quote = 0
+    var stop = -1
+    var ok = true
+    var i = at + 1
+    let steps = length + 1
+    // States: 0 tag name, 1 before attribute name, 2 attribute name, 3 after attribute name,
+    // 4 before attribute value, 5 quoted value, 6 unquoted value, 7 after quoted value, 8 self-closing.
+    for step in 0..steps {
+        if i >= length || stop >= 0 || bool.not(ok) {
+            break
+        }
+        let byte = string.byte-at-or(text, i, 0)
+        let char = match string.slice(text, i, 1) { none => ""; some s => s }
+        var advance = 1
+        var emit-attr = false
+        if state == 0 {
+            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { name = string.concat(name, char) }
+        } else if state == 1 {
+            if rich-html.space?(byte) { state = 1 } else if byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { attr-name = "="; attr-value = ""; state = 2 } else { attr-name = ""; attr-value = ""; state = 2; advance = 0 }
+        } else if state == 2 {
+            if rich-html.space?(byte) || byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { state = 4 } else { attr-name = string.concat(attr-name, char) }
+        } else if state == 3 {
+            if rich-html.space?(byte) {
+                state = 3
+            } else if byte == 47 {
+                emit-attr = attr-name != ""
+                state = 8
+            } else if byte == 61 {
+                state = 4
+            } else if byte == 62 {
+                emit-attr = attr-name != ""
+                stop = i
+            } else {
+                emit-attr = attr-name != ""
+                state = 2
+                advance = 0
+            }
+        } else if state == 4 {
+            if rich-html.space?(byte) { state = 4 } else if byte == 34 || byte == 39 { quote = byte; state = 5 } else if byte == 62 { emit-attr = true; stop = i } else { state = 6; advance = 0 }
+        } else if state == 5 {
+            if byte == quote {
+                emit-attr = true
+                state = 7
+            } else if byte == 38 {
+                let ref = rich-html.char-ref(text, i)
+                let size = match int.parse(match list.get(ref, 1) { none => "0"; some n => n }) { none => 0; some n => n }
+                if size == 0 { ok = false } else { attr-value = string.concat(attr-value, match list.get(ref, 0) { none => ""; some s => s }); advance = size }
+            } else {
+                attr-value = string.concat(attr-value, char)
+            }
+        } else if state == 6 {
+            if rich-html.space?(byte) {
+                emit-attr = true
+                state = 1
+            } else if byte == 62 {
+                emit-attr = true
+                stop = i
+            } else if byte == 38 {
+                let ref = rich-html.char-ref(text, i)
+                let size = match int.parse(match list.get(ref, 1) { none => "0"; some n => n }) { none => 0; some n => n }
+                if size == 0 { ok = false } else { attr-value = string.concat(attr-value, match list.get(ref, 0) { none => ""; some s => s }); advance = size }
+            } else {
+                attr-value = string.concat(attr-value, char)
+            }
+        } else if state == 7 {
+            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { state = 1; advance = 0 }
+        } else {
+            if byte == 62 { stop = i } else { state = 1; advance = 0 }
+        }
+        if emit-attr {
+            // The tokenizer lower-cases ASCII letters in attribute names.
+            attr-name = string.to-lower-ascii(attr-name)
+            var seen = false
+            for attribute in attributes {
+                if attribute.name == attr-name {
+                    seen = true
+                }
+            }
+            if bool.not(seen) {
+                attributes = list.append(attributes, htmlAttribute.new(name = attr-name, value = attr-value))
+            }
+            attr-name = ""
+            attr-value = ""
+        }
+        i = i + advance
+    }
+    htmlTag.new(name = string.to-lower-ascii(name), attributes = attributes, stop = stop, valid = ok && stop >= 0)
+}
+
+test rich-html.tag/spec-states {
+    let tag = rich-html.tag("<action-text-attachment sgid=\"abc\" content-type=\"application/vnd.campfire.mention\" content=\"<span class=\" mention\"=\"\"></action-text-attachment>", 0)
+    expect tag.valid && tag.name == "action-text-attachment"
+    expect tag.attributes == [htmlAttribute.new(name = "sgid", value = "abc"), htmlAttribute.new(name = "content-type", value = "application/vnd.campfire.mention"), htmlAttribute.new(name = "content", value = "<span class="), htmlAttribute.new(name = "mention\"", value = "")]
+    let quoted = rich-html.tag("<a title='x>y' HREF=/a>z", 0)
+    expect quoted.valid && quoted.stop == 22 && quoted.attributes == [htmlAttribute.new(name = "title", value = "x>y"), htmlAttribute.new(name = "href", value = "/a")]
+    expect rich-html.tag("<p class=\"a&quot;b\">", 0).attributes == [htmlAttribute.new(name = "class", value = "a\"b")]
+    expect bool.not(rich-html.tag("<p title=\"&copy;\">", 0).valid)
+    expect bool.not(rich-html.tag("<p title=\"x", 0).valid)
+}
+
+fn rich-html.attribute(tag: HtmlTag, name: String) -> Option<String> {
+    var found = option.none<String>()
+    for attribute in tag.attributes {
+        if attribute.name == name {
+            found = option.some<String>(attribute.value)
+            break
+        }
+    }
+    found
+}
+
+test rich-html.attribute/lookup {
+    let tag = rich-html.tag("<a href=\"/x\">", 0)
+    expect rich-html.attribute(tag, "href") == option.some<String>("/x") && rich-html.attribute(tag, "title") == option.none<String>()
+}
+
+fn rich-html.escape-text(text: String) -> String {
+    doc "Nokogiri's HTML5 serialization of text: & U+00A0 < > as &amp; &nbsp; &lt; &gt;."
+    string.replace(string.replace(string.replace(string.replace(text, "&", "&amp;"), " ", "&nbsp;"), "<", "&lt;"), ">", "&gt;")
+}
+
+test rich-html.escape-text/set {
+    expect rich-html.escape-text("a & <b> \"q\"") == "a &amp; &lt;b&gt; \"q\""
+}
+
+fn rich-html.escape-attribute(text: String) -> String {
+    doc "Nokogiri's HTML5 serialization of an attribute value: & U+00A0 \" as &amp; &nbsp; &quot;."
+    string.replace(string.replace(string.replace(text, "&", "&amp;"), " ", "&nbsp;"), "\"", "&quot;")
+}
+
+test rich-html.escape-attribute/set {
+    expect rich-html.escape-attribute("a\"b&c<") == "a&quot;b&amp;c<"
+}

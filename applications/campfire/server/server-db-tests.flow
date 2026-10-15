@@ -207,3 +207,11 @@ test campfire.server.boosts-for/fixture {
     expect match boosts { error failure => ""; ok views => match list.get(views, 0) { none => ""; some view => string.join([view.booster-name, ":", view.content]) } } == "Ann:👀"
     expect campfire.server.boosts-for(list.empty<Int>(), bytes.from-utf8("key")) == result.ok<List<BoostView>, DbError>(list.empty<BoostView>())
 }
+
+test campfire.server.mention-users/fixture {
+    expect campfire.server.test-fixture() == 0
+    let users = campfire.server.mention-users([1, 99], bytes.from-utf8("key"))
+    expect list.count(users) == 1
+    expect match list.get(users, 0) { none => ""; some user => user.name } == "Ann"
+    expect list.count(campfire.server.mention-users(list.empty<Int>(), bytes.from-utf8("key"))) == 0
+}
