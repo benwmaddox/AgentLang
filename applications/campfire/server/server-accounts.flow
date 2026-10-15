@@ -99,6 +99,8 @@ fn campfire.server.test-fixture() -> Int {
     failed = failed + campfire.server.run(db.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY, room_id INTEGER NOT NULL, creator_id INTEGER NOT NULL, client_message_id TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE action_text_rich_texts (record_id INTEGER, record_type TEXT, name TEXT, body TEXT)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE bans (ip_address TEXT)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE boosts (id INTEGER PRIMARY KEY, booster_id INTEGER NOT NULL, content TEXT NOT NULL, created_at TEXT NOT NULL, message_id INTEGER NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("INSERT INTO boosts (id, booster_id, content, created_at, message_id, updated_at) VALUES (7, 1, '👀', '2026-10-14 10:06:00', 2, '2026-10-14 10:06:00')", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE push_subscriptions (user_id INTEGER, endpoint TEXT)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("INSERT INTO users (id, name, role, status, updated_at) VALUES (1, 'Ann', 0, 0, '2026-01-01 00:00:00'), (2, 'Bo', 0, 0, '2026-01-01 00:00:00')", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("INSERT INTO sessions (id, user_id, token, last_active_at, created_at, updated_at) VALUES (1, 1, 'session-token-1', '2026-10-14 11:30:00', '2026-10-01 00:00:00', '2026-10-14 11:30:00')", list.empty<DbValue>()))

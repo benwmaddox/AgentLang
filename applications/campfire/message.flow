@@ -4,7 +4,48 @@ record MessageContext {
     base-url: String
 }
 
+record BoostView {
+    id: Int
+    message-id: Int
+    booster-id: Int
+    booster-name: String
+    booster-avatar-url: String
+    content: String
+}
+
+fn campfire.views.boost(boost: BoostView) -> Html {
+    effects none
+    doc "messages/boosts/_boost (inside its `cache boost` block), generated from Campfire's markup. The content span is txt-medium when the content is all emoji."
+
+    let id = int.to-string(boost.id)
+    let booster-id = int.to-string(boost.booster-id)
+    let message-id = int.to-string(boost.message-id)
+    let label = string.join([boost.booster-name, " boosted ", boost.content])
+    let span-class = if campfire.emoji.all?(boost.content) { "txt-small txt-medium" } else { "txt-small" }
+    html"""  <div id="boost_{id}"
+      class="boost boost-item flex-inline postion--relative max-width align-center fill-white gap"
+      data-controller="boost-delete" data-boost-delete-perform-class="boost--deleting" data-boost-delete-reveal-class="expanded" data-boost-delete-booster-id-value="{booster-id}">
+    <figure class="avatar boost__avatar flex-item-no-shrink">
+      <a title="{boost.booster-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{boost.booster-avatar-url}" width="48" height="48" /></a>
+    </figure>
+
+    <span role="button" class="{span-class}" data-action="click-&gt;boost-delete#reveal keydown.enter-&gt;boost-delete#reveal:prevent" data-boost-delete-target="content">{boost.content}</span>
+
+    <form class="button_to" method="post" action="/messages/{message-id}/boosts/{id}"><input type="hidden" name="_method" value="delete" /><button data-action="boost-delete#perform" data-boost-delete-target="button" class="btn btn--negative flex-item-justify-end boost__delete" type="submit">
+      <img aria-hidden="true" src="/assets/minus-b31a1093.svg" width="20" height="20" />
+      <span class="for-screen-reader">Delete this boost</span>
+</button></form>  </div>
+  <span id="delete_boost_accessible_label" class="for-screen-reader">Press enter to delete this boost</span>
+"""
+}
+
 fn campfire.views.rails-message(context: MessageContext, message: MessageWithCreator) -> Html {
+    effects none
+    doc "campfire.views.rails-message-boosted with no boosts."
+    campfire.views.rails-message-boosted(context, message, list.empty<BoostView>())
+}
+
+fn campfire.views.rails-message-boosted(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>) -> Html {
     effects none
     doc "One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
 
@@ -24,8 +65,8 @@ fn campfire.views.rails-message(context: MessageContext, message: MessageWithCre
         none => Html.new("")
         some text => Html.new(text)
     }
-    let boosts = list.empty<Html>()
-    html"""<div id="message_{message.client-message-id}" class="message " data-controller="reply" data-user-id="{creator-id}" data-message-id="{id}" data-message-timestamp="{created-ms}" data-message-updated-at="{updated-ms}" data-sort-value="{created-ms}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">
+    let boosts = boost-views.map(campfire.views.boost)
+    html"""  <div id="message_{message.client-message-id}" class="message " data-controller="reply" data-user-id="{creator-id}" data-message-id="{id}" data-message-timestamp="{created-ms}" data-message-updated-at="{updated-ms}" data-sort-value="{created-ms}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">
     <h2 class="message__day-separator"><time datetime="{iso}" data-local-time-target="date"></time></h2>
 
     <figure class="avatar message__avatar">
@@ -125,7 +166,8 @@ fn campfire.views.rails-message(context: MessageContext, message: MessageWithCre
           <turbo-frame id="boosting_message_{message.client-message-id}">
   <div class="boosts flex flex-wrap align-center gap full-width" style="--column-gap: 0.4ch; --row-gap: 0"
       data-controller="turbo-streaming" data-action="turbo:submit-start->turbo-streaming#unsubscribe">
-    <div class="flex-inline flex-wrap gap" id="boosts_message_{message.client-message-id}" data-turbo-streaming-target="container">{boosts}
+    <div class="flex-inline flex-wrap gap" id="boosts_message_{message.client-message-id}" data-turbo-streaming-target="container">
+      {boosts}
     </div>
 
     <turbo-frame id="new_boost_message_{message.client-message-id}">
@@ -140,5 +182,5 @@ fn campfire.views.rails-message(context: MessageContext, message: MessageWithCre
       </div>
     </turbo-frame>
 </div>
-  """
+"""
 }

@@ -199,3 +199,11 @@ test campfire.server.messages-by-id/only-requested {
     expect match loaded { error failure => ""; ok messages => match list.get(messages, 0) { none => ""; some message => match message.body { none => ""; some text => text } } } == "second message"
     expect campfire.server.messages-by-id(list.empty<Int>(), bytes.from-utf8("key")) == result.ok<List<MessageWithCreator>, DbError>(list.empty<MessageWithCreator>())
 }
+
+test campfire.server.boosts-for/fixture {
+    expect campfire.server.test-fixture() == 0
+    let boosts = campfire.server.boosts-for([2], bytes.from-utf8("key"))
+    expect match boosts { error failure => -1; ok views => list.count(views) } == 1
+    expect match boosts { error failure => ""; ok views => match list.get(views, 0) { none => ""; some view => string.join([view.booster-name, ":", view.content]) } } == "Ann:👀"
+    expect campfire.server.boosts-for(list.empty<Int>(), bytes.from-utf8("key")) == result.ok<List<BoostView>, DbError>(list.empty<BoostView>())
+}

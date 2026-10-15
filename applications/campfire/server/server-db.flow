@@ -741,6 +741,34 @@ fn campfire.server.messages-by-id(ids: List<Int>, avatar-key: Bytes) -> Result<L
     }
 }
 
+fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<BoostView>, DbError> {
+    effects db.read
+    doc "message.boosts.ordered (created_at) with each booster, for these message ids, in one query; the booster's fresh avatar path is signed here."
+
+    if list.count(ids) == 0 {
+        result.ok<List<BoostView>, DbError>(list.empty<BoostView>())
+    } else {
+        match db.query("SELECT boosts.id, boosts.message_id, boosts.booster_id, boosts.content, users.name, users.updated_at FROM boosts INNER JOIN users ON users.id = boosts.booster_id WHERE boosts.message_id IN (SELECT value FROM json_each($ids)) ORDER BY boosts.created_at", [db.text-param(campfire.server.id-list(ids))]) {
+            error failure => result.error<List<BoostView>, DbError>(campfire.server.db-error(failure))
+            ok rows => {
+                var boosts = list.empty<BoostView>()
+                for row in rows {
+                    let booster = campfire.server.int-or-zero(db.optional-int(row, 2))
+                    let stamp = campfire.server.text-or-empty(db.optional-text(row, 5))
+                    boosts = list.append(boosts, boostView.new(
+                        id = campfire.server.int-or-zero(db.optional-int(row, 0)),
+                        message-id = campfire.server.int-or-zero(db.optional-int(row, 1)),
+                        booster-id = booster,
+                        booster-name = campfire.server.text-or-empty(db.optional-text(row, 4)),
+                        booster-avatar-url = string.join(["/users/", campfire.server.avatar-token(avatar-key, booster), "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")]),
+                        content = campfire.server.text-or-empty(db.optional-text(row, 3))))
+                }
+                result.ok<List<BoostView>, DbError>(boosts)
+            }
+        }
+    }
+}
+
 fn campfire.server.last-page-with-creators(room-id: RoomId, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
     effects db.read, db.write
     doc "The room's newest forty messages, oldest first, with creators and avatar tokens, read in one deferred transaction (campfire.messages.last-page-with-creators)."
