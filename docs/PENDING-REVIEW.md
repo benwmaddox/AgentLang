@@ -228,6 +228,15 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
    copies and peak (`AgentLang.OwningListBuild.Tests`). The diagnostic profile
    is linear in bytes but its per-instruction self-check still re-reads every
    live local, so its time grows with the list.
+1. **Profile the Linux portable path first.** Done in 281; see "Linux
+   profile (281)" below. The dominant cost was `db.column`, 37% uncached and
+   44% cached. Each column read rescans the whole row. Campfire's message rows
+   now decode in one pass. Still open: compare measurement scopes (cgroup on
+   Linux vs process CPU on Windows).
+2. **`html.raw` re-validates already-validated markup** (cache agent's probe:
+   costs about as much as rendering). Trusted inputs should skip it.
+3. **`list.append` in loops is O(n^2)** (same probe, similar size). Needs an
+   amortized append / builder for loop accumulation.
 4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
    passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
    Leaner small-op path or fused common sequences.
@@ -272,8 +281,163 @@ level only because Flow saturated all 4 vCPUs. In rough order of expected size:
     element, and copies the element into the Option. 200 Strings, trusted O2:
     count 6.2 -> 3.2 us, get [150] 5.9 -> 5.6 us (about 3.2 us of each is
     input staging).
+8. **Memory**: done in 281. PSS went from 171 MB to 20 MB. The 171 MB came
+   from `memset`, which committed every reservation on every worker.
+9. **Worker context copied per request**: done in 281. The context is now
+   borrowed from the protected arena prefix. It is only 240 bytes, so the time
+   saved is under 0.1%.
+10. **Missing native `list.get` / `list.count`** (forces loop helpers).
 
 Measured reference points: sum loop 0.52 ns/iteration; small-word call loop
 23 ns/iteration; lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
 BCrypt) / 1.22 us (Linux, OpenSSL one-shot); stdlib ops: concat/encode ~72 ns,
 slice/xor ~125 ns, mask one CSRF token ~247 ns.
+
+## Linux profile (281; Campfire Flow server, measured 2026-10-15)
+
+**How it was measured.** `perf record -g -F 2999` (linux-tools 6.8) ran for
+the length of the 10 s smoke, on the harness setup:
+- namespace lb273, 4 pinned workers on vCPUs 8-11, loadgen on vCPUs 12-15;
+- snapshot snap-nc and its session cookie, the watercooler room, `--validate`.
+
+The binary is a trusted -O2 build made with `-Profile`, which keeps frame
+pointers in the generated words. `symbols.tsv` maps the `agentlang_word_NNNN`
+symbols back to Flow words.
+
+"By Flow word" charges each sample to the innermost Flow word on its stack.
+That includes the runtime and stdlib helpers the word called, and libc,
+libcrypto and SQLite. libcrypto and libc have no frame pointers, so their
+stacks end at that frame. Scripts, the harness copy and the raw reports are in
+`.agentlang/hostperf/` of the 281 worktree.
+
+**Before 281, uncached** (946 req/s, 4.39 ms CPU/req under perf):
+- Flat by function: `al_owning_scan_value` 22.3%,
+  `validate_type_descriptor` 11.9%, `scan_text` 9.5%, `scan_readable` 4.8%,
+  `html_template_write` 4.2%, `copy_range` 4.0%, `al_stdlib_emit` 3.4%,
+  `html_template_plan` 3.1%, `read_u64_le` 2.5%, memmove 1.2%,
+  `string_join_parts_write` 1.1%, `store_i64` 1.0%, `string_join_write`
+  1.0%, `publish` 1.0%, `sqlite3VdbeExec` 0.9%.
+- Inclusive: `scan_value` 46.8%, `db.column` 37.0%, `locate_field` 25.3%,
+  `measure_value` 13.6%, `rails-message` 11.1%, stdlib emit/write 10.9%,
+  `locate_sum_case` 8.1%, `page-query` 7.3%, `al_host_flow_http_v1` 5.3%,
+  `sqlite3_step` 4.9%, HMAC 4.7%, `cached-room-page` 4.6%, kernel send 2.9%.
+- By Flow word: `db.column` 37.0%, `campfire.views.rails-message` 11.1%,
+  `page-query` 7.0%, `cached-room-page` 4.6%, `csrf.mask` 3.6%,
+  `avatar-token` 3.3%, `message-page` 2.7%, `csrf.digest` 2.0%,
+  `db.optional-text` 2.0%, `db.optional-int` 1.9%, `show-room` 1.4%,
+  `message-row` 1.4%, `csrf.pad-at` 1.4%, `message-fragment` 1.2%,
+  `flow_http_handle` 1.1%.
+
+**Before 281, cached `--cache-mb 32`:**
+- By Flow word: `db.column` 44.4%, `page-query` 8.4%, `message-fragment`
+  6.6% (of which `al_owning_utf8_valid` is 65%), `cached-room-page` 5.4%,
+  `avatar-token` 3.6%, `message-page` 3.1%.
+- Flat: `scan_value` 25.9%, `validate_type_descriptor` 13.3%, `scan_text`
+  8.7%, `copy_range` 4.6%, `scan_readable` 4.6%, `utf8_valid` 4.4%.
+
+**Why `db.column` cost so much.** The cost is in the runtime, which is not
+281's area, so it is reported here. `db.column(row, k)` loops over
+`row.values`. Every call first locates `DbRow.values`. In the trusted
+profile, `al_owning_locate_field` walks each dynamic field before the target
+with a full `scan_value`, and that includes the target field itself. So each
+call scans the whole `List<DbValue>`, including UTF-8 validation of every
+text column and the message body, then measures elements up to column k.
+Campfire read about 22 columns per message row this way, times 40 rows.
+
+281 changes `campfire.server.message-row` to make one
+`for value, index in row.values` pass. That one change moved uncached CPU
+from 4.39 to 2.83 ms per request under perf.
+
+Runtime follow-ups, whose owners are the lists and locate work:
+- a native `list.get` (item 10);
+- a trusted-mode `locate_field` that takes a dynamic String's extent from its
+  length prefix instead of scanning its bytes;
+- no `validate_type_descriptor` on every locate.
+
+`campfire.server.session-row` still reads its eight columns with
+`db.optional-*` once per request. That costs about 1%.
+
+**After 281, uncached** (prof3 build):
+- Flat: `scan_value` 9.6%, `scan_text` 7.8%, `html_template_write` 6.9%,
+  `copy_range` 5.6%, `validate_type_descriptor` 5.6%, `al_stdlib_emit` 5.3%,
+  `html_template_plan` 5.0%, `scan_readable` 3.5%, `string_join_parts_write`
+  1.5%, `sqlite3VdbeExec` 1.4%, `string_join_write` 1.4%, `publish` 1.4%,
+  `al_stdlib_arguments` 1.3%, `read_u64_le` 1.3%, `clear_page_erms` 1.2%.
+- By Flow word: `rails-message` 17.8%, `page-query` 11.7%, `message-row`
+  7.2%, `cached-room-page` 6.9%, `csrf.mask` 5.9%, `avatar-token` 4.9%,
+  `message-page` 4.8% (`list.append`, item 3), `csrf.digest` 3.6%,
+  `csrf.pad-at` 2.2%, `message-fragment` 2.0%, `show-room` 2.0%,
+  `http-response` 1.6%, `flow_http_handle` 1.5% (`publish`), `cache.key`
+  1.2%, `db.column` 1.1% (session row).
+
+**After 281, cached:**
+- By Flow word: `page-query` 16.4%, `message-fragment` 12.6%, `message-row`
+  10.0%, `cached-room-page` 9.4%, `message-page` 7.1%, `avatar-token` 6.1%,
+  `show-room` 2.8%, `http-response` 2.2%, `flow_http_handle` 1.9%.
+- Flat: `scan_value` 11.7%, `utf8_valid` 8.6%, `copy_range` 7.4%,
+  `validate_type_descriptor` 6.5%, `scan_text` 5.9%.
+
+The 8.6% `utf8_valid` is in the cache-hit path:
+`al_owning_commit_host_output` -> `measure_external_value` re-validates every
+`cache.get` hit. That String was already validated when `cache.put` stored it
+from verified arena bytes. Skipping the check needs a per-operation trusted
+output flag in the host-op emission and in `commit_host_output`. `db.query`
+text goes through the same boundary and must keep its validation.
+
+**Other costs (not the host's):**
+- `html_template_write` and `_plan` (~12%) and the stdlib emit/plan path
+  (items 2 and 4).
+- HMAC through `EVP_Q_mac`, plus `EVP_MAC_fetch` and its rwlocks (~4.5%,
+  item 6).
+- The arena copies of the 460 KB page: `show-room`, `http-response` and
+  `publish` together are ~5%.
+
+**What changed in the host (281):**
+- Lazy buffer reservations.
+- Response bodies of 16 KB or more go out with one gather send straight from
+  the response buffer. This removed the 1.7% memmove into the connection
+  buffer.
+- The context is borrowed instead of copied.
+- Per-worker peaks are logged at shutdown.
+
+HTTP parsing, epoll, SQLite binding and the cache copy were each under 1% and
+were left as they are.
+
+**Smoke results, uncached and cached.** Each figure is a median with its
+range, over 3 interleaved runs per configuration of the harness's flow type.
+The runs used the harness copy with `PERF=0`, which is identical to
+`native-lifetime.sh` apart from where it writes its output:
+
+| build | cache | req/s | CPU ms/req | p50 / p99 ms | PSS MB |
+| --- | --- | --- | --- | --- | --- |
+| before (89b3923) | off | 972 [909-975] | 4.22 [4.13-4.23] | 13.2 / 42.8 | 171.3 |
+| 281 | off | 1517 [1409-1572] | 2.61 [2.58-2.72] | 7.4 / 20.9 | 20.0 |
+| before (89b3923) | 32 MB | 1146 [1111-1167] | 3.50 [3.32-3.57] | 8.9 / 42.1 | 171.7 |
+| 281 | 32 MB | 1802 [1778-1859] | 2.02 [1.99-2.07] | 6.4 / 14.9 | 19.8 |
+
+All runs returned 0 invalid responses. The 276 figures were 1126 req/s,
+3.62 ms and 171 MB; this session's "before" runs were slower than that on the
+same binary.
+
+**Memory, before.** PSS was 171.8 MB, almost all private anonymous memory:
+- four glibc thread heaps of about 33.5 MB each, the 32 MB arenas;
+- one 37 MB mapping holding 4 x (5.1 MB input + 4 MB response buffer).
+
+All of it was resident because `fh_alloc` was `posix_memalign` plus
+`memset`.
+
+**Memory, after.** PSS is 20 MB: 16.9 MB anonymous and 3.4 MB file-backed
+(libcrypto, SQLite, the binary). The anonymous part is:
+- the worker buffers, 7.4 MB resident of 86 MB reserved (touched arena
+  pages, the 460 KB response, the input);
+- the glibc heaps, about 7-8 MB (SQLite page caches and statements,
+  connection buffers);
+- the cache table, under 1 MB for 40 fragments.
+
+**Measured peaks, per worker:**
+- Arena cursor: 17.3-17.6 MB. This includes the 16 MB output reservation of a
+  host call such as `db.query`, which is reserved but mostly not touched, so
+  keep `--arena-mb 32`.
+- Response: 460.5 KB.
+- Input: 824 B with the context borrowed, 1064 B before.
+- Context: 240 B.

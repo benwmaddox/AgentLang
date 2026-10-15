@@ -187,10 +187,15 @@ type OwningTarget =
 
 /// One exported entry of a multi-entry native host module: the C symbol, the
 /// app word the compiler-minted shim calls, and its verified shim body.
+/// BorrowsLastInput: the last input is not in the input buffer; the host keeps
+/// it at arena [0, extent) across calls (a protected prefix below every call's
+/// mark, extent in the extents table) and the shim borrows it in place instead
+/// of copying it (al_owning_adopt_protected_input).
 type OwningHostEntry =
     { ExportName: string
       EntryWord: string
-      Body: VerifiedIrBody }
+      Body: VerifiedIrBody
+      BorrowsLastInput: bool }
 
 /// Trusted build inputs, never selected by language code or request data.
 type OwningNativeHostDependencies =
@@ -4018,7 +4023,7 @@ module OwningStackAot =
         (nativeHostProfile: OwningNativeHostProfile option)
         (runtimeProfile: OwningRuntimeProfile)
         (target: OwningTarget)
-        (hostExportNames: string list option) =
+        (hostExportNames: (string * bool) list option) =
         let body = info.Body
         let bodies = info.Bodies
         if bodies.Length <> entryAnalyses.Length then
@@ -4228,6 +4233,8 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_load_local(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_copy_constant(ptr, i32, ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_copy_external_bounded(ptr, i32, ptr, i32, i32, i32, i32, i32, i32)")
+        if hostExportNames |> Option.exists (List.exists snd) then
+            writer.Line("declare i32 @al_owning_adopt_protected_input(ptr, ptr, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_measure_value(ptr, ptr, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_measure_external_value(ptr, ptr, i32, ptr, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_check_initialized(ptr, i32, i32)")
@@ -8071,7 +8078,16 @@ module OwningStackAot =
 
         // One exported wrapper per entry body: the default single-entry export,
         // or (multi-entry host module) one named export per body.
-        let emitEntryWrapper (body: IrExecutableBody) (frameSymbol: string) (exportName: string option) =
+        // Releases the call's arena down to its floor: 0, or the protected
+        // prefix of a borrowed input (never poisoned, never released).
+        let emitEntryRelease (wrapper: OwningLlvmWriter) (protectedSlot: string option) =
+            match protectedSlot with
+            | None -> wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            | Some slot ->
+                let floor = wrapper.Fresh "entry.protected.floor.value"
+                wrapper.Inst($"{floor} = load i32, ptr {slot}, align 4")
+                wrapper.Inst($"call void @al_owning_release_to(ptr %%ctx, i32 {floor}, i32 0, i32 0, i32 0)")
+        let emitEntryWrapper (body: IrExecutableBody) (frameSymbol: string) (exportName: string option) (borrowsLast: bool) =
             let wrapper = OwningLlvmWriter()
             let wrapperFailure = wrapper.Label "entry.failure"
             let wrapperBodyFailure = wrapper.Label "entry.body.failure"
@@ -8085,6 +8101,16 @@ module OwningStackAot =
                 | None, _ -> $"define {dllExport}i32 @agentlang_owning_execute(ptr %%ctx, ptr %%input, i32 %%input.bytes, ptr %%input.extents, i32 %%input.count, ptr %%retained, i32 %%retained.capacity) {{"
             wrapper.Line(exportSignature)
             wrapper.Line("entry:")
+            // Borrowed last input: the protected prefix [0, extent) is the
+            // floor every release of this call stops at (0 until reserved).
+            let protectedSlot =
+                if borrowsLast then
+                    if body.BodyInputTypes.IsEmpty then invalidOp "A borrowed host input needs an entry input."
+                    let slot = wrapper.Fresh "entry.protected.floor"
+                    wrapper.Inst($"{slot} = alloca i32, align 4")
+                    wrapper.Inst($"store i32 0, ptr {slot}, align 4")
+                    Some slot
+                else None
             wrapper.Inst("call void @al_owning_begin(ptr %ctx)")
             let contextStatus = emitContextLoad wrapper "%ctx" 19
             let contextOkay = wrapper.Fresh "entry.context.ok"
@@ -8138,9 +8164,41 @@ module OwningStackAot =
                     let array = wrapper.Fresh "entry.input.descriptors"
                     wrapper.Inst($"{array} = alloca [{body.BodyInputTypes.Length} x %%AlOwningDescriptor], align 4")
                     array
+            // The borrowed input is adopted in place at arena [0, extent); the
+            // copied inputs then go above it, so arena offset = extent + offset
+            // within the input buffer (which holds only the copied inputs).
+            let borrowed =
+                match protectedSlot with
+                | None -> None
+                | Some slot ->
+                    let lastIndex = body.BodyInputTypes.Length - 1
+                    let ty = body.BodyInputTypes[lastIndex]
+                    let tablePointer = wrapper.Fresh "borrowed.extent.pointer"
+                    let extent = wrapper.Fresh "borrowed.extent"
+                    wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {lastIndex}")
+                    wrapper.Inst($"{extent} = load i32, ptr {tablePointer}, align 4")
+                    let errorId = addDiagnostic "OWNING_STACK_INPUT_INVALID" "The borrowed host input does not match the verified dynamic value layout." body.BodyName None [] []
+                    let payloadPointer = wrapper.Fresh "borrowed.payload.pointer"
+                    wrapper.Inst($"{payloadPointer} = alloca i32, align 4")
+                    let status = wrapper.Fresh "borrowed.adopt.status"
+                    // Reserves [0, extent) without poisoning it (unlike reserve_to).
+                    wrapper.Inst($"{status} = call i32 @al_owning_adopt_protected_input(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex ty}, i32 {extent}, i32 {typeId ty}, i32 {errorId}, ptr {payloadPointer})")
+                    emitStatusResult wrapper status wrapperFailure
+                    wrapper.Inst($"store i32 {extent}, ptr {slot}, align 4")
+                    let payload = wrapper.Fresh "borrowed.payload"
+                    wrapper.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                    Some(lastIndex, extent, payload, ty)
+            let arenaOffset sourceOffset =
+                match borrowed with
+                | None -> sourceOffset
+                | Some(_, extent, _, _) -> emitOffset wrapper extent sourceOffset
+            let copiedInputs =
+                match borrowed with
+                | None -> body.BodyInputTypes |> List.indexed
+                | Some(lastIndex, _, _, _) -> body.BodyInputTypes |> List.indexed |> List.filter (fun (index, _) -> index <> lastIndex)
             let inputSizes = ResizeArray<int * string * string * string * IrType>()
             let mutable inputOffset = "0"
-            for index, ty in body.BodyInputTypes |> List.indexed do
+            for index, ty in copiedInputs do
                 let tablePointer = wrapper.Fresh "input.extent.pointer"
                 let hostExtent = wrapper.Fresh "input.host.extent"
                 wrapper.Inst($"{tablePointer} = getelementptr inbounds i32, ptr %%input.extents, i32 {index}")
@@ -8194,16 +8252,24 @@ module OwningStackAot =
             wrapper.Inst($"br label %%{wrapperFailure}")
             wrapper.Line($"{inputValid}:")
             let inputReserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve verified entry inputs." body.BodyName None [] []
-            emitReserve wrapper inputOffset inputReserveError wrapperFailure
+            emitReserve wrapper (arenaOffset inputOffset) inputReserveError wrapperFailure
             for index, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
                 let inputPointer = emitPointerOffset wrapper "%input" sourceOffset
                 let copyError = addDiagnostic "OWNING_STACK_INPUT_INVALID" "Input bytes changed after validation." body.BodyName None [] []
                 let status = wrapper.Fresh "input.copy.status"
-                wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {sourceOffset}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
+                let destination = arenaOffset sourceOffset
+                wrapper.Inst($"{status} = call i32 @al_owning_copy_external_bounded(ptr %%ctx, i32 {destination}, ptr {inputPointer}, i32 {extentBytes}, i32 0, i32 {payloadBytes}, i32 {extentBytes}, i32 {typeId ty}, i32 {copyError})")
                 emitStatusResult wrapper status wrapperFailure
-                let ownerEnd = emitOffset wrapper sourceOffset extentBytes
-                let entry = { Type = ty; Offset = sourceOffset; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd; Register = None }
+                let ownerEnd = emitOffset wrapper destination extentBytes
+                let entry = { Type = ty; Offset = destination; Extent = extentBytes; Payload = payloadBytes; OwnerEnd = ownerEnd; Register = None }
                 let pointer = emitDescriptorElementPointer wrapper inputDescriptors index
+                emitStoreDescriptor wrapper pointer entry
+                emitDescriptorTransfer wrapper entry wrapperFailure
+            match borrowed with
+            | None -> ()
+            | Some(lastIndex, extent, payload, ty) ->
+                let entry = { Type = ty; Offset = "0"; Extent = extent; Payload = payload; OwnerEnd = extent; Register = None }
+                let pointer = emitDescriptorElementPointer wrapper inputDescriptors lastIndex
                 emitStoreDescriptor wrapper pointer entry
                 emitDescriptorTransfer wrapper entry wrapperFailure
 
@@ -8217,14 +8283,17 @@ module OwningStackAot =
                 let validationFrame = wrapper.Fresh "entry.validation.frame.entered"
                 wrapper.Inst($"{validationFrame} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 {validationDepthError})")
                 emitStatusResult wrapper validationFrame wrapperFailure
-                for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes do
+                let admitted =
+                    [ for _, sourceOffset, extentBytes, payloadBytes, ty in inputSizes -> arenaOffset sourceOffset, extentBytes, payloadBytes, ty ]
+                    @ (match borrowed with None -> [] | Some(_, extent, payload, ty) -> [ "0", extent, payload, ty ])
+                for offset, extentBytes, payloadBytes, ty in admitted do
                     if hasValidatedScalar ty then
                         let entry =
                             { Type = ty
-                              Offset = sourceOffset
+                              Offset = offset
                               Extent = extentBytes
                               Payload = payloadBytes
-                              OwnerEnd = emitOffset wrapper sourceOffset extentBytes; Register = None }
+                              OwnerEnd = emitOffset wrapper offset extentBytes; Register = None }
                         emitValidateEntryValue wrapper body.BodyName entry ty wrapperValidationFailure.Value
                 wrapper.Inst("call void @al_owning_leave_frame(ptr %ctx)")
                 let validationSucceeded = wrapper.Label "entry.validation.succeeded"
@@ -8345,7 +8414,7 @@ module OwningStackAot =
                 emitRuntimeStatus wrapper "%ctx" wrapperFailure
                 outputDestinationOffset <- emitOffset wrapper outputDestinationOffset extent
 
-            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            emitEntryRelease wrapper protectedSlot
             let successfulLive = emitContextLoad wrapper "%ctx" 4
             let successfulLocals = emitContextLoad wrapper "%ctx" 8
             let negativeSuccessfulLive = emitSub wrapper "0" successfulLive
@@ -8360,7 +8429,7 @@ module OwningStackAot =
             let failedTotalLive = emitOffset wrapper failedLive failedLocals
             let zeroLive = emitSub wrapper "0" failedTotalLive
             let zeroLocal = emitSub wrapper "0" failedLocals
-            wrapper.Inst("call void @al_owning_release_to(ptr %ctx, i32 0, i32 0, i32 0, i32 0)")
+            emitEntryRelease wrapper protectedSlot
             wrapper.Inst($"call void @al_owning_update_live(ptr %%ctx, i32 {zeroLive}, i32 {zeroLocal})")
             wrapper.Inst($"call void @al_owning_local_release(ptr %%ctx, i32 {failedReservations})")
             wrapper.Inst("br label %entry.return.status")
@@ -8373,8 +8442,8 @@ module OwningStackAot =
         let wrapperTexts =
             match hostExportNames with
             | Some names ->
-                bodies |> List.mapi (fun index current -> emitEntryWrapper current entryFrameSymbols[index] (Some names[index]))
-            | None -> [ emitEntryWrapper body entryFrameSymbols[0] None ]
+                bodies |> List.mapi (fun index current -> emitEntryWrapper current entryFrameSymbols[index] (Some(fst names[index])) (snd names[index]))
+            | None -> [ emitEntryWrapper body entryFrameSymbols[0] None false ]
         let mailboxCallbackTexts = ResizeArray<string * string * int>()
         if mailboxMode then
             for index, entryBody in bodies |> List.indexed do
@@ -9151,8 +9220,17 @@ module OwningStackAot =
             bodies |> List.map (fun verified -> ArenaLifetime.analyzeBody (IrVerifier.verifyBody program (VerifiedIrBody.inspect verified)))
         let functionAnalyses = ArenaLifetime.analyzeProgram program
         let llvmIr, diagnostics, _, _, _, _, _, _ =
-            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some names)
+            emitDynamicModule programInfo analyses functionAnalyses false (Some profile) runtimeProfile target (Some(entries |> List.map (fun entry -> entry.ExportName, entry.BorrowsLastInput)))
         llvmIr, (diagnostics |> Array.map (fun info -> info.Diagnostic))
+
+    /// The LLVM symbol of every word emitHostModule emits for these entries, as
+    /// (symbol, word name, revision) rows: the profiler's symbol map. Uses the
+    /// same ordering as the emitter (reachable words by name, then revision).
+    let hostModuleSymbols (profile: OwningNativeHostProfile) (entries: OwningHostEntry list) =
+        let programInfo = makeProgramInfoForBodies true (Some profile) (entries |> List.map (fun entry -> entry.Body))
+        programInfo.ReachableFunctions
+        |> List.sortBy (fun fn -> fn.FunctionName, fn.FunctionRevision)
+        |> List.mapi (fun index fn -> $"agentlang_word_{index:D4}", fn.FunctionName, fn.FunctionRevision)
 
     let compileMailboxWithProfile
         (toolchain: LlvmToolchain)

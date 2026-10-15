@@ -19,7 +19,9 @@ param(
     [ValidateSet('trusted', 'diagnostic')] [string] $RuntimeProfile = 'trusted',
     [ValidateSet('O0', 'O2')] [string] $Optimization = 'O2',
     [Parameter(Mandatory)] [string] $OutDir,
-    [string] $LinuxName = ''
+    [string] $LinuxName = '',
+    # Linux only: frame pointers and debug info for perf (see build-flow-http-linux.sh).
+    [switch] $Profile
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -82,7 +84,7 @@ else {
     $ErrorActionPreference = 'Continue' # compiler warnings on stderr are not failures
     # A per-build staging name: concurrent builds must not overwrite each other's script.
     $stagedScript = "/tmp/build-flow-http-linux-$([Guid]::NewGuid().ToString('N')).sh"
-    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > $stagedScript && bash $stagedScript '$wslStage' $linuxOut $trusted $Optimization; rc=`$?; rm -f $stagedScript; exit `$rc" 2>&1
+    $result = & wsl -- bash -lc "tr -d '\r' < '$wslScript' > $stagedScript && bash $stagedScript '$wslStage' $linuxOut $trusted $Optimization $(if ($Profile) { '1' } else { '0' }); rc=`$?; rm -f $stagedScript; exit `$rc" 2>&1
     if ($LASTEXITCODE -ne 0) { throw "WSL build failed: $($result -join [Environment]::NewLine)" }
     $result | Select-Object -Last 1 | ForEach-Object { $_.Replace('built ', '') }
 }

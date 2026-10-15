@@ -547,27 +547,77 @@ fn campfire.server.avatar-token(avatar-key: Bytes, user-id: Int) -> String {
     string.concat(encoded, string.concat("--", hex.encode(crypto.hmac-sha256(avatar-key, bytes.from-utf8(encoded)))))
 }
 
-fn campfire.server.message-row(row: DbRow, avatar-token: String) -> Option<MessageWithCreator> {
-    let created-at = db.optional-text(row, 6)
-    let creator-updated-at = db.optional-text(row, 9)
+fn campfire.server.value-int(value: DbValue) -> Option<Int> {
+    doc "A column value as db.optional-int reads it: integers only."
+    match value.kind {
+        int-value => option.some<Int>(value.int-value)
+        null-value => option.none<Int>()
+        text-value => option.none<Int>()
+        blob-value => option.none<Int>()
+    }
+}
+
+fn campfire.server.value-text(value: DbValue) -> Option<String> {
+    doc "A column value as db.optional-text reads it: text, or a formatted integer."
+    match value.kind {
+        text-value => option.some<String>(value.text-value)
+        int-value => option.some<String>(int.to-string(value.int-value))
+        null-value => option.none<String>()
+        blob-value => option.none<String>()
+    }
+}
+
+fn campfire.server.int-or-zero(value: Option<Int>) -> Int {
+    match value { none => 0; some number => number }
+}
+
+fn campfire.server.text-or-empty(value: Option<String>) -> String {
+    match value { none => ""; some text => text }
+}
+
+fn campfire.server.message-row(row: DbRow, avatar-key: Bytes, known-user: Int, known-token: String) -> Option<MessageWithCreator> {
+    doc "Validates and maps one page row in a single pass over its columns (db.column rescans the row per call). The avatar token is known-token when the creator is known-user, otherwise derived."
+
+    var id = option.none<Int>()
+    var room-id = option.none<Int>()
+    var creator-id = option.none<Int>()
+    var created-at-ms = option.none<Int>()
+    var updated-at-ms = option.none<Int>()
+    var client-message-id = option.none<String>()
+    var created-at = option.none<String>()
+    var creator-name = option.none<String>()
+    var creator-bio = option.none<String>()
+    var creator-updated-at = option.none<String>()
+    var body = option.none<String>()
+    for value, index in row.values {
+        if index < 5 {
+            let number = campfire.server.value-int(value)
+            if index == 0 { id = number } else if index == 1 { room-id = number } else if index == 2 { creator-id = number } else if index == 3 { created-at-ms = number } else { updated-at-ms = number }
+        } else {
+            let text = campfire.server.value-text(value)
+            if index == 5 { client-message-id = text } else if index == 6 { created-at = text } else if index == 7 { creator-name = text } else if index == 8 { creator-bio = text } else if index == 9 { creator-updated-at = text } else if index == 10 { body = text }
+        }
+    }
     let created-ok = match created-at { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
     let creator-updated-ok = match creator-updated-at { none => false; some text => campfire.server.parse-timestamp(text) != option.none<Int>() }
-    let texts-ok = db.optional-text(row, 5) != option.none<String>() && db.optional-text(row, 7) != option.none<String>() && db.optional-text(row, 8) != option.none<String>()
-    let ints-ok = db.optional-int(row, 0) != option.none<Int>() && db.optional-int(row, 1) != option.none<Int>() && db.optional-int(row, 2) != option.none<Int>() && db.optional-int(row, 3) != option.none<Int>() && db.optional-int(row, 4) != option.none<Int>()
+    let texts-ok = client-message-id != option.none<String>() && creator-name != option.none<String>() && creator-bio != option.none<String>()
+    let ints-ok = id != option.none<Int>() && room-id != option.none<Int>() && creator-id != option.none<Int>() && created-at-ms != option.none<Int>() && updated-at-ms != option.none<Int>()
     if created-ok && creator-updated-ok && texts-ok && ints-ok {
+        let creator = campfire.server.int-or-zero(creator-id)
+        let token = if known-token != "" && known-user == creator { known-token } else { campfire.server.avatar-token(avatar-key, creator) }
         option.some<MessageWithCreator>(messageWithCreator.new(
-            id = MessageId.new(db.int(row, 0)),
-            room-id = RoomId.new(db.int(row, 1)),
-            creator-id = UserId.new(db.int(row, 2)),
-            created-at-ms = db.int(row, 3),
-            updated-at-ms = db.int(row, 4),
-            client-message-id = db.text(row, 5),
-            created-at = db.text(row, 6),
-            creator-name = db.text(row, 7),
-            creator-bio = db.text(row, 8),
-            creator-updated-at = db.text(row, 9),
-            creator-avatar-token = avatar-token,
-            body = db.optional-text(row, 10)))
+            id = MessageId.new(campfire.server.int-or-zero(id)),
+            room-id = RoomId.new(campfire.server.int-or-zero(room-id)),
+            creator-id = UserId.new(creator),
+            created-at-ms = campfire.server.int-or-zero(created-at-ms),
+            updated-at-ms = campfire.server.int-or-zero(updated-at-ms),
+            client-message-id = campfire.server.text-or-empty(client-message-id),
+            created-at = campfire.server.text-or-empty(created-at),
+            creator-name = campfire.server.text-or-empty(creator-name),
+            creator-bio = campfire.server.text-or-empty(creator-bio),
+            creator-updated-at = campfire.server.text-or-empty(creator-updated-at),
+            creator-avatar-token = token,
+            body = body))
     } else {
         option.none<MessageWithCreator>()
     }
@@ -581,16 +631,13 @@ fn campfire.server.message-page(rows: List<DbRow>, avatar-key: Bytes) -> Option<
     var token-user = 0
     var token = ""
     for row in rows {
-        let creator = db.int(row, 2)
-        if token == "" || token-user != creator {
-            token = campfire.server.avatar-token(avatar-key, creator)
-            token-user = creator
-        }
-        let parsed = campfire.server.message-row(row, token)
+        let parsed = campfire.server.message-row(row, avatar-key, token-user, token)
         valid = valid && match parsed {
             none => false
             some message => true
         }
+        token-user = match parsed { none => token-user; some message => UserId.value(message.creator-id) }
+        token = match parsed { none => token; some message => message.creator-avatar-token }
         messages = match parsed {
             none => messages
             some message => list.append(messages, message)
