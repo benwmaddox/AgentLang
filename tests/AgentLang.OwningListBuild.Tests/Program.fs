@@ -37,7 +37,10 @@ let private words =
     [ "tag.ok?"; "native.lists.ints"; "native.lists.strings"; "native.lists.records"; "native.lists.nested"; "native.lists.joined"
       "native.lists.compact-joined"; "native.lists.append"; "native.lists.concat"; "native.lists.append-records"
       "native.lists.literal-tag"; "native.lists.runtime-tag"; "native.lists.append-top"; "native.lists.append-adjacent"
-      "native.lists.concat-adjacent"; "native.lists.append-aliased"; "tag.text"; "native.lists.retag" ]
+      "native.lists.concat-adjacent"; "native.lists.append-aliased"; "tag.text"; "native.lists.retag"
+      "native.acc.ints"; "native.acc.strings"; "native.acc.records"; "native.acc.aliases"; "native.acc.snapshots"
+      "native.acc.break"; "native.acc.branches"; "native.acc.with-text"; "native.acc.rows"; "native.acc.kept"
+      "native.lists.get"; "native.lists.get-int"; "native.lists.get-pair"; "native.lists.count" ]
 
 let private wordArgs (name: string) =
     let args = JsonObject()
@@ -202,6 +205,93 @@ let private run () =
             | :? OwningStackExecutionException as failure -> failure.Diagnostic.Code
             | error -> error.GetType().Name
         check $"tags/{optimization}: runtime construction is still validated ({rejection})" (rejection = "REFINEMENT_FAILED")
+
+        // Loop accumulation (report 278): `v = list.append(v, x)` in a loop. Every
+        // shape must equal the interpreter; aliases and snapshots stay unchanged.
+        let ints n = ListValue(TInt, [ for i in 0L .. n - 1L -> IntValue i ])
+        let accInts, _ = execute optimization "native.acc.ints" [ TInt ] [ TList TInt ] [ IntValue 5L ]
+        check $"acc ints/{optimization}" (accInts = [ ints 5L ])
+        let accStrings, _ = execute optimization "native.acc.strings" [ TInt ] [ TList TString ] [ IntValue 12L ]
+        check $"acc strings/{optimization}" (accStrings = [ strings [ for i in 0 .. 11 -> string i ] ])
+        let accRecords, _ = execute optimization "native.acc.records" [ TInt ] [ TList(TNamed "Pair") ] [ IntValue 3L ]
+        check $"acc records/{optimization}" (match accRecords with [ ListValue(_, items) ] -> items.Length = 4 | _ -> false)
+        let aliases, _ = execute optimization "native.acc.aliases" [ TInt ] [ TList(TList TInt) ] [ IntValue 3L ]
+        check $"acc aliases/{optimization}: the pre-loop alias and the let are unchanged" (
+            aliases = [ ListValue(TList TInt, [ ListValue(TInt, [ IntValue 7L ]); ListValue(TInt, [ IntValue 7L ]); ListValue(TInt, [ IntValue 7L; IntValue 0L; IntValue 1L; IntValue 2L ]) ]) ])
+        let snapshots, _ = execute optimization "native.acc.snapshots" [ TInt ] [ TList(TList TInt) ] [ IntValue 4L ]
+        check $"acc snapshots/{optimization}: each snapshot keeps its length" (snapshots = [ ListValue(TList TInt, [ for n in 0L .. 4L -> ints n ]) ])
+        for stop in [ 0L; 3L; 20L ] do
+            let broken, _ = execute optimization "native.acc.break" [ TInt; TInt ] [ TList TInt ] [ IntValue 10L; IntValue stop ]
+            check $"acc break {stop}/{optimization}: pending elements survive break" (broken = [ ints (min 10L (stop + 1L)) ])
+        let branches, _ = execute optimization "native.acc.branches" [ TInt ] [ TList TInt ] [ IntValue 12L ]
+        check $"acc branches/{optimization}" (match branches with [ ListValue(_, items) ] -> items.Head = IntValue -1L && items.Length = 9 | _ -> false)
+        let withText, _ = execute optimization "native.acc.with-text" [ TInt ] [ TList TString ] [ IntValue 4L ]
+        check $"acc with another carried var/{optimization}" (withText = [ strings [ "0"; "1"; "2"; "3"; "xxxx"; "end" ] ])
+        let rows, _ = execute optimization "native.acc.rows" [ TInt ] [ TList(TList TInt) ] [ IntValue 5L ]
+        check $"acc nested loops/{optimization}" (rows = [ ListValue(TList TInt, [ for n in 0L .. 4L -> ints n ]) ])
+        let kept, _ = execute optimization "native.acc.kept" [ TList TString ] [ TList TString ] [ strings [ "a"; ""; "b"; "c"; "" ] ]
+        check $"acc list loop views/{optimization}" (kept = [ strings [ "a"; "b"; "c" ] ])
+
+        // Native list.get / list.count (interpreter parity, including out-of-range indexes).
+        for index in [ -1L; 0L; 2L; 3L; 4_294_967_296L ] do
+            let got, _ = execute optimization "native.lists.get" [ TList TString; TInt ] [ TOption TString ] [ strings [ "a"; "bé"; "c🚀" ]; IntValue index ]
+            let expected = if index >= 0L && index < 3L then Some(StringValue([| "a"; "bé"; "c🚀" |][int index])) else None
+            check $"list.get {index}/{optimization}" (got = [ OptionValue(TString, expected) ])
+            let gotInt, _ = execute optimization "native.lists.get-int" [ TList TInt; TInt ] [ TOption TInt ] [ ints 3L; IntValue index ]
+            check $"list.get Int {index}/{optimization}" (gotInt = [ OptionValue(TInt, (if index >= 0L && index < 3L then Some(IntValue index) else None)) ])
+        let pairs = ListValue(TNamed "Pair", [ for i in 1L .. 3L -> RecordValue("Pair", Map.ofList [ "name", StringValue(String.replicate (int i) "n"); "count", IntValue i ]) ])
+        let gotPair, _ = execute optimization "native.lists.get-pair" [ TList(TNamed "Pair"); TInt ] [ TOption(TNamed "Pair") ] [ pairs; IntValue 2L ]
+        check $"list.get record/{optimization}" (match gotPair with [ OptionValue(_, Some(RecordValue(_, fields))) ] -> fields["count"] = IntValue 3L | _ -> false)
+        for values in [ []; [ "a" ]; [ "a"; "b"; "c" ] ] do
+            let counted, _ = execute optimization "native.lists.count" [ TList TString ] [ TInt ] [ strings values ]
+            check $"list.count {values.Length}/{optimization}" (counted = [ IntValue(int64 values.Length) ])
+
+    // Accumulation is linear: copied/moved bytes and peak arena double (not
+    // quadruple) when the element count doubles, in every profile. Trusted O0 and
+    // O2 also time 5,000 vs 10,000 elements. (The diagnostic profile re-checks
+    // every live local's init bits after each instruction, a self-test whose cost
+    // grows with the list, so it is measured on bytes at 1,000 vs 2,000.)
+    let trustedFor optimization =
+        let body = engine.ExportVerifiedFlowEntryPoint("native.acc.strings", [ TInt ], [ TList TString ])
+        OwningStackAot.compileWithRuntimeProfile toolchain optimization OwningRuntimeProfile.TrustedGenerated (Path.Combine(runRoot, "native", "trusted", string optimization, "native.acc.strings")) body
+    use trustedO0 = trustedFor LlvmOptimization.O0
+    use trustedO2 = trustedFor LlvmOptimization.O2
+    let programs =
+        [ "diagnostic O0", nativeFor LlvmOptimization.O0 "native.acc.strings" [ TInt ] [ TList TString ], 1_000L, false
+          "diagnostic O2", nativeFor LlvmOptimization.O2 "native.acc.strings" [ TInt ] [ TList TString ], 1_000L, false
+          "trusted O0", trustedO0, 5_000L, true
+          "trusted O2", trustedO2, 5_000L, true ]
+    for label, program, half, timed in programs do
+        let measure n =
+            let result = program.Execute([ IntValue n ], 16_777_216, 8_388_608)
+            check $"acc linear/{label}: {n} elements" (match result.Values with [ ListValue(_, items) ] -> items.Length = int n | _ -> false)
+            let ticks =
+                if timed then [| for _ in 1 .. 40 -> (program.Execute([ IntValue n ], 16_777_216, 8_388_608) |> ignore; program.LastNativeElapsedTicks) |] |> Array.min
+                else 0L
+            result.Metrics, ticks
+        let small, smallTicks = measure half
+        let large, largeTicks = measure (2L * half)
+        let ratio (a: uint64) (b: uint64) = float a / float (max 1UL b)
+        let copies = ratio (large.DeepCopyBytes + large.MoveBytes) (small.DeepCopyBytes + small.MoveBytes)
+        let peak = float large.ReservedStackBytes / float small.ReservedStackBytes
+        let row = JsonObject()
+        row["word"] <- JsonValue.Create($"native.acc.strings {half}->{2L * half} {label}")
+        row["copyRatio"] <- JsonValue.Create(copies)
+        row["peakRatio"] <- JsonValue.Create(peak)
+        row["deepCopyBytes"] <- JsonValue.Create(large.DeepCopyBytes)
+        row["moveBytes"] <- JsonValue.Create(large.MoveBytes)
+        row["peakCursorBytes"] <- JsonValue.Create(large.ReservedStackBytes)
+        check $"acc linear/{label}: copied+moved bytes scale linearly ({copies:F2}x)" (copies < 2.2)
+        check $"acc linear/{label}: peak arena scales linearly ({peak:F2}x)" (peak < 2.2)
+        // Every element is copied once into the pending run, plus the one String
+        // per iteration int.to-string writes: no list recopy.
+        check $"acc linear/{label}: no list recopy ({large.DeepCopyBytes} bytes for {2L * half})" (large.DeepCopyBytes < uint64 (2L * half) * 40UL)
+        if timed then
+            let time = float largeTicks / float (max 1L smallTicks)
+            row["timeRatio"] <- JsonValue.Create(time)
+            // Quadratic growth would be 4x; allow noise from a busy machine.
+            check $"acc linear/{label}: time scales linearly ({time:F2}x)" (time < 3.0)
+        metrics.Add(row)
     for program in compiled.Values do (program :> IDisposable).Dispose()
 
     let receipt = JsonObject()

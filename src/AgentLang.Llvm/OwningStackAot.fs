@@ -375,7 +375,8 @@ type internal OwningProgramInfo =
       ValidatedScalarValidators: Map<IrType, IrResolvedCall>
       ValidatedScalarConstructors: Map<IrType, IrGeneratedTarget>
       /// WrapScalar sites whose input is a literal the type's pure validator
-      /// accepted at compile time; their runtime validator call is omitted.
+      /// accepted at compile time, or a value already valid for the type
+      /// (provenValidatedWrapSites); their runtime validator call is omitted.
       ProvenRefinedLiteralSites: Set<SourceSiteId>
       Layouts: OwningStackTypeLayout list }
 
@@ -1031,6 +1032,128 @@ module OwningStackAot =
         | IrNominal key -> TNamed(typeName program (IrNominal key))
 
     let private extent payload = max 8 payload
+
+    /// Operand and result counts of a straight-line IR operation; None for
+    /// operations that run nested blocks or transfer control.
+    let private straightLineEffect (operation: IrOperation) =
+        match operation with
+        | IrOperation.Constant _ | IrOperation.ListEmpty _ | IrOperation.OptionNone _ | IrOperation.LoadLocal _ -> Some(0, 1)
+        | IrOperation.Call call
+        | IrOperation.MakeRecord(call, _, _)
+        | IrOperation.GetRecordField(call, _, _)
+        | IrOperation.WrapScalar(call, _, _)
+        | IrOperation.UnwrapScalar(call, _)
+        | IrOperation.MakeEnumCase(call, _, _) -> Some(call.InputTypes.Length, call.OutputTypes.Length)
+        | IrOperation.HtmlTemplate(_, parts) -> Some(parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1), 1)
+        | IrOperation.ListSingleton _ | IrOperation.OptionSome _ | IrOperation.ResultOk _ | IrOperation.ResultError _
+        | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ -> Some(1, 1)
+        | IrOperation.ListOf(_, count) -> Some(count, 1)
+        | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
+        | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
+        | _ -> None
+
+    /// WrapScalar sites in one function body whose String input is already valid
+    /// for the wrapped type, so its (pure) validator would return true:
+    /// - the input is `UnwrapScalar` of the same type, as in
+    ///   `html.raw(Html.value(page))`, directly or through `let` locals;
+    /// - for Html (`string.html-fragment?`), the input is also built only from
+    ///   unwrapped Html, literal well-formed fragments and `string.concat` of
+    ///   them. A fragment leaves the checker in its start state (content, no open
+    ///   element), so concatenated fragments are fragments.
+    /// Anything else (a parameter, a var, a match binding, another call) keeps
+    /// its run-time check.
+    let private provenValidatedWrapSites (isHtmlKey: ProgramTypeKey -> bool) (body: IrBlock) =
+        // A tag is the set of validated types the String is known to satisfy.
+        // HtmlKeys stands for every Html-validated type.
+        let fragmentTag = set [ None ]
+        let tagFor key = if isHtmlKey key then Set.ofList [ Some key; None ] else Set.singleton (Some key)
+        let satisfies (tag: Set<ProgramTypeKey option>) key = tag.Contains(Some key) || (isHtmlKey key && tag.Contains None)
+        let excluded = HashSet<LocalSlot>()
+        let rec collectBinders (block: IrBlock) =
+            for instruction in block.Code do
+                match instruction.Operation with
+                | IrOperation.AssignLocal slot -> excluded.Add slot |> ignore
+                | IrOperation.ForRange(index, inner) -> excluded.Add index |> ignore; collectBinders inner
+                | IrOperation.ForList(_, item, index, inner) ->
+                    excluded.Add item |> ignore
+                    index |> Option.iter (excluded.Add >> ignore)
+                    collectBinders inner
+                | IrOperation.MatchOption(some, left, right) -> excluded.Add some |> ignore; collectBinders left; collectBinders right
+                | IrOperation.MatchResult(ok, error, left, right) ->
+                    excluded.Add ok |> ignore
+                    excluded.Add error |> ignore
+                    collectBinders left
+                    collectBinders right
+                | IrOperation.Scope inner | IrOperation.Compact inner -> collectBinders inner
+                | IrOperation.If(left, right) -> collectBinders left; collectBinders right
+                | IrOperation.MatchEnum(_, cases) -> for _, inner in cases do collectBinders inner
+                | _ -> ()
+        collectBinders body
+        let mutable slotTags = Map.empty<LocalSlot, Set<ProgramTypeKey option>>
+        let mutable changed = true
+        let mutable rounds = 0
+        let proven = HashSet<SourceSiteId>()
+        while changed && rounds < 16 do
+            rounds <- rounds + 1
+            proven.Clear()
+            let stores = Dictionary<LocalSlot, Set<ProgramTypeKey option>>()
+            let rec visit (block: IrBlock) =
+                let mutable stack: Set<ProgramTypeKey option> list = List.replicate block.EntryShape.StackTypes.Length Set.empty
+                let mutable stopped = false
+                let pop count =
+                    let count = min count stack.Length
+                    let popped = stack |> List.skip (stack.Length - count)
+                    stack <- stack |> List.take (stack.Length - count)
+                    popped
+                let opaque (blocks: IrBlock list) exitLength =
+                    for inner in blocks do visit inner
+                    stack <- List.replicate exitLength Set.empty
+                for instruction in block.Code do
+                    if not stopped then
+                        match instruction.Operation with
+                        | IrOperation.Constant(LString text, IrString) ->
+                            stack <- stack @ [ (if HtmlMarkup.isFragment text then fragmentTag else Set.empty) ]
+                        | IrOperation.UnwrapScalar(_, key) ->
+                            pop 1 |> ignore
+                            stack <- stack @ [ tagFor key ]
+                        | IrOperation.WrapScalar(_, key, Some _) ->
+                            match pop 1 with
+                            | [ tag ] when satisfies tag key -> proven.Add instruction.Site |> ignore
+                            | _ -> ()
+                            stack <- stack @ [ Set.empty ]
+                        | IrOperation.Call call when call.ResolvedTarget = PrimitiveTarget(PrimitiveId "string.concat") ->
+                            match pop 2 with
+                            | [ left; right ] -> stack <- stack @ [ Set.intersect left right |> Set.filter (fun tag -> tag = None) ]
+                            | _ -> stack <- stack @ [ Set.empty ]
+                        | IrOperation.LoadLocal slot ->
+                            stack <- stack @ [ slotTags.TryFind slot |> Option.defaultValue Set.empty ]
+                        | IrOperation.StoreLocal slot ->
+                            let tag = match pop 1 with [ tag ] -> tag | _ -> Set.empty
+                            stores[slot] <- (match stores.TryGetValue slot with | true, seen -> Set.intersect seen tag | _ -> tag)
+                        | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) ->
+                            opaque [ inner ] inner.ExitShape.StackTypes.Length
+                        | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
+                            opaque [ left; right ] left.ExitShape.StackTypes.Length
+                        | IrOperation.MatchEnum(_, cases) ->
+                            match cases with
+                            | (_, first) :: _ -> opaque (List.map snd cases) first.ExitShape.StackTypes.Length
+                            | [] -> stopped <- true
+                        | IrOperation.Break | IrOperation.Continue -> stopped <- true
+                        | operation ->
+                            match straightLineEffect operation with
+                            | Some(pops, pushes) ->
+                                pop pops |> ignore
+                                stack <- stack @ List.replicate pushes Set.empty
+                            | None -> stopped <- true
+            visit body
+            let next =
+                stores
+                |> Seq.filter (fun pair -> not (excluded.Contains pair.Key) && not pair.Value.IsEmpty)
+                |> Seq.map (fun pair -> pair.Key, pair.Value)
+                |> Map.ofSeq
+            changed <- next <> slotTags
+            slotTags <- next
+        proven
 
     let private makeProgramInfoForBodies allowValidatedScalars (nativeHostProfile: OwningNativeHostProfile option) (verifiedBodies: VerifiedIrBody list) =
         if List.isEmpty verifiedBodies then invalidArg (nameof verifiedBodies) "An owning module requires at least one verified body."
@@ -1881,6 +2004,12 @@ module OwningStackAot =
             // Only function bodies: their sites are owner-qualified and unique, while
             // detached entry bodies number sites from zero and may share ids.
             for fn in reachableFunctions do visit fn.FunctionBody
+            // Values already valid for the type (html.raw(Html.value(page)) and
+            // Html built from Html) are retagged without re-running the validator.
+            let isHtmlKey key =
+                validatedScalarValidators.TryFind(IrNominal key) |> Option.exists (Some >> IrHtml.isHtmlValidator)
+            for fn in reachableFunctions do
+                for site in provenValidatedWrapSites isHtmlKey fn.FunctionBody do found.Add site |> ignore
             Set.ofSeq found
         { Program = program
           Body = body
@@ -2476,25 +2605,6 @@ module OwningStackAot =
           PendingPayloadSlot: string
           PendingCountSlot: string }
 
-    /// Operand and result counts of a straight-line IR operation; None for
-    /// operations that run nested blocks or transfer control.
-    let private straightLineEffect (operation: IrOperation) =
-        match operation with
-        | IrOperation.Constant _ | IrOperation.ListEmpty _ | IrOperation.OptionNone _ | IrOperation.LoadLocal _ -> Some(0, 1)
-        | IrOperation.Call call
-        | IrOperation.MakeRecord(call, _, _)
-        | IrOperation.GetRecordField(call, _, _)
-        | IrOperation.WrapScalar(call, _, _)
-        | IrOperation.UnwrapScalar(call, _)
-        | IrOperation.MakeEnumCase(call, _, _) -> Some(call.InputTypes.Length, call.OutputTypes.Length)
-        | IrOperation.HtmlTemplate(_, parts) -> Some(parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1), 1)
-        | IrOperation.ListSingleton _ | IrOperation.OptionSome _ | IrOperation.ResultOk _ | IrOperation.ResultError _
-        | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ -> Some(1, 1)
-        | IrOperation.ListOf(_, count) -> Some(count, 1)
-        | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
-        | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
-        | _ -> None
-
     let rec private blockMentionsSlot (slot: LocalSlot) (block: IrBlock) =
         block.Code
         |> List.exists (fun instruction ->
@@ -2514,14 +2624,15 @@ module OwningStackAot =
     let private loopAccumulatorPattern (body: IrBlock) (slot: LocalSlot) =
         let appends = HashSet<IrInstruction>(HashIdentity.Reference)
         let assigns = HashSet<IrInstruction>(HashIdentity.Reference)
+        let loads = HashSet<IrInstruction>(HashIdentity.Reference)
         let mutable ok = true
         let isAppend (call: IrResolvedCall) =
             match call.ResolvedTarget with
             | PrimitiveTarget(PrimitiveId "list.append") -> true
             | _ -> false
         let rec visit (block: IrBlock) =
-            // true marks the unmodified value of a load of `slot`.
-            let mutable stack: bool list = List.replicate block.EntryShape.StackTypes.Length false
+            // Some marks the unmodified value of a load of `slot`.
+            let mutable stack: IrInstruction option list = List.replicate block.EntryShape.StackTypes.Length None
             let code = Array.ofList block.Code
             let mutable index = 0
             let mutable stopped = false
@@ -2532,23 +2643,24 @@ module OwningStackAot =
                 else
                     let popped = stack |> List.skip (stack.Length - count)
                     stack <- stack |> List.take (stack.Length - count)
-                    if List.contains true popped then ok <- false
+                    if List.exists Option.isSome popped then ok <- false
                     popped
             let nested (blocks: IrBlock list) exitLength =
-                if List.contains true stack then ok <- false
+                if List.exists Option.isSome stack then ok <- false
                 for inner in blocks do visit inner
-                stack <- List.replicate exitLength false
+                stack <- List.replicate exitLength None
             while ok && not stopped && index < code.Length do
                 let instruction = code[index]
                 match instruction.Operation with
-                | IrOperation.LoadLocal s when s = slot -> stack <- stack @ [ true ]
+                | IrOperation.LoadLocal s when s = slot -> stack <- stack @ [ Some instruction ]
                 | IrOperation.Call call when
                     isAppend call
                     && index + 1 < code.Length
                     && (match code[index + 1].Operation with IrOperation.AssignLocal s -> s = slot | _ -> false)
                     && stack.Length >= 2
-                    && stack[stack.Length - 2]
-                    && not stack[stack.Length - 1] ->
+                    && stack[stack.Length - 2].IsSome
+                    && stack[stack.Length - 1].IsNone ->
+                    loads.Add stack[stack.Length - 2].Value |> ignore
                     appends.Add instruction |> ignore
                     assigns.Add code[index + 1] |> ignore
                     stack <- stack |> List.take (stack.Length - 2)
@@ -2570,18 +2682,18 @@ module OwningStackAot =
                     | (_, first) :: _ -> nested (List.map snd cases) first.ExitShape.StackTypes.Length
                     | [] -> ok <- false
                 | IrOperation.Break | IrOperation.Continue ->
-                    if List.contains true stack then ok <- false
+                    if List.exists Option.isSome stack then ok <- false
                     stopped <- true
                 | operation ->
                     match straightLineEffect operation with
                     | Some(pops, pushes) ->
                         pop pops |> ignore
-                        stack <- stack @ List.replicate pushes false
+                        stack <- stack @ List.replicate pushes None
                     | None -> ok <- false
                 index <- index + 1
-            if not stopped && List.contains true stack then ok <- false
+            if not stopped && List.exists Option.isSome stack then ok <- false
         visit body
-        if ok && appends.Count > 0 then Some(appends, assigns) else None
+        if ok && appends.Count > 0 then Some(appends, assigns, loads) else None
 
     let private blockStores (block: IrBlock) =
         let values = Dictionary<LocalSlot, ResizeArray<IrType>>()
@@ -4886,6 +4998,7 @@ module OwningStackAot =
             // and the accumulator of each var (for other assignments).
             let accumulatorAppends = Dictionary<IrInstruction, OwningLoopAccumulator>(HashIdentity.Reference)
             let accumulatorAssigns = HashSet<IrInstruction>(HashIdentity.Reference)
+            let accumulatorLoads = HashSet<IrInstruction>(HashIdentity.Reference)
             let accumulatorSlots = Dictionary<LocalSlot, OwningLoopAccumulator>()
             let rec dynamicEnvFlags (env: OwningDynamicLocalEnvPlan) : int list =
                 (env.Slots |> Map.toList |> List.map (fun (_, slotPlan) -> slotPlan.FlagId))
@@ -5503,8 +5616,11 @@ module OwningStackAot =
                             stack <- stack @ [ registerEntry ty (resolveLocalScalar binding) ]
                         else
                             let descriptor = resolveLocalEntry binding ty
-                            emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
-                            emitDescriptorTransfer w descriptor failBody
+                            // An accumulator's pattern load only names the list its append
+                            // extends; nothing reads it, so it skips the descriptor checks.
+                            if not (accumulatorLoads.Contains instruction) then
+                                emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
+                                emitDescriptorTransfer w descriptor failBody
                             stack <- push stack ty descriptor.Offset descriptor.Extent descriptor.Payload descriptor.OwnerEnd
                     | IrOperation.Scope inner ->
                         let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified descriptor Scope has no local plan.")
@@ -5730,7 +5846,7 @@ module OwningStackAot =
                                     match localTypesBeforeLoop[slot] with
                                     | IrList _ as listType ->
                                         loopAccumulatorPattern body slot
-                                        |> Option.map (fun (appends, assigns) ->
+                                        |> Option.map (fun (appends, assigns, loads) ->
                                             let newSlot name =
                                                 let pointer = w.Fresh $"acc.pending.{name}"
                                                 w.Inst($"{pointer} = alloca i32, align 4")
@@ -5745,12 +5861,13 @@ module OwningStackAot =
                                                   PendingCountSlot = newSlot "count" }
                                             for append in appends do accumulatorAppends[append] <- state
                                             for assign in assigns do accumulatorAssigns.Add assign |> ignore
+                                            for load in loads do accumulatorLoads.Add load |> ignore
                                             accumulatorSlots[slot] <- state
-                                            state, appends, assigns)
+                                            state, appends, assigns, loads)
                                     | _ -> None)
                         let carried =
                             match accumulator with
-                            | Some(state, _, _) -> state.AccumulatorSlot :: (carried |> List.filter ((<>) state.AccumulatorSlot))
+                            | Some(state, _, _, _) -> state.AccumulatorSlot :: (carried |> List.filter ((<>) state.AccumulatorSlot))
                             | None -> carried
                         let bodyFlags = dynamicEnvFlags childEnv
                         for flagId in bodyFlags do removeLocal flagId
@@ -5885,7 +6002,7 @@ module OwningStackAot =
                                     |> List.iteri (fun index (slot, entry) ->
                                         let moved = { entry with Offset = loadQuad index 0 "loop.carried.offset"; OwnerEnd = loadQuad index 3 "loop.carried.owner.end" }
                                         emitStoreLocal (localBinding slot localsBeforeLoop) moved)
-                                | Some(state, _, _) ->
+                                | Some(state, _, _, _) ->
                                     let _, listEntry = List.head resolved
                                     let count = w.Fresh "acc.latch.count"
                                     w.Inst($"{count} = load i32, ptr {state.PendingCountSlot}, align 4")
@@ -5965,7 +6082,7 @@ module OwningStackAot =
                         w.Line($"{exitLabel}:")
                         for flagId in bodyFlags do removeLocal flagId
                         match accumulator with
-                        | Some(state, appends, assigns) ->
+                        | Some(state, appends, assigns, loads) ->
                             // A break can leave elements pending: build the final list once.
                             let count = w.Fresh "acc.exit.count"
                             w.Inst($"{count} = load i32, ptr {state.PendingCountSlot}, align 4")
@@ -5994,6 +6111,7 @@ module OwningStackAot =
                             w.Line($"{doneLabel}:")
                             for append in appends do accumulatorAppends.Remove append |> ignore
                             for assign in assigns do accumulatorAssigns.Remove assign |> ignore
+                            for load in loads do accumulatorLoads.Remove load |> ignore
                             accumulatorSlots.Remove state.AccumulatorSlot |> ignore
                         | None -> ()
                         stack <- prefix

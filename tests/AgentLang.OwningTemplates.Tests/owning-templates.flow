@@ -50,6 +50,41 @@ fn native.tpl.raw(text: String) -> String {
     html.text(html"<div>{html.raw(text)}</div>")
 }
 
+fn native.tpl.reraw(text: String) -> String {
+    effects none
+    doc "Markup that is already Html, passed back through html.raw: no run-time check."
+
+    let page = html"<p>{text}</p>"
+    let again = html.raw(Html.value(page))
+    let both = string.concat(Html.value(again), string.concat("<br>", Html.value(page)))
+    html.text(html.raw(both))
+}
+
+fn native.tpl.reraw-open(text: String) -> String {
+    effects none
+    doc "Html joined with a String that is not a fragment: checked, and rejected."
+
+    let page = html"<p>{text}</p>"
+    html.text(html.raw(string.concat(Html.value(page), "<b")))
+}
+
+fn native.tpl.reraw-extra(text: String, extra: String) -> String {
+    effects none
+    doc "Html joined with an untrusted String: checked at run time."
+
+    let page = html"<p>{text}</p>"
+    html.text(html.raw(string.concat(Html.value(page), extra)))
+}
+
+fn native.tpl.reraw-var(text: String, extra: String) -> String {
+    effects none
+    doc "A var that held Html markup may since hold anything: checked."
+
+    var markup = Html.value(html"<p>{text}</p>")
+    markup = string.concat(markup, extra)
+    html.text(html.raw(markup))
+}
+
 fn native.tpl.fragment?(text: String) -> Bool {
     effects none
     string.html-fragment?(text)
@@ -73,6 +108,26 @@ test native.tpl.braces/literal {
 test html.text/item {
     html.text(tpl.item("a"))
     => value "<li>a</li>"
+}
+
+test native.tpl.reraw/same {
+    native.tpl.reraw("a<b")
+    => value "<p>a&lt;b</p><br><p>a&lt;b</p>"
+}
+
+test native.tpl.reraw-open/fails {
+    native.tpl.reraw-open("a")
+    => error REFINEMENT_FAILED
+}
+
+test native.tpl.reraw-extra/ok {
+    native.tpl.reraw-extra("a", "<i>b</i>")
+    => value "<p>a</p><i>b</i>"
+}
+
+test native.tpl.reraw-var/ok {
+    native.tpl.reraw-var("a", "<i>b</i>")
+    => value "<p>a</p><i>b</i>"
 }
 
 test native.tpl.raw/literal {
