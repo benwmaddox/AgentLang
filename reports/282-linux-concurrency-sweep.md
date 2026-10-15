@@ -72,25 +72,30 @@ pre-registered before the first run (`PLAN.md` in the evidence).
 
 ## Findings
 
-- **Uncached, Flow beats Rust.** Flow serves 26% more requests per second
-  (1,986 vs 1,573) at 14% less CPU per request (2.06 vs 2.39 ms) and less than
-  a quarter of the memory (20 vs 90 MB PSS), with lower p50/p99 at every
-  connection count. Both servers are saturated, and their CPU per request
-  barely moves from 16 to 128 connections. Flow's page is 11% larger (below),
-  so the per-byte comparison favors Flow further.
-- **With caches, Rust is 4.1× ahead** (9,855 vs 2,389 req/s; 0.40 vs 1.70
-  ms/request). The cache saves Flow only 17% (2.06 → 1.70 ms), against 83% for
-  Rust (2.39 → 0.40). This is the clearest target. Two causes are known, and
-  the second is a fairness question:
+- **Uncached, Flow measured ahead of Rust** on pages that are not yet
+  equivalent (see Fairness; no speed ratio is claimed). Flow served 1,986 vs
+  1,573 req/s, at 2.06 vs 2.39 ms CPU per request and 20 vs 90 MB PSS, with
+  lower p50/p99 at every connection count. Both are saturated, and CPU per
+  request barely moves from 16 to 128 connections. Flow still does work Rust
+  does not (about 320 masked CSRF tokens per page, below) and skips work Rust
+  does (rich-text rendering).
+- **With caches, Rust measured far ahead** (9,855 vs 2,389 req/s; 0.40 vs 1.70
+  ms/request; same page caveat). The cache saves Flow 17% (2.06 → 1.70 ms) and
+  Rust 83% (2.39 → 0.40). Two known causes; the second makes this cached
+  comparison unfair as it stands:
   1. Flow's cached path still pays for page-query, re-validation of every
      `cache.get` hit (8.6% of cached CPU in the 281 profile) and the
      per-request layout.
-  2. **Rust's page is byte-identical on every request** (`body_constant=yes`
-     in all 6 Rust lifetimes). Rails' and Flow's pages differ on every
-     request, because the composer and meta CSRF tokens are freshly masked.
-     Rust apparently does not re-mask per-request tokens, so it does less work
-     per request than Rails. This needs checking in the Rust reference before
-     the cached comparison is called fair.
+  2. **The Rust reference emits no CSRF tokens.** It implements Rails main's
+     `protect_from_forgery using: :header_only` and checks
+     `Sec-Fetch-Site`/`Origin` on writes (`kit/src/ctx.rs`
+     `verify_authenticity_token`): "pages carry no per-request token, so they
+     render the same until what they show changes". Its page is byte-identical
+     on every request (`body_constant=yes` in all 6 Rust lifetimes). The Rails
+     reference and Flow mask a CSRF token per boost form (about 320) plus the
+     meta and composer tokens on every uncached page, and the per-request ones
+     on every cached page. So Rust does less work per request than Rails in
+     both columns, and the cached column most of all.
 - **Rails never saturates its 4 vCPUs.** It sits at 0.78–0.81 utilization at
   every connection count, cached or not. The reference configuration runs 3
   puma workers, each limited by the GVL, so about 3 cores' worth of Ruby. It is
@@ -105,15 +110,19 @@ pre-registered before the first run (`PLAN.md` in the evidence).
   utilization 0.54–0.71 for Flow against 0.33–0.39 for Rust at 4–5× the
   request rate. This counts against Flow in the labels (one Flow cached
   128-connection rep crossed 0.70). It does not change server CPU per request.
-- **Rust uncached is CPU-bound once the client has 8 vCPUs.** The 273 smoke
-  (load generator on 4 vCPUs) looked wait-bound at 2.97 ms/request. Here Rust
-  is at 0.93–0.94 utilization and 2.39 ms.
+- **Between-session drift is about 20%.** The same Rust binary used 2.97 ms
+  per request in 273's smoke and 2.39 ms here (0.80×); Flow shows the same
+  shift against 281 (2.61 → 2.06 ms, not the same binary). In 273 the load
+  generator used about 8% of its vCPUs, so it was not the cause; the cause is
+  unknown. Only interleaved, same-session comparisons such as this sweep
+  should be compared.
 
 ## Fairness
 
-- **Pages are not identical.** Flow sends 460,238 bytes, Rust 416,127 and Rails
-  463,753. Flow still lacks rich text, two boosts and a few attributes; Rust
-  differs as noted above.
+- **Pages are not identical, so no speed ratio is claimed.** Flow sends
+  460,238 bytes, Rust 416,127 and Rails 463,753. Flow still lacks rich text,
+  two boosts and a few attributes. Rust emits no CSRF tokens (header-only
+  forgery protection), which Rails and Flow do.
 - Flow cannot log in (no bcrypt), so it serves the snapshot's Rails session
   cookie. Rails and Rust log in at the start of each lifetime.
 - vCPUs, not physical cores. All three servers ran in the same WSL2 VM and the
@@ -136,9 +145,10 @@ pre-registered before the first run (`PLAN.md` in the evidence).
    - Cache more of the page per request, as Rust evidently does, once the CSRF
      question below is settled.
    - Profile the cached path again.
-2. **Rust CSRF masking.** Check whether the Rust reference re-masks
-   per-request CSRF tokens as Rails does. If it doesn't, decide whether to
-   compare against it as-is or with masking.
+2. **CSRF parity (user decision).** Either run Rails and Flow with
+   header-only forgery protection like Rust, or keep Rails' token scheme and
+   treat Rust as doing less work. Until then the cached column is not a fair
+   comparison.
 3. **Rails at 4 workers** (`WEB_CONCURRENCY=4`), as a supplementary run so
    Rails can use all 4 vCPUs. Needs a user decision: it changes the reference
    configuration.
