@@ -36,6 +36,14 @@ labeled as the one server doing token work (report 283).
   (`campfire.server.page-frame`). Possible language support: a template form
   checked as a pair (head opens exactly what tail closes), or a streaming hole
   that names where the stream continues.
+- **List primitives without a native lowering.** `list.tail` and
+  `list.is-empty?` run in the interpreter, but the owning backend rejects them
+  when it emits native code (`IR_NATIVE_HOST_PROFILE` / unsupported primitive),
+  so code passes its tests and then fails the native build. 285 worked around
+  it: the rich-text checker keeps its open-element stack as a path string
+  (`"/div/p"`), and the server uses `list.count(x) == 0`. Lower both natively
+  (a header read and an extent adjustment), then the checker can use a list
+  again.
 - **Host operations with no inputs.** `store.capacity`, `response.written` and
   `response.discard` take an ignored Int. Allow zero-input host operations.
 

@@ -121,3 +121,46 @@ work in Flow code:
 - Native and interpreter parity hold; all gates pass.
 - The interleaved sweep is rerun, and the uncached column is reported as
   comparable.
+
+## After 285: equal output across the rest of the app (user, 2026-10-15)
+
+The standing goal: for the same database, every Flow response matches Rails'
+bytes (CSRF elements aside). Each step uses the same method as 285: record
+Rails' output (the room page, or `.agentlang/pages-285/oracle.rb`-style
+runners for partials), diff, and port until 0 differing blocks.
+
+1. **Rich-text phase B:** the 14 snapshot messages Rails transforms. These are
+   mentions and other attachments (signed GlobalID lookups), Open Graph embeds,
+   sounds, `figure` stripping and auto_link. The oracle's 169 messages all
+   match when this is done.
+   The 14 transformed oracle cases, in build order:
+   - **B1 `figure` and sounds.** Strip the disallowed `figure` around Lexxy
+     tables (keeping its children). `/play <name>` messages (content type
+     `sound`) render the sound partial from the app's sound list.
+   - **B2 HTML5 tokenizer in Flow.** A spec-conformant tokenizer (data, tag,
+     attribute-name and attribute-value states, numeric and named character
+     references). It is needed because stored markup can be malformed: one
+     mention stores `content="<span class=" mention"=""`, which HTML5
+     tokenization reads as an attribute named `mention"`. Tree building stays
+     restricted to the allowlisted elements; anything needing WHATWG recovery
+     beyond that is refused. Named references outside the table Flow carries
+     are refused (the editor writes raw UTF-8).
+   - **B3 attachments in rich text:**
+     - mentions: read the GlobalID inside the SGID, as Campfire's
+       possibly-expired path does; look up the user; render the mention
+       partial; sanitize it, which strips `sgid`, `data-turbo-frame` and
+       `aria-hidden`;
+     - Open Graph embeds, from the `content` HTML or from the
+       url/href/filename/caption attributes, including the Twitter avatar
+       variant and exact partial whitespace;
+     - the RemoveSoloUnfurledLinkText filter.
+   - **B4 message attachments** (content type `attachment`): Active Storage
+     blobs and their variants and previews.
+2. **Routes beyond GET/HEAD `/rooms/<id>`,** one at a time:
+   - the sidebar frame;
+   - message paging (`/rooms/<id>/@<message>`, before and after);
+   - search;
+   - users and avatars;
+   - account;
+   - sign-in and sign-out (bcrypt needs a decision);
+   - message and boost writes, with sanitization inbound when writes land.

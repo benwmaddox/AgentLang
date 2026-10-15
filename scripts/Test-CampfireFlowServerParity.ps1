@@ -34,7 +34,12 @@ param(
     # 4 workers). With a store the room page is streamed through the worker
     # cache (docs/WORKER-STORE-PLAN.md); bodies still match the native host
     # byte for byte. The process-wide --cache-mb cache stays off.
-    [int] $StoreMb = 32
+    [int] $StoreMb = 32,
+    # Since report 285 the Flow server renders the room page as Rails does (docs/EQUAL-PAGES-PLAN.md),
+    # which the native HTTP.sys host (scheduled for deletion) does not. Room-page bodies are then
+    # compared with this Rails page (CSRF elements removed) instead of the native host's; statuses,
+    # headers, cookies and every other body still compare with the native host.
+    [string] $RailsRoomPage = ''
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -198,10 +203,19 @@ foreach ($case in $cases) {
     $name = $case[0]
     $native = Read-Response (Join-Path $out 'native') $name
     $flow = Read-Response (Join-Path $out 'flow') $name
-    $same = [ordered]@{ status = $native.status -eq $flow.status; headers = $native.headers -eq $flow.headers; cookies = $native.cookies -eq $flow.cookies; body = $native.body -ceq $flow.body }
+    # A room page (HEAD included: it has the GET's content-length and no body).
+    $nativeLength = [long](($native.headers -split "`n" | Where-Object { $_.StartsWith('content-length: ') } | Select-Object -First 1) -replace '^content-length: ', '0')
+    $roomPage = $RailsRoomPage -ne '' -and $native.status -eq '200' -and $nativeLength -gt 100000
+    $railsPage = if ($roomPage) { [IO.File]::ReadAllText([IO.Path]::GetFullPath($RailsRoomPage)) } else { '' }
+    $expectedBody = if ($roomPage -and $name -ne 'room-head') { $railsPage } else { $native.body }
+    # A room page compared with Rails has Rails' length: drop content-length from the native comparison and check it against the expected bytes.
+    $nativeHeaders = if ($roomPage) { ($native.headers -split "`n" | Where-Object { -not $_.StartsWith('content-length:') }) -join "`n" } else { $native.headers }
+    $flowHeaders = if ($roomPage) { ($flow.headers -split "`n" | Where-Object { -not $_.StartsWith('content-length:') }) -join "`n" } else { $flow.headers }
+    $lengthOk = -not $roomPage -or ($flow.headers -split "`n" | Where-Object { $_ -eq ('content-length: ' + [Text.Encoding]::UTF8.GetByteCount($railsPage)) }).Count -eq 1
+    $same = [ordered]@{ status = $native.status -eq $flow.status; headers = ($nativeHeaders -eq $flowHeaders) -and $lengthOk; cookies = $native.cookies -eq $flow.cookies; body = $expectedBody -ceq $flow.body }
     $ok = -not ($same.Values -contains $false)
     $allSame = $allSame -and $ok
-    "{0,-15} status {1}/{2} headers={3} set-cookie={4} body={5} ({6} bytes)" -f $name, $native.status, $flow.status, $same.headers, $same.cookies, $same.body, $flow.bodyBytes
+    "{0,-15} status {1}/{2} headers={3} set-cookie={4} body={5} ({6} bytes{7})" -f $name, $native.status, $flow.status, $same.headers, $same.cookies, $same.body, $flow.bodyBytes, $(if ($roomPage) { ', vs Rails' } else { '' })
     if (-not $ok) {
         [IO.File]::WriteAllText((Join-Path $out "$name.native.txt"), "$($native.status)`n$($native.headers)`n$($native.cookies)`n`n$($native.body)")
         [IO.File]::WriteAllText((Join-Path $out "$name.flow.txt"), "$($flow.status)`n$($flow.headers)`n$($flow.cookies)`n`n$($flow.body)")
@@ -236,7 +250,8 @@ if (Test-Path $flowServerLog) {
     "flow    {0}" -f ((Select-String -LiteralPath $flowServerLog -Pattern 'STOPPED' | Select-Object -Last 1).Line -replace '^.*(cache-mb=.*)$', '$1')
     foreach ($line in (Select-String -LiteralPath $flowServerLog -Pattern '^worker \d+: ')) { "flow    {0}" -f ($line.Line -replace '^(worker \d+): .*(store-bytes=\d+ store-pages-used=\d+).*$', '$1 $2') }
 }
-$loadgenSame = [IO.File]::ReadAllText((Join-Path $out 'native/loadgen-body.html')) -ceq [IO.File]::ReadAllText((Join-Path $out 'flow/loadgen-body.html'))
+$loadgenExpected = if ($RailsRoomPage -ne '') { [IO.File]::ReadAllText([IO.Path]::GetFullPath($RailsRoomPage)) } else { [IO.File]::ReadAllText((Join-Path $out 'native/loadgen-body.html')) }
+$loadgenSame = $loadgenExpected -ceq [IO.File]::ReadAllText((Join-Path $out 'flow/loadgen-body.html'))
 $allSame = $allSame -and $loadgenSame
 "loadgen bodies identical: {0}" -f $loadgenSame
 "PARITY {0}" -f ($(if ($allSame) { 'PASS' } else { 'FAIL' }))
