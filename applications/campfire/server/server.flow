@@ -382,7 +382,7 @@ fn campfire.server.boosts-of(boosts: List<BoostView>, message-id: Int) -> List<B
 }
 
 test campfire.server.boosts-of/filters {
-    let boost = boostView.new(id = 1, message-id = 5, booster-id = 2, booster-name = "B", booster-avatar-url = "/a", content = "x")
+    let boost = boostView.new(id = 1, message-id = 5, booster-id = 2, booster-name = "B", booster-bio = "", booster-avatar-url = "/a", content = "x")
     expect list.count(campfire.server.boosts-of([boost], 5)) == 1
     expect list.count(campfire.server.boosts-of([boost], 6)) == 0
 }
@@ -427,15 +427,46 @@ test campfire.server.page-extras/none {
     expect campfire.server.page-extras(list.empty<MessageWithCreator>(), campfire.server.test-context()).request-host == "127.0.0.1"
 }
 
-fn campfire.server.presentation(message: MessageWithCreator, extras: PageExtras) -> Html {
-    doc "message_presentation: the attached file when the message has one, else campfire.presentation.body-for-host of its stored body with the page's mention users and the request's host."
+fn campfire.server.attachment-of(message: MessageWithCreator, extras: PageExtras) -> Option<MessageAttachment> {
+    doc "The message's attached file among the page's attachments."
     var attached = option.none<MessageAttachment>()
     for attachment in extras.attachments {
         if attachment.message-id == MessageId.value(message.id) {
             attached = option.some<MessageAttachment>(attachment)
         }
     }
-    match attached {
+    attached
+}
+
+test campfire.server.attachment-of/none {
+    let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "A", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("<p>🎉🔥</p>"))
+    expect campfire.server.attachment-of(message, campfire.server.no-extras()) == option.none<MessageAttachment>()
+    expect campfire.server.shown(message, campfire.server.no-extras()).emoji
+}
+
+fn campfire.server.shown(message: MessageWithCreator, extras: PageExtras) -> MessageShown {
+    doc "message_tag's message--emoji (Message#plain_text_body all emoji: the body's plain text, else the attachment's filename) and _actions' primary actions (Download and Share for an attachment, else Reply)."
+    let attached = campfire.server.attachment-of(message, extras)
+    let body-text = match message.body { none => ""; some text => campfire.presentation.plain-text(text, extras.users) }
+    let plain = if bool.not(campfire.views.blank?(body-text)) { body-text } else { match attached { none => ""; some file => campfire.presentation.sanitized-filename(file.filename) } }
+    let actions = match attached {
+        none => campfire.views.reply-actions()
+        some file => campfire.views.attachment-actions(string.concat(campfire.presentation.blob-path(file), "?disposition=attachment"), campfire.presentation.blob-path(file), campfire.presentation.sanitized-filename(file.filename))
+    }
+    messageShown.new(emoji = campfire.emoji.all?(plain), actions = actions)
+}
+
+test campfire.server.shown/attachment {
+    let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "A", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.none<String>())
+    let file = messageAttachment.new(message-id = 5, filename = "🎉", content-type = "text/plain", width = "", height = "", blob-token = "T", preview-token = "")
+    let shown = campfire.server.shown(message, pageExtras.new(users = list.empty<MentionUser>(), attachments = [file], request-host = ""))
+    expect shown.emoji
+    expect string.contains(campfire.views.text(shown.actions), "href=\"/rails/active_storage/blobs/redirect/T/%F0%9F%8E%89?disposition=attachment\"")
+}
+
+fn campfire.server.presentation(message: MessageWithCreator, extras: PageExtras) -> Html {
+    doc "message_presentation: the attached file when the message has one, else campfire.presentation.body-for-host of its stored body with the page's mention users and the request's host."
+    match campfire.server.attachment-of(message, extras) {
         some attachment => campfire.presentation.attachment-html(attachment)
         none => campfire.presentation.body-for-host(message.body, extras.users, extras.request-host)
     }
@@ -469,13 +500,13 @@ test campfire.server.presentation/canonical-or-escaped {
 
 fn campfire.server.render-message(context: MessageContext, message: MessageWithCreator, boosts: List<BoostView>, extras: PageExtras) -> String {
     doc "messages/_message with the message's own boosts and its presentation."
-    campfire.views.text(campfire.views.rails-message-presented(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, extras)))
+    campfire.views.text(campfire.views.rails-message-shown(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, extras), campfire.server.shown(message, extras)))
 }
 
 test campfire.server.render-message/boost-markup {
     let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.none<String>())
     let context = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
-    let text = campfire.server.render-message(context, message, [boostView.new(id = 9, message-id = 5, booster-id = 2, booster-name = "Bo", booster-avatar-url = "/users/t2/avatar?v=1", content = "👀")], campfire.server.no-extras())
+    let text = campfire.server.render-message(context, message, [boostView.new(id = 9, message-id = 5, booster-id = 2, booster-name = "Bo", booster-bio = "", booster-avatar-url = "/users/t2/avatar?v=1", content = "👀")], campfire.server.no-extras())
     expect string.contains(text, "<div id=\"boost_9\"")
     expect string.contains(text, "class=\"txt-small txt-medium\"")
     expect string.contains(text, "aria-label=\"Bo boosted 👀\"")
@@ -671,7 +702,7 @@ fn campfire.server.whole-room-page(chrome: PageChrome, messages: List<MessageWit
     let extras = campfire.server.page-extras(messages, context)
     var rendered = list.empty<Html>()
     for message in messages {
-        rendered = list.append(rendered, campfire.views.rails-message-presented(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, extras)))
+        rendered = list.append(rendered, campfire.views.rails-message-shown(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message, extras), campfire.server.shown(message, extras)))
     }
     campfire.views.text(campfire.views.page(chrome, rendered))
 }

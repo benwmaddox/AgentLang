@@ -988,10 +988,19 @@ test campfire.presentation.preview-dimensions/scaled {
     expect scaled == [dimension.new(present = true, real = true, value = 1200.0), dimension.new(present = true, real = true, value = 675.0)]
 }
 
+fn campfire.presentation.blob-path(attachment: MessageAttachment) -> String {
+    doc "rails_blob_path(attachment, only_path: true): the redirect route with the signed blob id and the sanitized filename, path-escaped."
+    string.join(["/rails/active_storage/blobs/redirect/", campfire.presentation.escape-path(attachment.blob-token, false), "/", campfire.presentation.escape-path(campfire.presentation.sanitized-filename(attachment.filename), true)])
+}
+
+test campfire.presentation.blob-path/escaped {
+    expect campfire.presentation.blob-path(messageAttachment.new(message-id = 1, filename = "a b.txt", content-type = "text/plain", width = "", height = "", blob-token = "T", preview-token = "")) == "/rails/active_storage/blobs/redirect/T/a%20b.txt"
+}
+
 fn campfire.presentation.attachment-html(attachment: MessageAttachment) -> Html {
     doc "Messages::AttachmentPresentation#render for an attached file."
     let filename = campfire.presentation.sanitized-filename(attachment.filename)
-    let blob-path = string.join(["/rails/active_storage/blobs/redirect/", campfire.presentation.escape-path(attachment.blob-token, false), "/", campfire.presentation.escape-path(filename, true)])
+    let blob-path = campfire.presentation.blob-path(attachment)
     let download = rich-html.html-escape(string.concat(blob-path, "?disposition=attachment"))
     let video = campfire.presentation.video?(attachment.content-type)
     if video || campfire.presentation.variable?(attachment.content-type) {

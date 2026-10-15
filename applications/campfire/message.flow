@@ -9,8 +9,74 @@ record BoostView {
     message-id: Int
     booster-id: Int
     booster-name: String
+    booster-bio: String
     booster-avatar-url: String
     content: String
+}
+
+record MessageShown {
+    emoji: Bool
+    actions: Html
+}
+
+fn campfire.views.blank?(text: String) -> Bool {
+    effects none
+    doc "Ruby's blank? for a String, over ASCII whitespace (space, tab, LF, VT, FF, CR)."
+    var blank = true
+    for index in 0..string.byte-length(text) {
+        let byte = string.byte-at-or(text, index, 0)
+        if byte != 32 && (byte < 9 || byte > 13) {
+            blank = false
+            break
+        }
+    }
+    blank
+}
+
+test campfire.views.blank?/whitespace {
+    expect campfire.views.blank?("") && campfire.views.blank?(" \t\n") && bool.not(campfire.views.blank?(" x"))
+}
+
+fn campfire.views.user-title(name: String, bio: String) -> String {
+    effects none
+    doc "User#title: the name and bio that are not blank, joined by ' – '."
+    let has-name = bool.not(campfire.views.blank?(name))
+    let has-bio = bool.not(campfire.views.blank?(bio))
+    if has-name && has-bio { string.join([name, " – ", bio]) } else if has-name { name } else if has-bio { bio } else { "" }
+}
+
+test campfire.views.user-title/blank-bio {
+    expect campfire.views.user-title("JZ", "Designer") == "JZ – Designer" && campfire.views.user-title("JZ", " ") == "JZ" && campfire.views.user-title("JZ", "") == "JZ"
+}
+
+fn campfire.views.reply-actions() -> Html {
+    effects none
+    doc "The Reply button _actions shows for a message without an attachment."
+    html"""          <button class="btn message__action-btn center full-width" data-action="reply#reply" title="Reply" aria-label="Reply">
+            <img class="colorize--black" aria-hidden="true" src="/assets/reply-edb77e33.svg" width="20" height="20" />
+</button>
+"""
+}
+
+test campfire.views.reply-actions/button {
+    expect string.contains(campfire.views.text(campfire.views.reply-actions()), "data-action=\"reply#reply\"")
+}
+
+fn campfire.views.attachment-actions(download: String, share: String, filename: String) -> Html {
+    effects none
+    doc "The Download link and Share button _actions shows in place of Reply for a message with an attachment: download is the blob path with disposition=attachment, share the blob path."
+    html"""          <a class="btn message__action-btn center full-width hide-in-ios-pwa" title="Download" aria-label="Download" href="{download}">
+            <img class="colorize--black" aria-hidden="true" src="/assets/download-04029899.svg" width="20" height="20" />
+</a>
+          <button class="btn message__action-btn center full-width" data-controller="web-share" data-action="web-share#share" data-web-share-files-value="{share}" data-web-share-title-value="{filename}" title="Share" aria-label="Share">
+            <img class="colorize--black" aria-hidden="true" src="/assets/share-bf28da4f.svg" width="20" height="20" />
+</button>
+"""
+}
+
+test campfire.views.attachment-actions/escaped {
+    let text = campfire.views.text(campfire.views.attachment-actions("/b/x.txt?disposition=attachment", "/b/x.txt", "a&b.txt"))
+    expect string.contains(text, "href=\"/b/x.txt?disposition=attachment\"") && string.contains(text, "data-web-share-title-value=\"a&amp;b.txt\"")
 }
 
 fn campfire.views.boost(boost: BoostView) -> Html {
@@ -22,11 +88,12 @@ fn campfire.views.boost(boost: BoostView) -> Html {
     let message-id = int.to-string(boost.message-id)
     let label = string.join([boost.booster-name, " boosted ", boost.content])
     let span-class = if campfire.emoji.all?(boost.content) { "txt-small txt-medium" } else { "txt-small" }
+    let title = campfire.views.user-title(boost.booster-name, boost.booster-bio)
     html"""  <div id="boost_{id}"
       class="boost boost-item flex-inline postion--relative max-width align-center fill-white gap"
       data-controller="boost-delete" data-boost-delete-perform-class="boost--deleting" data-boost-delete-reveal-class="expanded" data-boost-delete-booster-id-value="{booster-id}">
     <figure class="avatar boost__avatar flex-item-no-shrink">
-      <a title="{boost.booster-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{boost.booster-avatar-url}" width="48" height="48" /></a>
+      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{boost.booster-avatar-url}" width="48" height="48" /></a>
     </figure>
 
     <span role="button" class="{span-class}" data-action="click-&gt;boost-delete#reveal keydown.enter-&gt;boost-delete#reveal:prevent" data-boost-delete-target="content">{boost.content}</span>
@@ -63,7 +130,13 @@ fn campfire.views.rich-text-layout(content: Html) -> Html {
 
 fn campfire.views.rails-message-presented(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>, body: Html) -> Html {
     effects none
-    doc "body is the message's whole presentation, as Rails' message_presentation returns it (the rich-text layout for a text message, the sound markup for a sound). One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
+    doc "campfire.views.rails-message-shown for a message that is not all emoji and has no attachment (the Reply action)."
+    campfire.views.rails-message-shown(context, message, boost-views, body, messageShown.new(emoji = false, actions = campfire.views.reply-actions()))
+}
+
+fn campfire.views.rails-message-shown(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>, body: Html, shown: MessageShown) -> Html {
+    effects none
+    doc "body is the message's whole presentation, as Rails' message_presentation returns it (the rich-text layout for a text message, the sound markup for a sound). shown says whether the message is all emoji (message--emoji) and holds its primary actions (campfire.views.reply-actions or attachment-actions). One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
 
     let id = int.to-string(MessageId.value(message.id))
     let creator-id = int.to-string(UserId.value(message.creator-id))
@@ -72,13 +145,10 @@ fn campfire.views.rails-message-presented(context: MessageContext, message: Mess
     let iso = string.concat(string.replace(message.created-at, " ", "T"), "Z")
     let stamp = string.replace(string.replace(string.replace(message.creator-updated-at, "-", ""), ":", ""), " ", "")
     let avatar-url = string.concat(string.concat(string.concat("/users/", message.creator-avatar-token), "/avatar?v="), stamp)
-    let title = if message.creator-bio == "" {
-        message.creator-name
-    } else {
-        string.concat(string.concat(message.creator-name, " – "), message.creator-bio)
-    }
+    let title = campfire.views.user-title(message.creator-name, message.creator-bio)
     let boosts = boost-views.map(campfire.views.boost)
-    html"""  <div id="message_{message.client-message-id}" class="message " data-controller="reply" data-user-id="{creator-id}" data-message-id="{id}" data-message-timestamp="{created-ms}" data-message-updated-at="{updated-ms}" data-sort-value="{created-ms}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">
+    let emoji-class = if shown.emoji { "message--emoji" } else { "" }
+    html"""  <div id="message_{message.client-message-id}" class="message {emoji-class}" data-controller="reply" data-user-id="{creator-id}" data-message-id="{id}" data-message-timestamp="{created-ms}" data-message-updated-at="{updated-ms}" data-sort-value="{created-ms}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">
     <h2 class="message__day-separator"><time datetime="{iso}" data-local-time-target="date"></time></h2>
 
     <figure class="avatar message__avatar">
@@ -155,10 +225,7 @@ fn campfire.views.rails-message-presented(context: MessageContext, message: Mess
 </a>      </div>
 
       <div class="flex flex-wrap border-top margin-block-start-half pad-block-start-half message__actions-grid">
-          <button class="btn message__action-btn center full-width" data-action="reply#reply" title="Reply" aria-label="Reply">
-            <img class="colorize--black" aria-hidden="true" src="/assets/reply-edb77e33.svg" width="20" height="20" />
-</button>
-        <button class="btn message__action-btn center full-width" title="Copy link" aria-label="Copy link" data-controller="copy-to-clipboard" data-action="copy-to-clipboard#copy" data-copy-to-clipboard-success-class="btn--success" data-copy-to-clipboard-content-value="{context.base-url}/rooms/{context.room-id}/@{id}">
+{shown.actions}        <button class="btn message__action-btn center full-width" title="Copy link" aria-label="Copy link" data-controller="copy-to-clipboard" data-action="copy-to-clipboard#copy" data-copy-to-clipboard-success-class="btn--success" data-copy-to-clipboard-content-value="{context.base-url}/rooms/{context.room-id}/@{id}">
           <img class="colorize--black" aria-hidden="true" src="/assets/link-e546a5df.svg" width="20" height="20" />
 </button>
         <a class="btn message__action-btn center full-width message__edit-btn" data-turbo-frame="edit_message_{message.client-message-id}" title="Edit" aria-label="Edit" href="/rooms/{context.room-id}/messages/{id}/edit">

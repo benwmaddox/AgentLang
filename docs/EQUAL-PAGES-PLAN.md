@@ -28,7 +28,7 @@ Rust's deviations are recorded in the report but not copied.
 | 4 | `loaded_at` | `room.updated_at` in epoch ms (`messages_helper.rb`) | done |
 | 5 | Message-list whitespace | partial `"  <div…</div>\\n"`, container prefix `"\\n    \\n    \\n"` | done |
 | 6 | Empty boost list whitespace, and the 2 boosts | `_boosts` / `_boost` partials; boosters' signed avatars; all-emoji class (Ruby 3.4.10 Unicode 15.0 ranges) | done |
-| 7 | Message bodies | Flow HTML parser + Rails pipeline, at render time on store misses (inbound later) | after 6 |
+| 7 | Message bodies | Flow HTML parser + Rails pipeline, at render time on store misses (inbound later) | done (phase B, below) |
 
 ## What message content may contain (the allowlist Rails applies, mirrored)
 
@@ -156,6 +156,35 @@ runners for partials), diff, and port until 0 differing blocks.
      - the RemoveSoloUnfurledLinkText filter.
    - **B4 message attachments** (content type `attachment`): Active Storage
      blobs and their variants and previews.
+
+   **Status (2026-10-15): phase B is done.** The Rails oracle matches all
+   169 snapshot messages (`.agentlang/pages-285/run-oracle.sh`, with
+   `private/attachment-oracle-tests.flow` for the 5 attachments). Two room
+   pages are byte-identical to Rails without CSRF on Linux: the benchmark
+   room, and room 654632876 (`page-lifetime.sh`, `PAGE_ROOM`). That room
+   holds the sound, embed, mention, attachment and emoji-only messages.
+   The page check also found three things outside message bodies, now
+   matched:
+   - `message--emoji` on messages whose plain text is all emoji;
+   - Download and Share in place of Reply for attachment messages;
+   - boost avatar titles of name – bio (`User#title`).
+
+   Facts the port depends on:
+   - Previews follow the reference environment: ffmpeg is present, so
+     videos preview; poppler and mupdf are absent, so PDFs don't. `image/bmp`
+     isn't in `variable_content_types`.
+   - Signed blob ids and variation keys use the ActiveStorage verifier:
+     PBKDF2-SHA256 key ("ActiveStorage", 64 bytes), strict Base64 and an
+     HMAC-SHA1 hex signature, both from libcrypto.
+   - Dimensions follow Ruby's Integer/Float arithmetic. `float.to-string`
+     is shortest round-trip like Ruby's, and agrees with it below 1e16.
+   - Open Graph `web_url` compares against the request host (the authority
+     without its port; empty in the oracle runner, as in `rails runner`).
+
+   Not covered by the snapshot, so approximated and noted in the code: plain
+   text for lists, quotes and captions (used only for comparison with a URL
+   and for the emoji test), whitespace-only bios beyond ASCII, metadata
+   dimensions in exponent form.
 2. **Routes beyond GET/HEAD `/rooms/<id>`,** one at a time:
    - the sidebar frame;
    - message paging (`/rooms/<id>/@<message>`, before and after);

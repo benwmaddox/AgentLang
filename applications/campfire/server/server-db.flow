@@ -748,7 +748,7 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
     if list.count(ids) == 0 {
         result.ok<List<BoostView>, DbError>(list.empty<BoostView>())
     } else {
-        match db.query("SELECT boosts.id, boosts.message_id, boosts.booster_id, boosts.content, users.name, users.updated_at FROM boosts INNER JOIN users ON users.id = boosts.booster_id WHERE boosts.message_id IN (SELECT value FROM json_each($ids)) ORDER BY boosts.created_at", [db.text-param(campfire.server.id-list(ids))]) {
+        match db.query("SELECT boosts.id, boosts.message_id, boosts.booster_id, boosts.content, users.name, users.updated_at, COALESCE(users.bio, '') FROM boosts INNER JOIN users ON users.id = boosts.booster_id WHERE boosts.message_id IN (SELECT value FROM json_each($ids)) ORDER BY boosts.created_at", [db.text-param(campfire.server.id-list(ids))]) {
             error failure => result.error<List<BoostView>, DbError>(campfire.server.db-error(failure))
             ok rows => {
                 var boosts = list.empty<BoostView>()
@@ -760,6 +760,7 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
                         message-id = campfire.server.int-or-zero(db.optional-int(row, 1)),
                         booster-id = booster,
                         booster-name = campfire.server.text-or-empty(db.optional-text(row, 4)),
+                        booster-bio = campfire.server.text-or-empty(db.optional-text(row, 6)),
                         booster-avatar-url = string.join(["/users/", campfire.server.avatar-token(avatar-key, booster), "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")]),
                         content = campfire.server.text-or-empty(db.optional-text(row, 3))))
                 }
