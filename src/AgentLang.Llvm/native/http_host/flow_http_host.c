@@ -778,7 +778,7 @@ static int fh_load_config(fh_options *options) {
 static void fh_usage(void) {
   fh_log("usage: flow_http_host --port <p> --db <sqlite path> [--config <file>] [--workers N] [--pin]\n"
          "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--allow-control]\n"
-         "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 32; 0 disables it)\n");
+         "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 0 = disabled)\n");
 }
 
 int main(int argc, char **argv) {
@@ -799,7 +799,7 @@ int main(int argc, char **argv) {
   options.arena_bytes = 32u << 20;
   options.retained_bytes = 4u << 20;
   options.max_body_bytes = 1u << 20;
-  options.cache_mb = 32u;
+  options.cache_mb = 0u; /* off unless asked for: a no-cache run never caches silently */
   for (i = 1; i < argc; ++i) {
     const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : 0;
     if (strcmp(a, "--port") == 0 && v) { options.port = atoi(v); ++i; }

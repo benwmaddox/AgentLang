@@ -178,6 +178,37 @@ host and the .NET hosts (stdlib plan step 5).
   lb273 (4 pinned workers, 16 clients, 10 s): 1126 req/s, 3.62 ms CPU/req,
   p50 10.9 ms, p99 35.7 ms, PSS 171 MB.
 
+### E. Fragment cache as built (277)
+
+- Stdlib host operations (`src/stdlib/cache.flow`, `src/AgentLang.FlowHttp/
+  Cache.fs`, native tags 3/4): `cache.get(key: String) -> Option<String>`
+  (effect `cache.read`; a hit is copied into the request arena) and
+  `cache.put(key: String, value: String) -> Bool` (effect `cache.write`; first
+  writer wins, a put of a present key is dropped and returns false), plus
+  `cache.key(parts)`. `cache.read`/`cache.write` join the closed effect
+  vocabulary. Interpreter: a process-wide `ConcurrentDictionary` (`TryAdd`);
+  attached tests get a fresh one.
+- Native (`native/http_host/flow_http_cache.c`): one process-wide cache shared
+  by all workers, lock-free. An insert-only open-addressing table of pointers to
+  immutable malloc'd entries, slots claimed by CAS; byte budget `--cache-mb N`
+  (default 0 = disabled, so a run without the flag never caches), half per
+  generation; a full generation is replaced
+  by an atomic pointer swap and freed after every worker's per-request epoch
+  shows it cannot hold a reference (the memory-ordering argument is the comment
+  at the top of the file). Peak memory is about the budget plus two slot
+  arrays. Stress test `flow_http_cache_test.c` (TSan, ASan/UBSan, -O2:
+  `scripts/test-flow-http-cache-linux.sh`).
+- Campfire: `campfire.server.message-fragment` mirrors Rails'
+  `cache [ message, "presentation-v3" ]` (key: template version, message id,
+  updated_at ms, `presentation-v3`); the fragment holds the eight boost-form
+  CSRF tokens of its first render, as Rails' does. User, avatar and room edits
+  do not change the key, in Rails as here; boosts touch the message. Fragments
+  are joined as text into the layout's message slot (re-wrapping each cached
+  String as Html re-validated it on every hit). `Test-CampfireFlowServerParity
+  .ps1 -CacheMb 32|0` checks parity with the native host either way, verifies
+  every CSRF token, and that boost tokens repeat across requests only with the
+  cache on.
+
 ## Benchmark protocol (Linux)
 
 - All three servers natively in WSL2 (not Docker), each against its own copy

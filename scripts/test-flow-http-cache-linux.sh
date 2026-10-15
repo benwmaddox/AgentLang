@@ -13,5 +13,12 @@ for mode in tsan asan o2; do
     o2) FLAGS="-O2" ;;
   esac
   clang -std=gnu11 -Wall -Wextra $FLAGS "$SRC/flow_http_cache.c" "$SRC/flow_http_cache_test.c" -lpthread -o "$OUT/cache_test_$mode"
-  echo "[$mode] $("$OUT/cache_test_$mode" 2>&1 | tail -n 3)"
+  # Sanitizer reports abort the run (nonzero exit) instead of scrolling past.
+  rc=0
+  TSAN_OPTIONS=halt_on_error=1 ASAN_OPTIONS=halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+    "$OUT/cache_test_$mode" > "$OUT/cache_test_$mode.log" 2>&1 || rc=$?
+  reports=$(grep -cE 'WARNING: ThreadSanitizer|ERROR: AddressSanitizer|runtime error:' "$OUT/cache_test_$mode.log" || true)
+  echo "[$mode] exit=$rc sanitizer-reports=$reports $(tail -n 1 "$OUT/cache_test_$mode.log")"
+  if [ "$rc" -ne 0 ] || [ "$reports" -ne 0 ]; then tail -n 40 "$OUT/cache_test_$mode.log"; exit 1; fi
 done
+echo "CACHE STRESS: all modes clean"

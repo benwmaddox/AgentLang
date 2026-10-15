@@ -283,7 +283,7 @@ let private run () =
         let exe = build "windows-x64" winDir profile
         let database = Path.Combine(root, $"win-{profile}.db")
         createDatabase database
-        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8"
+        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
         try
             parity $"windows/{profile}" expected
             protocol $"windows/{profile}"
@@ -312,7 +312,7 @@ let private run () =
             let remote = "~/linuxbench/flowhttp/counter-test"
             let command =
                 $"cp '{wslPath linuxDatabase}' {remote}/test.db && rm -f {remote}/test.db-wal {remote}/test.db-shm && cp '{wslPath configPath}' {remote}/config.txt && " +
-                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8"
+                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
             let server = startServer $"linux/{profile}" "wsl.exe" $"-- bash -lc \"{command}\""
             try
                 parity $"linux/{profile}" expected
