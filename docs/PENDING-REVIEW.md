@@ -199,3 +199,39 @@ object without LTO. Plan, in order:
 
 Lean User-Agent cost today: typical Chrome UA 50 us, corpus median 31 us
 (trusted O2), versus a few us in the retired C normalizer.
+
+## Performance opportunities (measured 2026-10-14; Flow server on Linux)
+
+Context: the Campfire Flow server on Linux (276 smoke, 4 pinned vCPUs, no
+cache) costs 3.62 ms CPU per request against Rust's 2.97 ms; the Windows
+HTTP.sys host with C cookie/db code cost 1.30 ms (272). Throughput looked
+level only because Flow saturated all 4 vCPUs. In rough order of expected size:
+
+1. **Profile the Linux portable path first** (`perf` under load). Moved from
+   C into Flow at once: cookie decrypt + JSON, generic `db.query` rows with
+   loop-based accessors, worker context copied into every request. Also
+   compare measurement scopes (cgroup on Linux vs process CPU on Windows).
+2. **`html.raw` re-validates already-validated markup** (cache agent's probe:
+   costs about as much as rendering). Trusted inputs should skip it.
+3. **`list.append` in loops is O(n^2)** (same probe, similar size). Needs an
+   amortized append / builder for loop accumulation.
+4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
+   passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
+   Leaner small-op path or fused common sequences.
+5. **Word calls pass arguments through the arena** (~23 ns/call after
+   scalars-in-registers). Register calling for scalars, and the approved
+   `inline` attribute.
+6. **OpenSSL per-call setup** ~0.8 us x ~41 HMACs/page: per-worker cached
+   digest/HMAC objects (user approved; thread-local, no sharing).
+7. **`Option` results through the arena**: keep small Options in registers
+   when matched immediately; then decide whether `string.byte-at-or` stays.
+8. **Memory**: Flow PSS 171 MB vs Rust 85 MB; likely generous per-worker
+   arena and buffer reservations. Measure and right-size.
+9. **Worker context copied per request** (276 deviation): borrow it from a
+   protected region below the arena mark instead.
+10. **Missing native `list.get` / `list.count`** (forces loop helpers).
+
+Measured reference points: sum loop 0.52 ns/iteration; small-word call loop
+23 ns/iteration; lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
+BCrypt) / 1.22 us (Linux, OpenSSL one-shot); stdlib ops: concat/encode ~72 ns,
+slice/xor ~125 ns, mask one CSRF token ~247 ns.
