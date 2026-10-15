@@ -1,9 +1,11 @@
 /* db.query / db.execute for the portable Flow HTTP host, against the SQLite C
  * API. One connection and one prepared-statement cache per worker; nothing is
- * shared between workers. Mirrors AgentLang.FlowHttp/Db.fs step for step so
+ * shared between workers. The adapter also routes cache.get / cache.put to the
+ * process-wide cache (flow_http_cache.c). Mirrors AgentLang.FlowHttp/Db.fs step for step so
  * interpreter and native results (rows, change counts, SqlError codes) agree. */
 #include "flow_http.h"
 #include "flow_http_sqlite.h"
+#include "flow_http_cache.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +13,8 @@
 #define FH_DB_STATEMENTS 256u
 #define FH_DB_QUERY 1u
 #define FH_DB_EXECUTE 2u
+#define FH_CACHE_GET 3u /* src/AgentLang.FlowHttp/Cache.fs nativeOperations */
+#define FH_CACHE_PUT 4u
 #define FH_PARAMETER_COUNT_MESSAGE "parameter count does not match the statement"
 
 /* DbValueKind ordinals, declaration order in src/stdlib/db.flow. */
@@ -232,13 +236,41 @@ static int32_t fh_run(fh_db *db, uint32_t operation, const uint8_t *sql, uint32_
   return 0;
 }
 
+/* cache.get(key) -> Option<String> (a hit's bytes are copied straight into
+ * the output, which is the request arena); cache.put(key, value) -> Bool. */
+static int32_t fh_cache_host(uint32_t worker, uint32_t operation, const fh_host_input *inputs,
+                             uint32_t input_count, fh_writer *w) {
+  fh_reader key_reader, value_reader;
+  const uint8_t *key, *value;
+  uint32_t key_length, value_length;
+  if (inputs == 0 || input_count != (operation == FH_CACHE_GET ? 1u : 2u)) return 1;
+  key_reader.data = inputs[0].data; key_reader.extent = inputs[0].extent_bytes; key_reader.at = 0u; key_reader.failed = 0;
+  key = fh_get_bytes(&key_reader, &key_length);
+  if (key_reader.failed) return 1;
+  if (operation == FH_CACHE_GET) {
+    if (fh_cache_get(worker, key, key_length, &value, &value_length)) {
+      fh_put_i64(w, 0); /* some */
+      fh_put_bytes(w, value, value_length);
+    } else {
+      fh_put_i64(w, 1); /* none */
+    }
+    return 0;
+  }
+  value_reader.data = inputs[1].data; value_reader.extent = inputs[1].extent_bytes; value_reader.at = 0u; value_reader.failed = 0;
+  value = fh_get_bytes(&value_reader, &value_length);
+  if (value_reader.failed) return 1;
+  fh_put_i64(w, fh_cache_put(worker, key, key_length, value, value_length) ? 1 : 0);
+  return 0;
+}
+
 int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
                              const al_owning_layout *layout,
                              const fh_host_input *inputs, uint32_t input_count,
                              uint32_t output_type_index, uint8_t *output,
                              uint32_t output_capacity_bytes,
                              uint32_t *output_extent_bytes) {
-  fh_db *db = (fh_db *)provider_context;
+  const fh_provider *provider = (const fh_provider *)provider_context;
+  fh_db *db = provider == 0 ? 0 : provider->db;
   fh_reader sql_reader, parameters;
   fh_writer w;
   const uint8_t *sql;
@@ -246,6 +278,13 @@ int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
   int32_t status;
   (void)layout;
   (void)output_type_index;
+  if (provider != 0 && output != 0 && (operation == FH_CACHE_GET || operation == FH_CACHE_PUT)) {
+    w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
+    status = fh_cache_host(provider->worker, operation, inputs, input_count, &w);
+    if (status != 0 || w.failed) return 1;
+    *output_extent_bytes = w.used;
+    return 0;
+  }
   if (db == 0 || input_count != 2u || inputs == 0 || output == 0 ||
       (operation != FH_DB_QUERY && operation != FH_DB_EXECUTE))
     return 1;

@@ -59,6 +59,10 @@ let private cases =
       case "GET" "/item?id=99" [] ""
       case "POST" "/echo?a=1&b=2" [ "X-Probe", "pp"; "Accept", "*/*" ] "hello body"
       case "GET" "/bad-sql" [] ""
+      case "GET" "/cache?k1" [] ""                        // process-wide cache: miss,
+      case "POST" "/cache?k1" [] "v1"                     // stored,
+      case "POST" "/cache?k1" [] "v2"                     // second writer dropped,
+      case "GET" "/cache?k1" [] ""                        // first value
       case "GET" "/nope" [] "" ]
 
 type private Response = { Status: int; Headers: (string * string) list; Body: string }
@@ -224,6 +228,16 @@ let private protocol label =
     let contexts = clients |> List.map (fun (_, client) -> client.Read(false) |> Option.map (fun r -> r.Body))
     for tcp, _ in clients do tcp.Dispose()
     check $"{label}: worker contexts agree across connections {contexts}" (contexts |> List.forall (fun body -> body = contexts.Head) && contexts.Head.IsSome)
+    // One cache for every worker: a value put on one connection is a hit on all.
+    (let tcp, client = connect ()
+     use _tcp = tcp
+     client.Send(encodeRequest (case "POST" "/cache?shared" [] "everyone"))
+     check $"{label}: cache put" (client.Read(false) |> Option.exists (fun r -> r.Body = "stored")))
+    let clients = [ for _ in 1 .. 8 -> connect () ]
+    for _, client in clients do client.Send(encodeRequest (case "GET" "/cache?shared" [] ""))
+    let hits = clients |> List.map (fun (_, client) -> client.Read(false) |> Option.map (fun r -> r.Body))
+    for tcp, _ in clients do tcp.Dispose()
+    check $"{label}: the cache is shared by every worker {hits}" (hits |> List.forall ((=) (Some "hit:everyone")))
 
 // ---- builds ----
 
@@ -256,6 +270,7 @@ let private run () =
     check "interpreter: unique violation maps to SqlError 2067" (expected[5].Status = 409 && expected[5].Body = "db error 2067")
     check "interpreter: listing after inserts" (expected[6].Body = "1:first\n2:second\n3:third\n")
     check "interpreter: optional-text null" (expected[8].Body = "third / (none)")
+    check "interpreter: cache miss, stored, kept, first writer wins" ((expected[12].Status, expected[13].Body, expected[14].Body, expected[15].Body) = (404, "stored", "kept", "hit:v1"))
     printfn "interpreter: %d responses" expected.Length
 
     let profiles =
@@ -268,12 +283,25 @@ let private run () =
         let exe = build "windows-x64" winDir profile
         let database = Path.Combine(root, $"win-{profile}.db")
         createDatabase database
-        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8"
+        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
         try
             parity $"windows/{profile}" expected
             protocol $"windows/{profile}"
         finally stopServer server
         printfn "windows/%s: parity and protocol checks passed" profile
+        // --cache-mb 0 disables the cache: puts are dropped, gets miss.
+        if profile = profiles.Head then
+            let disabledDatabase = Path.Combine(root, $"win-{profile}-nocache.db")
+            createDatabase disabledDatabase
+            let disabled = startServer $"windows/{profile}/cache-off" exe $"--port {port} --db \"{disabledDatabase}\" --config \"{configPath}\" --workers 2 --allow-control --arena-mb 8 --cache-mb 0"
+            try
+                let tcp, client = connect ()
+                use _tcp = tcp
+                client.Send(encodeRequest (case "POST" "/cache?k" [] "v"))
+                check "cache-off: put dropped" (client.Read(false) |> Option.exists (fun r -> r.Body = "kept"))
+                client.Send(encodeRequest (case "GET" "/cache?k" [] ""))
+                check "cache-off: get misses" (client.Read(false) |> Option.exists (fun r -> r.Status = 404 && r.Body = "miss"))
+            finally stopServer disabled
 
         // Linux (WSL), unless skipped.
         if Environment.GetEnvironmentVariable "AGENTLANG_FLOWHTTP_SKIP_LINUX" <> "1" then
@@ -284,7 +312,7 @@ let private run () =
             let remote = "~/linuxbench/flowhttp/counter-test"
             let command =
                 $"cp '{wslPath linuxDatabase}' {remote}/test.db && rm -f {remote}/test.db-wal {remote}/test.db-shm && cp '{wslPath configPath}' {remote}/config.txt && " +
-                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8"
+                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
             let server = startServer $"linux/{profile}" "wsl.exe" $"-- bash -lc \"{command}\""
             try
                 parity $"linux/{profile}" expected

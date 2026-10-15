@@ -5,9 +5,11 @@
  *   flow_http_handle(request: HttpRequest, context) -> HttpResponse  per request
  * Each worker thread owns its listening socket (Linux: SO_REUSEPORT; Windows:
  * workers accept from one shared listening socket, the only shared kernel
- * object), its connections, arena, SQLite connection and context bytes. There
- * is no shared mutable state and no lock: the main thread only writes each
- * worker's own stop flag at shutdown, and workers only write their own state.
+ * object), its connections, arena, SQLite connection and context bytes. The
+ * only shared mutable state is the lock-free cache.get/cache.put cache
+ * (flow_http_cache.c, --cache-mb); there is no lock: the main thread only
+ * writes each worker's own stop flag at shutdown, and workers only write their
+ * own state and the cache.
  *
  * HTTP/1.1 with keep-alive and pipelining, Content-Length request bodies (no
  * chunked request bodies), Content-Length responses, no compression. Listens
@@ -48,6 +50,7 @@ typedef int fh_socket;
 #include <string.h>
 
 #include "flow_http.h"
+#include "flow_http_cache.h"
 
 int32_t flow_http_worker_init(al_owning_stack_context *ctx, void *provider,
                               uint8_t *input, uint32_t input_bytes,
@@ -73,6 +76,7 @@ typedef struct fh_options {
   uint32_t arena_bytes;
   uint32_t retained_bytes;
   uint32_t max_body_bytes;
+  uint32_t cache_mb;
   const char *db_path;
   const char *config_path;
   uint8_t *config_value; /* encoded List<HttpHeader>, shared read-only after startup */
@@ -104,6 +108,7 @@ typedef struct fh_worker {
   volatile long stop;   /* written only by the main thread */
   volatile long state;  /* written only by this worker: 1 ready, -1 failed */
   fh_db *db;
+  fh_provider provider; /* db + worker index, the generated module's provider context */
   uint8_t *stack;
   uint8_t *init_bitmap;
   uint8_t *poison_bitmap;
@@ -250,8 +255,10 @@ static int fh_worker_init(fh_worker *worker) {
   char reason[160];
   memcpy(worker->input, worker->options->config_value, extent);
   fh_context_reset(worker, &ctx);
-  status = flow_http_worker_init(&ctx, worker->db, worker->input, extent, &extent, 1u,
+  fh_cache_enter((uint32_t)worker->index);
+  status = flow_http_worker_init(&ctx, &worker->provider, worker->input, extent, &extent, 1u,
                                  worker->retained, worker->options->retained_bytes);
+  fh_cache_leave((uint32_t)worker->index);
   if (status != 0 || ctx.status != 0) {
     snprintf(reason, sizeof(reason), "worker %d: worker-init failed status=%u error_id=%u\n",
              worker->index, ctx.status, ctx.error_id);
@@ -480,8 +487,12 @@ static long fh_handle_one(fh_worker *worker, fh_connection *c) {
   memcpy(worker->input + w.used, worker->context, worker->context_bytes);
 
   fh_context_reset(worker, &ctx);
-  status = flow_http_handle(&ctx, worker->db, worker->input, w.used + worker->context_bytes, extents, 2u,
+  /* The cache epoch covers the whole handle call: cache.get copies a hit into
+   * the arena inside it; the response is then in the worker's own buffer. */
+  fh_cache_enter((uint32_t)worker->index);
+  status = flow_http_handle(&ctx, &worker->provider, worker->input, w.used + worker->context_bytes, extents, 2u,
                             worker->retained, worker->options->retained_bytes);
+  fh_cache_leave((uint32_t)worker->index);
   ++worker->requests;
   if (status != 0 || ctx.status != 0 ||
       !fh_write_response(c, worker->retained, (uint32_t)ctx.retained_copy_bytes,
@@ -688,6 +699,8 @@ static void *fh_worker_main(void *argument)
     worker->state = -1;
     goto done;
   }
+  worker->provider.db = worker->db;
+  worker->provider.worker = (uint32_t)worker->index;
 #if !defined(_WIN32)
   worker->listener = fh_listen(options->port, 1);
   worker->epoll_fd = epoll_create1(0);
@@ -764,7 +777,8 @@ static int fh_load_config(fh_options *options) {
 
 static void fh_usage(void) {
   fh_log("usage: flow_http_host --port <p> --db <sqlite path> [--config <file>] [--workers N] [--pin]\n"
-         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--allow-control]\n");
+         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--allow-control]\n"
+         "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 0 = disabled)\n");
 }
 
 int main(int argc, char **argv) {
@@ -785,6 +799,7 @@ int main(int argc, char **argv) {
   options.arena_bytes = 32u << 20;
   options.retained_bytes = 4u << 20;
   options.max_body_bytes = 1u << 20;
+  options.cache_mb = 0u; /* off unless asked for: a no-cache run never caches silently */
   for (i = 1; i < argc; ++i) {
     const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : 0;
     if (strcmp(a, "--port") == 0 && v) { options.port = atoi(v); ++i; }
@@ -794,17 +809,19 @@ int main(int argc, char **argv) {
     else if (strcmp(a, "--arena-mb") == 0 && v) { options.arena_bytes = (uint32_t)atoi(v) << 20; ++i; }
     else if (strcmp(a, "--retained-mb") == 0 && v) { options.retained_bytes = (uint32_t)atoi(v) << 20; ++i; }
     else if (strcmp(a, "--max-body-kb") == 0 && v) { options.max_body_bytes = (uint32_t)atoi(v) << 10; ++i; }
+    else if (strcmp(a, "--cache-mb") == 0 && v) { options.cache_mb = (uint32_t)atoi(v); ++i; }
     else if (strcmp(a, "--pin") == 0) options.pin = 1;
     else if (strcmp(a, "--allow-control") == 0) options.allow_control = 1;
     else { fh_usage(); return 2; }
   }
   if (options.db_path == 0 || options.port <= 0 || options.port > 65535 || options.workers < 1 ||
       options.workers > FH_MAX_WORKERS || options.arena_bytes == 0u || options.arena_bytes > (1u << 30) ||
-      options.retained_bytes == 0u || options.max_body_bytes == 0u) {
+      options.retained_bytes == 0u || options.max_body_bytes == 0u || options.cache_mb > (1u << 16)) {
     fh_usage();
     return 2;
   }
   if (!fh_load_config(&options)) return 2;
+  if (fh_cache_init((uint64_t)options.cache_mb << 20, (uint32_t)options.workers) != 0) { fh_log("cache allocation failed\n"); return 3; }
   {
     char reason[160];
     if (!fh_db_provision(options.db_path, reason, sizeof(reason))) {
@@ -892,6 +909,14 @@ int main(int argc, char **argv) {
   WSACleanup();
 #endif
   if (options.config_value) { memset(options.config_value, 0, options.config_extent); free(options.config_value); }
-  fprintf(stderr, "STOPPED requests=%llu failures=%llu max-prepared-statements=%u\n", (unsigned long long)requests, (unsigned long long)failures, max_prepared);
+  {
+    fh_cache_stats cache;
+    fh_cache_stats_read(&cache);
+    fh_cache_shutdown();
+    fprintf(stderr, "STOPPED requests=%llu failures=%llu max-prepared-statements=%u cache-mb=%u cache-hits=%llu cache-misses=%llu cache-puts=%llu cache-dropped=%llu cache-rollovers=%llu\n",
+            (unsigned long long)requests, (unsigned long long)failures, max_prepared, options.cache_mb,
+            (unsigned long long)cache.hits, (unsigned long long)cache.misses, (unsigned long long)cache.puts,
+            (unsigned long long)cache.dropped, (unsigned long long)cache.rollovers);
+  }
   return failed ? 1 : 0;
 }

@@ -229,8 +229,121 @@ test campfire.server.tokened-message/tokens {
     expect string.byte-length(campfire.server.tokened-message("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", message).boost-tokens.fire) == 86
 }
 
+// ------------------------------------------------------- fragment cache
+//
+// Rails renders the room's messages with `render partial: "messages/message",
+// collection: @messages, cached: true`, and messages/_message wraps its whole
+// body in `cache [ message, "presentation-v3" ]`: one fragment per message
+// version, keyed by the template digest, the message id and its updated_at
+// cache version, and nothing about the viewer, the creator or the room. On a
+// hit Rails evaluates none of the partial, so the eight quick-boost forms keep
+// the authenticity tokens of the request that first rendered the fragment
+// (valid for that session only; Rails behaves the same). Editing a message or
+// adding/removing a boost (Boost belongs_to :message, touch: true) changes
+// updated_at and so the key; renaming the creator, changing their avatar or
+// renaming the room does not, in Rails as here.
+
+fn campfire.server.message-template-version() -> String {
+    doc "Stands in for Rails' template digest of messages/_message and the partials it renders. The cache lives in the server process, so a rebuilt server starts empty; bump this when campfire.views.rails-message changes what it emits within one build."
+    "views/messages/_message:flow-1"
+}
+
+test campfire.server.message-template-version/template {
+    expect string.starts-with(campfire.server.message-template-version(), "views/messages/_message:")
+}
+
+fn campfire.server.message-cache-key(message: MessageWithCreator) -> String {
+    doc "The Rails key of `cache [ message, presentation-v3 ]` with the record's cache version folded in (the cache keeps the first value per key): <template version>/messages/<id>-<updated_at ms>/presentation-v3."
+    let record = string.concat(string.concat(string.concat("messages/", int.to-string(MessageId.value(message.id))), "-"), int.to-string(message.updated-at-ms))
+    cache.key([campfire.server.message-template-version(), record, "presentation-v3"])
+}
+
+test campfire.server.message-cache-key/version {
+    let message = messageWithCreator.new(id = MessageId.new(3), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 1772465460123, client-message-id = "c", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.none<String>())
+    expect campfire.server.message-cache-key(message) == "views/messages/_message:flow-1/messages/3-1772465460123/presentation-v3"
+}
+
+record FragmentContext {
+    page: MessageContext
+    secret: String
+}
+
+fn campfire.server.message-fragment(context: FragmentContext, message: MessageWithCreator) -> String {
+    effects cache.read, cache.write, random.read
+    doc "The markup of messages/_message for one message through the fragment cache: the cached fragment, else the rendered partial (with this request's boost tokens, from the session's CSRF secret), stored for later requests."
+
+    let key = campfire.server.message-cache-key(message)
+    match cache.get(key) {
+        some fragment => fragment
+        none => {
+            let rendered = campfire.views.text(campfire.views.rails-message(context.page, campfire.server.tokened-message(context.secret, message)))
+            if cache.put(key, rendered) {
+                rendered
+            } else {
+                rendered
+            }
+        }
+    }
+}
+
+test campfire.server.message-fragment/first-render-is-kept {
+    let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 9, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("x"))
+    let page = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
+    let first = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), message)
+    let again = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"), message)
+    let edited = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"), messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 10, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("y")))
+    expect first == again
+    expect string.contains(edited, "data-message-updated-at=\"10\"")
+    expect first != edited
+}
+
+fn campfire.server.messages-slot() -> String {
+    doc "The element campfire.server.cached-room-page renders in place of the messages and then replaces with their markup. Page text from strings is escaped, so only the layout can contain it."
+    "<flow-messages-slot></flow-messages-slot>"
+}
+
+test campfire.server.messages-slot/element {
+    expect campfire.server.messages-slot() == campfire.views.text(html"<flow-messages-slot></flow-messages-slot>")
+}
+
+fn campfire.server.cached-room-page(chrome: PageChrome, secret: String, messages: List<MessageWithCreator>) -> String {
+    effects cache.read, cache.write, random.read
+    doc "campfire.views.creator-room-page with each message through campfire.server.message-fragment. The fragments are joined as text into the layout's message slot (as Rails concatenates cached fragments): wrapping each cached String back into Html would re-validate every fragment on every hit, which costs as much as rendering it."
+
+    let context = fragmentContext.new(page = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url), secret = secret)
+    let fragments = messages.map(context, campfire.server.message-fragment)
+    let page = campfire.views.text(campfire.views.page(chrome, [html"<flow-messages-slot></flow-messages-slot>"]))
+    let slot = campfire.server.messages-slot()
+    match string.index-of(page, slot, 0) {
+        none => page
+        some at => {
+            let rest = at + string.byte-length(slot)
+            let before = match string.slice(page, 0, at) {
+                none => ""
+                some text => text
+            }
+            let after = match string.slice(page, rest, string.byte-length(page) - rest) {
+                none => ""
+                some text => text
+            }
+            string.join([before, string.join(fragments), after])
+        }
+    }
+}
+
+test campfire.server.cached-room-page/hit-equals-miss {
+    let message = messageWithCreator.new(id = MessageId.new(4), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 7, client-message-id = "c4", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("hi <b>"))
+    let chrome = campfire.views.room-chrome(roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "", updated-at = ""), authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x", "m", "c")
+    let first = campfire.server.cached-room-page(chrome, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", [message])
+    let second = campfire.server.cached-room-page(chrome, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", [message])
+    expect first == second
+    expect string.contains(first, "hi &lt;b&gt;")
+    expect bool.not(string.contains(first, "flow-messages-slot"))
+    expect string.contains(first, "<div id=\"message_c4\"")
+}
+
 fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, random.read
+    effects db.read, db.write, cache.read, cache.write, random.read
     doc "campfire.http.show-room: the newest forty messages; last_room is set only when the cookie differs."
 
     match campfire.server.page-for-member(user.id, room.id, context) {
@@ -241,7 +354,6 @@ fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room:
             let meta-token = campfire.csrf.form-token(secret.value, "!real_csrf_token")
             let composer-token = campfire.csrf.form-token(secret.value, string.concat(string.concat("/rooms/", room-id), "/messages#post"))
             let secret-value = secret.value
-            let tokened = messages.map(secret-value, campfire.server.tokened-message)
             let new-csrf-token = if secret.fresh {
                 option.some<String>(secret.value)
             } else {
@@ -267,7 +379,7 @@ fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room:
                 remember-return-to = false,
                 last-room = remember-room,
                 new-csrf-token = new-csrf-token,
-                body = campfire.views.creator-room-page(campfire.views.room-chrome(room, user, request.base-url, meta-token, composer-token), tokened))
+                body = campfire.server.cached-room-page(campfire.views.room-chrome(room, user, request.base-url, meta-token, composer-token), secret-value, messages))
         }
     }
 }
@@ -284,7 +396,7 @@ test campfire.server.show-room/fixture {
 }
 
 fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, random.read
+    effects db.read, db.write, cache.read, cache.write, random.read
     doc "campfire.http.room-read-route: the room through the user's membership, else the room-show redirect."
 
     match campfire.rooms.find-for-user(user.id, request.room-id) {
@@ -306,7 +418,7 @@ test campfire.server.room-read-route/missing-room {
 }
 
 fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, random.read
+    effects db.read, db.write, cache.read, cache.write, random.read
     doc "campfire.http.room-read for GET/HEAD room-show: session cookie, bot key, gates, room."
 
     match request.route {
@@ -518,7 +630,7 @@ test campfire.server.http-response/redirect {
 // ------------------------------------------------------------------ entry
 
 fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) -> HttpResponse {
-    effects db.read, db.write, random.read
+    effects db.read, db.write, cache.read, cache.write, random.read
     doc "GET/HEAD /rooms/<id>: transport checks, the room-read chain, then the rendered response with its cookies."
 
     match campfire.server.request(request, context) {

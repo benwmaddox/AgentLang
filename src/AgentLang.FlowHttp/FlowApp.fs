@@ -21,8 +21,8 @@ type FlowApp =
         member this.Dispose() = this.Provider.Dispose()
 
 module FlowApp =
-    let capabilities = Set.ofList [ "db.read"; "db.write"; "clock.read"; "random.read" ]
-    let stdlibFiles = [ "http.flow"; "db.flow" ]
+    let capabilities = Set.ofList [ "db.read"; "db.write"; "cache.read"; "cache.write"; "clock.read"; "random.read" ]
+    let stdlibFiles = [ "http.flow"; "db.flow"; "cache.flow" ]
 
     /// src/stdlib, found next to the executable (copied there) or in the repo.
     let stdlibDirectory () =
@@ -73,11 +73,13 @@ module FlowApp =
         let bootstrap = Runtime.Engine(projectDirectory, capabilities, "2026-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities)
         define bootstrap (String.concat "\n\n" stdlibSources)
         dispatch bootstrap "commit" [] |> ignore
-        let provider = Db.createProvider databasePath
+        // db: one connection (this interpreter "worker"); cache: the process-wide
+        // store. Attached tests get an in-memory database and a fresh cache.
+        let provider = Cache.combine [ Db.createProvider databasePath; Cache.createProvider (Some Cache.processStore) ]
         let environment =
-            { Manifest = Db.manifest
+            { Manifest = Map.fold (fun acc key value -> Map.add key value acc) Db.manifest Cache.manifest
               ProductionProvider = provider
-              CreateTestProvider = fun () -> Ok(Db.createProvider ":memory:") }
+              CreateTestProvider = fun () -> Ok(Cache.combine [ Db.createProvider ":memory:"; Cache.createProvider (Some(Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.Ordinal))) ]) }
         let engine =
             Runtime.Engine(projectDirectory, capabilities, "2026-01-01T00:00:00Z",
                            fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities, hostOperations = environment)
@@ -112,7 +114,7 @@ module FlowApp =
     let handle (app: FlowApp) (request: Value) (context: Value) =
         invoke app $"{app.App}.handle" (handleSignature app) [ request; context ]
 
-    /// Native host manifest for the db operations (no app operations).
+    /// Native host manifest for the db and cache operations (no app operations).
     let hostManifest (app: FlowApp) : OwningAppHostManifest =
         { ProfileId = "flow-http-v1"
           EntryWord = $"{app.App}.handle"
@@ -124,7 +126,7 @@ module FlowApp =
           OutputLimitBytes = 16777216u
           BoundarySchemaNames = [ "HttpHeader"; "HttpRequest"; "HttpResponse"; "DbValue"; "DbRow"; "SqlError"; "DbValueKind"; app.ContextType ]
           Operations =
-            Db.nativeOperations
+            Db.nativeOperations @ Cache.nativeOperations
             |> List.map (fun (tag, name, inputs, outputs, effects) ->
                 { Name = name; Tag = tag; InputTypes = inputs; OutputTypes = outputs; Effects = effects }) }
 
