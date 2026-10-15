@@ -384,9 +384,24 @@ test campfire.server.boosts-of/filters {
     expect list.count(campfire.server.boosts-of([boost], 6)) == 0
 }
 
+fn campfire.server.presentation(message: MessageWithCreator) -> Html {
+    doc "The message body as Rails' message_presentation shows it: a stored body that is already safe, canonical rich text (rich-html.canonical?) is inserted as is, which is what Rails renders for it; anything else is escaped as text until the full Flow pipeline exists (docs/EQUAL-PAGES-PLAN.md)."
+    match message.body {
+        none => Html.new("")
+        some text => if rich-html.canonical?(text) { html.raw(text) } else { Html.new(text) }
+    }
+}
+
+test campfire.server.presentation/canonical-or-escaped {
+    let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.some<String>("<p>hi</p>"))
+    expect campfire.views.text(campfire.server.presentation(message)) == "<p>hi</p>"
+    let unsafe = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c5", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.some<String>("<script>x</script>"))
+    expect campfire.views.text(campfire.server.presentation(unsafe)) == "&lt;script&gt;x&lt;/script&gt;"
+}
+
 fn campfire.server.render-message(context: MessageContext, message: MessageWithCreator, boosts: List<BoostView>) -> String {
-    doc "messages/_message with the message's own boosts."
-    campfire.views.text(campfire.views.rails-message-boosted(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id))))
+    doc "messages/_message with the message's own boosts and its presentation."
+    campfire.views.text(campfire.views.rails-message-presented(context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message)))
 }
 
 test campfire.server.render-message/boost-markup {
@@ -587,7 +602,7 @@ fn campfire.server.whole-room-page(chrome: PageChrome, messages: List<MessageWit
     let message-context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
     var rendered = list.empty<Html>()
     for message in messages {
-        rendered = list.append(rendered, campfire.views.rails-message-boosted(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id))))
+        rendered = list.append(rendered, campfire.views.rails-message-presented(message-context, message, campfire.server.boosts-of(boosts, MessageId.value(message.id)), campfire.server.presentation(message)))
     }
     campfire.views.text(campfire.views.page(chrome, rendered))
 }

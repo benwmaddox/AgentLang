@@ -47,7 +47,17 @@ fn campfire.views.rails-message(context: MessageContext, message: MessageWithCre
 
 fn campfire.views.rails-message-boosted(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>) -> Html {
     effects none
-    doc "One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
+    doc "campfire.views.rails-message-presented with the body escaped as text."
+    let body = match message.body {
+        none => Html.new("")
+        some text => Html.new(text)
+    }
+    campfire.views.rails-message-presented(context, message, boost-views, body)
+}
+
+fn campfire.views.rails-message-presented(context: MessageContext, message: MessageWithCreator, boost-views: List<BoostView>, body: Html) -> Html {
+    effects none
+    doc "body is the message's presentation (what Rails' message_presentation puts inside the lexxy-content layout). One message as Rails renders messages/_message (with _actions, _presentation and the boosts frame), generated from Campfire's markup. Boosts and rich text are later slices: the boost list is empty and the body is escaped text."
 
     let id = int.to-string(MessageId.value(message.id))
     let creator-id = int.to-string(UserId.value(message.creator-id))
@@ -60,10 +70,6 @@ fn campfire.views.rails-message-boosted(context: MessageContext, message: Messag
         message.creator-name
     } else {
         string.concat(string.concat(message.creator-name, " – "), message.creator-bio)
-    }
-    let body = match message.body {
-        none => Html.new("")
-        some text => Html.new(text)
     }
     let boosts = boost-views.map(campfire.views.boost)
     html"""  <div id="message_{message.client-message-id}" class="message " data-controller="reply" data-user-id="{creator-id}" data-message-id="{id}" data-message-timestamp="{created-ms}" data-message-updated-at="{updated-ms}" data-sort-value="{created-ms}" data-messages-target="message" data-search-results-target="message" data-refresh-room-target="message" data-reply-composer-outlet="#composer">

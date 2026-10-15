@@ -1,0 +1,442 @@
+// Standard library: user rich text that is already safe and canonical
+// (docs/EQUAL-PAGES-PLAN.md, phase A of the Flow HTML work).
+//
+// rich-html.canonical?(text) is true only when text is markup that Rails'
+// message pipeline (Action Text load, Campfire's content filters, the
+// Action Text sanitizer, auto_link) returns unchanged. Such text is safe to
+// insert as Html, and inserting it gives the same bytes Rails renders. The
+// check is strict and refuses anything it is not sure about:
+//   * Nokogiri's HTML5 serialization: lower-case names, attributes as
+//     ` name="value"`, explicit end tags, void elements without them, text
+//     escaping only & < > and U+00A0 (as &amp; &lt; &gt; &nbsp;), attribute
+//     values escaping only & " and U+00A0;
+//   * the allowlisted tags and attributes (no on* handlers, no `name`, no
+//     `style`), and URLs only with an allowed protocol (no javascript:);
+//   * no structure an HTML5 parser would rearrange: no block element inside
+//     <p>, no nested <a>, no heading inside a heading, no <li> directly in
+//     <li>, table parts only where tables allow them, no newline right after
+//     <pre>, no comments or doctypes;
+//   * nothing auto_link would turn into a link (://, www., @).
+// Anything else is false; the caller escapes the text instead (never unsafe,
+// only possibly different from Rails until the full pipeline exists).
+
+fn rich-html.allowed-tag?(name: String) -> Bool {
+    doc "Rails' SafeList tags (without the ones only Campfire's attachments emit) plus the editor's formatting tags."
+    let tags = ["a", "abbr", "acronym", "address", "b", "big", "blockquote", "br", "cite", "code", "dd", "del", "dfn", "div", "dl", "dt", "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "img", "ins", "kbd", "li", "mark", "ol", "p", "pre", "samp", "small", "span", "strong", "sub", "sup", "time", "tt", "ul", "var", "s", "u", "table", "thead", "tbody", "tfoot", "tr", "th", "td"]
+    var found = false
+    for tag in tags {
+        if tag == name {
+            found = true
+            break
+        }
+    }
+    found
+}
+
+test rich-html.allowed-tag?/list {
+    expect rich-html.allowed-tag?("p") && rich-html.allowed-tag?("td") && rich-html.allowed-tag?("mark")
+    expect bool.not(rich-html.allowed-tag?("script")) && bool.not(rich-html.allowed-tag?("figure")) && bool.not(rich-html.allowed-tag?("style"))
+}
+
+fn rich-html.allowed-attribute?(name: String) -> Bool {
+    doc "Rails' SafeList attributes without `name`, plus the editor's data-language. No on*, no style."
+    let names = ["abbr", "alt", "cite", "class", "datetime", "height", "href", "lang", "src", "title", "width", "xml:lang", "data-language"]
+    var found = false
+    for allowed in names {
+        if allowed == name {
+            found = true
+            break
+        }
+    }
+    found
+}
+
+test rich-html.allowed-attribute?/list {
+    expect rich-html.allowed-attribute?("href") && rich-html.allowed-attribute?("data-language")
+    expect bool.not(rich-html.allowed-attribute?("onclick")) && bool.not(rich-html.allowed-attribute?("style")) && bool.not(rich-html.allowed-attribute?("name"))
+}
+
+fn rich-html.void?(name: String) -> Bool {
+    doc "Allowed void elements: serialized without an end tag."
+    name == "br" || name == "hr" || name == "img"
+}
+
+test rich-html.void?/br {
+    expect rich-html.void?("br") && bool.not(rich-html.void?("p"))
+}
+
+fn rich-html.closes-p?(name: String) -> Bool {
+    doc "Allowed elements whose start tag closes an open <p> in HTML5 parsing (so they may not appear inside one)."
+    let blocks = ["address", "blockquote", "div", "dl", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "ol", "p", "pre", "table", "ul", "dd", "dt", "li"]
+    var found = false
+    for block in blocks {
+        if block == name {
+            found = true
+            break
+        }
+    }
+    found
+}
+
+test rich-html.closes-p?/div {
+    expect rich-html.closes-p?("div") && bool.not(rich-html.closes-p?("strong"))
+}
+
+fn rich-html.heading?(name: String) -> Bool {
+    name == "h1" || name == "h2" || name == "h3" || name == "h4" || name == "h5" || name == "h6"
+}
+
+test rich-html.heading?/h2 {
+    expect rich-html.heading?("h2") && bool.not(rich-html.heading?("hr"))
+}
+
+fn rich-html.safe-url?(value: String) -> Bool {
+    doc "A URL Loofah keeps: no scheme (relative), or an allowed scheme before ':'. Leading spaces, control characters and entity tricks are refused rather than normalized."
+    let length = string.byte-length(value)
+    var ok = true
+    var scheme-end = -1
+    for index in 0..length {
+        let byte = string.byte-at-or(value, index, 0)
+        if byte <= 32 || byte == 127 {
+            ok = false
+            break
+        }
+        if byte == 58 {
+            scheme-end = index
+            break
+        }
+        if byte == 47 || byte == 63 || byte == 35 {
+            break
+        }
+    }
+    if bool.not(ok) {
+        false
+    } else if scheme-end < 0 {
+        true
+    } else {
+        let scheme = string.to-lower-ascii(match string.slice(value, 0, scheme-end) { none => ""; some text => text })
+        let schemes = ["http", "https", "mailto", "tel", "ftp", "sms", "xmpp", "irc", "webcal", "callto", "afs", "aim", "ed2k", "fax", "gopher", "line", "modem", "news", "nntp", "rsync", "rtsp", "sftp", "ssh", "tag", "telnet", "urn"]
+        var allowed = false
+        for name in schemes {
+            if name == scheme {
+                allowed = true
+                break
+            }
+        }
+        allowed
+    }
+}
+
+test rich-html.safe-url?/schemes {
+    expect rich-html.safe-url?("https://example.com/launch") && rich-html.safe-url?("/users/1") && rich-html.safe-url?("mailto:a@b.c")
+    expect bool.not(rich-html.safe-url?("javascript:alert(1)")) && bool.not(rich-html.safe-url?("JaVaScRiPt:x")) && bool.not(rich-html.safe-url?(" javascript:x"))
+    expect bool.not(rich-html.safe-url?("data:text/html,x"))
+}
+
+fn rich-html.name-char?(byte: Int) -> Bool {
+    (byte >= 97 && byte <= 122) || (byte >= 48 && byte <= 57) || byte == 45 || byte == 58
+}
+
+test rich-html.name-char?/ascii {
+    expect rich-html.name-char?(97) && rich-html.name-char?(45) && bool.not(rich-html.name-char?(65))
+}
+
+fn rich-html.entity-at(text: String, at: Int, in-attribute: Bool) -> Int {
+    doc "The length of the escape Nokogiri writes at this '&' (&amp; &lt; &gt; &nbsp; in text; &amp; &quot; &nbsp; in attributes), or 0 when it is anything else."
+    let rest = match string.slice(text, at, if string.byte-length(text) - at < 6 { string.byte-length(text) - at } else { 6 }) { none => ""; some s => s }
+    if string.starts-with(rest, "&amp;") {
+        5
+    } else if string.starts-with(rest, "&nbsp;") {
+        6
+    } else if in-attribute && string.starts-with(rest, "&quot;") {
+        6
+    } else if bool.not(in-attribute) && (string.starts-with(rest, "&lt;") || string.starts-with(rest, "&gt;")) {
+        4
+    } else {
+        0
+    }
+}
+
+test rich-html.entity-at/escapes {
+    expect rich-html.entity-at("a&amp;b", 1, false) == 5
+    expect rich-html.entity-at("&lt;", 0, false) == 4 && rich-html.entity-at("&lt;", 0, true) == 0
+    expect rich-html.entity-at("&quot;", 0, true) == 6 && rich-html.entity-at("&quot;", 0, false) == 0
+    expect rich-html.entity-at("&copy;", 0, false) == 0
+}
+
+// The open-element stack is a path of names, outermost first: "/div/p".
+
+fn rich-html.last-slash(stack: String) -> Int {
+    doc "The index of the last '/' in the stack path, or -1."
+    var found = -1
+    for index in 0..string.byte-length(stack) {
+        if string.byte-at-or(stack, index, 0) == 47 {
+            found = index
+        }
+    }
+    found
+}
+
+test rich-html.last-slash/path {
+    expect rich-html.last-slash("/div/p") == 4 && rich-html.last-slash("") == -1
+}
+
+fn rich-html.top(stack: String) -> String {
+    doc "The innermost open element, or empty."
+    let at = rich-html.last-slash(stack)
+    if at < 0 { "" } else { match string.slice(stack, at + 1, string.byte-length(stack) - at - 1) { none => ""; some name => name } }
+}
+
+test rich-html.top/empty {
+    expect rich-html.top("") == "" && rich-html.top("/a/b") == "b"
+}
+
+fn rich-html.pop(stack: String) -> String {
+    doc "The stack without its innermost element."
+    let at = rich-html.last-slash(stack)
+    if at < 0 { "" } else { match string.slice(stack, 0, at) { none => ""; some rest => rest } }
+}
+
+test rich-html.pop/one {
+    expect rich-html.pop("/a/b") == "/a" && rich-html.pop("/a") == ""
+}
+
+fn rich-html.open?(stack: String, name: String) -> Bool {
+    doc "True when an element of this name is open."
+    string.contains(string.concat(stack, "/"), string.join(["/", name, "/"]))
+}
+
+test rich-html.open?/inside {
+    expect rich-html.open?("/a/b", "a") && bool.not(rich-html.open?("/b", "a")) && bool.not(rich-html.open?("/ab", "a"))
+}
+
+fn rich-html.child-ok?(parent: String, child: String, stack: String) -> Bool {
+    doc "Whether an HTML5 parser keeps this start tag where it is (no implied end tags, foster parenting or adoption)."
+    let table-part = child == "thead" || child == "tbody" || child == "tfoot" || child == "tr" || child == "th" || child == "td"
+    let in-table-context = parent == "table" || parent == "thead" || parent == "tbody" || parent == "tfoot" || parent == "tr"
+    if rich-html.open?(stack, "p") && rich-html.closes-p?(child) {
+        false
+    } else if child == "a" && rich-html.open?(stack, "a") {
+        false
+    } else if rich-html.heading?(child) && rich-html.heading?(parent) {
+        false
+    } else if child == "li" && parent == "li" {
+        false
+    } else if (child == "dd" || child == "dt") && (parent == "dd" || parent == "dt") {
+        false
+    } else if in-table-context {
+        (parent == "table" && (child == "thead" || child == "tbody" || child == "tfoot")) || ((parent == "thead" || parent == "tbody" || parent == "tfoot") && child == "tr") || (parent == "tr" && (child == "th" || child == "td"))
+    } else if table-part {
+        false
+    } else {
+        true
+    }
+}
+
+test rich-html.child-ok?/rules {
+    expect bool.not(rich-html.child-ok?("p", "div", "/p"))
+    expect bool.not(rich-html.child-ok?("strong", "p", "/p/strong"))
+    expect bool.not(rich-html.child-ok?("span", "a", "/a/span"))
+    expect rich-html.child-ok?("table", "tbody", "/table") && rich-html.child-ok?("tr", "td", "/table/tbody/tr")
+    expect bool.not(rich-html.child-ok?("table", "tr", "/table")) && bool.not(rich-html.child-ok?("div", "td", "/div"))
+    expect rich-html.child-ok?("div", "p", "/div")
+}
+
+fn rich-html.word-byte?(byte: Int) -> Bool {
+    doc "A byte auto_link's e-mail pattern may treat as a word character: ASCII letters, digits, '_' and '-', and (conservatively) any non-ASCII byte."
+    (byte >= 97 && byte <= 122) || (byte >= 65 && byte <= 90) || (byte >= 48 && byte <= 57) || byte == 95 || byte == 45 || byte >= 128
+}
+
+test rich-html.word-byte?/classes {
+    expect rich-html.word-byte?(97) && rich-html.word-byte?(45) && rich-html.word-byte?(200) && bool.not(rich-html.word-byte?(46))
+}
+
+fn rich-html.email-like?(text: String) -> Bool {
+    doc "True when some '@' is followed by word characters, a '.', and another word character: the shape auto_link links as an e-mail address (user@host.tld). '@' without a dotted host after it is left alone, as auto_link leaves it."
+    let length = string.byte-length(text)
+    var found = false
+    for index in 0..length {
+        if string.byte-at-or(text, index, 0) == 64 {
+            var at = index + 1
+            let start = at
+            for k in start..length {
+                if bool.not(rich-html.word-byte?(string.byte-at-or(text, k, 0))) {
+                    break
+                }
+                at = k + 1
+            }
+            if at > start && string.byte-at-or(text, at, 0) == 46 && rich-html.word-byte?(string.byte-at-or(text, at + 1, 0)) {
+                found = true
+            }
+        }
+    }
+    found
+}
+
+test rich-html.email-like?/shapes {
+    expect rich-html.email-like?("mail a@b.c") && rich-html.email-like?("x@host.example")
+    expect bool.not(rich-html.email-like?("Deployed campfire@4f2c1e9 to production")) && bool.not(rich-html.email-like?("@ home")) && bool.not(rich-html.email-like?("a@b."))
+}
+
+fn rich-html.text-ok?(stack: String, text: String) -> Bool {
+    doc "Text a parser keeps in place and auto_link leaves alone: only whitespace directly in table structure; nothing that looks like a URL or e-mail address."
+    let parent = rich-html.top(stack)
+    let in-table = parent == "table" || parent == "thead" || parent == "tbody" || parent == "tfoot" || parent == "tr"
+    let blank = string.replace(string.replace(string.replace(text, " ", ""), "\n", ""), "\t", "") == ""
+    if in-table && bool.not(blank) {
+        false
+    } else {
+        bool.not(string.contains(text, "://")) && bool.not(string.contains(string.to-lower-ascii(text), "www.")) && bool.not(rich-html.email-like?(text))
+    }
+}
+
+test rich-html.text-ok?/links-and-tables {
+    expect rich-html.text-ok?("/p", "plain text")
+    expect bool.not(rich-html.text-ok?("/p", "see https://x.y")) && bool.not(rich-html.text-ok?("/p", "mail a@b.c")) && bool.not(rich-html.text-ok?("/p", "WWW.example.com"))
+    expect rich-html.text-ok?("/table/tbody", " ") && bool.not(rich-html.text-ok?("/table/tbody", "x"))
+}
+
+fn rich-html.canonical?(text: String) -> Bool {
+    doc "True when text is safe, canonical rich text that Rails' message pipeline returns unchanged (see the file comment). Anything uncertain is false."
+
+    let length = string.byte-length(text)
+    var ok = true
+    var at = 0
+    var stack = ""
+    var text-start = 0
+    let steps = length + 1
+    for step in 0..steps {
+        if bool.not(ok) || at >= length {
+            break
+        }
+        let byte = string.byte-at-or(text, at, 0)
+        if byte == 60 {
+            // Flush the text run before this tag.
+            let run = match string.slice(text, text-start, at - text-start) { none => ""; some s => s }
+            ok = ok && rich-html.text-ok?(stack, run)
+            let closing = string.byte-at-or(text, at + 1, 0) == 47
+            var name-end = if closing { at + 2 } else { at + 1 }
+            let name-scan = name-end
+            for k in name-scan..length {
+                if bool.not(rich-html.name-char?(string.byte-at-or(text, k, 0))) {
+                    break
+                }
+                name-end = k + 1
+            }
+            let name-start = if closing { at + 2 } else { at + 1 }
+            let name = match string.slice(text, name-start, name-end - name-start) { none => ""; some s => s }
+            if name == "" || bool.not(rich-html.allowed-tag?(name)) {
+                ok = false
+            } else if closing {
+                // An end tag must close the element on top of the stack, exactly as `</name>`.
+                ok = ok && string.byte-at-or(text, name-end, 0) == 62 && rich-html.top(stack) == name && bool.not(rich-html.void?(name))
+                stack = rich-html.pop(stack)
+                at = name-end + 1
+            } else {
+                ok = ok && rich-html.child-ok?(rich-html.top(stack), name, stack)
+                // Attributes: ` name="value"` until '>'.
+                var cursor = name-end
+                var seen = ""
+                for attribute in 0..64 {
+                    if bool.not(ok) || string.byte-at-or(text, cursor, 0) == 62 {
+                        break
+                    }
+                    if string.byte-at-or(text, cursor, 0) != 32 {
+                        ok = false
+                        break
+                    }
+                    var attr-end = cursor + 1
+                    let attr-scan = cursor + 1
+                    for k in attr-scan..length {
+                        if bool.not(rich-html.name-char?(string.byte-at-or(text, k, 0))) {
+                            break
+                        }
+                        attr-end = k + 1
+                    }
+                    let attr-name = match string.slice(text, cursor + 1, attr-end - cursor - 1) { none => ""; some s => s }
+                    if attr-name == "" || bool.not(rich-html.allowed-attribute?(attr-name)) || rich-html.open?(seen, attr-name) || string.byte-at-or(text, attr-end, 0) != 61 || string.byte-at-or(text, attr-end + 1, 0) != 34 {
+                        ok = false
+                        break
+                    }
+                    seen = string.join([seen, "/", attr-name])
+                    // The value runs to the next '"'; only Nokogiri's attribute escapes may appear.
+                    var value-end = attr-end + 2
+                    let value-scan = attr-end + 2
+                    for k in value-scan..length {
+                        let value-byte = string.byte-at-or(text, k, 0)
+                        if value-byte == 34 {
+                            break
+                        }
+                        if value-byte == 38 && rich-html.entity-at(text, k, true) == 0 {
+                            ok = false
+                        }
+                        value-end = k + 1
+                    }
+                    let value = match string.slice(text, attr-end + 2, value-end - attr-end - 2) { none => ""; some s => s }
+                    if string.byte-at-or(text, value-end, 0) != 34 || string.contains(value, " ") {
+                        ok = false
+                        break
+                    }
+                    if (attr-name == "href" || attr-name == "src" || attr-name == "cite") && bool.not(rich-html.safe-url?(string.replace(value, "&amp;", "&"))) {
+                        ok = false
+                        break
+                    }
+                    cursor = value-end + 1
+                }
+                ok = ok && string.byte-at-or(text, cursor, 0) == 62
+                // A newline right after <pre> is dropped by HTML5 parsing.
+                if name == "pre" && string.byte-at-or(text, cursor + 1, 0) == 10 {
+                    ok = false
+                }
+                if bool.not(rich-html.void?(name)) {
+                    stack = string.join([stack, "/", name])
+                }
+                at = cursor + 1
+            }
+            text-start = at
+        } else if byte == 62 {
+            ok = false
+        } else if byte == 38 {
+            let size = rich-html.entity-at(text, at, false)
+            if size == 0 {
+                ok = false
+            }
+            at = at + size
+        } else if byte == 194 && string.byte-at-or(text, at + 1, 0) == 160 {
+            // A raw U+00A0 would be serialized as &nbsp;.
+            ok = false
+        } else {
+            at = at + 1
+        }
+    }
+    let tail = match string.slice(text, text-start, length - text-start) { none => ""; some s => s }
+    ok && stack == "" && rich-html.text-ok?(stack, tail)
+}
+
+test rich-html.canonical?/editor-markup {
+    expect rich-html.canonical?("<p>092. I'm heading out for lunch.</p>")
+    expect rich-html.canonical?("I don't care &amp; you &lt;3")
+    expect rich-html.canonical?("<p>Here's the plan for the <strong>spring launch</strong>:</p> <ol><li>Finish</li><li>Ship <code>2026-03-16</code></li></ol> <blockquote>Simple.</blockquote>")
+    expect rich-html.canonical?("<p>The helper:</p><pre data-language=\"ruby\">def greet(name)<br>  \"Hello\"<br>end</pre>")
+    expect rich-html.canonical?("<table><tbody> <tr><th><p>Name</p></th></tr> </tbody></table>")
+    expect rich-html.canonical?("<p>See <a href=\"/rooms/1\">the room</a>.</p>")
+}
+
+test rich-html.canonical?/refuses-unsafe-or-noncanonical {
+    expect bool.not(rich-html.canonical?("<script>alert(1)</script>"))
+    expect bool.not(rich-html.canonical?("<p onclick=\"x()\">hi</p>"))
+    expect bool.not(rich-html.canonical?("<a href=\"javascript:alert(1)\">x</a>"))
+    expect bool.not(rich-html.canonical?("<p style=\"color: red\">x</p>"))
+    expect bool.not(rich-html.canonical?("<P>x</P>"))
+    expect bool.not(rich-html.canonical?("<p class='x'>x</p>"))
+    expect bool.not(rich-html.canonical?("<p>x"))
+    expect bool.not(rich-html.canonical?("<p><div>x</div></p>"))
+    expect bool.not(rich-html.canonical?("<a href=\"/a\"><a href=\"/b\">x</a></a>"))
+    expect bool.not(rich-html.canonical?("<table><tr><td>x</td></tr></table>"))
+    expect bool.not(rich-html.canonical?("<p>visit https://example.com</p>"))
+    expect bool.not(rich-html.canonical?("<p>x &copy; y</p>"))
+    expect bool.not(rich-html.canonical?("<!-- c --><p>x</p>"))
+    expect bool.not(rich-html.canonical?("<pre>\nx</pre>"))
+    expect bool.not(rich-html.canonical?("a > b"))
+    expect bool.not(rich-html.canonical?("<figure><p>x</p></figure>"))
+}

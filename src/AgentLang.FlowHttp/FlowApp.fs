@@ -25,7 +25,7 @@ type FlowApp =
 module FlowApp =
     let capabilities = Set.ofList [ "db.read"; "db.write"; "cache.read"; "cache.write"; "clock.read"; "random.read"; "store.read"; "store.write"; "response.write" ]
     /// Defined first, on a bootstrap engine: types the host manifest names, and words that call no host operation.
-    let stdlibFiles = [ "http.flow"; "db.flow"; "cache.flow" ]
+    let stdlibFiles = [ "http.flow"; "db.flow"; "cache.flow"; "rich-html.flow" ]
     /// Defined with the app, once the host operations are bound (their words call them).
     let hostStdlibFiles = [ "store.flow"; "worker-cache.flow" ]
 
