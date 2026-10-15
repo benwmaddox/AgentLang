@@ -226,3 +226,12 @@ host and the .NET hosts (stdlib plan step 5).
 - One decision applied to all three: whether requests carry a real browser
   `User-Agent`.
 - Same session, interleaved order, repeated, medians and ranges.
+- Saturation check (user, 2026-10-14: "is Rust client limited?"): a fixed
+  16-connection load is not fair. Smoke runs showed Flow CPU-saturated at 16
+  connections while Rust used ~84% of its vCPUs (wait-bound, ~14 ms per
+  request for ~3 ms of CPU) and Rust-with-cache was load-generator-bound.
+  So: sweep 16/32/64/128 connections per server and report each server's
+  peak; record server and load-generator CPU utilization per run; a run counts
+  as a server's peak only if the server is saturated and the load generator
+  stays below ~70% CPU (otherwise label it client-bound or wait-bound); give
+  the load generator 8 vCPUs; report CPU per request next to throughput.
