@@ -158,13 +158,534 @@ test campfire.presentation.find-user/by-id {
     expect campfire.presentation.find-user([user], 7) == option.some<MentionUser>(user)
 }
 
+// --------------------------------------------------------- Open Graph embeds
+//
+// ActionText::Attachment::OpengraphEmbed (lib/rails_ext/actiontext_opengraph_embeds.rb):
+// a link preview read from the attachment's attributes (Trix) or its content
+// markup (Lexxy), its link and image kept only when they are absolute http(s)
+// URLs on a named host other than this Campfire's. Rendered as the
+// action_text/attachables/_opengraph_embed partial as the final sanitizer
+// leaves it: <figure> and <actiontext-opengraph-embed> removed, rel and
+// target removed, the partial's trailing newline chomped.
+
+record OpengraphEmbed {
+    href: Option<String>
+    url: Option<String>
+    filename: Option<String>
+    description: String
+}
+
+fn campfire.presentation.opengraph-type?(kind: String) -> Bool {
+    doc "OpengraphEmbed.from_node's content-type test (a match anywhere in the attribute)."
+    string.contains(kind, "application/vnd.actiontext.opengraph-embed")
+}
+
+test campfire.presentation.opengraph-type?/match {
+    expect campfire.presentation.opengraph-type?("application/vnd.actiontext.opengraph-embed") && bool.not(campfire.presentation.opengraph-type?("application/vnd.campfire.mention"))
+}
+
+fn campfire.presentation.ruby-space?(byte: Int) -> Bool {
+    doc "What String#strip and #blank? treat as whitespace: NUL, tab, LF, VT, FF, CR, space."
+    byte == 0 || byte == 32 || (byte >= 9 && byte <= 13)
+}
+
+test campfire.presentation.ruby-space?/set {
+    expect campfire.presentation.ruby-space?(11) && bool.not(campfire.presentation.ruby-space?(65))
+}
+
+fn campfire.presentation.ruby-strip(text: String) -> String {
+    doc "String#strip."
+    let length = string.byte-length(text)
+    var start = 0
+    for index in 0..length {
+        if bool.not(campfire.presentation.ruby-space?(string.byte-at-or(text, index, 0))) {
+            break
+        }
+        start = index + 1
+    }
+    var stop = length
+    for step in 0..length {
+        if stop <= start || bool.not(campfire.presentation.ruby-space?(string.byte-at-or(text, stop - 1, 0))) {
+            break
+        }
+        stop = stop - 1
+    }
+    match string.slice(text, start, stop - start) { none => ""; some s => s }
+}
+
+test campfire.presentation.ruby-strip/ends {
+    expect campfire.presentation.ruby-strip("  a b\n\t") == "a b" && campfire.presentation.ruby-strip(" \n") == ""
+}
+
+fn campfire.presentation.truncate(text: String, limit: Int) -> String {
+    doc "String#truncate(limit, omission: '…'): over limit characters, the first limit - 1 and an ellipsis."
+    let length = string.byte-length(text)
+    var chars = 0
+    var cut = -1
+    for index in 0..length {
+        let byte = string.byte-at-or(text, index, 0)
+        // A character starts at every byte that is not a UTF-8 continuation byte.
+        if byte < 128 || byte >= 192 {
+            if chars == limit - 1 {
+                cut = index
+            }
+            chars = chars + 1
+        }
+    }
+    if chars <= limit { text } else { string.concat(match string.slice(text, 0, cut) { none => ""; some s => s }, "…") }
+}
+
+test campfire.presentation.truncate/characters {
+    expect campfire.presentation.truncate("abcdef", 6) == "abcdef"
+    expect campfire.presentation.truncate("abcdefg", 6) == "abcde…"
+    expect campfire.presentation.truncate("ééééééé", 6) == "ééééé…"
+}
+
+fn campfire.presentation.uri-byte?(byte: Int) -> Bool {
+    doc "Bytes Ruby's RFC 3986 URI parser accepts: unreserved, reserved and '%' (escapes)."
+    rich-html.letter?(byte) || (byte >= 48 && byte <= 57) || string.contains("-._~:/?#[]@!$&'()*+,;=%", rich-html.ascii-char(byte)) && byte >= 33 && byte <= 126
+}
+
+test campfire.presentation.uri-byte?/set {
+    expect campfire.presentation.uri-byte?(47) && bool.not(campfire.presentation.uri-byte?(32)) && bool.not(campfire.presentation.uri-byte?(34)) && bool.not(campfire.presentation.uri-byte?(200))
+}
+
+fn campfire.presentation.uri-host(value: String) -> Option<String> {
+    doc "The host of a URI with an authority ('scheme://[userinfo@]host[:port]...'); none when there is none."
+    match string.index-of(value, "//", 0) {
+        none => option.none<String>()
+        some slashes => {
+            let start = slashes + 2
+            let length = string.byte-length(value)
+            var stop = length
+            for index in start..length {
+                let byte = string.byte-at-or(value, index, 0)
+                if byte == 47 || byte == 63 || byte == 35 {
+                    stop = index
+                    break
+                }
+            }
+            let authority = match string.slice(value, start, stop - start) { none => ""; some s => s }
+            var host-start = 0
+            for index in 0..string.byte-length(authority) {
+                if string.byte-at-or(authority, index, 0) == 64 {
+                    host-start = index + 1
+                }
+            }
+            let host-port = match string.slice(authority, host-start, string.byte-length(authority) - host-start) { none => ""; some s => s }
+            let colon = match string.index-of(host-port, ":", 0) { none => string.byte-length(host-port); some index => index }
+            string.slice(host-port, 0, colon)
+        }
+    }
+}
+
+test campfire.presentation.uri-host/authority {
+    expect campfire.presentation.uri-host("https://user@Example.com:8080/a?b") == option.some<String>("Example.com")
+    expect campfire.presentation.uri-host("https:/rooms/1") == option.none<String>()
+}
+
+fn campfire.presentation.canonical-host(host: String) -> String {
+    let lower = string.to-lower-ascii(host)
+    if string.ends-with(lower, ".") { match string.slice(lower, 0, string.byte-length(lower) - 1) { none => ""; some s => s } } else { lower }
+}
+
+test campfire.presentation.canonical-host/dot {
+    expect campfire.presentation.canonical-host("Example.COM.") == "example.com"
+}
+
+fn campfire.presentation.named-host?(host: String) -> Bool {
+    doc "A domain name written plainly: no escapes, a dot, and a last label (trailing dots ignored) with a letter that is not a 0x number."
+    var trimmed = host
+    for step in 0..string.byte-length(host) {
+        if bool.not(string.ends-with(trimmed, ".")) {
+            break
+        }
+        trimmed = match string.slice(trimmed, 0, string.byte-length(trimmed) - 1) { none => ""; some s => s }
+    }
+    var label-start = 0
+    for index in 0..string.byte-length(trimmed) {
+        if string.byte-at-or(trimmed, index, 0) == 46 {
+            label-start = index + 1
+        }
+    }
+    let label = match string.slice(trimmed, label-start, string.byte-length(trimmed) - label-start) { none => ""; some s => s }
+    var letter = false
+    for index in 0..string.byte-length(label) {
+        if rich-html.letter?(string.byte-at-or(label, index, 0)) {
+            letter = true
+        }
+    }
+    host != "" && bool.not(string.contains(host, "%")) && string.contains(host, ".") && letter && bool.not(string.starts-with(string.to-lower-ascii(label), "0x"))
+}
+
+test campfire.presentation.named-host?/kinds {
+    expect campfire.presentation.named-host?("example.com") && campfire.presentation.named-host?("example.com.")
+    expect bool.not(campfire.presentation.named-host?("127.0.0.1")) && bool.not(campfire.presentation.named-host?("0x7f.0x1")) && bool.not(campfire.presentation.named-host?("localhost")) && bool.not(campfire.presentation.named-host?("ex%61mple.com"))
+}
+
+fn campfire.presentation.web-url(value: String, request-host: String) -> Option<String> {
+    doc "OpengraphEmbed.web_url: the value when it is an absolute http(s) URL on a named host other than this request's; none otherwise."
+    var parseable = string.byte-length(value) > 0
+    for index in 0..string.byte-length(value) {
+        if bool.not(campfire.presentation.uri-byte?(string.byte-at-or(value, index, 0))) {
+            parseable = false
+            break
+        }
+    }
+    let colon = match string.index-of(value, ":", 0) { none => 0; some index => index }
+    let scheme = string.to-lower-ascii(match string.slice(value, 0, colon) { none => ""; some s => s })
+    let host = match campfire.presentation.uri-host(value) { none => ""; some h => h }
+    let web = parseable && (scheme == "http" || scheme == "https") && string.starts-with(match string.slice(value, colon, 3) { none => ""; some s => s }, "://")
+    if web && campfire.presentation.named-host?(host) && campfire.presentation.canonical-host(host) != campfire.presentation.canonical-host(request-host) { option.some<String>(value) } else { option.none<String>() }
+}
+
+test campfire.presentation.web-url/elsewhere {
+    expect campfire.presentation.web-url("https://example.com/cookies", "") == option.some<String>("https://example.com/cookies")
+    expect campfire.presentation.web-url("https://chat.example.com/rooms/1", "Chat.example.com") == option.none<String>()
+    expect campfire.presentation.web-url("javascript:alert(1)", "") == option.none<String>()
+    expect campfire.presentation.web-url("https:/rooms/1", "") == option.none<String>()
+    expect campfire.presentation.web-url("https://example.com/a b", "") == option.none<String>()
+    expect campfire.presentation.web-url("", "") == option.none<String>()
+}
+
+fn campfire.presentation.optional-url(value: Option<String>, request-host: String) -> Option<String> {
+    match value { none => option.none<String>(); some text => campfire.presentation.web-url(text, request-host) }
+}
+
+test campfire.presentation.optional-url/none {
+    expect campfire.presentation.optional-url(option.none<String>(), "") == option.none<String>()
+}
+
+fn campfire.presentation.opengraph-from-content(content: String, request-host: String) -> Option<OpengraphEmbed> {
+    doc "attributes_from_content: the title link, the image and the description read out of the embed's content markup. none when that markup holds a reference this library cannot decode."
+    let length = string.byte-length(content)
+    let title-at = rich-html.find-start-tag(content, 0, length, "", "og-embed__title")
+    let title-end = if title-at < 0 { -1 } else { rich-html.element-end(content, title-at) }
+    let link-at = if title-at < 0 { -1 } else { rich-html.find-start-tag(content, title-at + 1, title-end, "a", "") }
+    let link-end = if link-at < 0 { -1 } else { rich-html.element-end(content, link-at) }
+    let href = if link-at < 0 { option.none<String>() } else { rich-html.attribute(rich-html.tag(content, link-at), "href") }
+    let image-at = rich-html.find-start-tag(content, 0, length, "", "og-embed__image")
+    let img-at = if image-at < 0 { -1 } else { rich-html.find-start-tag(content, image-at + 1, rich-html.element-end(content, image-at), "img", "") }
+    let src = if img-at < 0 { option.none<String>() } else { rich-html.attribute(rich-html.tag(content, img-at), "src") }
+    let description-at = rich-html.find-start-tag(content, 0, length, "", "og-embed__description")
+    let filename = if link-at >= 0 { rich-html.text-between(content, link-at, link-end) } else if title-at >= 0 { rich-html.text-between(content, title-at, title-end) } else { option.some<String>("") }
+    let description = if description-at < 0 { option.some<String>("") } else { rich-html.text-between(content, description-at, rich-html.element-end(content, description-at)) }
+    if filename == option.none<String>() || description == option.none<String>() {
+        option.none<OpengraphEmbed>()
+    } else {
+        option.some<OpengraphEmbed>(opengraphEmbed.new(
+            href = campfire.presentation.optional-url(href, request-host),
+            url = campfire.presentation.optional-url(src, request-host),
+            filename = if link-at < 0 && title-at < 0 { option.none<String>() } else { option.some<String>(campfire.presentation.ruby-strip(match filename { none => ""; some s => s })) },
+            description = campfire.presentation.ruby-strip(match description { none => ""; some s => s })))
+    }
+}
+
+test campfire.presentation.opengraph-from-content/lexxy {
+    let content = "<actiontext-opengraph-embed><div class=\"og-embed gap \"> <div class=\"og-embed__content\"><div class=\"og-embed__title\"><a href=\"https://example.com/launch\" rel=\"noreferrer\" target=\"_blank\">Spring launch</a></div> <div class=\"og-embed__description\"> All of it. </div></div><div class=\"og-embed__image\"><img src=\"https://example.com/og/launch.jpg\" class=\"image center\" alt=\"\" /></div></div></actiontext-opengraph-embed>"
+    expect campfire.presentation.opengraph-from-content(content, "") == option.some<OpengraphEmbed>(opengraphEmbed.new(href = option.some<String>("https://example.com/launch"), url = option.some<String>("https://example.com/og/launch.jpg"), filename = option.some<String>("Spring launch"), description = "All of it."))
+}
+
+fn campfire.presentation.opengraph(tag: HtmlTag, request-host: String) -> Option<OpengraphEmbed> {
+    doc "OpengraphEmbed.from_node for an attachment tag already known to be an embed: the Trix attributes when filename is present, else the Lexxy content."
+    let filename = match rich-html.attribute(tag, "filename") { none => ""; some value => value }
+    if campfire.presentation.ruby-strip(filename) != "" {
+        option.some<OpengraphEmbed>(opengraphEmbed.new(
+            href = campfire.presentation.optional-url(rich-html.attribute(tag, "href"), request-host),
+            url = campfire.presentation.optional-url(rich-html.attribute(tag, "url"), request-host),
+            filename = option.some<String>(filename),
+            description = match rich-html.attribute(tag, "caption") { none => ""; some value => value }))
+    } else {
+        campfire.presentation.opengraph-from-content(match rich-html.attribute(tag, "content") { none => ""; some value => value }, request-host)
+    }
+}
+
+test campfire.presentation.opengraph/trix {
+    let tag = rich-html.tag("<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\" url=\"https://pbs.twimg.com/a.jpg\" href=\"https://twitter.com/x/status/1\" filename=\"x (@x)\" caption=\"Hi\"></action-text-attachment>", 0)
+    expect campfire.presentation.opengraph(tag, "") == option.some<OpengraphEmbed>(opengraphEmbed.new(href = option.some<String>("https://twitter.com/x/status/1"), url = option.some<String>("https://pbs.twimg.com/a.jpg"), filename = option.some<String>("x (@x)"), description = "Hi"))
+}
+
+fn campfire.presentation.opengraph-html(embed: OpengraphEmbed) -> String {
+    doc "The _opengraph_embed partial as the final sanitizer leaves it (see above)."
+    let twitter = match embed.url { none => false; some url => string.starts-with(url, "https://pbs.twimg.com/profile_images") }
+    let name = match embed.filename { none => match embed.href { none => ""; some href => href }; some filename => campfire.presentation.truncate(filename, 280) }
+    let title = match embed.href {
+        none => rich-html.escape-text(name)
+        some href => string.join(["<a href=\"", rich-html.escape-attribute(href), "\">", rich-html.escape-text(name), "</a>"])
+    }
+    let image = match embed.url {
+        none => ""
+        some url => string.join(["        <div class=\"og-embed__image\">\n          <img src=\"", rich-html.escape-attribute(url), "\" class=\"image center\" alt=\"\">\n        </div>\n"])
+    }
+    string.join(["\n  \n    <div class=\"og-embed gap ", if twitter { "og-embed--twitter-avatar" } else { "" }, "\">\n      <div class=\"og-embed__content\">\n        <div class=\"og-embed__title\">\n          ", title, "\n        </div>\n        <div class=\"og-embed__description\">", rich-html.escape-text(campfire.presentation.truncate(embed.description, 560)), "</div>\n      </div>\n", image, "    </div>\n  \n"])
+}
+
+test campfire.presentation.opengraph-html/no-image {
+    let html = campfire.presentation.opengraph-html(opengraphEmbed.new(href = option.none<String>(), url = option.none<String>(), filename = option.some<String>("A & B"), description = "d"))
+    expect html == "\n  \n    <div class=\"og-embed gap \">\n      <div class=\"og-embed__content\">\n        <div class=\"og-embed__title\">\n          A &amp; B\n        </div>\n        <div class=\"og-embed__description\">d</div>\n      </div>\n    </div>\n  \n"
+}
+
+// ------------------------------------------------ RemoveSoloUnfurledLinkText
+//
+// When a body is nothing but the link it unfurled (its plain text equals the
+// one embed's link, tweets compared without query and with x.com read as
+// twitter.com), the link text goes: a Trix body's divs hold only the embed,
+// a Lexxy body loses its paragraphs that hold no attachment.
+
+fn campfire.presentation.chomp-newlines(text: String) -> String {
+    doc "String#chomp(''): every trailing LF or CRLF removed."
+    var out = text
+    for step in 0..string.byte-length(text) {
+        if bool.not(string.ends-with(out, "\n")) {
+            break
+        }
+        let cut = if string.ends-with(out, "\r\n") { 2 } else { 1 }
+        out = match string.slice(out, 0, string.byte-length(out) - cut) { none => ""; some s => s }
+    }
+    out
+}
+
+test campfire.presentation.chomp-newlines/trailing {
+    expect campfire.presentation.chomp-newlines("a\n\r\n\n") == "a" && campfire.presentation.chomp-newlines("a\n ") == "a\n " && campfire.presentation.chomp-newlines("a\r") == "a\r"
+}
+
+fn campfire.presentation.without-last(items: List<String>) -> List<String> {
+    var out = list.empty<String>()
+    let keep = list.count(items) - 1
+    for item, index in items {
+        if index < keep {
+            out = list.append(out, item)
+        }
+    }
+    out
+}
+
+test campfire.presentation.without-last/drops {
+    expect campfire.presentation.without-last(["a", "b"]) == ["a"] && campfire.presentation.without-last(list.empty<String>()) == list.empty<String>()
+}
+
+fn campfire.presentation.with-last(items: List<String>, value: String) -> List<String> {
+    list.append(campfire.presentation.without-last(items), value)
+}
+
+test campfire.presentation.with-last/replaces {
+    expect campfire.presentation.with-last(["a", "b"], "c") == ["a", "c"]
+}
+
+fn campfire.presentation.last-of(items: List<String>) -> String {
+    match list.get(items, list.count(items) - 1) { none => ""; some item => item }
+}
+
+test campfire.presentation.last-of/top {
+    expect campfire.presentation.last-of(["a", "b"]) == "b" && campfire.presentation.last-of(list.empty<String>()) == ""
+}
+
+fn campfire.presentation.plain-close(name: String, value: String) -> String {
+    doc "PlainTextConversion for a closed element. Lists, items, quotes and captions add bullets, quotes or brackets; a space stands for them, which no URL holds, since only comparison with a URL reads this text."
+    if name == "p" || name == "h1" {
+        string.concat(campfire.presentation.chomp-newlines(value), "\n\n")
+    } else if name == "div" {
+        string.concat(campfire.presentation.chomp-newlines(value), "\n")
+    } else if name == "ul" || name == "ol" || name == "li" || name == "blockquote" || name == "figcaption" {
+        " "
+    } else if name == "script" || name == "style" {
+        ""
+    } else {
+        value
+    }
+}
+
+test campfire.presentation.plain-close/blocks {
+    expect campfire.presentation.plain-close("p", "a\n") == "a\n\n" && campfire.presentation.plain-close("div", "a") == "a\n" && campfire.presentation.plain-close("b", "a") == "a"
+}
+
+fn campfire.presentation.plain-text(text: String, users: List<MentionUser>) -> String {
+    doc "Content#to_plain_text, as far as comparing it with a URL needs: embeds read as nothing, mentions as @name, other attachments as a mark no URL holds."
+    let length = string.byte-length(text)
+    var names = [""]
+    var values = [""]
+    var at = 0
+    let close-tag = "</action-text-attachment>"
+    let steps = length + 1
+    for step in 0..steps {
+        if at >= length {
+            break
+        }
+        let next = match string.index-of(text, "<", at) { none => length; some index => index }
+        let chunk = match rich-html.decode-text(match string.slice(text, at, next - at) { none => ""; some s => s }) { none => " "; some decoded => decoded }
+        values = campfire.presentation.with-last(values, string.concat(campfire.presentation.last-of(values), campfire.presentation.chomp-newlines(chunk)))
+        let second = string.byte-at-or(text, next + 1, 0)
+        if next >= length {
+            at = length
+        } else if second == 47 {
+            let gt = match string.index-of(text, ">", next) { none => length - 1; some index => index }
+            let name = string.to-lower-ascii(campfire.presentation.ruby-strip(match string.slice(text, next + 2, gt - next - 2) { none => ""; some s => s }))
+            var open = false
+            for frame, index in names {
+                if index > 0 && frame == name {
+                    open = true
+                }
+            }
+            for frame in names {
+                if bool.not(open) || list.count(names) <= 1 {
+                    break
+                }
+                let top = campfire.presentation.last-of(names)
+                let closed = campfire.presentation.plain-close(top, campfire.presentation.last-of(values))
+                names = campfire.presentation.without-last(names)
+                values = campfire.presentation.without-last(values)
+                values = campfire.presentation.with-last(values, string.concat(campfire.presentation.last-of(values), closed))
+                if top == name {
+                    open = false
+                }
+            }
+            at = gt + 1
+        } else if string.starts-with(match string.slice(text, next, 4) { none => ""; some s => s }, "<!--") {
+            at = match string.index-of(text, "-->", next) { none => length; some index => index + 3 }
+        } else if rich-html.letter?(second) {
+            let tag = rich-html.tag(text, next)
+            var piece = ""
+            if bool.not(tag.valid) {
+                piece = " "
+                at = length
+            } else if tag.name == "action-text-attachment" {
+                let kind = match rich-html.attribute(tag, "content-type") { none => ""; some value => value }
+                let user-id = match rich-html.attribute(tag, "sgid") { none => option.none<Int>(); some sgid => campfire.presentation.sgid-user-id(sgid) }
+                let user = match user-id { none => option.none<MentionUser>(); some id => campfire.presentation.find-user(users, id) }
+                piece = if campfire.presentation.opengraph-type?(kind) { "" } else { match user { none => "☒"; some found => string.concat("@", found.name) } }
+                let after = tag.stop + 1
+                let closed = match string.slice(text, after, string.byte-length(close-tag)) { none => false; some s => s == close-tag }
+                at = if closed { after + string.byte-length(close-tag) } else { after }
+            } else if tag.name == "br" {
+                piece = "\n"
+                at = tag.stop + 1
+            } else if rich-html.void?(tag.name) {
+                at = tag.stop + 1
+            } else {
+                names = list.append(names, tag.name)
+                values = list.append(values, "")
+                at = tag.stop + 1
+            }
+            values = campfire.presentation.with-last(values, string.concat(campfire.presentation.last-of(values), piece))
+        } else {
+            values = campfire.presentation.with-last(values, string.concat(campfire.presentation.last-of(values), "<"))
+            at = next + 1
+        }
+    }
+    for frame in names {
+        if list.count(names) <= 1 {
+            break
+        }
+        let closed = campfire.presentation.plain-close(campfire.presentation.last-of(names), campfire.presentation.last-of(values))
+        names = campfire.presentation.without-last(names)
+        values = campfire.presentation.without-last(values)
+        values = campfire.presentation.with-last(values, string.concat(campfire.presentation.last-of(values), closed))
+    }
+    campfire.presentation.chomp-newlines(campfire.presentation.last-of(values))
+}
+
+test campfire.presentation.plain-text/shapes {
+    let embed = "<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\" href=\"https://a.com/x\" filename=\"x\"></action-text-attachment>"
+    expect campfire.presentation.plain-text(string.join(["<div>https://a.com/x", embed, "</div>"]), list.empty<MentionUser>()) == "https://a.com/x"
+    expect campfire.presentation.plain-text(string.join(["<p><a href=\"https://a.com/x\">https://a.com/x</a></p> ", embed]), list.empty<MentionUser>()) == "https://a.com/x\n\n "
+    expect campfire.presentation.plain-text(string.join(["<p>https://a.com/x</p>", embed]), list.empty<MentionUser>()) == "https://a.com/x"
+    expect campfire.presentation.plain-text("<ul><li>a</li></ul>", list.empty<MentionUser>()) == " "
+    expect campfire.presentation.plain-text("<p>a &amp; b<br>c</p>", list.empty<MentionUser>()) == "a & b\nc"
+}
+
+fn campfire.presentation.normalize-tweet-url(url: String) -> String {
+    doc "normalize_tweet_url: a twitter.com or x.com URL without its query, x.com read as twitter.com; anything else as it is."
+    let host = match campfire.presentation.uri-host(url) { none => ""; some h => h }
+    let twitter = string.contains(url, "x.com") || string.contains(url, "twitter.com")
+    var parseable = true
+    for index in 0..string.byte-length(url) {
+        if bool.not(campfire.presentation.uri-byte?(string.byte-at-or(url, index, 0))) {
+            parseable = false
+        }
+    }
+    if bool.not(twitter) || bool.not(parseable) || host == "" {
+        url
+    } else {
+        let mapped = if string.to-lower-ascii(host) == "x.com" { string.replace(url, string.join(["//", host]), "//twitter.com") } else { url }
+        let question = match string.index-of(mapped, "?", 0) { none => -1; some index => index }
+        let hash = match string.index-of(mapped, "#", 0) { none => string.byte-length(mapped); some index => index }
+        if question < 0 || question > hash { mapped } else { string.concat(match string.slice(mapped, 0, question) { none => ""; some s => s }, match string.slice(mapped, hash, string.byte-length(mapped) - hash) { none => ""; some s => s }) }
+    }
+}
+
+test campfire.presentation.normalize-tweet-url/forms {
+    expect campfire.presentation.normalize-tweet-url("https://x.com/a/status/1?s=20") == "https://twitter.com/a/status/1"
+    expect campfire.presentation.normalize-tweet-url("https://example.com/?a") == "https://example.com/?a"
+}
+
+fn campfire.presentation.remove-solo-unfurled(text: String, users: List<MentionUser>, request-host: String) -> String {
+    doc "ContentFilters::RemoveSoloUnfurledLinkText."
+    let length = string.byte-length(text)
+    let close-tag = "</action-text-attachment>"
+    var embeds = 0
+    var embed-at = -1
+    var at = 0
+    let steps = length + 1
+    for step in 0..steps {
+        let next = rich-html.find-start-tag(text, at, length, "action-text-attachment", "")
+        if next < 0 {
+            break
+        }
+        let tag = rich-html.tag(text, next)
+        // find_all matches the content-type attribute exactly.
+        if rich-html.attribute(tag, "content-type") == option.some<String>("application/vnd.actiontext.opengraph-embed") {
+            embeds = embeds + 1
+            embed-at = next
+        }
+        at = tag.stop + 1
+    }
+    let embed-tag = rich-html.tag(text, if embed-at < 0 { 0 } else { embed-at })
+    let href = if embeds == 1 { match campfire.presentation.opengraph(embed-tag, request-host) { none => option.none<String>(); some embed => embed.href } } else { option.none<String>() }
+    let solo = match href { none => false; some link => campfire.presentation.normalize-tweet-url(link) == campfire.presentation.normalize-tweet-url(campfire.presentation.plain-text(text, users)) }
+    if bool.not(solo) {
+        text
+    } else {
+        let after = embed-tag.stop + 1
+        let closed = match string.slice(text, after, string.byte-length(close-tag)) { none => false; some s => s == close-tag }
+        let embed-end = if closed { after + string.byte-length(close-tag) } else { after }
+        let embed-source = match string.slice(text, embed-at, embed-end - embed-at) { none => ""; some s => s }
+        let trix = rich-html.find-start-tag(text, 0, length, "div", "") >= 0
+        let name = if trix { "div" } else { "p" }
+        var out = ""
+        var from = 0
+        let element-steps = length + 1
+        for step in 0..element-steps {
+            let start = rich-html.find-start-tag(text, from, length, name, "")
+            if start < 0 {
+                break
+            }
+            let stop = rich-html.element-end(text, start)
+            let element = match string.slice(text, start, stop - start) { none => ""; some s => s }
+            let open-end = rich-html.tag(text, start).stop + 1
+            let open = match string.slice(text, start, open-end - start) { none => ""; some s => s }
+            let kept = if trix { string.join([open, embed-source, "</div>"]) } else if string.contains(element, "<action-text-attachment") { element } else { "" }
+            out = string.join([out, match string.slice(text, from, start - from) { none => ""; some s => s }, kept])
+            from = stop
+        }
+        string.concat(out, match string.slice(text, from, length - from) { none => ""; some s => s })
+    }
+}
+
+test campfire.presentation.remove-solo-unfurled/trix-and-lexxy {
+    let embed = "<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\" href=\"https://twitter.com/a/status/1\" filename=\"a\"></action-text-attachment>"
+    expect campfire.presentation.remove-solo-unfurled(string.join(["<div>https://x.com/a/status/1?s=2", embed, "</div>"]), list.empty<MentionUser>(), "") == string.join(["<div>", embed, "</div>"])
+    expect campfire.presentation.remove-solo-unfurled(string.join(["<p>https://twitter.com/a/status/1</p>", embed]), list.empty<MentionUser>(), "") == embed
+    let kept = string.join(["<p>see https://twitter.com/a/status/1</p>", embed])
+    expect campfire.presentation.remove-solo-unfurled(kept, list.empty<MentionUser>(), "") == kept
+}
+
 record AttachmentScan {
     text: String
     user-ids: List<Int>
     supported: Bool
 }
 
-fn campfire.presentation.scan-attachments(text: String, users: List<MentionUser>) -> AttachmentScan {
+fn campfire.presentation.scan-attachments(text: String, users: List<MentionUser>, request-host: String) -> AttachmentScan {
     doc "Replaces each empty <action-text-attachment ...></action-text-attachment> that mentions a known user with the mention markup. Collects every mentioned user id (for the caller's query). supported is false for any other attachment or shape."
     let close-tag = "</action-text-attachment>"
     var out = ""
@@ -182,9 +703,14 @@ fn campfire.presentation.scan-attachments(text: String, users: List<MentionUser>
         let after = tag.stop + 1
         let closed = tag.valid && tag.name == "action-text-attachment" && match string.slice(text, after, string.byte-length(close-tag)) { none => false; some s => s == close-tag }
         let user-id = match rich-html.attribute(tag, "sgid") { none => option.none<Int>(); some sgid => campfire.presentation.sgid-user-id(sgid) }
-        let opengraph = match rich-html.attribute(tag, "content-type") { none => false; some kind => string.contains(kind, "opengraph") }
-        if bool.not(closed) || opengraph || user-id == option.none<Int>() {
+        let opengraph = match rich-html.attribute(tag, "content-type") { none => false; some kind => campfire.presentation.opengraph-type?(kind) }
+        let embed = if opengraph { campfire.presentation.opengraph(tag, request-host) } else { option.none<OpengraphEmbed>() }
+        if bool.not(closed) || (opengraph && embed == option.none<OpengraphEmbed>()) || (bool.not(opengraph) && user-id == option.none<Int>()) {
             supported = false
+        } else if opengraph {
+            let rendered = match embed { none => ""; some found => campfire.presentation.opengraph-html(found) }
+            out = string.join([out, match string.slice(text, at, next - at) { none => ""; some s => s }, rendered])
+            at = after + string.byte-length(close-tag)
         } else {
             let id = match user-id { none => 0; some value => value }
             ids = list.append(ids, id)
@@ -198,15 +724,15 @@ fn campfire.presentation.scan-attachments(text: String, users: List<MentionUser>
 
 test campfire.presentation.scan-attachments/mention {
     let user = mentionUser.new(id = 127326141, name = "David", bio = "", avatar-url = "/a")
-    let scan = campfire.presentation.scan-attachments("<div>Thanks <action-text-attachment sgid=\"eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMTI3MzI2MTQxIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--x\" content-type=\"application/vnd.campfire.mention\"></action-text-attachment>, ok</div>", [user])
+    let scan = campfire.presentation.scan-attachments("<div>Thanks <action-text-attachment sgid=\"eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMTI3MzI2MTQxIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--x\" content-type=\"application/vnd.campfire.mention\"></action-text-attachment>, ok</div>", [user], "")
     expect scan.supported && scan.user-ids == [127326141]
     expect scan.text == "<div>Thanks <span class=\"mention\"><a title=\"David\" class=\"btn avatar\" href=\"/users/127326141\"><img src=\"/a\" width=\"48\" height=\"48\"></a> David</span>, ok</div>"
-    expect bool.not(campfire.presentation.scan-attachments("<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\"></action-text-attachment>", list.empty<MentionUser>()).supported)
+    expect campfire.presentation.scan-attachments("<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\"></action-text-attachment>", list.empty<MentionUser>(), "").supported
 }
 
 fn campfire.presentation.mentioned-user-ids(stored: Option<String>) -> List<Int> {
     doc "The user ids a stored body mentions, for loading them before rendering."
-    match stored { none => list.empty<Int>(); some text => campfire.presentation.scan-attachments(text, list.empty<MentionUser>()).user-ids }
+    match stored { none => list.empty<Int>(); some text => campfire.presentation.scan-attachments(text, list.empty<MentionUser>(), "").user-ids }
 }
 
 test campfire.presentation.mentioned-user-ids/none {
@@ -214,6 +740,23 @@ test campfire.presentation.mentioned-user-ids/none {
 }
 
 fn campfire.presentation.body-with(stored: Option<String>, users: List<MentionUser>) -> Html {
+    doc "campfire.presentation.body-for-host with no request host (Rails' Current.request_host outside a request)."
+    campfire.presentation.body-for-host(stored, users, "")
+}
+
+test campfire.presentation.body-with/no-host {
+    expect Html.value(campfire.presentation.body-with(option.some<String>("<p>hi</p>"), list.empty<MentionUser>())) == "<div class=\"lexxy-content\">\n  <p>hi</p>\n</div>\n"
+}
+
+test campfire.presentation.body-for-host/own-host-preview {
+    let stored = option.some<String>("<div>hi<action-text-attachment content-type=\"application/vnd.actiontext.opengraph-embed\" url=\"https://chat.example.com/a.jpg\" href=\"https://chat.example.com/rooms/1\" filename=\"Room\" caption=\"\"></action-text-attachment></div>")
+    let elsewhere = Html.value(campfire.presentation.body-for-host(stored, list.empty<MentionUser>(), "other.example.com"))
+    let here = Html.value(campfire.presentation.body-for-host(stored, list.empty<MentionUser>(), "chat.example.com"))
+    expect string.contains(elsewhere, "<a href=\"https://chat.example.com/rooms/1\">Room</a>") && string.contains(elsewhere, "<img src=\"https://chat.example.com/a.jpg\"")
+    expect string.contains(here, "<div class=\"og-embed__title\">\n          Room\n") && bool.not(string.contains(here, "<img"))
+}
+
+fn campfire.presentation.body-for-host(stored: Option<String>, users: List<MentionUser>, request-host: String) -> Html {
     doc "A stored message body as Rails' message_presentation shows it: a stored body that is already safe, canonical rich text (rich-html.canonical?) is inserted as is, which is what Rails renders for it; anything else is escaped as text until the full Flow pipeline exists (docs/EQUAL-PAGES-PLAN.md)."
     match stored {
         none => campfire.views.rich-text-layout(Html.new(""))
@@ -224,8 +767,9 @@ fn campfire.presentation.body-with(stored: Option<String>, users: List<MentionUs
                 some found => campfire.views.sound(found)
                 none => {
                     // SanitizeTags strips Lexxy's table <figure> wrapper and keeps the table.
-                    let unwrapped = match rich-html.without-figure(text) { none => text; some inner => inner }
-                    let scanned = campfire.presentation.scan-attachments(unwrapped, users)
+                    let solo = campfire.presentation.remove-solo-unfurled(text, users, request-host)
+                    let unwrapped = match rich-html.without-figure(solo) { none => solo; some inner => inner }
+                    let scanned = campfire.presentation.scan-attachments(unwrapped, users, request-host)
                     // A mention of a user the caller did not load renders as nothing, like Rails' missing attachable.
                     // Unsupported attachments, or anything present refuses: escaped text (safe, possibly unlike Rails).
                     let presented = if scanned.supported { rich-html.present(scanned.text) } else { option.none<String>() }

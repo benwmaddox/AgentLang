@@ -944,3 +944,178 @@ fn rich-html.escape-attribute(text: String) -> String {
 test rich-html.escape-attribute/set {
     expect rich-html.escape-attribute("a\"b&c<") == "a&quot;b&amp;c<"
 }
+
+// ------------------------------------------------------------ fragment queries
+//
+// Small read-only queries over a fragment, enough to read an element's text
+// the way Nokogiri's `.text` does (every descendant text node, references
+// decoded) and to find the first element of a name or class. Comments are
+// skipped; a reference this library cannot decode makes the text unreadable.
+
+fn rich-html.letter?(byte: Int) -> Bool {
+    (byte >= 65 && byte <= 90) || (byte >= 97 && byte <= 122)
+}
+
+test rich-html.letter?/ascii {
+    expect rich-html.letter?(97) && rich-html.letter?(90) && bool.not(rich-html.letter?(48))
+}
+
+fn rich-html.has-class?(tag: HtmlTag, class: String) -> Bool {
+    doc "Whether the tag's class attribute holds this class among its whitespace-separated tokens."
+    match rich-html.attribute(tag, "class") {
+        none => false
+        some value => string.contains(string.join([" ", string.replace(string.replace(string.replace(string.replace(value, "\t", " "), "\n", " "), "\r", " "), "\f", " "), " "]), string.join([" ", class, " "]))
+    }
+}
+
+test rich-html.has-class?/tokens {
+    let tag = rich-html.tag("<div class=\"og-embed gap\tx\">", 0)
+    expect rich-html.has-class?(tag, "gap") && rich-html.has-class?(tag, "x") && bool.not(rich-html.has-class?(tag, "og"))
+}
+
+fn rich-html.find-start-tag(text: String, from: Int, to: Int, name: String, class: String) -> Int {
+    doc "Where the first start tag in [from, to) with this name (any when empty) and class (any when empty) begins; -1 when there is none."
+    var at = from
+    var found = -1
+    let steps = to - from + 1
+    for step in 0..steps {
+        let next = match string.index-of(text, "<", at) { none => -1; some index => index }
+        if next < 0 || next >= to || found >= 0 {
+            break
+        }
+        if rich-html.letter?(string.byte-at-or(text, next + 1, 0)) {
+            let tag = rich-html.tag(text, next)
+            if tag.valid && (name == "" || tag.name == name) && (class == "" || rich-html.has-class?(tag, class)) {
+                found = next
+            }
+            at = if tag.valid { tag.stop + 1 } else { next + 1 }
+        } else {
+            at = next + 1
+        }
+    }
+    found
+}
+
+test rich-html.find-start-tag/name-and-class {
+    let text = "<div class=\"a\"><a href=\"/x\">x</a><div class=\"b c\">y</div></div>"
+    expect rich-html.find-start-tag(text, 0, string.byte-length(text), "", "c") == 33
+    expect rich-html.find-start-tag(text, 1, string.byte-length(text), "a", "") == 15
+    expect rich-html.find-start-tag(text, 0, 10, "", "c") == -1
+}
+
+fn rich-html.element-end(text: String, at: Int) -> Int {
+    doc "Just past the end tag matching the start tag at this '<' (elements of the same name nest); just past the start tag for a void element; the text's end when it is never closed; -1 when the start tag is unreadable."
+    let tag = rich-html.tag(text, at)
+    let length = string.byte-length(text)
+    let close = string.join(["</", tag.name])
+    var depth = 1
+    var stop = length
+    var i = tag.stop + 1
+    if bool.not(tag.valid) {
+        stop = -1
+    } else if rich-html.void?(tag.name) {
+        stop = tag.stop + 1
+    } else {
+        for step in 0..length {
+            let next = match string.index-of(text, "<", i) { none => -1; some index => index }
+            if next < 0 || depth == 0 {
+                break
+            }
+            let after = string.byte-at-or(text, next + string.byte-length(close), 0)
+            let bounded = after == 62 || rich-html.space?(after) || after == 47
+            if string.to-lower-ascii(match string.slice(text, next, string.byte-length(close)) { none => ""; some s => s }) == close && bounded {
+                depth = depth - 1
+                let gt = match string.index-of(text, ">", next) { none => length - 1; some index => index }
+                if depth == 0 {
+                    stop = gt + 1
+                }
+                i = gt + 1
+            } else if rich-html.letter?(string.byte-at-or(text, next + 1, 0)) {
+                let inner = rich-html.tag(text, next)
+                if inner.valid && inner.name == tag.name {
+                    depth = depth + 1
+                }
+                i = if inner.valid { inner.stop + 1 } else { next + 1 }
+            } else {
+                i = next + 1
+            }
+        }
+    }
+    stop
+}
+
+test rich-html.element-end/nesting {
+    let text = "<div><div>a</div>b</DIV>c"
+    expect rich-html.element-end(text, 0) == 24
+    expect rich-html.element-end(text, 5) == 17
+    expect rich-html.element-end("<img src=\"/a\">b", 0) == 14
+    expect rich-html.element-end("<p>open", 0) == 7
+}
+
+fn rich-html.decode-text(text: String) -> Option<String> {
+    doc "A text node's character references decoded; none when one cannot be decoded."
+    var out = ""
+    var at = 0
+    var readable = true
+    let length = string.byte-length(text)
+    let steps = length + 1
+    for step in 0..steps {
+        let next = match string.index-of(text, "&", at) { none => -1; some index => index }
+        if next < 0 || bool.not(readable) {
+            break
+        }
+        let ref = rich-html.char-ref(text, next)
+        let size = match int.parse(match list.get(ref, 1) { none => "0"; some n => n }) { none => 0; some n => n }
+        if size == 0 {
+            readable = false
+        } else {
+            out = string.join([out, match string.slice(text, at, next - at) { none => ""; some s => s }, match list.get(ref, 0) { none => ""; some s => s }])
+            at = next + size
+        }
+    }
+    if readable { option.some<String>(string.concat(out, match string.slice(text, at, length - at) { none => ""; some s => s })) } else { option.none<String>() }
+}
+
+test rich-html.decode-text/references {
+    expect rich-html.decode-text("a &amp; b &#39;c&#39;") == option.some<String>("a & b 'c'")
+    expect rich-html.decode-text("&copy;") == option.none<String>()
+}
+
+fn rich-html.text-between(text: String, from: Int, to: Int) -> Option<String> {
+    doc "Every text node in [from, to) joined, references decoded, tags and comments left out (Nokogiri's .text of the element there); none when a reference cannot be decoded."
+    var out = ""
+    var at = from
+    var readable = true
+    let steps = to - from + 1
+    for step in 0..steps {
+        if at >= to || bool.not(readable) {
+            break
+        }
+        let next = match string.index-of(text, "<", at) { none => to; some index => if index < to { index } else { to } }
+        let chunk = match string.slice(text, at, next - at) { none => ""; some s => s }
+        let decoded = rich-html.decode-text(chunk)
+        if decoded == option.none<String>() {
+            readable = false
+        } else {
+            out = string.concat(out, match decoded { none => ""; some value => value })
+        }
+        let second = string.byte-at-or(text, next + 1, 0)
+        if next >= to {
+            at = to
+        } else if string.starts-with(match string.slice(text, next, 4) { none => ""; some s => s }, "<!--") {
+            at = match string.index-of(text, "-->", next) { none => to; some index => index + 3 }
+        } else if rich-html.letter?(second) || second == 47 || second == 33 || second == 63 {
+            at = match string.index-of(text, ">", next) { none => to; some index => index + 1 }
+        } else {
+            out = string.concat(out, "<")
+            at = next + 1
+        }
+    }
+    if readable { option.some<String>(out) } else { option.none<String>() }
+}
+
+test rich-html.text-between/text-nodes {
+    let text = "<a href=\"/x\">Free <b>cookies</b> &amp; <!-- no -->milk</a>"
+    expect rich-html.text-between(text, 0, string.byte-length(text)) == option.some<String>("Free cookies & milk")
+    expect rich-html.text-between("a < b", 0, 5) == option.some<String>("a < b")
+}
