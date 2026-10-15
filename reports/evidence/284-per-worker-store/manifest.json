@@ -1,0 +1,3410 @@
+{
+  "archiveFile": "284-per-worker-store-evidence.zip",
+  "archiveSha256": "107c8c020c72874cb161c6b490721a0fa61f184c1b36c2c563c74d6fda8aae08",
+  "archiveSizeBytes": 386265,
+  "entryCount": 568,
+  "entries": [
+    {
+      "archivePath": "gates/acceptance.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/acceptance.log",
+      "sha256": "7a67b4949dc0263341916304b1dd6fd0d62dc561fe6b9b0bb53e667af24c4b8b",
+      "sizeBytes": 1398
+    },
+    {
+      "archivePath": "gates/arena-lifetime.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/arena-lifetime.log",
+      "sha256": "81081f1023fa5a5537e2801654f972f5123ad74dc148bbf6b82abe2a6833a93a",
+      "sizeBytes": 59
+    },
+    {
+      "archivePath": "gates/campfire-browser.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/campfire-browser.log",
+      "sha256": "c247a02cae9409dee9de0fa51917b0a7445254e3bb0c7f5c7b198c7c53689b50",
+      "sizeBytes": 221
+    },
+    {
+      "archivePath": "gates/campfire-views.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/campfire-views.log",
+      "sha256": "e8ed2534e9711eb3b0f88d787229dad3b314e6ad404d8c15e3c062d38edf56f5",
+      "sizeBytes": 272
+    },
+    {
+      "archivePath": "gates/campfire.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/campfire.log",
+      "sha256": "dbef54707f50dae180d133a78b244432a5d5211b0f7127e96044fb39149e7904",
+      "sizeBytes": 10542
+    },
+    {
+      "archivePath": "gates/flow-runtime-tests.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/flow-runtime-tests.log",
+      "sha256": "78453bcbd03beef7c19b2dc1ad429eb852a5273c05a2e6281a387c8da6132c86",
+      "sizeBytes": 56
+    },
+    {
+      "archivePath": "gates/flow-tests.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/flow-tests.log",
+      "sha256": "3a0a819f15fa89e132a6c84f1f044c98bab0ea05e4ea83129aad1de5ff7bd0d2",
+      "sizeBytes": 921
+    },
+    {
+      "archivePath": "gates/flowhttp.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/flowhttp.log",
+      "sha256": "0f6cb2ac48ddeb44c7136c67cebe608c8214ef4ddaf7a1128f5b41744fabcd06",
+      "sizeBytes": 364
+    },
+    {
+      "archivePath": "gates/ir-interpreter.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/ir-interpreter.log",
+      "sha256": "7e39bf8a8dfd4c33c0fa8ccbe70827ea3dc7a60c6d1edf0517993734d3f2b36e",
+      "sizeBytes": 47
+    },
+    {
+      "archivePath": "gates/ir-parity.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/ir-parity.log",
+      "sha256": "49a25d33d011f831c784cd3e964e4dd9f89fbc7ee81eb9bc2448a868b9a21247",
+      "sizeBytes": 103
+    },
+    {
+      "archivePath": "gates/llvm-full-suite.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/llvm-full-suite.log",
+      "sha256": "b819763bebe14c0261e21da86609fe30c243379e4fb39a00e8cfe715c4c7e570",
+      "sizeBytes": 3620
+    },
+    {
+      "archivePath": "gates/native-conformance.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/native-conformance.log",
+      "sha256": "c4c41714c6578e3874f3ef6303976b5cf32a5a31ef12fd1c0f29d5307c996a7a",
+      "sizeBytes": 3636
+    },
+    {
+      "archivePath": "gates/native-value-stack.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/native-value-stack.log",
+      "sha256": "b80caa58107d88841c5920f6977838eec85ff0ba857943615a8179ebcc14edec",
+      "sizeBytes": 177
+    },
+    {
+      "archivePath": "gates/owning-compact.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-compact.log",
+      "sha256": "4f76f2712d9a129356ed5d5f033dfa8a620ef9b2c10d7851725f033fbc809436",
+      "sizeBytes": 148
+    },
+    {
+      "archivePath": "gates/owning-html.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-html.log",
+      "sha256": "6e85ba36d39575006b5e3938c2c5b7efdf894b31aca815b19ca960eea7d79ab0",
+      "sizeBytes": 145
+    },
+    {
+      "archivePath": "gates/owning-list-ops.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-list-ops.log",
+      "sha256": "aa982f979f1fbdec74ef2de7f7615658035095425e755d256bba128c00b925cb",
+      "sizeBytes": 158
+    },
+    {
+      "archivePath": "gates/owning-listbuild.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-listbuild.log",
+      "sha256": "fa8baf265cb97cd285425a393a862f8ae450c5655a7ac710338142b256533bda",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-lists.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-lists.log",
+      "sha256": "4ef76fa93fd9007ad6398825b1801828375c07372033b641c8dae1b17d07fec0",
+      "sizeBytes": 199
+    },
+    {
+      "archivePath": "gates/owning-mailbox.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-mailbox.log",
+      "sha256": "29d29568345630c730ff92636a83afa1f529bf764f37d59ebc78c407624b7df8",
+      "sizeBytes": 1134
+    },
+    {
+      "archivePath": "gates/owning-templates.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-templates.log",
+      "sha256": "a2dac254f4a31fd5eda526d5cf58576203664832039a0689229e0f16bb690f6c",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-utf8.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/owning-utf8.log",
+      "sha256": "3c02728fbaa30d33bb1ff534300d4bc604ca716b129d171242d0f7bba14a09ef",
+      "sizeBytes": 143
+    },
+    {
+      "archivePath": "gates/room-read-diagnostic-off.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/room-read-diagnostic-off.log",
+      "sha256": "17d6104993bc783132fab5eb85a1d5f41f6d9fbf95000099dccb7263de518f28",
+      "sizeBytes": 12057
+    },
+    {
+      "archivePath": "gates/room-read-trusted-off.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/room-read-trusted-off.log",
+      "sha256": "aaf0b1d77f05ed3f7ceee5c71f9d82038e2d22c1ee08b66655cc6aa878ac14ca",
+      "sizeBytes": 12063
+    },
+    {
+      "archivePath": "gates/source.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/source.log",
+      "sha256": "bd2a949d47eac60cb8fed5c499eeb96d230c66865cdb32a5d188f17611a043c4",
+      "sizeBytes": 43
+    },
+    {
+      "archivePath": "gates/stdlib.log",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/stdlib.log",
+      "sha256": "7d7132e57d3ec98276fe945436a7641fcc6e2193dfdfefbd97a453837d732cf3",
+      "sizeBytes": 165
+    },
+    {
+      "archivePath": "gates/summary.json",
+      "sourcePath": ".agentlang/lang-284/gates-20261015T142105Z/summary.json",
+      "sha256": "db84cd782caa04530f1f73bff48927bd4488d9b1498a2b2838fd47822fd369e1",
+      "sizeBytes": 7752
+    },
+    {
+      "archivePath": "store-284/parity-linux-store0.txt",
+      "sourcePath": ".agentlang/store-284/parity-linux-store0.txt",
+      "sha256": "a832ec779c0a981c8403b3de877671b6e8e9d6059b00458141cbc0d4139442ab",
+      "sizeBytes": 1851
+    },
+    {
+      "archivePath": "store-284/parity-linux-store32.txt",
+      "sourcePath": ".agentlang/store-284/parity-linux-store32.txt",
+      "sha256": "97980ee89306d2459266e96479c8edd1a26ab0df569cf80a946492d677562ed3",
+      "sizeBytes": 1881
+    },
+    {
+      "archivePath": "store-284/parity-win-store0.txt",
+      "sourcePath": ".agentlang/store-284/parity-win-store0.txt",
+      "sha256": "e5def4072277397e0e9e13de647e73308abad32fcff555d4e7e43f4dfc4203f9",
+      "sizeBytes": 1835
+    },
+    {
+      "archivePath": "store-284/parity-win-store32.txt",
+      "sourcePath": ".agentlang/store-284/parity-win-store32.txt",
+      "sha256": "add2f41f8e10ce89cff8ee788278972c2c1b5f8ba72b41cddd7c39be68623ce2",
+      "sizeBytes": 1865
+    },
+    {
+      "archivePath": "store-284/edit_campfire_db.py",
+      "sourcePath": ".agentlang/store-284/edit_campfire_db.py",
+      "sha256": "61d14624849c859fc8e636f7fc8da3f090aa762d278fe30f1fd675a9788ee5f0",
+      "sizeBytes": 4973
+    },
+    {
+      "archivePath": "store-284/edit_campfire_server.py",
+      "sourcePath": ".agentlang/store-284/edit_campfire_server.py",
+      "sha256": "7407a89cba883a5b74f1981900d17e618a274f0d42e159de6481087b0fc6a8fe",
+      "sizeBytes": 11434
+    },
+    {
+      "archivePath": "store-284/edit_campfire_server2.py",
+      "sourcePath": ".agentlang/store-284/edit_campfire_server2.py",
+      "sha256": "035488fadff565eebc1ef6b2016896689a848432a1a08cbbb521fc0108f7a8c3",
+      "sizeBytes": 4361
+    },
+    {
+      "archivePath": "store-284/edit_campfire_tests.py",
+      "sourcePath": ".agentlang/store-284/edit_campfire_tests.py",
+      "sha256": "67a88b2bc9f4d621a00eed3224f2907ca4c2a21cf21f9949199692ef7eb97fbb",
+      "sizeBytes": 8750
+    },
+    {
+      "archivePath": "store-284/edit_counter.py",
+      "sourcePath": ".agentlang/store-284/edit_counter.py",
+      "sha256": "c8fb6d12af08f22c78ae2533abbf4edaad083f344409985fa30cf7b9e24df91e",
+      "sizeBytes": 8168
+    },
+    {
+      "archivePath": "store-284/edit_docs.py",
+      "sourcePath": ".agentlang/store-284/edit_docs.py",
+      "sha256": "9a2fa30d80c7eda06eb773f7fa363a41d73f844e37d4b3a1ccb48e986c4180a7",
+      "sizeBytes": 3682
+    },
+    {
+      "archivePath": "store-284/edit_effects.py",
+      "sourcePath": ".agentlang/store-284/edit_effects.py",
+      "sha256": "d869421afa0e793cc0fd600c95da8cb295d7b12e2ae73f0ef22692043e9af808",
+      "sizeBytes": 1963
+    },
+    {
+      "archivePath": "store-284/edit_flowapp.py",
+      "sourcePath": ".agentlang/store-284/edit_flowapp.py",
+      "sha256": "bfa62ed6dbabd7d4243f6db894b5efd85035a333c6e061387ef30934a0dec038",
+      "sizeBytes": 3984
+    },
+    {
+      "archivePath": "store-284/edit_flowapp2.py",
+      "sourcePath": ".agentlang/store-284/edit_flowapp2.py",
+      "sha256": "56a5682a231ba4472d8341eda8ea99664486cc9d04f3b5ee78b69fc824f2ce19",
+      "sizeBytes": 968
+    },
+    {
+      "archivePath": "store-284/edit_frame.py",
+      "sourcePath": ".agentlang/store-284/edit_frame.py",
+      "sha256": "60a88846c9a26d174bcae70d0f5a1c42162363bbd5646fbc4d634e6cfd530f93",
+      "sizeBytes": 2699
+    },
+    {
+      "archivePath": "store-284/edit_http.py",
+      "sourcePath": ".agentlang/store-284/edit_http.py",
+      "sha256": "afbee330ff88f973a08e7e9dff3b9753cc70f5b84c421f58f78bd147364187dc",
+      "sizeBytes": 2476
+    },
+    {
+      "archivePath": "store-284/edit_native.py",
+      "sourcePath": ".agentlang/store-284/edit_native.py",
+      "sha256": "5e7226c014826aba0b5fec5975b611bcccce5361b2c55201e5c000124b36e99b",
+      "sizeBytes": 11932
+    },
+    {
+      "archivePath": "store-284/edit_native2.py",
+      "sourcePath": ".agentlang/store-284/edit_native2.py",
+      "sha256": "83edaf482bb8f65d303e3f60e85d6ce6266388c9504b9cb707b0df77966e9f24",
+      "sizeBytes": 1038
+    },
+    {
+      "archivePath": "store-284/edit_native3.py",
+      "sourcePath": ".agentlang/store-284/edit_native3.py",
+      "sha256": "f5e879876efa5174ead2ea45eb52bafb81b9e124169f2b5def2e2d202f1abae2",
+      "sizeBytes": 1583
+    },
+    {
+      "archivePath": "store-284/edit_parity.py",
+      "sourcePath": ".agentlang/store-284/edit_parity.py",
+      "sha256": "7eb7162be71c5c3b98fb9679a7e6d64103725f90482486bb989321ac1cd2eb53",
+      "sizeBytes": 2075
+    },
+    {
+      "archivePath": "store-284/fix_cache_tests.py",
+      "sourcePath": ".agentlang/store-284/fix_cache_tests.py",
+      "sha256": "266c6f79422056171e48290d6699d0da1d5729025ce225fb6fccde12066be9fe",
+      "sizeBytes": 3707
+    },
+    {
+      "archivePath": "store-284/fix_large_test.py",
+      "sourcePath": ".agentlang/store-284/fix_large_test.py",
+      "sha256": "ac3b1b68af86704b9c9494f7ca8f5259e4655164ba1f31c5ff31df520739d464",
+      "sizeBytes": 1387
+    },
+    {
+      "archivePath": "store-284/fix_match.py",
+      "sourcePath": ".agentlang/store-284/fix_match.py",
+      "sha256": "e0e3c6c46b483e92345df7768390524c8e066c3794f8dccb35c5d6a81c425d53",
+      "sizeBytes": 1488
+    },
+    {
+      "archivePath": "store-284/split_layout.py",
+      "sourcePath": ".agentlang/store-284/split_layout.py",
+      "sha256": "324d2af202a6625ad203cbd7b2580fdadcf25f2508118ff2402f9b173a7266b2",
+      "sizeBytes": 1619
+    },
+    {
+      "archivePath": "sweep/PLAN.md",
+      "sourcePath": ".agentlang/linux-sweep-284/PLAN.md",
+      "sha256": "bd7b342198a90d0b5a0befa2b630b87d10c32c6c3535ab611aef0a8a325b8e4c",
+      "sizeBytes": 3237
+    },
+    {
+      "archivePath": "sweep/sweep-lifetime.sh",
+      "sourcePath": ".agentlang/linux-sweep-284/sweep-lifetime.sh",
+      "sha256": "de2ccbd4b2b9cf605ed347c2101aec598cbf88504d02925707bf7593e7afc76a",
+      "sizeBytes": 14259
+    },
+    {
+      "archivePath": "sweep/run-sweep.sh",
+      "sourcePath": ".agentlang/linux-sweep-284/run-sweep.sh",
+      "sha256": "602578f4474ba3e5f10984a5162c225097ae5c1c993c20459fbcf0db1ad568dd",
+      "sizeBytes": 1611
+    },
+    {
+      "archivePath": "sweep/cleanup-native.sh",
+      "sourcePath": ".agentlang/linux-sweep-284/cleanup-native.sh",
+      "sha256": "e9b1be69ee843e5cc8bcea954e29d2318fe9161da70018a622b49247195d412c",
+      "sizeBytes": 482
+    },
+    {
+      "archivePath": "sweep/aggregate.py",
+      "sourcePath": ".agentlang/linux-sweep-284/aggregate.py",
+      "sha256": "358481dc12f6677cc024f47a51fe93bf3051195cc6cf2f9c17ee9638db84b70b",
+      "sizeBytes": 2970
+    },
+    {
+      "archivePath": "sweep/aggregate-s284.md",
+      "sourcePath": ".agentlang/linux-sweep-284/aggregate-s284.md",
+      "sha256": "42eddbc969985c039c7b77661dd7f78875bab4c94b2006957c173bbc4ae8b8f1",
+      "sizeBytes": 3975
+    },
+    {
+      "archivePath": "sweep/aggregate-s284.json",
+      "sourcePath": ".agentlang/linux-sweep-284/aggregate-s284.json",
+      "sha256": "1d9927255a6f46100b3f1700a62eb5db8f1baecf13e9343a2ebeaa1d6813ff5c",
+      "sizeBytes": 8347
+    },
+    {
+      "archivePath": "sweep/sweep-s284.log",
+      "sourcePath": ".agentlang/linux-sweep-284/sweep-s284.log",
+      "sha256": "fbeebe9f30212c95b26a4ca5bdba5cdf796f17356097d4d1d968283e2cb58b4b",
+      "sizeBytes": 4038
+    },
+    {
+      "archivePath": "sweep/wait-s284.log",
+      "sourcePath": ".agentlang/linux-sweep-284/wait-s284.log",
+      "sha256": "92035169238a5871afb5d4ec4c7161a0bae2ce5207189f8844c6e3e6a407d28e",
+      "sizeBytes": 3953
+    },
+    {
+      "archivePath": "sweep/contamination-screen.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/contamination-screen.txt",
+      "sha256": "4f58f81900f0e10c6c67e0831c4ece28c456dd405a78998fb34a80312e1def8e",
+      "sizeBytes": 102
+    },
+    {
+      "archivePath": "sweep/flowbin.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/flowbin.txt",
+      "sha256": "ca628eebe57772442fd9df48ed82dc1366cde57eff623553a6fa3fdbee16687d",
+      "sizeBytes": 127
+    },
+    {
+      "archivePath": "sweep/wait-quiet-then-sweep.sh",
+      "sourcePath": ".agentlang/linux-sweep-284/wait-quiet-then-sweep.sh",
+      "sha256": "116c6f89417194ef8267dca64c8ea667b9d1d37a9d1bae4cc3451e939c51c974",
+      "sizeBytes": 574
+    },
+    {
+      "archivePath": "sweep/uncached-ab.sh",
+      "sourcePath": ".agentlang/linux-sweep-284/uncached-ab.sh",
+      "sha256": "0aefefe2c92c76fcb56c7607bd360bc03963c30c49a3b14e6e9427b50aa21c87",
+      "sizeBytes": 544
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/affinity.txt",
+      "sha256": "70eb1e55614f5ac2adeb0cbc84928deecdeca8b847ad449cd4a5a5949eaae30b",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/cells.jsonl",
+      "sha256": "32c435538645ade9fcce7ebf40d7c44f74afa68bd540f51733f38f5308a55b39",
+      "sizeBytes": 670
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/client-time-c16.txt",
+      "sha256": "16f91abdcbd8f1d605f446e6ef1a58838f8dba609983fff6f65ed970487643e8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/client-time-c64.txt",
+      "sha256": "e69a9ca0a493968ed33dc64cfb39adf0018b59fe69da320b8a42c9b36abc34a1",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/driver.log",
+      "sha256": "25b6dd4b7f877b7d08d507e6e029ac7dca2ec014c15e3c43e1ca60cc9426599b",
+      "sizeBytes": 1919
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/measure-c16.json",
+      "sha256": "59e92997d4f0206089a9c56a0b73c9cb876458db19fc7a7a46422e2185c5a280",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/measure-c64.json",
+      "sha256": "63412f65953ca528acc9c897cec47614d2be6d610205ec030288032f792e011d",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/procs-ready.txt",
+      "sha256": "516f089aa6825aa5ae3d30aba71b6475e9fdac3cbed4ab97cc0786b51c50b93c",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/pss.txt",
+      "sha256": "eccec9450a3cf2d0197dcb4da713ddbbba653ca1d2e020e2c7dd3b872e7ba363",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/server.log",
+      "sha256": "776a231f95e847ec07a9462ca291ba592405a689693328d8866136cde3dc3bde",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/warmup-c16.json",
+      "sha256": "053f6dca194e08eda2d63f9fa6ba2cb73ff7ac7ca98314cd9aa4af234164ee96",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-1/warmup-c64.json",
+      "sha256": "99dc7018109f95d4f62573ea0b16fae905610b5d91206ccf57e865d2bae1c66d",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/affinity.txt",
+      "sha256": "edecb2dc291003bbc301de4a0fc7c30059e230970b2413afd569ade91a38b7ff",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/cells.jsonl",
+      "sha256": "fab2120ac73594adce17e44f1647f369c1ea994e33b86c8975ee87c77a53e30f",
+      "sizeBytes": 668
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/client-time-c16.txt",
+      "sha256": "d1b0485b09cbfdd97f1574e1206ba4d89626d7b3fe37cedd44f5f7acdae423bb",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/client-time-c64.txt",
+      "sha256": "1c4742e9a4534b7276fc1a84ad6b87926767c7905a43233cc592e9fd5a85b143",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/driver.log",
+      "sha256": "460d128fbe2eb2df2610afce4031e401fa8d1f4b5278d92a54ff8f9508a5fb1b",
+      "sizeBytes": 1918
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/measure-c16.json",
+      "sha256": "46fb6fd8cff2b94b33d639c0d46aaf82bc1a5eb246270127dc69b5c7ec7fe1c6",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/measure-c64.json",
+      "sha256": "ebcfc81c0914fd0d2f95f10e15977e45aa291970654fcd9931a616924b9c6efa",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/procs-ready.txt",
+      "sha256": "a999048371b516b41e12e442b0347cf9cc75f17ad7ba36a07ea6a9e0ac370c3e",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/pss.txt",
+      "sha256": "e7c920a46eeceebf3e4c08f4b15fc3a21b79352f89044c8c9561c023b01e4a44",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/server.log",
+      "sha256": "73264ba3c5ad40a50ad1a33d3af842f9f8de31e1593d5592b390422ff767f286",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/warmup-c16.json",
+      "sha256": "d215ea5c97f89b93e67cfec6d9c576f062b57d0a1e400704d23d7c11cce0978a",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-2/warmup-c64.json",
+      "sha256": "3d4c54b988f9c4fee3f46914a60a0ea3964f81c65202a8e62c126bb4c6b828f5",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/affinity.txt",
+      "sha256": "e8fec58cab15c1b3156cfee9f4cbacb00efc519e36e7d75974a75ba4e581bd6c",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/cells.jsonl",
+      "sha256": "7cfe02732989ea9c1d902f5c22e8ef323e6e3e1bbac0fdb56dc715de0b7c8afd",
+      "sizeBytes": 670
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/client-time-c16.txt",
+      "sha256": "0931a86ef29f617eb05088a9b691462803af890a5c6a281a5690d7ede0a5bffa",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/client-time-c64.txt",
+      "sha256": "05606b15f3fedb276fcb76aa99fba73d77e066df61ac726b41d4516dcc75f770",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/driver.log",
+      "sha256": "78a246e5b0395ff3a7a7b409e84db5585565ef5989515c76783ea4d437bae900",
+      "sizeBytes": 1920
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/measure-c16.json",
+      "sha256": "323d6e2eb57a0eb3b7fd24d10130b6fd772bf924a7e9b4ea50c3aba6be67626e",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/measure-c64.json",
+      "sha256": "b8f72f05c2b22a4621ce3be43b2a4245b8c3f562f5d03e1375862f8fadc0f550",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/procs-ready.txt",
+      "sha256": "e25fa4ddee44acd7733fef0460d6d59c3ad324779d0be0cb96494203447d4b37",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/pss.txt",
+      "sha256": "e7c920a46eeceebf3e4c08f4b15fc3a21b79352f89044c8c9561c023b01e4a44",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/server.log",
+      "sha256": "da5a76c02ff3a4b84a4b779de4c69087a25b95f7416d2740c49f769f858cbfb5",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/warmup-c16.json",
+      "sha256": "30e1011e35dda7f9ec4ad9d2cada8278fa22158d076d134b5510e6a1f1c4c395",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/ab284-off-3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/ab284-off-3/warmup-c64.json",
+      "sha256": "e4787938d656b768f672e252a01b7a07a1c489f89991e643a01bf4f4fa66f7ae",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/affinity.txt",
+      "sha256": "80b04187e921f95292aff2650c426668cc0e4b3276db094d8c9e866e652d0673",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/cells.jsonl",
+      "sha256": "08527a2d80efe704a371179b3f0c81dd6f79d950182bc67fb6ad1a10e9079d2d",
+      "sizeBytes": 679
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/client-time-c16.txt",
+      "sha256": "9266707c542ffa0fc0b1aa862030bfc0e63faae5989f1b22339d946260a14d95",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/client-time-c64.txt",
+      "sha256": "304f3f59535f627940cc2a215868cdf1d21a582dda3288f0ab4fc7d41a725214",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/driver.log",
+      "sha256": "b722a84e9d7185ce3ca872bbd7691e14305bdb6589d85fe964af61afb0b847fc",
+      "sizeBytes": 1932
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/measure-c16.json",
+      "sha256": "41e34844df7130ea9a5ff8880272d74da8791a43113c260dbce28f9f51fbb2ea",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/measure-c64.json",
+      "sha256": "e1549f4a8e76a5a10cc75c31b555fd5e908bfb6fac43a16c533d0eb5eaff6d4e",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/procs-ready.txt",
+      "sha256": "2a0ac017bef8421db4c0c0fd5a26950011a9516b5012770cd7566f766720adcb",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/pss.txt",
+      "sha256": "d0f1d43e935f941ac4e5edf1b80ae00c90e87323951069c69d5fd02b77590fa6",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/server.log",
+      "sha256": "3caa2be85ad0f0b84f2b4613d8a857ecfd1e9e667ba5a1ea337c436ce42fee8d",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/warmup-c16.json",
+      "sha256": "dd747b327291975d7817c06ec40f7aa5d87aa8a7b3bfbe0c566bc051ecf0ab44",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/q284-flow-off-1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/q284-flow-off-1/warmup-c64.json",
+      "sha256": "7b907adf170bb76e625f97ac2c09907bb67947343051390909cb1d8b132d736e",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/affinity.txt",
+      "sha256": "6a716e6e6d16bf8056416584cdbb6eb175daa81e5e3eb24d98461e3f2c74012e",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/cells.jsonl",
+      "sha256": "84afd687b06da68c7232f41fa1c653c102ca7864eec0286b595e0a5e2dbbc29a",
+      "sizeBytes": 1360
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/client-time-c128.txt",
+      "sha256": "02da34841b8489f3a8f6bec2f5a4c13159f794832a071796d3266a74744b1c7a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/client-time-c16.txt",
+      "sha256": "36f086610f15c47ce81f07dce6228017dcf40ee9495be49fdf4ccc237a96f61f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/client-time-c32.txt",
+      "sha256": "cf5a71ec9fbc883f041e316f2130481077b1098461c3f316a6d3015557a7afa1",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/client-time-c64.txt",
+      "sha256": "c86ef1d9ac0d4482f72f39b185e35feb52ebb4d8223e33f4f30743599ce878ee",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/driver.log",
+      "sha256": "14197ab799c56acc10eeaa95980e52454f90334e0f29f94bcdda00a9ce50777e",
+      "sizeBytes": 3111
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/measure-c128.json",
+      "sha256": "7dd3f5030e214eae3f2713029fa48ad6eaae3a79e0d097ce89af4efb52fd5238",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/measure-c16.json",
+      "sha256": "b727d098678cd15d9e3cecb86e7cca8514099232c4443902c5520e66f331dcc0",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/measure-c32.json",
+      "sha256": "62ab576a5706a9f2792d68dec1cbbfe7aca2e64166791748d57b779bef466a91",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/measure-c64.json",
+      "sha256": "a16bd1b95655fcf5af43b2b01a0ff6e1113da380e8ee5b94d4e5d23af34e8d46",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/procs-ready.txt",
+      "sha256": "53628aa6e495ee2122a3ae81747f29a4943406f7e93bc1516fe85facd4d4c194",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/pss.txt",
+      "sha256": "1a0c0b9fb01c2dfb5fe255a94b1456865ab0ba75508bcb23c36f94da0aee96e7",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/server.log",
+      "sha256": "49fb83f90a2862ce09fd1895bd3c7298116b143be399932413bdbba8ad9bd11b",
+      "sizeBytes": 760
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/warmup-c128.json",
+      "sha256": "8cb6eb7f25b7ecaef6d3310741fab06cc1d8cb0699488e39f2f23f80db1f7f3e",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/warmup-c16.json",
+      "sha256": "0c3f4eab229982347b1b6b52b033541fee28d7a11703ca7d3c0d21251c9590f4",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/warmup-c32.json",
+      "sha256": "88d5c1038b7b7256cb6b9579a9965174c77438de8503774cde45ed0bdb96099b",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r1/warmup-c64.json",
+      "sha256": "8984795933a3154c6e7d0654105b766594963d271a423e718640531d06062fd2",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/affinity.txt",
+      "sha256": "2b09141a8ca72a37b76ea4aec8bf555b690cbc41681622921dee08e513f99994",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/cells.jsonl",
+      "sha256": "3f8ed34c251436878f93f25f0a3d8a3135b295a67fd59077ef35e1638ce843d9",
+      "sizeBytes": 1364
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/client-time-c128.txt",
+      "sha256": "bf5545c0d01d15e0707b302acb4e4aa552a68e5aa8687f03303f31859950cdd8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/client-time-c16.txt",
+      "sha256": "83416057f780dd63357fa158d34ce121a0e4e589fe54e48f6e183b3a4f35672c",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/client-time-c32.txt",
+      "sha256": "5bb44922d9355303925157f924a233c5f4d97ed600ede6c6778b039c849f0811",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/client-time-c64.txt",
+      "sha256": "6ed6c54a6529dec98ce61e54180052692abac7008fc5796edcfede643e40a5fa",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/driver.log",
+      "sha256": "54b3d278594ad6beefb5d17f91adc1ec2d940ee8f62bf56eca1256870a3c3603",
+      "sizeBytes": 3116
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/measure-c128.json",
+      "sha256": "0a4b6cda78ba426d1b454db1959063052d73b04f90397a2fb596df0c0baeda29",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/measure-c16.json",
+      "sha256": "b7106b1bd0c42780f3ed2059d9f4ed866144b7390cb0439e37382fc97481b5a7",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/measure-c32.json",
+      "sha256": "5e73efd6db45d3129d4f829588d52f6b7bec4a3f7597ed0f63ffb613e1f2e09e",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/measure-c64.json",
+      "sha256": "a9dd989943c42dbf22b7134c8ff9815caf10793af75924e6d21ae3923ef293c2",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/procs-ready.txt",
+      "sha256": "4748a6d9fdc6701f59a3668d0b4c45848faad5c646848486b20eb2800dc58b31",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/pss.txt",
+      "sha256": "34e35853df3c75f01c4e831d15078e0b78fe7c08fc49c541b597f23bfd7100b9",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/server.log",
+      "sha256": "276de1199f28bb2671fc435797d25f79d485e803439e23c4a2d7b4a762aa95ab",
+      "sizeBytes": 760
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/warmup-c128.json",
+      "sha256": "4222a35097ff4e627a120be10d607392466804171633f408b623c9d9fb707aad",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/warmup-c16.json",
+      "sha256": "c13e3fb9a86cb3d5b67f7ed832e07c08909d2d2f832341cc504931ed47369761",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/warmup-c32.json",
+      "sha256": "1cb34422b889933689288d9b5be64414d2a32ef89a9abd38e4de1a552298e773",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r2/warmup-c64.json",
+      "sha256": "e2b4f829b755fe5a7279468f7da5bbb899fe931ebb56d8798faaed124e87f412",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/affinity.txt",
+      "sha256": "5f2e542ef1956e2722e12858978f0ca70ef348bf43d48421bea4c6b33544168d",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/cells.jsonl",
+      "sha256": "d8d17273c771b91539b7240f84e8fee527c89e03cdf7a3d2a64c712ed17f01ad",
+      "sizeBytes": 1361
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/client-time-c128.txt",
+      "sha256": "2a1bceef4c3d981a89aac11122ec98ab91556c09657a564e9aab978f510b2908",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/client-time-c16.txt",
+      "sha256": "9e6530469e3ca8c8adfa4c58d70ddda75347451a75bb5e7c7ecdb5798fdfd4ea",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/client-time-c32.txt",
+      "sha256": "d4e82c7e72dd75250e926c8648216e910e4e14f4e01c48ec366e4f99c7f012f3",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/client-time-c64.txt",
+      "sha256": "7f377c849d6d70fb33e260cae4dce0263d8c673b337509bab863e69a295d9628",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/driver.log",
+      "sha256": "206996e745e6450b44e58d90ddb2a1a5695c74f968b5bdfaf398399a63daad7e",
+      "sizeBytes": 3113
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/measure-c128.json",
+      "sha256": "fb2b8918a3cbbbdd37e8e28bf0a61c1871a024966c6a3e975f91da9d44f25c32",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/measure-c16.json",
+      "sha256": "32a8033fc8611b8a51ab2ebf2a160b0d55ea2bedc9da0d80369eefd0f6e2ae62",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/measure-c32.json",
+      "sha256": "2c9dabd40fbc4d98a7e5b29356f168bda6be838f49f2cee17e9584e7a55eb986",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/measure-c64.json",
+      "sha256": "0fb2bd7d8f0db39c5ac3e6f7d8d19de3657e9a14c039832f0b5c902da753a7cf",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/procs-ready.txt",
+      "sha256": "33351b1f67ba741e67eed1fd4c003c6c5e0b670bef42333ed02b912578530198",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/pss.txt",
+      "sha256": "ec092545380a9c1da6e954929efdcd13d15dd5fed967c32e8b2a42964a93930b",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/server.log",
+      "sha256": "8dc823d8b8bc3498cf240bd243bc415663231d11b5a07d819f015d947302db02",
+      "sizeBytes": 760
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/warmup-c128.json",
+      "sha256": "6da48a0a90a733d5cdba3868b84a29f79ff3a38d8a9d95ea01fefec3f94c0a9d",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/warmup-c16.json",
+      "sha256": "766911b733eb4b6798fc1cbaa9699fe1b7485d887cb5bc58fce0fe453056c868",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/warmup-c32.json",
+      "sha256": "a0481af6490044a3e0b865df92c493e64f38fd4ed2fd9dd01cd3bdb12effe509",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-off-r3/warmup-c64.json",
+      "sha256": "27d625e245fd84d2c3d8d3419f0f92fb122d52142446ceb880804fb51e20ad2d",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/affinity.txt",
+      "sha256": "2cd8f126b07a84e4b7378683bb110cafdb1ba9b962cc86e037288142d0e29c1d",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/cache-env.txt",
+      "sha256": "1559398595aec2b8612e92f36f4f613961bdede102526f54531230346f2cb70d",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/cells.jsonl",
+      "sha256": "dff72d168097b68f1f5fdecea0d9ac10900d801305752e945284aafb485bdcb1",
+      "sizeBytes": 1348
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/client-time-c128.txt",
+      "sha256": "55830bbd2be215ae63304dc9b1dc2e005937076793990057aac559159b6a58fa",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/client-time-c16.txt",
+      "sha256": "53c3351d69ec5d75fd3a97ee4564906b1eaf32308ace07a896e290b04db4be46",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/client-time-c32.txt",
+      "sha256": "06de54e2a90b3c9b7420438054d26e7ea885de7e49ad9bdc6d52579063024a51",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/client-time-c64.txt",
+      "sha256": "6bb6a0446a488d67919b343c84d923402765f24026ba2097fac92fa731469f8a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/driver.log",
+      "sha256": "e59bb37196d45d6195948146f942cbf7b64efb251d80ec127a13ea10f3fd463b",
+      "sizeBytes": 3099
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/measure-c128.json",
+      "sha256": "37fc7d887675073b46bbe785c507d35e70ea3c284e909cf137ad6c0c111111d1",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/measure-c16.json",
+      "sha256": "0e52b71dc946cd5b284b0f993088f4d26110375bf6b808dc63bcf26b7daa9b18",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/measure-c32.json",
+      "sha256": "bc4bd1d82c4fd5edaf62637e9461c52267e97ed7588adec26df873ee452bf515",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/measure-c64.json",
+      "sha256": "b02052b1a85ecf8a9419031c2bf7193f83fb98702d2d243fb961e52e3a04dbe4",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/procs-ready.txt",
+      "sha256": "bde2c8566c2e8241d24e1566f0d2f226f8a4925b38d85569b76cc76d90edbc4c",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/pss.txt",
+      "sha256": "94ad8dc426a9957d3b8767abd77f26c800bd0dd7c116b39d37358db9a0b5a698",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/server.log",
+      "sha256": "9ee01ff0e56aea7983bf90bf66cc9e55d3a02a441a6bdb140059c800a455c5ec",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/warmup-c128.json",
+      "sha256": "0ae744386636fb5f5a9cf7f8bd34b0686b76883168a610c78678348431c530fb",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/warmup-c16.json",
+      "sha256": "c442bd0d158440b35a61930ed3673d8e24dd502fc94ae93289e8e3bcddeb76bf",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/warmup-c32.json",
+      "sha256": "6a044d3fb7320a709dd6a9f1afea2b23bf79c31b9e804632195012abfda850fa",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r1/warmup-c64.json",
+      "sha256": "a91d38ddb3c4ac84373c8b85964b4803ec9ecc0e351c3e17222cd42c45fa98f0",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/affinity.txt",
+      "sha256": "cd52493da69840939ed6739a9dedd74be9e65e3832317d596a648ecf108d6b8c",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/cache-env.txt",
+      "sha256": "1559398595aec2b8612e92f36f4f613961bdede102526f54531230346f2cb70d",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/cells.jsonl",
+      "sha256": "07d5fb0b6f74725d55498ed2341d693b8dcad6e7b5d925331d44efeefdec31a7",
+      "sizeBytes": 1349
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/client-time-c128.txt",
+      "sha256": "42b156a21ce70997b29e4ffc56f720cd8e5c10f7d3e53af65e12005626765da3",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/client-time-c16.txt",
+      "sha256": "a8eac01d517e6ed377c7b7ab2e8bdbf24dd367afd6219b8fd6619814bf4f42ea",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/client-time-c32.txt",
+      "sha256": "a442b43f1ec71b1fcf4abad5fba282c555fbedd3f4fdc44d26cb1ed550132151",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/client-time-c64.txt",
+      "sha256": "a8e5d0da29c2c2fd279f97b522963d4d8a4c7da3f17c8393b274b44e8abe8ab4",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/driver.log",
+      "sha256": "4973b024b7929acb484dca875937b52053a1cd300711020d1247da927d0b2940",
+      "sizeBytes": 3100
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/measure-c128.json",
+      "sha256": "fd94550566eb2de061d70143c7e2f08f1b593851c6725fa05abd7821b4cba6e9",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/measure-c16.json",
+      "sha256": "a777befd2c7db772bc4e3c3c3c4bbca1d4d222c0dd1bfa4dd222896d97245918",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/measure-c32.json",
+      "sha256": "101a4fc9500fb34acfa9bfa6aadd0b20e9bc35473bb41efbcddb9a15fc46c106",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/measure-c64.json",
+      "sha256": "1438b74b044a8d80ea792744ee651e48fb3ed1353eb1cf521c95c7c8973fc706",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/procs-ready.txt",
+      "sha256": "5eb82cfd28be5b92a99fa4ab0cb2f8757d192dd01f39645e6e016fb22d304230",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/pss.txt",
+      "sha256": "d696e3d60a03c93a9e0d8e1be153c42ea05e001bc44366047a8db61d400d3fa4",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/server.log",
+      "sha256": "2ac6a005ddfe827804516d8956c7b8e6cb12a326815b00798a0a32024fec631d",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/warmup-c128.json",
+      "sha256": "f24584d3a3acdc8a5e086385b998a3245b1c38675fc202b07aacba13155852bd",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/warmup-c16.json",
+      "sha256": "2f98048b95abc8776f72b4c2e824cf88e53a0e735e6e0707c188820563413747",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/warmup-c32.json",
+      "sha256": "2f523e493feb95c5e8dbfebbe9d8e122a2947211fced52b62496a5574c8f8e34",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r2/warmup-c64.json",
+      "sha256": "09402e2b540663ee174147a40f5d94dfd904f09ac70d3da10dcba50dce92bdf3",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/affinity.txt",
+      "sha256": "913b2539cae2e2469bccf45ef303ae6d1a3067ac4105d974502e0880a9143da6",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/cache-env.txt",
+      "sha256": "1559398595aec2b8612e92f36f4f613961bdede102526f54531230346f2cb70d",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/cells.jsonl",
+      "sha256": "4c611c2cab820db6fbfd0e2479cee2f6405fbd00a562898ad7fc4360fdfa73ba",
+      "sizeBytes": 1352
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/client-time-c128.txt",
+      "sha256": "cf669c61c07eadd015570e5de71562e5b3cb1a3926b16e716a3cb925b72a90ab",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/client-time-c16.txt",
+      "sha256": "0bec44ff2ed87f19710ad99e58e454db3124f382703bb2567e56417ab732692c",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/client-time-c32.txt",
+      "sha256": "99a5c5495731a204366a13b18b7dfbbcfa320be7b8b092cdd43c903694b951e0",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/client-time-c64.txt",
+      "sha256": "ee45def786ed4ee54abc1bd6063ef579352584426988a86d6f091bd1d68fd4bd",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/driver.log",
+      "sha256": "8d69854271fc13238ef421a22c29686201798cf96a8f0e37fa360bb7ccc05a80",
+      "sizeBytes": 3103
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/measure-c128.json",
+      "sha256": "5e337f01e2f8f8c9a3c3be2dda62c4fc74a830e5c6173cdb146c23cf00abf83c",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/measure-c16.json",
+      "sha256": "965048612a9ac9ab707d537b60bbe274e110046ba742ac04c9dcfd1e2347d8e8",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/measure-c32.json",
+      "sha256": "fd9eb0a3e59ed7869f51b669fde41f5c9ae201866f0e9d4681cfef783805a5a9",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/measure-c64.json",
+      "sha256": "471e3f4b66e2b5c016a50b329b6c225b35d3369b9c75f179c5768df82a3eeb33",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/procs-ready.txt",
+      "sha256": "069e9517f5fdac26877a1f8677f58371baf1c511981ac809885c70fd4694e7e5",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/pss.txt",
+      "sha256": "c7d992db6d67d0bcd7e33263e9b5dc1c5edfb9017fc51f2ae62f6f0560792573",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/server.log",
+      "sha256": "2414dbc6a5f62fd0d6dbb9a535d3090f6701d249204df27b25402d9b22d1286c",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/warmup-c128.json",
+      "sha256": "bdebdcbb04d345af2b98774acd0568a76bdd6fef2449a450816f59e402ce097c",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/warmup-c16.json",
+      "sha256": "e7975c61a9edae18dae1999a6a10e4fcad65b2eb427b31ab98e6b408ac64b1ab",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/warmup-c32.json",
+      "sha256": "e74ae8314ebf70e09c80114a8c5c62dd35890a12f5b914d0910872dcac0bcef1",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-flow-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-flow-on-r3/warmup-c64.json",
+      "sha256": "b866a3b798e6a1e1f7a98d9a494d6fc5d5354ffab4752dddb0f78ac88234997e",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/affinity.txt",
+      "sha256": "19e006ba4316cf69deff49d98cc913876903172849d8d8a3b92a5a286fdd481d",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/cells.jsonl",
+      "sha256": "550c100d2fa706a6636da874328fb1a0c3b9f7c2056822bf1cd62e8815ba9372",
+      "sizeBytes": 1380
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/client-time-c128.txt",
+      "sha256": "1f557d6a959d0bea516ebcd6003354ca91633d74c59c58bde60a34c8a5459852",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/client-time-c16.txt",
+      "sha256": "59b8e22027f745e948b871c38dc1ffe8f4bb6e396ae4249a7c3006324f8359b8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/client-time-c32.txt",
+      "sha256": "6f06f012248b38ecee9605f2dc777ac6ba69c76330284bf2ced7bbcc08e9e8e7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/client-time-c64.txt",
+      "sha256": "1bba1244d849cb3812ff39718c86eb0e263e4528c5361f266cfbeaccf09b928f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/driver.log",
+      "sha256": "d43a06f3bd3f426e14de4cb3ba356f07f31bfa4bb480e620abadb379f2d6c80c",
+      "sizeBytes": 3177
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/measure-c128.json",
+      "sha256": "7ccfb119245cfec76f2aeb54e88cfbf86c1fd643523341fcfe90e2260f5fb11b",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/measure-c16.json",
+      "sha256": "7e8445866612a6be0dc376f77bda6b373729230bd264e72b39fb8841b0ea67d3",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/measure-c32.json",
+      "sha256": "cf0a023528ea611a6315fee73de1f496740ff1191ea1bb027e1cc2a493eec603",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/measure-c64.json",
+      "sha256": "a2904bf0610ce7e86a46841e03978bf8808c43c3fa3de54f5e675d6a36000032",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/procs-ready.txt",
+      "sha256": "060f023d4e98fb83d5295e723f9ed334663e5dee1fcc4f17cbad1182297ae0d9",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/pss.txt",
+      "sha256": "ea0e62e05340d54f49868a374ebba5a436ec4fbe44a4a0a1811a81191d3a47c5",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/warmup-c128.json",
+      "sha256": "54dbccf848cfcc0fdac976d8049845ff4a561fb91ae3b16a43261eb17841c30c",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/warmup-c16.json",
+      "sha256": "65774912683ac88af982233deff5d7ee701170d9708ae49976ffd595da15c1b5",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/warmup-c32.json",
+      "sha256": "f710d2ad8fbc77ba7914b5a8d58fe5f63af5592964a7d7bfcda15c889eb59fb5",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r1/warmup-c64.json",
+      "sha256": "fa3835f415bb6245960831fb5ce4adba55d4d1f4ab94382de3e9265a4cf214c6",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/affinity.txt",
+      "sha256": "d09284f3920eebf9e81bc0bfcabae20b1864bb2ca3161943da359c616a98b7ea",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/cells.jsonl",
+      "sha256": "a533ab43a1053d729ea131b99f7cefed8f033a3d061eb0ccf3df3ffdb6dc1ba6",
+      "sizeBytes": 1380
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/client-time-c128.txt",
+      "sha256": "795fa11653168c00f473dd0d387ca221d470f4d698bdc6dd3c66a8e538bc07af",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/client-time-c16.txt",
+      "sha256": "536eb6c6d5276a2fc0fe00533c4f066e0c6b824d7290757c18558c4088a955a8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/client-time-c32.txt",
+      "sha256": "507557e7401618ddb53d319552f900ea226c4b24982856d9f5db590a2cbceb7b",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/client-time-c64.txt",
+      "sha256": "40b0b30b313b0a1d6da113d2d884b68027a68f9b5faf6f29b49cfa3d4e59ba9f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/driver.log",
+      "sha256": "5b518ecbc53a88213d1c2306473c3e240d56e0e0230e7943b647b12067786ab4",
+      "sizeBytes": 3177
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/measure-c128.json",
+      "sha256": "6d20f74f59e1058cf6e61e6d0631c823f702e21358a8c49a58821202a1c7ce72",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/measure-c16.json",
+      "sha256": "9419fb3fd64258836e8ab837b6daab57fb9d8a88d997e0567dff6177d9efcd30",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/measure-c32.json",
+      "sha256": "4a665c02f2f0ad17f2468798e9e9f5cacdc052b0fcae766aa02d7ffe36ca2c8f",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/measure-c64.json",
+      "sha256": "845bf6eef3901e900dd1fc17a1d1c8a2cba35e0b30c4dbcdaade4d1eefb3a129",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/procs-ready.txt",
+      "sha256": "4bf49ce72c49835b9ad2cd64e0440067029ac0e01aa65a285d7979e00022ffc1",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/pss.txt",
+      "sha256": "ea9e0130b2d86a6324c7147d0821e34c59f474d13db58535635e4434ecea78ed",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/warmup-c128.json",
+      "sha256": "1506f281ff416635a9661b03d8e6c7d5b3a9683103d44eb1a91f9927610d0f1a",
+      "sizeBytes": 327
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/warmup-c16.json",
+      "sha256": "864ff401767455783923322563a574679e5628a1b500e701ac3becaa8851eb65",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/warmup-c32.json",
+      "sha256": "987d255b57e522f2d30aa65186b4bd5a9578971a5e9cc716dedd958d4e77caf1",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r2/warmup-c64.json",
+      "sha256": "3ed60603fd9835984cc6a4250cc2517420a2d759dca2c39b68975cc0da8dc030",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/affinity.txt",
+      "sha256": "835b645c15851da90fb25e8eab7ce50e7e835c8e886d62e0f83bb0e2a5e4c215",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/cells.jsonl",
+      "sha256": "bccad41285182fbe51cb84f6bcb8781177c6e97a96de0a6f90f7089ab21fcaf9",
+      "sizeBytes": 1379
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/client-time-c128.txt",
+      "sha256": "4b6e773a0278b7c3b7fb07bd7673175316760a6c95f18798a42a026c681b9304",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/client-time-c16.txt",
+      "sha256": "4ef759191c89e136c286b1fde44343b5f6158b135a57a8a7c9df1b430043aeaf",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/client-time-c32.txt",
+      "sha256": "42227a2561cbba69d0b850bf351c2dee87ba7d272251feb95f59bd4bc7305629",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/client-time-c64.txt",
+      "sha256": "a422a0c71c1d56a666c499ce5910444bbdc30572337ce271c3f9d9d756b65d2f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/driver.log",
+      "sha256": "c8b7839b70bf1b1c433e0f5133ff51b7c20b4bfcc96fafafb5a3678a4821032c",
+      "sizeBytes": 3176
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/measure-c128.json",
+      "sha256": "fa35725fefa44a613afcb3bb023a11a466c554d4054aab7daf888456876be064",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/measure-c16.json",
+      "sha256": "b17f2896f8f24550bfcbfcca9c55a99c1a20b279f7a3887ce72cf2897b1f2f9e",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/measure-c32.json",
+      "sha256": "fcf1ef5f034ec488c2c17f66a1087e7bf230f1fb66f7f9584f8b69415d43d405",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/measure-c64.json",
+      "sha256": "9e546dc9d94822d6674d4f89eac47c3aeaf46501bb9f451e8e97dfad04b056ec",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/procs-ready.txt",
+      "sha256": "81644cdd894c034c1853883a8867398a4f5d34d3caa7ce8196f6568ef5dc1f5f",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/pss.txt",
+      "sha256": "0e7841cc242331f22afb83ef7cc1c58fc893b0fa87bddaa6dbc84f691987beb8",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/warmup-c128.json",
+      "sha256": "a28778d2c1fe5987185a1402fbeabc5c0c00a5968466d58c310f53eba8a5ad3f",
+      "sizeBytes": 327
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/warmup-c16.json",
+      "sha256": "1a47c928e96fbc500b8ba9f47671556fd18377d12a17e86665809219e9b92afb",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/warmup-c32.json",
+      "sha256": "eef2d01967670866834892e076cf6a194645f5a45632ee82f83d05ef388448aa",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-off-r3/warmup-c64.json",
+      "sha256": "3c47b9daad88bfc1267ce0b5a310dcd7d4041d3cf67ea8fe5ebe7b88b1613316",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/affinity.txt",
+      "sha256": "3a902eb8bec369f667b0d0ceeb2a813496a269b19d99ca7a908a51aa23ff733e",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/cells.jsonl",
+      "sha256": "d36bac415d8a204c2ecd68375f4133d51b21eb5e7a71f651933347f52d7fa9a5",
+      "sizeBytes": 1371
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/client-time-c128.txt",
+      "sha256": "64afe913dae851d510945a20a6f6c74ca951d3f1314d920bc83b12498b0d6f27",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/client-time-c16.txt",
+      "sha256": "bec3f9d14a05729981c45f894254ff06e6ee8a0f8f4b41cb50ed43f226432278",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/client-time-c32.txt",
+      "sha256": "ca1011b78919326446c16890b45e5cf2634c4035281d0ec2610fb69d8a105a6b",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/client-time-c64.txt",
+      "sha256": "1ae94cd6f2c9792d129210e319da7b95afb101fe5464cf7dc0ece075d3062a1d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/driver.log",
+      "sha256": "07b2f18c681dca7fb69531633eb4b13ea1e8362ced99bafe189b33f7e478cdea",
+      "sizeBytes": 3170
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/measure-c128.json",
+      "sha256": "ab59ca933fd85d534401d21265401dfbd3bf769e1cf4657262b59a1890fcea16",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/measure-c16.json",
+      "sha256": "14d065912ae2005c6cc6a16e3e40899ec20f964a6dd1a65a77135524aa7deb37",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/measure-c32.json",
+      "sha256": "27c2f8246ecdb44230027d6ea7fd7b21f2324e4fde15b1774b51d5a2a126235c",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/measure-c64.json",
+      "sha256": "1d1b51bc25a62e48827d1e12137006bb6543b64b7f78d064a4268720e056855d",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/procs-ready.txt",
+      "sha256": "c6d5a9835fedea2c00e72e90ba0adcbb00b9f5adb6276e6ee45a6c07dbbaecf8",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/pss.txt",
+      "sha256": "1788b9c85f79a92830acf851d34a85c306b0bfac39b5341bb4daf119fe732a8f",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/warmup-c128.json",
+      "sha256": "da953b4829c08be5fb50be5abccc4dc84cbb567fb3dbca33ab587e56b9fc1807",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/warmup-c16.json",
+      "sha256": "f0b154018137e889fb60700fbcb7058ccb79697ec95f8d529a0e6ba3d6297b17",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/warmup-c32.json",
+      "sha256": "221f0ff9d711d4d0f341602165be361dec7ffffef1f6af8e35ac59c3ae16a249",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r1/warmup-c64.json",
+      "sha256": "7802c830e87be0f54ae54a861e294a94bcac529ce2301a05a43888c463fddbd0",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/affinity.txt",
+      "sha256": "f9cf283a3826826420a7081ba7c9f243b0d5eb6b04afe7938f81f0dc360da2f2",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/cells.jsonl",
+      "sha256": "6ec671a2a7b3973c953f9bf497cec4640b0a1f6583cd0e2d34d5887025239c9c",
+      "sizeBytes": 1369
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/client-time-c128.txt",
+      "sha256": "b194c42955d88ac3ec11e983929f294e41133a030e88161b4c06d1149d794767",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/client-time-c16.txt",
+      "sha256": "00e0e326c5762c99c66970626a7836f5d8e94a6dd9c0100f535087d49ba650fb",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/client-time-c32.txt",
+      "sha256": "09a707221a973ec5d5e5175e4e6595c0b1ecb928560a112ba6990f6f1d7b0d40",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/client-time-c64.txt",
+      "sha256": "c1ab8d2b0f9deb2f72fea7d057bcd0378940aca083ac7523fc78f7bf9d5c5242",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/driver.log",
+      "sha256": "20be67a47f89664fa47bb80fd786a661ad84cfe4c3574f3bfde67739a4e07801",
+      "sizeBytes": 3168
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/measure-c128.json",
+      "sha256": "6826fff47eb7a436cf32f683f7c7b7eaadc1069e81f13c6fa0ba4d7c5b93fb08",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/measure-c16.json",
+      "sha256": "3bc0afd68edd912a4c71159227ade8dc66ef203d08ca4a1b56d824ff3d247680",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/measure-c32.json",
+      "sha256": "9398a13842ec21ec57c9630d6b845348f753a788f70f8fdbd50f99d1a61d68cf",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/measure-c64.json",
+      "sha256": "b8a6367cd318fc12614815e0f8865f661cf22e5e66e5269d3595da1c90ef76a4",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/procs-ready.txt",
+      "sha256": "a400c53de7eebe7bce7613db0a21fed4f5dd750a8b706669e9dc0d0901d9dda2",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/pss.txt",
+      "sha256": "efa112d41b5245a1439af353de3bb68089a3a2ceb55cb0b3a7d6e746cdfc433e",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/warmup-c128.json",
+      "sha256": "54083fad7ff8079129d60e1f7532d4273482fd4c8a7850d99c15fa6dcccd03be",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/warmup-c16.json",
+      "sha256": "b106e6d2f8463596e9d93b7be68a01e699b480617429327d7288e7a546e40c70",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/warmup-c32.json",
+      "sha256": "b3e94a12408caa4cf2f5303cd91450464c473c5101743715ec1a0cabc1e6e3a4",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r2/warmup-c64.json",
+      "sha256": "68ad38bc1ee8341cab024bab804c36655d40ba0c66c82b76ebaf616ced8a76b2",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/affinity.txt",
+      "sha256": "b546ab04ff04d63a65532b2acbf4e79960e65762b16cc00b37e101f88eaab45a",
+      "sizeBytes": 225
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/cells.jsonl",
+      "sha256": "76af0c60bcd8f759d032757811e58697166de28893683fe8928a8d0fbc0895d7",
+      "sizeBytes": 1367
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/client-time-c128.txt",
+      "sha256": "95a9dd298f389bc6b31c639bfbbc129754efaac8c3ae709bfb19f5e0bbf4cf65",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/client-time-c16.txt",
+      "sha256": "dcde2dabce81718e634c0c2b542100ef2360d17a76ed8a948a868c0c46f945da",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/client-time-c32.txt",
+      "sha256": "6b14f8ffe302b649c0c6945069c86d3cb03c926c52442a9dbcf6c746a15de6f9",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/client-time-c64.txt",
+      "sha256": "ccf034d28c8f2ff65c5659798147502c870b6c419cd1ce7ec91e29c68b93b57d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/driver.log",
+      "sha256": "7af3a4de29ba0c5f3b2fb8e9952b72bdbd03973cfb078c21a3e79eac654f1732",
+      "sizeBytes": 3166
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/measure-c128.json",
+      "sha256": "13c7d1b42f050d00a76e094021efc2908a52018425f4222e139c4a2d8af8cf69",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/measure-c16.json",
+      "sha256": "011d46a4fbecc178ffc44b80c092df0eec9784d8c2a4a16899b826e6df9e4582",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/measure-c32.json",
+      "sha256": "823a008ebd8bce0d595e2254cab2aedcedfb0431f7b49583c23c5c24051ad202",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/measure-c64.json",
+      "sha256": "7bd2a4b58d22c2df66437bf6b952cfbedc657bd40f4dedd4f28e56e2a0453fe4",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/procs-ready.txt",
+      "sha256": "b334b730d21f5142755cf3ae26dfb44e3ab938a767408d4c0782a0a072e1fd56",
+      "sizeBytes": 842
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/pss.txt",
+      "sha256": "5c65a2e7dbc9fbfcad5b86050eea19e354433278b65e45ead5477eeb293232f3",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/warmup-c128.json",
+      "sha256": "3519012934b6ee9ebb399f1a6c115baed5ae91bf140ece90d1929f94638221a8",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/warmup-c16.json",
+      "sha256": "13e517b2200637545009bd5430649f5deabce4d0aa767e69f14736c635fcf30c",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/warmup-c32.json",
+      "sha256": "e1efb4b589c3c90c4525fa0d35474f8b1b83ef011d3bdb65f7275c1572dc1203",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rails-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rails-on-r3/warmup-c64.json",
+      "sha256": "ae648408b734f5b6bed3d83bc177d9cd0a47ed83d420dd341d00d900bfac49d1",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/affinity.txt",
+      "sha256": "9ca00ba8128a6e4c429d7827b76f830eb9f5cfa5180bbff34eb896dfe19faecf",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/cache-env.txt",
+      "sha256": "0f0080f664f1adb1c96da9f73d39b8ff47758f84d50db26c72b6955326f1f0f1",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/cells.jsonl",
+      "sha256": "d7ef20a6719aecbcbab89968a978c1fad83ef620a7a8ed45f58299a2cd5d1a98",
+      "sizeBytes": 1363
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/client-time-c128.txt",
+      "sha256": "dec919a949f0c68f0bc3094147fb393db4e20ba2cc4188af91d96c7100030e43",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/client-time-c16.txt",
+      "sha256": "7b5d7f021c2b7bfff1d99e8bcee171566fc0913b730c53aee5f3f94405bb81aa",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/client-time-c32.txt",
+      "sha256": "f69fe66d1387f5b2a10edff80dca8e6aead3efa3d25d934da352e2bd8b78925e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/client-time-c64.txt",
+      "sha256": "4b810417313e8e54bd663e654570e00bff729c0d9d5318c0a613aa9e2a4121a0",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/driver.log",
+      "sha256": "10e670bea6977e759800f65ad87a287d772c883511dd701d6673a5d2611a0d8d",
+      "sizeBytes": 3059
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/measure-c128.json",
+      "sha256": "68bf25e27b59a307a4e3377421685125da262e9afd6a6438d410e1aab45b95a1",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/measure-c16.json",
+      "sha256": "2ca876fe026b877d7ea37f71410e2d2359874b7c2dae339c7690402e23314d62",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/measure-c32.json",
+      "sha256": "ae14241c472e55f4ef71ce6b1415e9eef44bf6710c6b2953e30abcf83007e62a",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/measure-c64.json",
+      "sha256": "54b38bc83f20a2db33c7ee02c5513f277b7811380c0e6da354a171c4e9fe96e1",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/procs-ready.txt",
+      "sha256": "5fff6635f83694667f75c13d7d0d9d2e4a2b2a67cb216d5be95423855b08814e",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/pss.txt",
+      "sha256": "ca39453a432b4eb5045cc5ef960c825ac6c0189ab524f2e266b14a88a7aa3619",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/warmup-c128.json",
+      "sha256": "8e6044a1a7cbf0d1e93c3d69c596eff7664e5014af621bd3837b3c1fbc8d328a",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/warmup-c16.json",
+      "sha256": "791bd4d344174a8d98d330155aada79b48bdbd2d48601882d6a2e1cc4154081e",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/warmup-c32.json",
+      "sha256": "c97ab3f89462b5471d872c09d4f7b43fbf2db5d22c224ddea27b60359175613e",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r1/warmup-c64.json",
+      "sha256": "33a8323079f249d72ddd367e0d2069b6a45d390946dadf4ffc29ab574c334077",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/affinity.txt",
+      "sha256": "1d8ac4d4997e10215badd47b0f446c33df7d93d88ed4dcdadd0f3d133fa01e7d",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/cache-env.txt",
+      "sha256": "faab610d16c49132d05c96b995cab78c9d0497c657ff334bbaa150dba452ca75",
+      "sizeBytes": 78
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/cells.jsonl",
+      "sha256": "c23396ae0e4089fa4f7abcc94a274acd7de24e2a8c67a38781061edd4144b2d9",
+      "sizeBytes": 1366
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/client-time-c128.txt",
+      "sha256": "cb3eccddac7343ac8f335e9d1df2fc599e9047aef988e822b0ea2c40a3e3c2d8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/client-time-c16.txt",
+      "sha256": "2271c7120e747e4a634500c77d18b42a54bb1e1b5acef0deb68fa091a695e00f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/client-time-c32.txt",
+      "sha256": "135c9d90a18ac35f13d131d158b4058ef135f92d7deeb019433f76412000d39a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/client-time-c64.txt",
+      "sha256": "0676e62a8a4562375603ac0997eceff2ae30140496537983791a0eb87e79fe4e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/driver.log",
+      "sha256": "c4620bd4ebc1e1fe359677c72ac5e7a9d151696c62c0574819f32268c4e83d05",
+      "sizeBytes": 3065
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/measure-c128.json",
+      "sha256": "1f3732e279cf849474c514ff5292a1daf54e6cf7339a77d2ef5a1aba53517e05",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/measure-c16.json",
+      "sha256": "5df1c93a0285a536efde0beecee29b25e6804bc3ebb3cbdf75b81f17a549198c",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/measure-c32.json",
+      "sha256": "f922a513803c88cd6127650a96c6375c889bd9cc9f33d4938754276e01d60f41",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/measure-c64.json",
+      "sha256": "c7f25bdf97c82ebdeee431dfd3afecbbb6bc4d783c1b2507ebbb9336c862a4e4",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/procs-ready.txt",
+      "sha256": "4139ed25610ca06b3128c2f3050edb72029c025134943b8d2da11efe29dd8de9",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/pss.txt",
+      "sha256": "017a1988681e79996d1c9332ad2ee0e01f2fa8884474ca73d6511dfc6557c4a4",
+      "sizeBytes": 177
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/warmup-c128.json",
+      "sha256": "7f3053a7f4f6f5f2f10a50fb3a60d9d013b6fb9034180d389a69bbeb1fa5739b",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/warmup-c16.json",
+      "sha256": "aa1d63fbfd154b211a2be6227108f34e48345a49140faa65865ec08338f36910",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/warmup-c32.json",
+      "sha256": "d42b7f095ff235b1954dc891a5f4be6c79d710531a5c2e9fa2a21b18024b8793",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r2/warmup-c64.json",
+      "sha256": "7374d014c9c299aafd0fe476a53a3b993fbc8c3b0495a0e68826996d8e9e20fc",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/affinity.txt",
+      "sha256": "e1e7ea77bc4dbb35cacab1f7c7fd56b28d8d34cea7b0258c89e3ed2138f3dbe9",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/cache-env.txt",
+      "sha256": "1ebffcb8171d0aaec00edc87cb6d258cd54a514a7c3ff0537279e2b77bb5fc4c",
+      "sizeBytes": 78
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/cells.jsonl",
+      "sha256": "ac1d10ea7a71552079d67b3bcbe13cfa801b94477e2d5baf5b7767cef235a856",
+      "sizeBytes": 1365
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/client-time-c128.txt",
+      "sha256": "52d48a66038be18fedef28cffdc9d63d619c6328b2f8cfcb2b82d3f7dea5ea83",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/client-time-c16.txt",
+      "sha256": "c451cfd135743f2231a4f8f8244d3a9e5656371670e21122d18c6422b42b8004",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/client-time-c32.txt",
+      "sha256": "cfd9bd68591814a266456f4ad4d9889158306d9a5a448b495c775bfe7d8105a2",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/client-time-c64.txt",
+      "sha256": "7934fa616bc329d765eebcc5fc40636a69d07bf7abfd6062a616dfc2758c76e8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/driver.log",
+      "sha256": "f8de7b87eafc73725c7cd5ff13e7bbfa043240daea069ed566efcdf9e26229e9",
+      "sizeBytes": 3064
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/measure-c128.json",
+      "sha256": "76d5fe292b34209519758f5b2f971f45896965bde75df1ce06bf37e624865d24",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/measure-c16.json",
+      "sha256": "d9f3b85d9842636fd5543f9fdb3ef461925cd621678197d3ccd94f826efee874",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/measure-c32.json",
+      "sha256": "f865281b68ccc198c46bd09460b70d7697c0583a1adcfc68458552a50f036a85",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/measure-c64.json",
+      "sha256": "3c20be9a4c5125b4ca2c6c06c2c09bc809582b59255cda25404fda558cf1a776",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/procs-ready.txt",
+      "sha256": "fca56a8424be1e8ba95fb6a35c13eb2b936b4b4d9a90dbabc70dec11adfc3684",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/pss.txt",
+      "sha256": "bc9aac2b37747642f34662ee5e5ea97d8e061dea97977a76e4601a2a3120525a",
+      "sizeBytes": 179
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/warmup-c128.json",
+      "sha256": "6e746e7ccc6bb3563636bd345396db296a4382e1865748db11fbc4904c2a67ac",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/warmup-c16.json",
+      "sha256": "0b456e5fd8733b14ebcfc1b23f2088942d32deb53c0c189f40e3ed4211b19170",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/warmup-c32.json",
+      "sha256": "64c150be84ba3199dab5aac51e461dd17ab1261735a438abd5fd90a3789190ca",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-off-r3/warmup-c64.json",
+      "sha256": "5c55d7607c1da886e2774d0010aa86cbdce0eed67461eba32369f4cb643ce0f4",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/affinity.txt",
+      "sha256": "b90ce8efd12722047517a5dd58d8d60d13986fb81f31dff0c6d1fdb108887eca",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/cache-env.txt",
+      "sha256": "9e987d0bdce0e8c1c104cb15561c86b1d09cfa2df997d0807fcb4f33327280f8",
+      "sizeBytes": 79
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/cells.jsonl",
+      "sha256": "d1e0f4f1afedbc4ddff1faa296f09435135c3e7dc7e36a4c8e0bb9012233927f",
+      "sizeBytes": 1360
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/client-time-c128.txt",
+      "sha256": "f1e234f2e76b76048d10bc62503a5e96c8ea4c9772113f22533175b00f0c9857",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/client-time-c16.txt",
+      "sha256": "8e6ad7094e0798cf1eb5b7c8b3426a2d9f65b892a382ce6d1819cd7ab0f0af53",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/client-time-c32.txt",
+      "sha256": "479aba9d1b928d38e8c9f9c443b778a745753907a66f712012c898a7ab247b91",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/client-time-c64.txt",
+      "sha256": "a07be7dcd7f21819717515fd2544fa3007eecf81322494797c1ce46e335a320f",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/driver.log",
+      "sha256": "44c476167e2a94215d96aed879c87aa64aae33e857f962d3347688f030aa9df5",
+      "sizeBytes": 3058
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/measure-c128.json",
+      "sha256": "f4c9224ce70cee37b06c147644316079dd86c6499ad412f4cb78283b260f665e",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/measure-c16.json",
+      "sha256": "242420560349086693772b77cbaaa877da5f8f48dfd2af7aa2b06b0d2eedc4a6",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/measure-c32.json",
+      "sha256": "fe5ae2a8b125fd64a598b07a99af4e55149a8724bbdcd3a3f5558cd253fd8830",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/measure-c64.json",
+      "sha256": "9a3bccf950b54d4f6789fd61ea85807fab7dff9d4500444d152218264b7f2c10",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/procs-ready.txt",
+      "sha256": "05513f4fced99b39b79c221df2762c3552e652cfff40be9365850e9893418dd0",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/pss.txt",
+      "sha256": "fdc109ae9bb758d01c0421cae904ca6577e15439b96554915702316ca6da1be1",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/warmup-c128.json",
+      "sha256": "c3662d4e85ecb1d3c843815abfa062d8c78c9186451fe72fdd9f278588478b36",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/warmup-c16.json",
+      "sha256": "7ee2070865a629ecd337a8017c220a07a46290ea630f844c0302e61c2a3d31a5",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/warmup-c32.json",
+      "sha256": "82bdcb02882904b4a62287f374fa8b781cabe3a133002a8ed9c5f2e45be0905b",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r1/warmup-c64.json",
+      "sha256": "b42d3ce1053cef7048bf7d8650b545146be4e1f1bdf9c8bdb58bd08b2ce1e29d",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/affinity.txt",
+      "sha256": "16ab42e65f12d4104b9e9cb1a5c8d9b02efcb3f64b91e1c908dea4e5df5b2a11",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/cache-env.txt",
+      "sha256": "1d793cf9621b0c2711bcd1222ea33e4a5e947b41e0002d39f8cf7897dd8e9246",
+      "sizeBytes": 79
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/cells.jsonl",
+      "sha256": "0b25f916ab6feb3c86d605c15ceb28400e2e883d5b897a3edd69a582e498c7ce",
+      "sizeBytes": 1357
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/client-time-c128.txt",
+      "sha256": "f4fa01a89cf9f104a49b91890917bf5bdd17ab5dbc37e1b141561bb6e94f1a54",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/client-time-c16.txt",
+      "sha256": "f7a12577a84004f868aafe7213be446b8a6f470eb13afa93641ed7e025cc47cc",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/client-time-c32.txt",
+      "sha256": "2fb84a83dd4cdc4ce9005396998b3598890030a77c173c24d62426e34b5e26ef",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/client-time-c64.txt",
+      "sha256": "5af3386e5671790902642a6abd6f15430bd3c43b918af484f5795332eb899fe2",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/driver.log",
+      "sha256": "3aeceff25d628545cf888cc3735c2f46eeb0e3d6912be2d21d0db99abe644ed6",
+      "sizeBytes": 3055
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/measure-c128.json",
+      "sha256": "ea23480b9134f7a8994fbec5714fa4c04da535e1e0d276f493d190ec19e834dd",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/measure-c16.json",
+      "sha256": "107c2b45356ef3cc68f5347ae6df7f7696ad344e7c877d83ded16df650c81ea2",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/measure-c32.json",
+      "sha256": "5e0a57120cd9f778b5dad43275762578308cdeefc03dd66f0697ce69cb600496",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/measure-c64.json",
+      "sha256": "58b9a58eac620849204cff6fa5dcbab46aede2e011c9de1b34b508056118f843",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/procs-ready.txt",
+      "sha256": "7a0087025ac681d5ecc3e2a6ef39f8d7fde1d41f7534b411e4b83cb02c99c0cc",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/pss.txt",
+      "sha256": "05ffb3f8a42499abd2b13a6c124c0c154390b56bd4a51e5cac409b383b4b5c23",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/warmup-c128.json",
+      "sha256": "a9709de0bcff65fd0f385b6361e7a3d0a90164a19f42d3e6ca35bb61eb54e1e5",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/warmup-c16.json",
+      "sha256": "a206d43c16799e09dd379128e353db3e20af06296dd12ec188eeed56f1105456",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/warmup-c32.json",
+      "sha256": "d2aa1e4276e71aaf4b97532719a424268531003a4d57d9ee7bc0d0d6a99c49f7",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r2/warmup-c64.json",
+      "sha256": "773b5d12d509465bf784e8679657c249fad065d9f42c9cf0b2e1c152410c56c6",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/affinity.txt",
+      "sha256": "18557e087d560d64cc30ddacc119637ac7ab4e8699d00bf5ef4e0885a9b01de4",
+      "sizeBytes": 11
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/cache-env.txt",
+      "sha256": "f51663c203dfc1ace29274460dcb07dd23b21a7eaf326bc1e26c93d1cb61e7c7",
+      "sizeBytes": 79
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/cells.jsonl",
+      "sha256": "4d36cc6b823345929ad5840ea2b86b31ccdce7cfb0c86c439176b8b765dabdda",
+      "sizeBytes": 1355
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/client-time-c128.txt",
+      "sha256": "6146afebe6249483f61154e35027803a1e5b89840f1bc13872f74858e5dea644",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/client-time-c16.txt",
+      "sha256": "3bc51b0334225ac162055030ff15c601852619fd7b9badf9822b70a337bb6703",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/client-time-c32.txt",
+      "sha256": "eaa689070e668b5f79a37d2398b38c178e3d389484651ef63418d62f5f5dffd7",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/client-time-c64.txt",
+      "sha256": "994b145b9aa9279cd97e64a243c2ea66044b2ca82b828d58a3b51d796586f00a",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/driver.log",
+      "sha256": "954cbde69410e256a8d9f7d6a79db030d9beccfd0384b1b33730e77b8e73da13",
+      "sizeBytes": 3053
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/measure-c128.json",
+      "sha256": "8dc03cfa496be2ce1c67ea8362b161152e4bd50bec6ab81e7e97d91168bdfd7f",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/measure-c16.json",
+      "sha256": "bbb1ab74dda2a838a0770a05a8fae27f547688c4c3040dbcd45134c1a761b541",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/measure-c32.json",
+      "sha256": "d331fdd877f45ddd88d1b36e5f78c0f0de626c26abc3819e2ac5713efb45e65b",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/measure-c64.json",
+      "sha256": "61d6b543c2fce3b61940d69c9294e1c6b7f82ea867c6a6192240cb81e375e47e",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/procs-ready.txt",
+      "sha256": "af44e6b094086f65d79ab898d5266e49a1d0ccf03cee409a2ab950bf1709d8e0",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/pss.txt",
+      "sha256": "47521d4838af6a28ff599416f8255c28daf29962575a1595d060900c3bb96463",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/warmup-c128.json",
+      "sha256": "4e01421075fd2fb31ac397d7c268ad13dcb08403ff1afe4d22ca61ca7abbb31c",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/warmup-c16.json",
+      "sha256": "0a34156a845596502801790dc32fb5219db725c004d5299650ac06573bf8bd80",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/warmup-c32.json",
+      "sha256": "35ce0234b604cb3bef1a197f93220266f38cde282fd10317090cea95b3b8887b",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s284-rust-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/s284-rust-on-r3/warmup-c64.json",
+      "sha256": "6223203a4f2785e9abf8052a6b918879d5ff846d89bac66cacc78638de5ad01c",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/affinity.txt",
+      "sha256": "9da8c0a24c3d694800b4d229cf707d455ace53fa98e6e304a6d96427c9c397e0",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/cache-env.txt",
+      "sha256": "d9739165fe857fab6189f16a9ed221b0acb5c8cdcadccaf34f1e98df173c38b7",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/cells.jsonl",
+      "sha256": "b83c101d005da827d0ff1411f8935cd42fa8193400c76eac1d1e1b17bf6a0e67",
+      "sizeBytes": 340
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/client-time-c16.txt",
+      "sha256": "ce57902d82dcb64f458d114de6384cdfe3216e73c7d25e64b0302703495df837",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/driver.log",
+      "sha256": "3e5ad4058c56e17d0562907e4e4e83d0891ea929dbce29391835c01f9f6ae4c2",
+      "sizeBytes": 1348
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/measure-c16.json",
+      "sha256": "5c9edb4c87a8b6e30affa678d5850914a427c0c9e88f49e5b020cf5f26cc173e",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/procs-ready.txt",
+      "sha256": "1a9f39b66b35a9e72984c2d76ca165b4c3a23512ccf9bcd30d2d5befc1bd659c",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/pss.txt",
+      "sha256": "54fbb7b240be0947b034f8c3b6d5e26bf3485d61a1b32f6f648442507a775ee4",
+      "sizeBytes": 50
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/server.log",
+      "sha256": "da28da858e22bfd6fac45a63bbed6b7e7ce48929f4ba3f04c44ee8445df8c540",
+      "sizeBytes": 755
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-off/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-off/warmup-c16.json",
+      "sha256": "8ca659150ea3650fe5589047f5cbdfd8423317587595406ec8aa8d33b70b212e",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/affinity.txt",
+      "sha256": "0e25ec89e476e34df551f8a76f7527e7c6eece1e1d92c4a826db44da765efb8e",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/cache-env.txt",
+      "sha256": "1559398595aec2b8612e92f36f4f613961bdede102526f54531230346f2cb70d",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/cells.jsonl",
+      "sha256": "5b7dbfe1a4441be237b765c579d92ceb008f4d8178f8f82bb6f6c1961fbd5bd1",
+      "sizeBytes": 337
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/client-time-c16.txt",
+      "sha256": "54e6b7aab0e42b418167c8c28d98ebfd9c3fb0090ee6c09db074c7276b056ac0",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/driver.log",
+      "sha256": "1b4bdc57e24672b0ad5e0dbbf224aa0149e2d6e813fa875c89c011cdf7dee371",
+      "sizeBytes": 1344
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/measure-c16.json",
+      "sha256": "0212a16d5cb0b3012e2aa267d042b243f05e6a206859346679345f736194b363",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/procs-ready.txt",
+      "sha256": "68c5e506a6700b4b0e3268d098c642e16c294587311f58fac998638ba2f0a09d",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/pss.txt",
+      "sha256": "db94e48644eb93e162fa1bdf0b26f253bda5865acd415191d273dcb3cac91b90",
+      "sizeBytes": 50
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/server.log",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/server.log",
+      "sha256": "987c7ff49e5e6bf66ba723eb26cff2c323145cd095862f6a44657d9e4cc8ba9f",
+      "sizeBytes": 775
+    },
+    {
+      "archivePath": "sweep/runs/shake284-flow-on/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-284/runs/shake284-flow-on/warmup-c16.json",
+      "sha256": "cfbb010a8eff7cee702238e6a8f92eacff5d8f9cf1b3a3141fdbd9142283cd64",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/affinity.txt",
+      "sha256": "427c274a2e2cd7e8ba2ce5423f4040946f9c2673549042e91edfaf76a181d10e",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/cache-env.txt",
+      "sha256": "263f2fba0b5e10f486db9e3d18bbd9b87a444f14085f65227c2dd1b465c07db3",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/cells.jsonl",
+      "sha256": "5ddd5a62da5139f3ba61a34087aacc1c21f99cd18719dc1e1e0546a4726acc59",
+      "sizeBytes": 671
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/client-time-c16.txt",
+      "sha256": "6602278ef162ee804a438199b5b5fd29c2f5b143e4725ab5a8f397d5d22d1f09",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/client-time-c64.txt",
+      "sha256": "3e769380226e31f3d44cdf40cd61da33106028856b4af28a4f3a9194688f3df5",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/driver.log",
+      "sha256": "e54b524ed333e52c8caaceb7f5c25ede8c0a1066a6ac2b354a6f31ce0aad36c7",
+      "sizeBytes": 1908
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/measure-c16.json",
+      "sha256": "3923ade7436dd742f4ae70d76b326479a870ec4985263905359136e85bdf857e",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/measure-c64.json",
+      "sha256": "b983240f1f8342ce9b0df38c9fa1a2fb453112abfbf7425d2278afec3cb932e1",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/procs-ready.txt",
+      "sha256": "26ebc3b39b5a6ee31a2a7a4f95ed14ae91d1df2e63c319abdf4eb8fe0439acd7",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/pss.txt",
+      "sha256": "0404a67532084c31342241a84fce5718f94cd3155b4b836e5815fd4e7e86008d",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/server.log",
+      "sha256": "a9aa6975e055599b9d639efacc20295d70970aa7702db2053b84c681e78bfd6c",
+      "sizeBytes": 627
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/warmup-c16.json",
+      "sha256": "c77df57f46c6df9981ddbfe8a10f660f626f45fd21f323ac9acb9031d5950c66",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-1/warmup-c64.json",
+      "sha256": "0cc439ace98f06db2ada4365eb14817d2d1e6ceedb9b2f6a77e03d5d68f49280",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/affinity.txt",
+      "sha256": "998d4c1fdcefb369882e7fdc0bd2eb744b12b6096c786a77d7363f8275730ffb",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/cache-env.txt",
+      "sha256": "263f2fba0b5e10f486db9e3d18bbd9b87a444f14085f65227c2dd1b465c07db3",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/cells.jsonl",
+      "sha256": "bf16e3f7d3e0f1ae9f208d0c4f292bf34f65b2cdc919704f0d55b097f8bbd6f7",
+      "sizeBytes": 670
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/client-time-c16.txt",
+      "sha256": "a12d7b66be93419615aa4529bd3eefbaac6ce32484c69f5b0ad78ede784dad55",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/client-time-c64.txt",
+      "sha256": "c09a374c48db38beac40bed98ca17f9f8ddfbbeb8df0dbb932d63e446ddcb4bc",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/driver.log",
+      "sha256": "60e7cda67e91ef458b258ebd539dc359c7662ca6f61f0a7b73b056beb2424196",
+      "sizeBytes": 1907
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/measure-c16.json",
+      "sha256": "cbb2393abaddb206d24a802741379f785ad61c34c2ee68ffc07f8891f8146894",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/measure-c64.json",
+      "sha256": "4a0bdd042b232219fd62472a2f279d2495142e6cfa3511456e7c2272a5d1bb67",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/procs-ready.txt",
+      "sha256": "92cf1041d090c8536708cb85c415823eba3bed45b6412242cba1be8237a58c5b",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/pss.txt",
+      "sha256": "0404a67532084c31342241a84fce5718f94cd3155b4b836e5815fd4e7e86008d",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/server.log",
+      "sha256": "9730bc7996464801fdb6eda2d1d52ebaf47ff19328a7d7cd6338635d1262a5d2",
+      "sizeBytes": 627
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/warmup-c16.json",
+      "sha256": "9f30345b366bd45ae4fcfd0814e86402acc0d604ec390b59d804185d42af7fea",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-2/warmup-c64.json",
+      "sha256": "a79d0e8b258eaa4b3e15ea882ee70409cd3885e9b8eb48881365bbd664543a94",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/affinity.txt",
+      "sha256": "36948eeed357678494426a0e4490a5d6e6c8a7e6eb7ba95551969e987aa16e3c",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/cache-env.txt",
+      "sha256": "263f2fba0b5e10f486db9e3d18bbd9b87a444f14085f65227c2dd1b465c07db3",
+      "sizeBytes": 116
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/cells.jsonl",
+      "sha256": "3fa90284b2a9736828df63d20d5d5894ce56a5fea718bd9d125a695d5e218b69",
+      "sizeBytes": 666
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/client-time-c16.txt",
+      "sha256": "1a11fec073deca91bf28da53cd5820e259ab1650a5ad2566f170d595b664dc70",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/client-time-c64.txt",
+      "sha256": "8cdbe52b6548d7e9c3dd9e9b2933b5fdd6263ca5cfcea818d591129c20c373ee",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/driver.log",
+      "sha256": "e627fc0aafa55ed227562b17d7be114a97b81fb3cf517f1fb3427775023cc666",
+      "sizeBytes": 1903
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/measure-c16.json",
+      "sha256": "7174606c7a1cd4b394a20d0d9f2702b7bde4ee61e49dc681b43803a772bc4cf5",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/measure-c64.json",
+      "sha256": "3c0cb8152e3a9a44d16257c66841994d60fee6f990c1ed5cb27283c17968f034",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/procs-ready.txt",
+      "sha256": "06e36ddf9b7319e12e140fa5d3946cff8b1a9086014c29373b08daaae0a368b2",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/pss.txt",
+      "sha256": "0404a67532084c31342241a84fce5718f94cd3155b4b836e5815fd4e7e86008d",
+      "sizeBytes": 100
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/server.log",
+      "sha256": "43294e00b6ee753855812becad32dfb0be83f8e6309ba3ee30849fba25ae2039",
+      "sizeBytes": 627
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/warmup-c16.json",
+      "sha256": "89c9b2e563fa3287e4c332034426ade6df5f65840063bd6f7035f7d1d014abcd",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs-283-ab/ab283-off-3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-282/runs/ab283-off-3/warmup-c64.json",
+      "sha256": "3278e4e278f64a9a451fcd8aa3c33139e78880dfa63d4cbc96e090916f973b71",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "tools/Run-Gates.ps1",
+      "sourcePath": ".agentlang/lang-284/Run-Gates.ps1",
+      "sha256": "3576f619d4de8b9c64884476102e02d4afe1565be3c3081c8b8bffce4bcaf6cd",
+      "sizeBytes": 4351
+    },
+    {
+      "archivePath": "tools/seal_284.py",
+      "sourcePath": ".agentlang/lang-284/seal_284.py",
+      "sha256": "375b2b9af68f1f8460a2190f8e31a158535e1cd7a5dbf6afca3fe9285f1983e3",
+      "sizeBytes": 4295
+    },
+    {
+      "archivePath": "tools/secret_scan.py",
+      "sourcePath": ".agentlang/lang-281/secret_scan.py",
+      "sha256": "ea7574d42b6885f56346dcf934a4f465c76ffd6cbb2940dee18a5d5b17023587",
+      "sizeBytes": 1597
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-db-tests.flow",
+      "sourcePath": "applications/campfire/server/server-db-tests.flow",
+      "sha256": "2dcc87c5b5800075c4b2e8ae2ba4b30eda079518fb9cbfa1a1c452f7706049b6",
+      "sizeBytes": 12802
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-db.flow",
+      "sourcePath": "applications/campfire/server/server-db.flow",
+      "sha256": "860dd0d95e53239e0ac56d03a548e85c197fba85648e1ec67f765d6bbcc2070d",
+      "sizeBytes": 39347
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-request.flow",
+      "sourcePath": "applications/campfire/server/server-request.flow",
+      "sha256": "467b56574c51fca26562d675a7ee023d5add13f091f8e9d08c231165cbc6ad25",
+      "sizeBytes": 20683
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server.flow",
+      "sourcePath": "applications/campfire/server/server.flow",
+      "sha256": "f548bc47fbe43a891b114308eed3f1291b73a2e36484a146ec2af522f05ea7f6",
+      "sizeBytes": 49145
+    },
+    {
+      "archivePath": "sources/docs/PENDING-REVIEW.md",
+      "sourcePath": "docs/PENDING-REVIEW.md",
+      "sha256": "d079c459601b40746a670a853578317e86b5fd4d2d01b97bf3d9748e76cbff6f",
+      "sizeBytes": 28323
+    },
+    {
+      "archivePath": "sources/docs/WORKER-STORE-PLAN.md",
+      "sourcePath": "docs/WORKER-STORE-PLAN.md",
+      "sha256": "1a74299ece0898b548aae2ff0595ad7f98080183a11274af23074f02ad71a001",
+      "sizeBytes": 13704
+    },
+    {
+      "archivePath": "sources/scripts/Test-CampfireFlowServerParity.ps1",
+      "sourcePath": "scripts/Test-CampfireFlowServerParity.ps1",
+      "sha256": "5da4ef2d1e6020673fbe8025a26e074d75b399c2688b4205826ccc26fb73f7cf",
+      "sizeBytes": 16979
+    },
+    {
+      "archivePath": "sources/scripts/campfire-flow-parity-linux.sh",
+      "sourcePath": "scripts/campfire-flow-parity-linux.sh",
+      "sha256": "09f11194459eeb47f2fa029bcf8df5709c68f6467c6696209aaf1491d7844799",
+      "sizeBytes": 2686
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Core/Core.fs",
+      "sourcePath": "src/AgentLang.Core/Core.fs",
+      "sha256": "f1b52cc29820934e2c44eda42346f311d38cc101d06dd4e393d48aa0934b78a4",
+      "sizeBytes": 12004
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Core/Parser.fs",
+      "sourcePath": "src/AgentLang.Core/Parser.fs",
+      "sha256": "1f8083c193321a9fb77dbb5adc18ebde982307f4b964c474699891dbac2427d6",
+      "sizeBytes": 44756
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Core/TypedIR.fs",
+      "sourcePath": "src/AgentLang.Core/TypedIR.fs",
+      "sha256": "b70fc93b505eec80b7e51aaf39e6ecc5e37caa1c33ba6ef6138a09e689289921",
+      "sizeBytes": 103519
+    },
+    {
+      "archivePath": "sources/src/AgentLang.FlowHttp/AgentLang.FlowHttp.fsproj",
+      "sourcePath": "src/AgentLang.FlowHttp/AgentLang.FlowHttp.fsproj",
+      "sha256": "e39ad6f68796421d2fcc38d3a52dd2d2194cd50a98c78321d2bf023ad45ea955",
+      "sizeBytes": 727
+    },
+    {
+      "archivePath": "sources/src/AgentLang.FlowHttp/FlowApp.fs",
+      "sourcePath": "src/AgentLang.FlowHttp/FlowApp.fs",
+      "sha256": "7466b270aca923ec359e9fc1e8bece389d6ff5da3bbbdfda3fe7db0f5dbb0d4c",
+      "sizeBytes": 12149
+    },
+    {
+      "archivePath": "sources/src/AgentLang.FlowHttp/Store.fs",
+      "sourcePath": "src/AgentLang.FlowHttp/Store.fs",
+      "sha256": "6eeaa4d6e46384b37165672a9f9f6ef48b2addf1d4d38d9a5695f9ba39ef328e",
+      "sizeBytes": 9292
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/http_host/flow_http.h",
+      "sourcePath": "src/AgentLang.Llvm/native/http_host/flow_http.h",
+      "sha256": "69fcef8166f5810e9f74f4015a6e29e919c8d7a4eb96a29cb5cfd0622fe3b503",
+      "sizeBytes": 4377
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/http_host/flow_http_db.c",
+      "sourcePath": "src/AgentLang.Llvm/native/http_host/flow_http_db.c",
+      "sha256": "f9087e008c999ce3237dbf9887b2190d6d6661d63365c059782f116e482ed35a",
+      "sizeBytes": 17707
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/http_host/flow_http_host.c",
+      "sourcePath": "src/AgentLang.Llvm/native/http_host/flow_http_host.c",
+      "sha256": "a9f51c4bf30210005b3a0bb2b8c3910e95ddba99056af05f4f48cfa61a39d764",
+      "sizeBytes": 41572
+    },
+    {
+      "archivePath": "sources/src/stdlib/http.flow",
+      "sourcePath": "src/stdlib/http.flow",
+      "sha256": "125261a7b51878c806eded5413fe9f74c64a95db85cc79b1a0a6a4ff70296c93",
+      "sizeBytes": 3794
+    },
+    {
+      "archivePath": "sources/src/stdlib/store.flow",
+      "sourcePath": "src/stdlib/store.flow",
+      "sha256": "79a56857e5513f06076665bc05b200d8e8a8dbdf3a2e8e29cacbb11b8e49bfcd",
+      "sizeBytes": 2858
+    },
+    {
+      "archivePath": "sources/src/stdlib/worker-cache.flow",
+      "sourcePath": "src/stdlib/worker-cache.flow",
+      "sha256": "5a196b65fc70c205e13d0dcc552935897907d4d481b57535abf2503aef7c785c",
+      "sizeBytes": 19505
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.FlowHttp.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.FlowHttp.Tests/Program.fs",
+      "sha256": "30f4e701d4697c0a7fb64a089a7ef1cad5700bf6e94e04f092f0468d5fba835a",
+      "sizeBytes": 21223
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.FlowHttp.Tests/app/counter.flow",
+      "sourcePath": "tests/AgentLang.FlowHttp.Tests/app/counter.flow",
+      "sha256": "0692bd6d6df63515a9ccdfc8add209f15ee06174722f1c7ceaf926debe17113a",
+      "sizeBytes": 13121
+    }
+  ]
+}
