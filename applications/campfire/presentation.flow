@@ -796,3 +796,229 @@ test campfire.presentation.body-with/mention {
     let body = option.some<String>("<div>Thanks <action-text-attachment sgid=\"eyJfcmFpbHMiOnsiZGF0YSI6ImdpZDovL2NhbXBmaXJlL1VzZXIvMTI3MzI2MTQxIiwicHVyIjoiYXR0YWNoYWJsZSJ9fQ==--x\" content-type=\"application/vnd.campfire.mention\"></action-text-attachment>, ok</div>")
     expect string.contains(Html.value(campfire.presentation.body-with(body, [user])), "<span class=\"mention\"><a title=\"David\" class=\"btn avatar\" href=\"/users/127326141\"><img src=\"/a\" width=\"48\" height=\"48\"></a> David</span>, ok</div>")
 }
+
+// ----------------------------------------------------------- file attachments
+//
+// Messages::AttachmentPresentation for a message with an attached file: a
+// video or image preview sized like Rails sizes it (metadata dimensions,
+// scaled into the 1200x800 thumbnail box with Ruby's Integer and Float
+// arithmetic and Float#to_s), or a file row with download and share
+// buttons. Which files preview follows the reference environment
+// (ActiveStorage.variable_content_types; videos preview since ffmpeg is
+// present, PDFs do not since neither poppler nor mupdf is). The signed blob
+// id and variation key come from the caller (signing needs the server's key).
+
+record MessageAttachment {
+    message-id: Int
+    filename: String
+    content-type: String
+    width: String
+    height: String
+    blob-token: String
+    preview-token: String
+}
+
+record Dimension {
+    present: Bool
+    real: Bool
+    value: Float
+}
+
+fn campfire.presentation.video?(content-type: String) -> Bool {
+    string.starts-with(content-type, "video/")
+}
+
+test campfire.presentation.video?/prefix {
+    expect campfire.presentation.video?("video/quicktime") && bool.not(campfire.presentation.video?("image/png"))
+}
+
+fn campfire.presentation.variable?(content-type: String) -> Bool {
+    doc "ActiveStorage.variable_content_types in the reference environment."
+    var found = false
+    for kind in ["image/png", "image/gif", "image/jpeg", "image/tiff", "image/webp", "image/avif", "image/heic", "image/heif"] {
+        if kind == content-type {
+            found = true
+        }
+    }
+    found
+}
+
+test campfire.presentation.variable?/set {
+    expect campfire.presentation.variable?("image/jpeg") && bool.not(campfire.presentation.variable?("image/bmp")) && bool.not(campfire.presentation.variable?("image/svg+xml"))
+}
+
+fn campfire.presentation.extension-of(filename: String) -> String {
+    doc "ActiveStorage::Filename#extension_without_delimiter: what follows the last dot, if any."
+    var dot = -1
+    for index in 0..string.byte-length(filename) {
+        if string.byte-at-or(filename, index, 0) == 46 {
+            dot = index
+        }
+    }
+    if dot < 0 { "" } else { match string.slice(filename, dot + 1, string.byte-length(filename) - dot - 1) { none => ""; some s => s } }
+}
+
+test campfire.presentation.extension-of/last-dot {
+    expect campfire.presentation.extension-of("a.b.JPG") == "JPG" && campfire.presentation.extension-of("a") == ""
+}
+
+fn campfire.presentation.variant-format(filename: String, content-type: String) -> String {
+    doc "Blob#default_variant_format: a web image keeps its extension when the extension names its type (case-insensitively), else the type's own extension; any other image becomes png."
+    let extension = campfire.presentation.extension-of(filename)
+    let lower = string.to-lower-ascii(extension)
+    if content-type == "image/jpeg" {
+        if lower == "jpg" || lower == "jpeg" || lower == "jpe" { extension } else { "jpg" }
+    } else if content-type == "image/png" || content-type == "image/gif" || content-type == "image/webp" {
+        let own = match string.slice(content-type, 6, string.byte-length(content-type) - 6) { none => ""; some s => s }
+        if lower == own { extension } else { own }
+    } else {
+        "png"
+    }
+}
+
+test campfire.presentation.variant-format/reference {
+    expect campfire.presentation.variant-format("a.jpg", "image/jpeg") == "jpg" && campfire.presentation.variant-format("a.JPG", "image/jpeg") == "JPG"
+    expect campfire.presentation.variant-format("a.png", "image/jpeg") == "jpg" && campfire.presentation.variant-format("a", "image/jpeg") == "jpg"
+    expect campfire.presentation.variant-format("a.gif", "image/gif") == "gif" && campfire.presentation.variant-format("a.tiff", "image/tiff") == "png"
+}
+
+fn campfire.presentation.preview-variation(filename: String, content-type: String) -> String {
+    doc "The variation the preview names, as the JSON Rails signs (purpose variation): a video's webp poster, an image's thumb variant; empty for files that do not preview."
+    if campfire.presentation.video?(content-type) {
+        "{\"format\":\"webp\",\"resize_to_limit\":[1200,800]}"
+    } else if campfire.presentation.variable?(content-type) {
+        string.join(["{\"format\":\"", campfire.presentation.variant-format(filename, content-type), "\",\"resize_to_limit\":[1200,800]}"])
+    } else {
+        ""
+    }
+}
+
+test campfire.presentation.preview-variation/kinds {
+    expect campfire.presentation.preview-variation("moon.jpg", "image/jpeg") == "{\"format\":\"jpg\",\"resize_to_limit\":[1200,800]}"
+    expect campfire.presentation.preview-variation("a.mov", "video/quicktime") == "{\"format\":\"webp\",\"resize_to_limit\":[1200,800]}"
+    expect campfire.presentation.preview-variation("a.txt", "text/plain") == ""
+}
+
+fn campfire.presentation.sanitized-filename(filename: String) -> String {
+    doc "ActiveStorage::Filename#sanitized: stripped, with U+202E and % $ | : ; / < > ? * \" tab CR LF \\ each turned into '-'."
+    var out = campfire.presentation.ruby-strip(filename)
+    for mark in ["‮", "%", "$", "|", ":", ";", "/", "<", ">", "?", "*", "\"", "\t", "\r", "\n", "\\"] {
+        out = string.replace(out, mark, "-")
+    }
+    out
+}
+
+test campfire.presentation.sanitized-filename/marks {
+    expect campfire.presentation.sanitized-filename(" a/b:c?.txt ") == "a-b-c-.txt"
+}
+
+fn campfire.presentation.hex-digit(value: Int) -> String {
+    match string.slice("0123456789ABCDEF", value, 1) { none => ""; some s => s }
+}
+
+test campfire.presentation.hex-digit/upper {
+    expect campfire.presentation.hex-digit(11) == "B"
+}
+
+fn campfire.presentation.escape-path(text: String, keep-slash: Bool) -> String {
+    doc "Journey's path escaping: unreserved, sub-delims, ':' and '@' (and '/' for a glob) stay; every other byte is %XX."
+    var out = ""
+    for index in 0..string.byte-length(text) {
+        let byte = string.byte-at-or(text, index, 0)
+        let kept = rich-html.letter?(byte) || (byte >= 48 && byte <= 57) || (byte > 32 && byte < 127 && string.contains("-._~!$&'()*+,;=:@", rich-html.ascii-char(byte))) || (keep-slash && byte == 47)
+        out = if kept { string.concat(out, rich-html.ascii-char(byte)) } else { string.join([out, "%", campfire.presentation.hex-digit(byte / 16), campfire.presentation.hex-digit(byte % 16)]) }
+    }
+    out
+}
+
+test campfire.presentation.escape-path/bytes {
+    expect campfire.presentation.escape-path("a b#é/=", false) == "a%20b%23%C3%A9%2F="
+    expect campfire.presentation.escape-path("a/b", true) == "a/b"
+}
+
+fn campfire.presentation.dimension(text: String) -> Dimension {
+    doc "A metadata dimension as Ruby's JSON reads it: digits are an Integer, digits '.' digits a Float (parsed exactly: an integer mantissa over a power of ten); anything else is absent."
+    let dot = match string.index-of(text, ".", 0) { none => -1; some index => index }
+    let digits = string.replace(text, ".", "")
+    var plain = string.byte-length(digits) > 0 && string.byte-length(digits) <= 15 && string.byte-length(text) - string.byte-length(digits) <= 1 && dot != 0 && dot != string.byte-length(text) - 1
+    for index in 0..string.byte-length(digits) {
+        let byte = string.byte-at-or(digits, index, 0)
+        if byte < 48 || byte > 57 {
+            plain = false
+        }
+    }
+    let mantissa = if plain { match int.parse(digits) { none => 0; some n => n } } else { 0 }
+    var scale = 1
+    let places = if dot < 0 { 0 } else { string.byte-length(text) - dot - 1 }
+    for place in 0..places {
+        scale = scale * 10
+    }
+    dimension.new(present = plain, real = dot >= 0, value = float.divide(int.to-float(mantissa), int.to-float(scale)))
+}
+
+test campfire.presentation.dimension/forms {
+    expect campfire.presentation.dimension("640") == dimension.new(present = true, real = false, value = 640.0)
+    expect campfire.presentation.dimension("320.0") == dimension.new(present = true, real = true, value = 320.0)
+    expect bool.not(campfire.presentation.dimension("").present) && bool.not(campfire.presentation.dimension("1e5").present) && bool.not(campfire.presentation.dimension("-1").present)
+}
+
+fn campfire.presentation.number-text(value: Dimension) -> String {
+    doc "Integer#to_s or Float#to_s."
+    if value.real { float.to-string(value.value) } else { int.to-string(float.to-int(value.value)) }
+}
+
+test campfire.presentation.number-text/kinds {
+    expect campfire.presentation.number-text(dimension.new(present = true, real = true, value = 600.0)) == "600.0" && campfire.presentation.number-text(dimension.new(present = true, real = false, value = 320.0)) == "320"
+}
+
+fn campfire.presentation.preview-dimensions(width: Dimension, height: Dimension) -> List<Dimension> {
+    doc "preview_dimensions: as stored when inside 1200x800, else both scaled by the smaller of 1200/width and 800/height (Floats)."
+    if float.less-or-equal(width.value, 1200.0) && float.less-or-equal(height.value, 800.0) {
+        [width, height]
+    } else {
+        let width-factor = float.divide(1200.0, width.value)
+        let height-factor = float.divide(800.0, height.value)
+        let scale = if float.less-than(height-factor, width-factor) { height-factor } else { width-factor }
+        [dimension.new(present = true, real = true, value = float.multiply(width.value, scale)), dimension.new(present = true, real = true, value = float.multiply(height.value, scale))]
+    }
+}
+
+test campfire.presentation.preview-dimensions/scaled {
+    let scaled = campfire.presentation.preview-dimensions(dimension.new(present = true, real = false, value = 3840.0), dimension.new(present = true, real = false, value = 2160.0))
+    expect scaled == [dimension.new(present = true, real = true, value = 1200.0), dimension.new(present = true, real = true, value = 675.0)]
+}
+
+fn campfire.presentation.attachment-html(attachment: MessageAttachment) -> Html {
+    doc "Messages::AttachmentPresentation#render for an attached file."
+    let filename = campfire.presentation.sanitized-filename(attachment.filename)
+    let blob-path = string.join(["/rails/active_storage/blobs/redirect/", campfire.presentation.escape-path(attachment.blob-token, false), "/", campfire.presentation.escape-path(filename, true)])
+    let download = rich-html.html-escape(string.concat(blob-path, "?disposition=attachment"))
+    let video = campfire.presentation.video?(attachment.content-type)
+    if video || campfire.presentation.variable?(attachment.content-type) {
+        let preview-path = rich-html.html-escape(string.join(["/rails/active_storage/representations/redirect/", campfire.presentation.escape-path(attachment.blob-token, false), "/", campfire.presentation.escape-path(attachment.preview-token, false), "/", campfire.presentation.escape-path(filename, true)]))
+        let width = campfire.presentation.dimension(attachment.width)
+        let height = campfire.presentation.dimension(attachment.height)
+        let sized = width.present && height.present
+        let dimensions = if sized { campfire.presentation.preview-dimensions(width, height) } else { [width, height] }
+        let shown-width = match list.get(dimensions, 0) { none => width; some d => d }
+        let shown-height = match list.get(dimensions, 1) { none => height; some d => d }
+        let half = if shown-width.real { dimension.new(present = true, real = true, value = float.divide(shown-width.value, 2.0)) } else { dimension.new(present = true, real = false, value = int.to-float(float.to-int(shown-width.value) / 2)) }
+        let ratio = if sized && float.greater-than(shown-height.value, 0.0) { float.to-string(float.divide(shown-width.value, shown-height.value)) } else { "" }
+        let open = if sized { string.join(["<div class=\"max-inline-size center flex overflow-clip\" style=\"width: ", campfire.presentation.number-text(half), "px; aspect-ratio: ", ratio, ";\">"]) } else { "<div class=\"max-inline-size center overflow-clip\">" }
+        let size-attributes = if sized { string.join(["width=\"", campfire.presentation.number-text(shown-width), "\" height=\"", campfire.presentation.number-text(shown-height), "\" "]) } else { "" }
+        let inner = if video {
+            string.join(["<video src=\"", rich-html.html-escape(blob-path), "\" poster=\"", preview-path, "\" controls=\"controls\" preload=\"none\" width=\"100%\" height=\"100%\" class=\"message__attachment\"></video>"])
+        } else {
+            string.join(["<a class=\"flex\" data-lightbox-target=\"image\" data-action=\"lightbox#open\" data-lightbox-url-value=\"", download, "\" href=\"", rich-html.html-escape(blob-path), "\"><img ", size-attributes, "class=\"message__attachment\" loading=\"lazy\" src=\"", preview-path, "\" /></a>"])
+        }
+        html.raw(string.join([open, inner, "</div>"]))
+    } else {
+        let name = rich-html.html-escape(filename)
+        html.raw(string.join(["<div class=\"flex-inline align-center gap-half\"><img class=\"colorize--black\" aria-hidden=\"true\" src=\"/assets/common-file-text-9043d980.svg\" width=\"22\" height=\"22\" /><span>", name, "</span><a class=\"btn message__action-btn hide-in-ios-pwa\" style=\"--width: auto;\" href=\"", download, "\"><img aria-hidden=\"true\" src=\"/assets/download-04029899.svg\" width=\"20\" height=\"20\" /><span class=\"for-screen-reader\">Download ", name, "</span></a><button class=\"btn message__action-btn\" style=\"--width: auto;\" data-controller=\"web-share\" data-action=\"web-share#share\" data-web-share-files-value=\"", download, "\"><img aria-hidden=\"true\" src=\"/assets/share-bf28da4f.svg\" width=\"20\" height=\"20\" /><span class=\"for-screen-reader\">Share ", name, "</span></button></div>"]))
+    }
+}
+
+test campfire.presentation.attachment-html/unsized-image {
+    let attachment = messageAttachment.new(message-id = 1, filename = "a b.png", content-type = "image/png", width = "", height = "", blob-token = "B", preview-token = "V")
+    expect Html.value(campfire.presentation.attachment-html(attachment)) == "<div class=\"max-inline-size center overflow-clip\"><a class=\"flex\" data-lightbox-target=\"image\" data-action=\"lightbox#open\" data-lightbox-url-value=\"/rails/active_storage/blobs/redirect/B/a%20b.png?disposition=attachment\" href=\"/rails/active_storage/blobs/redirect/B/a%20b.png\"><img class=\"message__attachment\" loading=\"lazy\" src=\"/rails/active_storage/representations/redirect/B/V/a%20b.png\" /></a></div>"
+}

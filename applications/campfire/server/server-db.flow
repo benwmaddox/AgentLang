@@ -769,6 +769,46 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
     }
 }
 
+fn campfire.server.storage-token(storage-key: Bytes, data: String, purpose: String) -> String {
+    doc "ActiveStorage.verifier.generate(data, purpose:): strict Base64 of the JSON envelope, '--', hex HMAC-SHA1 with the ActiveStorage key. data is already JSON."
+    let encoded = base64.encode(bytes.from-utf8(string.join(["{\"_rails\":{\"data\":", data, ",\"pur\":\"", purpose, "\"}}"])))
+    string.join([encoded, "--", hex.encode(crypto.hmac-sha1(storage-key, bytes.from-utf8(encoded)))])
+}
+
+test campfire.server.storage-token/shape {
+    let token = campfire.server.storage-token(bytes.from-utf8("k"), "5", "blob_id")
+    expect string.starts-with(token, "eyJfcmFpbHMiOnsiZGF0YSI6NSwicHVyIjoiYmxvYl9pZCJ9fQ==--") && string.byte-length(token) == 52 + 2 + 40
+}
+
+fn campfire.server.attachments-for(ids: List<Int>, storage-key: Bytes) -> Result<List<MessageAttachment>, DbError> {
+    effects db.read
+    doc "The attached file of each of these messages (has_one_attached :attachment), in one query: its blob row, metadata dimensions as SQLite writes the JSON numbers, and the signed blob id and preview variation key."
+    if list.count(ids) == 0 {
+        result.ok<List<MessageAttachment>, DbError>(list.empty<MessageAttachment>())
+    } else {
+        match db.query("SELECT a.record_id, b.id, b.filename, b.content_type, CASE WHEN json_type(b.metadata, '$.width') IN ('integer', 'real') THEN CAST(json_extract(b.metadata, '$.width') AS TEXT) ELSE '' END, CASE WHEN json_type(b.metadata, '$.height') IN ('integer', 'real') THEN CAST(json_extract(b.metadata, '$.height') AS TEXT) ELSE '' END FROM active_storage_attachments AS a INNER JOIN active_storage_blobs AS b ON b.id = a.blob_id WHERE a.record_type = 'Message' AND a.name = 'attachment' AND a.record_id IN (SELECT value FROM json_each($ids))", [db.text-param(campfire.server.id-list(ids))]) {
+            error failure => result.error<List<MessageAttachment>, DbError>(campfire.server.db-error(failure))
+            ok rows => {
+                var attachments = list.empty<MessageAttachment>()
+                for row in rows {
+                    let filename = campfire.server.text-or-empty(db.optional-text(row, 2))
+                    let kind = campfire.server.text-or-empty(db.optional-text(row, 3))
+                    let variation = campfire.presentation.preview-variation(filename, kind)
+                    attachments = list.append(attachments, messageAttachment.new(
+                        message-id = campfire.server.int-or-zero(db.optional-int(row, 0)),
+                        filename = filename,
+                        content-type = kind,
+                        width = campfire.server.text-or-empty(db.optional-text(row, 4)),
+                        height = campfire.server.text-or-empty(db.optional-text(row, 5)),
+                        blob-token = campfire.server.storage-token(storage-key, int.to-string(campfire.server.int-or-zero(db.optional-int(row, 1))), "blob_id"),
+                        preview-token = if variation == "" { "" } else { campfire.server.storage-token(storage-key, variation, "variation") }))
+                }
+                result.ok<List<MessageAttachment>, DbError>(attachments)
+            }
+        }
+    }
+}
+
 fn campfire.server.mention-users(ids: List<Int>, avatar-key: Bytes) -> List<MentionUser> {
     effects db.read
     doc "The users these ids name, as mentions render them (name, bio, fresh avatar path), in one query. Missing users are left out (Rails renders a missing attachable as nothing)."

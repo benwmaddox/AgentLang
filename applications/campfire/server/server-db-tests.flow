@@ -215,3 +215,14 @@ test campfire.server.mention-users/fixture {
     expect match list.get(users, 0) { none => ""; some user => user.name } == "Ann"
     expect list.count(campfire.server.mention-users(list.empty<Int>(), bytes.from-utf8("key"))) == 0
 }
+
+test campfire.server.attachments-for/fixture {
+    expect campfire.server.test-fixture() == 0
+    let found = campfire.server.attachments-for([99, 1], bytes.from-utf8("key"))
+    let attachments = match found { error failure => list.empty<MessageAttachment>(); ok rows => rows }
+    expect list.count(attachments) == 1
+    let moon = match list.get(attachments, 0) { none => messageAttachment.new(message-id = 0, filename = "", content-type = "", width = "", height = "", blob-token = "", preview-token = ""); some row => row }
+    expect moon.message-id == 99 && moon.filename == "moon.jpg" && moon.width == "3840" && moon.height == "2160.0"
+    expect moon.blob-token == campfire.server.storage-token(bytes.from-utf8("key"), "5", "blob_id")
+    expect moon.preview-token == campfire.server.storage-token(bytes.from-utf8("key"), "{\"format\":\"jpg\",\"resize_to_limit\":[1200,800]}", "variation")
+}
