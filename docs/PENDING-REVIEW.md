@@ -194,6 +194,36 @@ than a diagnostic (item 5 above)?
   override is the test, the block, or the file; and whether a failure or a
   warning suits agent-written tests better.
 
+## Research: in-place append by dropping dead values above the list (user, 2026-10-15; not yet coded)
+
+When a list (or string) is appended to at its last use, the compiler drops the
+dead values allocated above it, writes the new element directly after it, and
+moves the arena cursor there. The list never moves; only the element is copied
+(which an append copies anyway), so the append costs O(element) in any code
+shape, not only in the recognized loop accumulator (278).
+
+- Relation to existing work: the same release-and-merge the loop accumulator
+  does at the latch, and the same release-to-mark mechanism as per-iteration
+  reclaim and `compact { }`, but chosen by the compiler at the append site, so
+  authors never write `compact` (see the no-compact rule).
+- Needs:
+  - liveness proof that everything above the list is dead after this point
+    (except the appended element); one live value up there falls back to
+    today's behavior;
+  - the list itself has no other owner that could see bytes past its end;
+  - an element's payload (a String element's bytes) moves down with it.
+- Limits: one growing value on top at a time (interleaved builds fall back);
+  no help for a list buried under live values.
+- Value: straight-line appends, appends to a `let`, mixed-use loops and
+  `s = string.concat(s, x)` become linear with no author effort (covers the
+  "last-use in-place append" option under Immutable strings). Low value for
+  the current streamed Campfire page.
+- First check: whether the existing "extend in place when unaliased and built
+  in the same block" path already handles the dead-above case.
+- Measure: micro-benchmarks for straight-line appends, appends to a `let`,
+  mixed-use loops and growing strings, against today.
+- Timing: after equal pages (user, 2026-10-15).
+
 ## Native loop and call overhead (measured 2026-10-14; next backend work)
 
 Measured with the trusted O2 build, over a 111-byte string (min of 2000 runs):
