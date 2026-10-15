@@ -4497,7 +4497,7 @@ module OwningStackAot =
         let isAbiRegisterType ty = ty = IrInt || ty = IrBool || ty = IrFloat || ty = IrUnit
         let registerSymbol (symbol: string) = symbol + ".reg"
         /// Largest `inline fn` body (emitted LLVM instructions) that is inlined.
-        let inlineInstructionLimit = 600
+        let inlineInstructionLimit = 400
         let hasRegisterResults (outputTypes: IrType list) = outputTypes |> List.exists (fun ty -> isAbiRegisterType ty || (match ty with IrOption item -> item = IrInt || item = IrBool || item = IrFloat | _ -> false))
         // Other inputs arrive as their four descriptor fields (offset, extent,
         // payload, owner end) in i32 parameters: no argument array.
@@ -4521,12 +4521,8 @@ module OwningStackAot =
             else None
         // Trusted builds enter and leave word frames inline; the diagnostic
         // runtime keeps its C helpers (events, detailed profiling).
-        // TEMP 280 measurement toggles (removed before the final commit).
-        let experiment280 = match Environment.GetEnvironmentVariable "AGENTLANG_EXPERIMENT_280" with null -> "" | value -> value
-        let keepProvenCallChecks = experiment280.Contains "checks"
-        let frameProfile = if experiment280.Contains "cframes" then OwningRuntimeProfile.Diagnostic else runtimeProfile
         let emitEnterFrame (w: OwningLlvmWriter) (failEnter: string) =
-            match frameProfile with
+            match runtimeProfile with
             | OwningRuntimeProfile.Diagnostic ->
                 let entered = w.Fresh "frame.entered"
                 w.Inst($"{entered} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 %%depth.error)")
@@ -4562,7 +4558,7 @@ module OwningStackAot =
                 w.Inst($"{deeper} = add i32 {depth}, 1")
                 w.Inst($"store i32 {deeper}, ptr {depthPointer}, align 4")
         let emitLeaveFrame (w: OwningLlvmWriter) =
-            match frameProfile with
+            match runtimeProfile with
             | OwningRuntimeProfile.Diagnostic -> w.Inst("call void @al_owning_leave_frame(ptr %ctx)")
             | OwningRuntimeProfile.TrustedGenerated ->
                 let depthPointer = emitContextFieldPointer w "%ctx" 24
@@ -4737,7 +4733,7 @@ module OwningStackAot =
                 let argument =
                     { Type = argumentType; Offset = $"%%arg.{index}.offset"; Extent = $"%%arg.{index}.extent"
                       Payload = $"%%arg.{index}.payload"; OwnerEnd = $"%%arg.{index}.owner.end"; Register = None }
-                if runtimeProfile = OwningRuntimeProfile.Diagnostic || keepProvenCallChecks then
+                if runtimeProfile = OwningRuntimeProfile.Diagnostic then
                     emitDescriptorBounds w argument (Some(string (typeId argumentType))) failBody
                 argumentEntries.Add argument
               else
@@ -7030,7 +7026,7 @@ module OwningStackAot =
                                 let resultEntry, actualType = emitLoadDescriptor w pointer outputType
                                 // The callee's results come from its verified emission;
                                 // trusted builds do not re-check them (report 280).
-                                if runtimeProfile = OwningRuntimeProfile.Diagnostic || keepProvenCallChecks then
+                                if runtimeProfile = OwningRuntimeProfile.Diagnostic then
                                     let typeValid = w.Fresh "callee.result.type.valid"
                                     let typeOkay = w.Label "callee.result.type.ok"
                                     w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId outputType}")

@@ -23,7 +23,7 @@ record UaProduct {
     comments: List<String>
 }
 
-fn campfire.ua.byte(text: String, index: Int) -> Int {
+inline fn campfire.ua.byte(text: String, index: Int) -> Int {
     doc "The byte at index, or -1 past either end."
 
     string.byte-at-or(text, index, -1)
@@ -38,23 +38,23 @@ fn campfire.ua.cut(text: String, start: Int, count: Int) -> String {
     }
 }
 
-fn campfire.ua.space?(value: Int) -> Bool {
+inline fn campfire.ua.space?(value: Int) -> Bool {
     doc "Ruby whitespace: space, tab, newline, vertical tab, form feed, carriage return."
 
     value == 32 || (value >= 9 && value <= 13)
 }
 
-fn campfire.ua.strip?(value: Int) -> Bool {
+inline fn campfire.ua.strip?(value: Int) -> Bool {
     doc "Bytes Ruby strip removes: whitespace and NUL."
 
     value == 0 || campfire.ua.space?(value)
 }
 
-fn campfire.ua.product-char?(value: Int) -> Bool {
+inline fn campfire.ua.product-char?(value: Int) -> Bool {
     value >= 0 && value != 47 && bool.not(campfire.ua.space?(value))
 }
 
-fn campfire.ua.digit?(value: Int) -> Bool {
+inline fn campfire.ua.digit?(value: Int) -> Bool {
     value >= 48 && value <= 57
 }
 
@@ -831,7 +831,7 @@ fn campfire.ua.comparable?(value: String) -> Bool {
     digits > 0 && (digits == string.byte-length(value) || campfire.ua.byte(value, digits) == 46)
 }
 
-fn campfire.ua.letter?(value: Int) -> Bool {
+inline fn campfire.ua.letter?(value: Int) -> Bool {
     (value >= 65 && value <= 90) || (value >= 97 && value <= 122)
 }
 
