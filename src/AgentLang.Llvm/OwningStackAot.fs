@@ -4499,11 +4499,16 @@ module OwningStackAot =
         /// Largest `inline fn` body (emitted LLVM instructions) that is inlined.
         let inlineInstructionLimit = 600
         let hasRegisterResults (outputTypes: IrType list) = outputTypes |> List.exists (fun ty -> isAbiRegisterType ty || (match ty with IrOption item -> item = IrInt || item = IrBool || item = IrFloat | _ -> false))
+        // Other inputs arrive as their four descriptor fields (offset, extent,
+        // payload, owner end) in i32 parameters: no argument array.
         let registerParameters (inputTypes: IrType list) (outputTypes: IrType list) =
             [ for index, ty in List.indexed inputTypes do
                 if isAbiRegisterType ty then $", i64 %%arg.reg.{index}"
+                else $", i32 %%arg.{index}.offset, i32 %%arg.{index}.extent, i32 %%arg.{index}.payload, i32 %%arg.{index}.owner.end"
               if hasRegisterResults outputTypes then ", ptr %results.reg" ]
             |> String.concat ""
+        let descriptorArguments (entry: OwningDynamicStackEntry) =
+            $", i32 {entry.Offset}, i32 {entry.Extent}, i32 {entry.Payload}, i32 {entry.OwnerEnd}"
         let registerResultSlot (w: OwningLlvmWriter) resultsReg index part =
             let pointer = w.Fresh "results.reg.slot"
             w.Inst($"{pointer} = getelementptr inbounds i64, ptr {resultsReg}, i32 {2 * index + part}")
@@ -4516,8 +4521,12 @@ module OwningStackAot =
             else None
         // Trusted builds enter and leave word frames inline; the diagnostic
         // runtime keeps its C helpers (events, detailed profiling).
+        // TEMP 280 measurement toggles (removed before the final commit).
+        let experiment280 = match Environment.GetEnvironmentVariable "AGENTLANG_EXPERIMENT_280" with null -> "" | value -> value
+        let keepProvenCallChecks = experiment280.Contains "checks"
+        let frameProfile = if experiment280.Contains "cframes" then OwningRuntimeProfile.Diagnostic else runtimeProfile
         let emitEnterFrame (w: OwningLlvmWriter) (failEnter: string) =
-            match runtimeProfile with
+            match frameProfile with
             | OwningRuntimeProfile.Diagnostic ->
                 let entered = w.Fresh "frame.entered"
                 w.Inst($"{entered} = call i32 @al_owning_enter_frame(ptr %%ctx, i32 %%depth.error)")
@@ -4553,7 +4562,7 @@ module OwningStackAot =
                 w.Inst($"{deeper} = add i32 {depth}, 1")
                 w.Inst($"store i32 {deeper}, ptr {depthPointer}, align 4")
         let emitLeaveFrame (w: OwningLlvmWriter) =
-            match runtimeProfile with
+            match frameProfile with
             | OwningRuntimeProfile.Diagnostic -> w.Inst("call void @al_owning_leave_frame(ptr %ctx)")
             | OwningRuntimeProfile.TrustedGenerated ->
                 let depthPointer = emitContextFieldPointer w "%ctx" 24
@@ -4666,7 +4675,10 @@ module OwningStackAot =
                 if nativeHostProfile.IsSome then "ptr %ctx, ptr %provider.context, ptr %arguments, ptr %results, i32 %depth.error"
                 else "ptr %ctx, ptr %arguments, ptr %results, i32 %depth.error"
             if registerAbi then
-                w.Line($"define internal i32 {registerSymbol symbol}({frameParameters}{registerParameters inputTypes outputTypes}) {{")
+                let baseParameters =
+                    if nativeHostProfile.IsSome then "ptr %ctx, ptr %provider.context, ptr %results, i32 %depth.error"
+                    else "ptr %ctx, ptr %results, i32 %depth.error"
+                w.Line($"define internal i32 {registerSymbol symbol}({baseParameters}{registerParameters inputTypes outputTypes}) {{")
             else
                 w.Line($"define internal i32 {symbol}({frameParameters}) {{")
             w.Line("entry:")
@@ -4719,6 +4731,15 @@ module OwningStackAot =
               if registerAbi && isAbiRegisterType argumentType then
                 let poison = "%__unmaterialized.scalar"
                 argumentEntries.Add { Type = argumentType; Offset = poison; Extent = poison; Payload = poison; OwnerEnd = poison; Register = Some $"%%arg.reg.{index}" }
+              elif registerAbi then
+                // Statically typed descriptor fields; the caller's values were
+                // proved by its own emission, so only diagnostic builds re-check.
+                let argument =
+                    { Type = argumentType; Offset = $"%%arg.{index}.offset"; Extent = $"%%arg.{index}.extent"
+                      Payload = $"%%arg.{index}.payload"; OwnerEnd = $"%%arg.{index}.owner.end"; Register = None }
+                if runtimeProfile = OwningRuntimeProfile.Diagnostic || keepProvenCallChecks then
+                    emitDescriptorBounds w argument (Some(string (typeId argumentType))) failBody
+                argumentEntries.Add argument
               else
                 let argumentPointer = emitDescriptorElementPointer w "%arguments" index
                 let argument, actualType = emitLoadDescriptor w argumentPointer argumentType
@@ -6969,21 +6990,15 @@ module OwningStackAot =
                             let values, prefix = pop call.InputTypes.Length
                             // Option arguments travel as descriptors.
                             let values = values |> List.map (fun value -> if isRegisterOption value.Type then materializeEntry currentOwner instructionSpan value else value)
-                            let argumentArray =
-                                if values |> List.forall (fun value -> isAbiRegisterType value.Type) then "null"
-                                else
-                                    let array = w.Fresh "call.arguments"
-                                    w.Inst($"{array} = alloca [{values.Length} x %%AlOwningDescriptor], align 4")
-                                    for index, value in values |> List.indexed do
-                                        if not (isAbiRegisterType value.Type) then
-                                            let pointer = emitDescriptorElementPointer w array index
-                                            emitStoreDescriptor w pointer value
-                                            emitDescriptorTransfer w value failBody
-                                    array
+                            // Arguments in parameter order: an i64 per scalar, the four
+                            // descriptor fields of every other value.
                             let registerArguments =
                                 values
-                                |> List.filter (fun value -> isAbiRegisterType value.Type)
-                                |> List.map (fun value -> $", i64 {scalarValue value}")
+                                |> List.map (fun value ->
+                                    if isAbiRegisterType value.Type then $", i64 {scalarValue value}"
+                                    else
+                                        emitDescriptorTransfer w value failBody
+                                        descriptorArguments value)
                                 |> String.concat ""
                             let resultArray =
                                 if call.OutputTypes |> List.forall isAbiResultRegister then "null"
@@ -6996,7 +7011,7 @@ module OwningStackAot =
                             let callError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." call.ResolvedName instructionSpan [] []
                             let callStatus = w.Fresh "callee.status"
                             let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
-                            w.Inst($"{callStatus} = call i32 {registerSymbol (symbolFor id)}(ptr %%ctx, {hiddenHostContext}ptr {argumentArray}, ptr {resultArray}, i32 {callError}{registerArguments}{resultsArgument})")
+                            w.Inst($"{callStatus} = call i32 {registerSymbol (symbolFor id)}(ptr %%ctx, {hiddenHostContext}ptr {resultArray}, i32 {callError}{registerArguments}{resultsArgument})")
                             emitStatusResult w callStatus failBody
                             let resultEntries = ResizeArray<OwningDynamicStackEntry>()
                             for index, outputType in call.OutputTypes |> List.indexed do
@@ -7013,12 +7028,15 @@ module OwningStackAot =
                               else
                                 let pointer = emitDescriptorElementPointer w resultArray index
                                 let resultEntry, actualType = emitLoadDescriptor w pointer outputType
-                                let typeValid = w.Fresh "callee.result.type.valid"
-                                let typeOkay = w.Label "callee.result.type.ok"
-                                w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId outputType}")
-                                w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{failBody}")
-                                w.Line($"{typeOkay}:")
-                                emitDescriptorBounds w resultEntry (Some(string (typeId outputType))) failBody
+                                // The callee's results come from its verified emission;
+                                // trusted builds do not re-check them (report 280).
+                                if runtimeProfile = OwningRuntimeProfile.Diagnostic || keepProvenCallChecks then
+                                    let typeValid = w.Fresh "callee.result.type.valid"
+                                    let typeOkay = w.Label "callee.result.type.ok"
+                                    w.Inst($"{typeValid} = icmp eq i32 {actualType}, {typeId outputType}")
+                                    w.Inst($"br i1 {typeValid}, label %%{typeOkay}, label %%{failBody}")
+                                    w.Line($"{typeOkay}:")
+                                    emitDescriptorBounds w resultEntry (Some(string (typeId outputType))) failBody
                                 emitDescriptorTransfer w resultEntry failBody
                                 resultEntries.Add resultEntry
                             stack <- prefix @ List.ofSeq resultEntries
@@ -7189,7 +7207,6 @@ module OwningStackAot =
             w.Line("entry:")
             let registerArguments =
                 [ for index, argumentType in List.indexed inputTypes do
-                    if isAbiRegisterType argumentType then
                         let argumentPointer = emitDescriptorElementPointer w "%arguments" index
                         let argument, actualType = emitLoadDescriptor w argumentPointer argumentType
                         let typeValid = w.Fresh "adapter.argument.type.valid"
@@ -7203,16 +7220,19 @@ module OwningStackAot =
                         w.Inst($"br label %%{failLabel}")
                         w.Line($"{typeOkay}:")
                         emitDescriptorBounds w argument (Some(string (typeId argumentType))) failLabel
-                        let value = w.Fresh "adapter.argument"
-                        w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {argument.Offset})")
-                        emitRuntimeStatus w "%ctx" failLabel
-                        yield $", i64 {value}" ]
+                        if isAbiRegisterType argumentType then
+                            let value = w.Fresh "adapter.argument"
+                            w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {argument.Offset})")
+                            emitRuntimeStatus w "%ctx" failLabel
+                            yield $", i64 {value}"
+                        else
+                            yield descriptorArguments argument ]
                 |> String.concat ""
             let resultsReg = allocateRegisterResults w outputTypes
             let resultsArgument = resultsReg |> Option.map (fun array -> $", ptr {array}") |> Option.defaultValue ""
             let hiddenHostContext = if nativeHostProfile.IsSome then "ptr %provider.context, " else ""
             let status = w.Fresh "adapter.status"
-            w.Inst($"{status} = call i32 {registerSymbol symbol}(ptr %%ctx, {hiddenHostContext}ptr %%arguments, ptr %%results, i32 %%depth.error{registerArguments}{resultsArgument})")
+            w.Inst($"{status} = call i32 {registerSymbol symbol}(ptr %%ctx, {hiddenHostContext}ptr %%results, i32 %%depth.error{registerArguments}{resultsArgument})")
             emitStatusResult w status failLabel
             for index, outputType in List.indexed outputTypes do
                 if isAbiRegisterType outputType then
