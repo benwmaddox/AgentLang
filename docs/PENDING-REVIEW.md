@@ -496,7 +496,11 @@ All of it was resident because `fh_alloc` was `posix_memalign` plus
 **Measured peaks, per worker:**
 - Arena cursor: 17.3-17.6 MB. This includes the 16 MB output reservation of a
   host call such as `db.query`, which is reserved but mostly not touched, so
-  keep `--arena-mb 32`.
+  keep `--arena-mb 32`. (285: rich-text presentation raised the 40-message
+  page to a 26.6 MB cursor, and the page around a message (81 messages)
+  overran 32 MB, so the default is now 128. Rendering costs about 650 KB of
+  arena per message for about 10 KB of HTML. That ratio is worth a look once
+  output equality is done.)
 - Response: 460.5 KB.
 - Input: 824 B with the context borrowed, 1064 B before.
 - Context: 240 B.

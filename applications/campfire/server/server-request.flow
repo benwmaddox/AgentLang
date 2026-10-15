@@ -9,6 +9,8 @@ record ServerRequest {
     // session (as the Rust reference loads it lazily): a room GET without a mutation never
     // touches it.
     session-cookie: Option<String>
+    // The message id of /rooms/<id>/@<message> (rooms#show's message_id), as ActiveRecord casts it.
+    around: Option<Int>
 }
 
 fn campfire.server.status(status: Int) -> HttpResponse {
@@ -104,6 +106,76 @@ fn campfire.server.equal-ignoring-case?(left: String, right: String) -> Bool {
 test campfire.server.equal-ignoring-case?/ascii {
     expect campfire.server.equal-ignoring-case?("/ROOMS/", "/rooms/")
     expect bool.not(campfire.server.equal-ignoring-case?("/rooms", "/rooms/"))
+}
+
+record RoomPath {
+    room: String
+    around: Option<String>
+}
+
+fn campfire.server.room-path(path: String) -> Option<RoomPath> {
+    doc "/rooms/<id> (campfire.server.room-id-text), or /rooms/<id>/@<message> (the at_message route: a segment of no '/' or '.')."
+    match campfire.server.room-id-text(path) {
+        some room => option.some<RoomPath>(roomPath.new(room = room, around = option.none<String>()))
+        none => {
+            let length = string.byte-length(path)
+            let rest = if length > 7 && campfire.server.equal-ignoring-case?(campfire.server.cut(path, 0, 7), "/rooms/") { campfire.server.cut(path, 7, length - 7) } else { "" }
+            let slash = match string.index-of(rest, "/@", 0) { none => -1; some at => at }
+            let room = if slash > 0 { campfire.server.cut(rest, 0, slash) } else { "" }
+            let message = if slash > 0 { campfire.server.cut(rest, slash + 2, string.byte-length(rest) - slash - 2) } else { "" }
+            if room == "" || message == "" || string.contains(room, "/") || string.contains(message, "/") || string.contains(message, ".") {
+                option.none<RoomPath>()
+            } else {
+                option.some<RoomPath>(roomPath.new(room = room, around = option.some<String>(message)))
+            }
+        }
+    }
+}
+
+test campfire.server.room-path/forms {
+    expect campfire.server.room-path("/rooms/1") == option.some<RoomPath>(roomPath.new(room = "1", around = option.none<String>()))
+    expect campfire.server.room-path("/rooms/1/@25") == option.some<RoomPath>(roomPath.new(room = "1", around = option.some<String>("25")))
+    expect campfire.server.room-path("/rooms/1/@") == option.none<RoomPath>()
+    expect campfire.server.room-path("/rooms/1/@2.json") == option.none<RoomPath>()
+    expect campfire.server.room-path("/rooms/1/messages") == option.none<RoomPath>()
+}
+
+fn campfire.server.ruby-to-i(text: String) -> Int {
+    doc "String#to_i, as ActiveModel's Integer type casts a parameter: leading whitespace, an optional sign, then digits (underscores between digits allowed); 0 when none."
+    var at = 0
+    let length = string.byte-length(text)
+    for step in 0..length {
+        let byte = string.byte-at-or(text, at, 0)
+        if byte != 32 && (byte < 9 || byte > 13) {
+            break
+        }
+        at = at + 1
+    }
+    let sign = string.byte-at-or(text, at, 0)
+    let negative = sign == 45
+    if sign == 45 || sign == 43 {
+        at = at + 1
+    }
+    var value = 0
+    var digits = 0
+    var done = false
+    for index in at..length {
+        let byte = string.byte-at-or(text, index, 0)
+        let underscore = byte == 95 && digits > 0 && string.byte-at-or(text, index + 1, 0) >= 48 && string.byte-at-or(text, index + 1, 0) <= 57
+        if done || bool.not((byte >= 48 && byte <= 57) || underscore) || digits >= 18 {
+            break
+        }
+        if bool.not(underscore) {
+            value = value * 10 + byte - 48
+            digits = digits + 1
+        }
+    }
+    if negative { 0 - value } else { value }
+}
+
+test campfire.server.ruby-to-i/forms {
+    expect campfire.server.ruby-to-i("25") == 25 && campfire.server.ruby-to-i("12abc") == 12 && campfire.server.ruby-to-i("abc") == 0
+    expect campfire.server.ruby-to-i(" -1_0") == -10
 }
 
 fn campfire.server.room-id-text(path: String) -> Option<String> {
@@ -330,9 +402,11 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
     let host = if campfire.server.header-count(incoming.headers, "host") == 1 { campfire.server.header-last(incoming.headers, "host") } else { option.none<String>() }
     let host-ok = match host { none => false; some value => campfire.server.equal-ignoring-case?(value, context.authority) }
     let length-status = campfire.server.content-length-status(incoming.headers)
-    match campfire.server.room-id-text(path) {
+    match campfire.server.room-path(path) {
         none => result.error<ServerRequest, HttpResponse>(campfire.server.status(404))
-        some id-text => {
+        some room-path => {
+            let id-text = room-path.room
+            let around = match room-path.around { none => option.none<Int>(); some text => option.some<Int>(campfire.server.ruby-to-i(text)) }
             if bool.not(is-get || is-head) {
                 let refused = campfire.server.status(405)
                 result.error<ServerRequest, HttpResponse>(httpResponse.new(status = 405, headers = list.append(refused.headers, httpHeader.new(name = "Allow", value = "GET, HEAD")), body = "", streamed = false))
@@ -345,7 +419,7 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
             } else {
                 match campfire.server.parse-room-id(id-text) {
                     none => result.error<ServerRequest, HttpResponse>(campfire.server.status(400))
-                    some room-id => campfire.server.room-request(incoming, context, room-id, is-head)
+                    some room-id => campfire.server.room-request(incoming, context, room-id, is-head, around)
                 }
             }
         }
@@ -365,7 +439,7 @@ test campfire.server.request/transport {
     expect match bad-id { ok request => 0; error response => response.status } == 400
 }
 
-fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerContext, room-id: Int, is-head: Bool) -> Result<ServerRequest, HttpResponse> {
+fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerContext, room-id: Int, is-head: Bool, around: Option<Int>) -> Result<ServerRequest, HttpResponse> {
     doc "The room-read CampfireHttpRequest: cookies (session_token, last_room; _campfire_session kept raw for a later mutation), the bot key, and fixed transport flags. No CSRF secret: pages carry no tokens."
 
     let cookie-count = campfire.server.header-count(incoming.headers, "cookie")
@@ -406,7 +480,7 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                             accepts-html = true,
                             last-room = last-room-value,
                             csrf-token = option.none<String>())
-                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie))
+                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around))
                     }
                 }
             }
@@ -417,9 +491,9 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
 test campfire.server.room-request/cookies {
     let context = campfire.server.test-context()
     let incoming = httpRequest.new(method = "HEAD", target = "/rooms/5?bot_key=1-x", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = "last_room=4; session_token=abc"), httpHeader.new(name = "user-agent", value = "UA")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7)
-    let built = campfire.server.room-request(incoming, context, 5, true)
+    let built = campfire.server.room-request(incoming, context, 5, true, option.none<Int>())
     expect match built { error response => false; ok request => request.campfire.last-room == option.some<String>("4") && request.campfire.session-token == option.some<String>("abc") && request.campfire.method == RequestMethod.head() }
     expect match built { error response => false; ok request => request.campfire.bot-key == option.some<BotKey>(BotKey.new("1-x")) && request.campfire.csrf-token == option.none<String>() && request.session-cookie == option.none<String>() }
-    let duplicated = campfire.server.room-request(httpRequest.new(method = "GET", target = "/rooms/5", headers = [httpHeader.new(name = "cookie", value = "session_token=a; session_token=b")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7), context, 5, false)
+    let duplicated = campfire.server.room-request(httpRequest.new(method = "GET", target = "/rooms/5", headers = [httpHeader.new(name = "cookie", value = "session_token=a; session_token=b")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7), context, 5, false, option.none<Int>())
     expect match duplicated { ok request => 0; error response => response.status } == 400
 }

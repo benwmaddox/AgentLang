@@ -226,3 +226,15 @@ test campfire.server.attachments-for/fixture {
     expect moon.blob-token == campfire.server.storage-token(bytes.from-utf8("key"), "5", "blob_id")
     expect moon.preview-token == campfire.server.storage-token(bytes.from-utf8("key"), "{\"format\":\"jpg\",\"resize_to_limit\":[1200,800]}", "variation")
 }
+
+test campfire.server.page-keys-around/fixture {
+    expect campfire.server.test-fixture() == 0
+    let first = match campfire.server.page-keys-around(RoomId.new(1), 1) { error failure => list.empty<PageKey>(); ok keys => keys }
+    expect list.count(first) == 2
+    expect match list.get(first, 0) { none => 0; some key => key.id } == 1
+    expect match list.get(first, 1) { none => 0; some key => key.id } == 2
+    let second = match campfire.server.page-keys-around(RoomId.new(1), 2) { error failure => list.empty<PageKey>(); ok keys => keys }
+    expect list.count(second) == 2 && match list.get(second, 0) { none => 0; some key => key.id } == 1
+    // A message of no room the user reads: the last page, as rooms#show's find_by fallback.
+    expect campfire.server.page-keys-around(RoomId.new(1), 99) == campfire.server.page-keys-query(RoomId.new(1))
+}

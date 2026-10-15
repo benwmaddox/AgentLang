@@ -183,15 +183,54 @@ test campfire.server.room-message-error/mapping {
     expect campfire.server.room-message-error(DbError.not-found()) == RoomMessageError.database-not-found()
 }
 
-fn campfire.server.page-for-member(user-id: UserId, room-id: RoomId, context: CampfireServerContext) -> Result<List<MessageWithCreator>, RoomMessageError> {
+fn campfire.server.messages-for-keys(keys: Result<List<PageKey>, DbError>, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
+    effects db.read
+    doc "The page rows of these keys, in the keys' order (one query)."
+    match keys {
+        error failure => result.error<List<MessageWithCreator>, DbError>(failure)
+        ok page => {
+            var ids = list.empty<Int>()
+            for key in page {
+                ids = list.append(ids, key.id)
+            }
+            match campfire.server.messages-by-id(ids, avatar-key) {
+                error failure => result.error<List<MessageWithCreator>, DbError>(failure)
+                ok loaded => {
+                    var ordered = list.empty<MessageWithCreator>()
+                    for key in page {
+                        for message in loaded {
+                            if MessageId.value(message.id) == key.id {
+                                ordered = list.append(ordered, message)
+                            }
+                        }
+                    }
+                    result.ok<List<MessageWithCreator>, DbError>(ordered)
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.messages-for-keys/order {
+    expect campfire.server.test-fixture() == 0
+    let keys = result.ok<List<PageKey>, DbError>([pageKey.new(id = 2, updated-at-ms = 0), pageKey.new(id = 1, updated-at-ms = 0)])
+    let loaded = match campfire.server.messages-for-keys(keys, bytes.from-utf8("k")) { error failure => list.empty<MessageWithCreator>(); ok rows => rows }
+    expect list.count(loaded) == 2 && match list.get(loaded, 0) { none => 0; some message => MessageId.value(message.id) } == 2
+}
+
+fn campfire.server.page-for-member(user-id: UserId, room-id: RoomId, context: CampfireServerContext, around: Option<Int>) -> Result<List<MessageWithCreator>, RoomMessageError> {
     effects db.read, db.write
-    doc "campfire.messages.page-for-member with the worker's avatar key."
+    doc "campfire.messages.page-for-member with the worker's avatar key: the last page, or the page around a message (campfire.server.page-keys-around)."
 
     match campfire.membership.exists?(membershipKey.new(user-id = user-id, room-id = room-id)) {
         error failure => result.error<List<MessageWithCreator>, RoomMessageError>(campfire.server.room-message-error(failure))
         ok is-member => {
             if is-member {
-                match campfire.server.last-page-with-creators(room-id, context.avatar-key) {
+                let loaded = match around {
+                    none => campfire.server.last-page-with-creators(room-id, context.avatar-key)
+                    some message-id => campfire.server.messages-for-keys(campfire.server.page-keys-around(room-id, message-id), context.avatar-key)
+                }
+                match loaded {
                     ok messages => result.ok<List<MessageWithCreator>, RoomMessageError>(messages)
                     error failure => result.error<List<MessageWithCreator>, RoomMessageError>(campfire.server.room-message-error(failure))
                 }
@@ -205,9 +244,9 @@ fn campfire.server.page-for-member(user-id: UserId, room-id: RoomId, context: Ca
 test campfire.server.page-for-member/fixture {
     expect campfire.server.test-fixture() == 0
     let context = campfire.server.test-context()
-    let page = campfire.server.page-for-member(UserId.new(1), RoomId.new(1), context)
+    let page = campfire.server.page-for-member(UserId.new(1), RoomId.new(1), context, option.none<Int>())
     expect match page { error failure => -1; ok messages => campfire.server.message-count(messages) } == 2
-    expect campfire.server.page-for-member(UserId.new(2), RoomId.new(1), context) == result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied())
+    expect campfire.server.page-for-member(UserId.new(2), RoomId.new(1), context, option.none<Int>()) == result.error<List<MessageWithCreator>, RoomMessageError>(RoomMessageError.access-denied())
 }
 
 fn campfire.server.message-count(messages: List<MessageWithCreator>) -> Int {
@@ -580,7 +619,7 @@ fn campfire.server.stream-room-page(chrome: PageChrome, keys: List<PageKey>, cac
     }
 }
 
-fn campfire.server.streamed-page-for-member(user-id: UserId, chrome: PageChrome, room-id: RoomId, cache: WorkerCache, context: CampfireServerContext) -> Result<Int, RoomMessageError> {
+fn campfire.server.streamed-page-for-member(user-id: UserId, chrome: PageChrome, room-id: RoomId, cache: WorkerCache, context: CampfireServerContext, around: Option<Int>) -> Result<Int, RoomMessageError> {
     effects db.read, db.write, store.read, store.write, response.write
     doc "campfire.server.page-for-member for the worker-store page: membership, then the narrow page and its misses in one deferred transaction, written to the response stream."
 
@@ -593,7 +632,8 @@ fn campfire.server.streamed-page-for-member(user-id: UserId, chrome: PageChrome,
                 match db.execute("BEGIN DEFERRED", list.empty<DbValue>()) {
                     error failure => result.error<Int, RoomMessageError>(campfire.server.room-message-error(campfire.server.db-error(failure)))
                     ok begun => {
-                        let written = match campfire.server.page-keys-query(room-id) {
+                        let page-keys = match around { none => campfire.server.page-keys-query(room-id); some message-id => campfire.server.page-keys-around(room-id, message-id) }
+                        let written = match page-keys {
                             error failure => result.error<Int, DbError>(failure)
                             ok keys => campfire.server.stream-room-page(chrome, keys, cache, context)
                         }
@@ -707,7 +747,7 @@ fn campfire.server.whole-room-page(chrome: PageChrome, messages: List<MessageWit
     campfire.views.text(campfire.views.page(chrome, rendered))
 }
 
-fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
+fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>, context: CampfireServerContext, around: Option<Int>) -> CampfireHttpResponse {
     effects db.read, db.write, store.read, store.write, response.write
     doc "campfire.http.show-room: the newest forty messages; last_room is set only when the cookie differs. With a worker store the page is written to the response stream through the worker cache (the response body is then empty); without one it is rendered in one piece."
 
@@ -724,7 +764,7 @@ fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room:
     }
     if cache.ready {
         // The page goes to the response stream; an empty room body marks it streamed.
-        match campfire.server.streamed-page-for-member(user.id, campfire.server.page-chrome(room, user, request.base-url, context), room.id, cache, context) {
+        match campfire.server.streamed-page-for-member(user.id, campfire.server.page-chrome(room, user, request.base-url, context), room.id, cache, context, around) {
             error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
             ok stored => campfireHttpResponse.new(
                 status = 200,
@@ -739,7 +779,7 @@ fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room:
                 body = "")
         }
     } else {
-        match campfire.server.page-for-member(user.id, room.id, context) {
+        match campfire.server.page-for-member(user.id, room.id, context, around) {
             error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
             ok messages => campfireHttpResponse.new(
                 status = 200,
@@ -760,7 +800,7 @@ test campfire.server.show-room/fixture {
     expect campfire.server.test-fixture() == 0
     let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
     let room = roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00")
-    let shown = campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context())
+    let shown = campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context(), option.none<Int>())
     expect shown.status == 200
     expect shown.last-room == option.some<RoomId>(RoomId.new(1))
     expect shown.new-csrf-token == option.none<String>()
@@ -770,13 +810,13 @@ test campfire.server.show-room/fixture {
     expect bool.not(string.contains(page, "authenticity_token"))
     expect string.contains(page, "second message")
     // Byte-identical to the one-piece page, cold and then from the worker cache.
-    let whole = match campfire.server.page-for-member(user.id, room.id, campfire.server.test-context()) {
+    let whole = match campfire.server.page-for-member(user.id, room.id, campfire.server.test-context(), option.none<Int>()) {
         error failure => ""
         ok messages => campfire.server.whole-room-page(campfire.server.page-chrome(room, user, "http://127.0.0.1:13773", campfire.server.test-context()), messages, campfire.server.test-context())
     }
     expect page == whole
     expect response.discard(0) == string.byte-length(whole)
-    expect campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context()).body == ""
+    expect campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context(), option.none<Int>()).body == ""
     expect response.written(0) == whole
     expect worker-cache.stats(campfire.server.worker-cache()).entries == 2
 }
@@ -828,11 +868,11 @@ test campfire.server.streamed-page-for-member/membership {
     expect campfire.server.test-fixture() == 0
     let cache = campfire.server.worker-cache()
     let chrome = campfire.views.room-chrome(roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00"), authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x")
-    expect campfire.server.streamed-page-for-member(UserId.new(1), chrome, RoomId.new(1), cache, campfire.server.test-context()) == result.ok<Int, RoomMessageError>(2)
-    expect campfire.server.streamed-page-for-member(UserId.new(2), chrome, RoomId.new(1), cache, campfire.server.test-context()) == result.error<Int, RoomMessageError>(RoomMessageError.access-denied())
+    expect campfire.server.streamed-page-for-member(UserId.new(1), chrome, RoomId.new(1), cache, campfire.server.test-context(), option.none<Int>()) == result.ok<Int, RoomMessageError>(2)
+    expect campfire.server.streamed-page-for-member(UserId.new(2), chrome, RoomId.new(1), cache, campfire.server.test-context(), option.none<Int>()) == result.error<Int, RoomMessageError>(RoomMessageError.access-denied())
 }
 
-fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
+fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, context: CampfireServerContext, around: Option<Int>) -> CampfireHttpResponse {
     effects db.read, db.write, store.read, store.write, response.write
     doc "campfire.http.room-read-route: the room through the user's membership, else the room-show redirect."
 
@@ -840,7 +880,7 @@ fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser,
         error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
         ok maybe-room => match maybe-room {
             none => campfire.server.response(302, HttpView.redirect-root(), "Room not found or inaccessible", refresh)
-            some room => campfire.server.show-room(request, user, room, refresh, context)
+            some room => campfire.server.show-room(request, user, room, refresh, context, around)
         }
     }
 }
@@ -848,13 +888,13 @@ fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser,
 test campfire.server.room-read-route/missing-room {
     expect campfire.server.test-fixture() == 0
     let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
-    let routed = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), user, option.none<SessionToken>(), campfire.server.test-context())
+    let routed = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), user, option.none<SessionToken>(), campfire.server.test-context(), option.none<Int>())
     expect routed.status == 200
-    let other = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), authUser.new(id = UserId.new(2), name = "Bo", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>(), campfire.server.test-context())
+    let other = campfire.server.room-read-route(campfire.server.test-request(option.none<String>()), authUser.new(id = UserId.new(2), name = "Bo", role = Role.member(), status = AuthUserStatus.active()), option.none<SessionToken>(), campfire.server.test-context(), option.none<Int>())
     expect other.status == 302
 }
 
-fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServerContext) -> CampfireHttpResponse {
+fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServerContext, around: Option<Int>) -> CampfireHttpResponse {
     effects db.read, db.write, store.read, store.write, response.write
     doc "campfire.http.room-read for GET/HEAD room-show: session cookie, bot key, gates, room."
 
@@ -874,7 +914,7 @@ fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServ
                             let refresh = campfire.server.refresh-token(restored)
                             match campfire.server.authenticated-user(request, restored, refresh) {
                                 error response => response
-                                ok user => campfire.server.room-read-route(request, user, refresh, context)
+                                ok user => campfire.server.room-read-route(request, user, refresh, context, around)
                             }
                         }
                     }
@@ -894,10 +934,10 @@ test campfire.server.room-read/signed-session {
     expect campfire.server.test-fixture() == 0
     let context = campfire.server.test-context()
     let signed = campfire.server.sign-session-token(context.signing-key, "session-token-1", 1791979200000000)
-    let shown = campfire.server.room-read(campfire.server.test-request(option.some<String>(signed)), context)
+    let shown = campfire.server.room-read(campfire.server.test-request(option.some<String>(signed)), context, option.none<Int>())
     expect shown.status == 200
     expect shown.refresh-session-token == option.none<SessionToken>()
-    let anonymous = campfire.server.room-read(campfire.server.test-request(option.none<String>()), context)
+    let anonymous = campfire.server.room-read(campfire.server.test-request(option.none<String>()), context, option.none<Int>())
     expect anonymous.status == 302
 }
 
@@ -1026,7 +1066,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>())
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1062,7 +1102,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>())
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1077,7 +1117,7 @@ fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) 
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => campfire.server.http-response(campfire.server.room-read(built.campfire, context), built, request.target, context)
+        ok built => campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context)
     }
 }
 
@@ -1158,7 +1198,7 @@ test campfire.server.whole-room-page/boosted {
     expect campfire.server.test-fixture() == 0
     let room = roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00")
     let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
-    let page = match campfire.server.page-for-member(user.id, room.id, campfire.server.test-context()) {
+    let page = match campfire.server.page-for-member(user.id, room.id, campfire.server.test-context(), option.none<Int>()) {
         error failure => ""
         ok messages => campfire.server.whole-room-page(campfire.server.page-chrome(room, user, "http://x", campfire.server.test-context()), messages, campfire.server.test-context())
     }

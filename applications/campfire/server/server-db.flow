@@ -677,6 +677,36 @@ record PageKey {
     updated-at-ms: Int
 }
 
+fn campfire.server.page-keys-around(room-id: RoomId, message-id: Int) -> Result<List<PageKey>, DbError> {
+    effects db.read
+    doc "messages.page_around(message) for /rooms/<id>/@<message>: the forty before it (created_at <, newest forty, oldest first), the message, the forty after it (created_at >, oldest forty). The last page when the room has no such message (rooms#show's find_by fallback)."
+
+    match db.query("SELECT EXISTS (SELECT 1 FROM messages INNER JOIN users ON users.id = messages.creator_id WHERE messages.room_id = $roomId AND messages.id = $messageId)", [db.int-param(RoomId.value(room-id)), db.int-param(message-id)]) {
+        error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+        ok found-rows => {
+            let found = match db.first-row(found-rows) { none => false; some row => db.int(row, 0) != 0 }
+            if bool.not(found) {
+                campfire.server.page-keys-query(room-id)
+            } else {
+                match db.query("WITH target AS (SELECT id, created_at FROM messages WHERE room_id = $roomId AND id = $messageId), before AS (SELECT messages.id AS id, ROW_NUMBER() OVER (ORDER BY messages.created_at DESC) AS position FROM messages, target WHERE messages.room_id = $roomId AND messages.created_at < target.created_at ORDER BY messages.created_at DESC LIMIT 40), after AS (SELECT messages.id AS id, ROW_NUMBER() OVER (ORDER BY messages.created_at) AS position FROM messages, target WHERE messages.room_id = $roomId AND messages.created_at > target.created_at ORDER BY messages.created_at LIMIT 40), page AS (SELECT id, 0 AS part, -position AS position FROM before UNION ALL SELECT id, 1, 0 FROM target UNION ALL SELECT id, 2, position FROM after) SELECT messages.id, CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER) FROM page INNER JOIN messages ON messages.id = page.id INNER JOIN users ON users.id = messages.creator_id ORDER BY page.part, page.position", [db.int-param(RoomId.value(room-id)), db.int-param(message-id)]) {
+                    error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+                    ok rows => {
+                        var keys = list.empty<PageKey>()
+                        var valid = true
+                        for row in rows {
+                            let id = campfire.server.value-int(match list.get(row.values, 0) { none => db.null-param(); some value => value })
+                            let updated = campfire.server.value-int(match list.get(row.values, 1) { none => db.null-param(); some value => value })
+                            valid = valid && id != option.none<Int>() && updated != option.none<Int>()
+                            keys = list.append(keys, pageKey.new(id = campfire.server.int-or-zero(id), updated-at-ms = campfire.server.int-or-zero(updated)))
+                        }
+                        if valid { result.ok<List<PageKey>, DbError>(keys) } else { result.error<List<PageKey>, DbError>(DbError.unavailable()) }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn campfire.server.page-keys-query(room-id: RoomId) -> Result<List<PageKey>, DbError> {
     effects db.read
     doc "The page's message ids and updated_at (ms), oldest first: the same forty rows as campfire.server.page-query (creator present), without their columns. Like the Rust reference's Message::last_page, it reads only what the fragment keys need."

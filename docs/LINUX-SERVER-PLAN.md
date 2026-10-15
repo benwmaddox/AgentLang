@@ -126,7 +126,7 @@ Unix-microseconds clock primitive.
   requests no longer copy it. The Campfire context is 240 bytes, so this
   saves little time (< 0.1% of a room request).
 - Worker buffers are lazy reservations (Linux `mmap` `MAP_NORESERVE`, no
-  memset; Windows commits on first touch): arena `--arena-mb` (32), input
+  memset; Windows commits on first touch): arena `--arena-mb` (128; 32 until 285, too small for the 81-message page around a message), input
   (128 KB head + `--max-body-kb`), response `--retained-mb` (4). Only touched
   pages are resident. At shutdown each worker logs `peak-arena-bytes` (cursor
   high-water, which includes the 16 MB host-output reservation of a host

@@ -879,7 +879,7 @@ int main(int argc, char **argv) {
 #endif
   options.port = 13774;
   options.workers = 1;
-  options.arena_bytes = 32u << 20;
+  options.arena_bytes = 128u << 20; /* an @message page (81 messages) needs more than 32 MB of cursor */
   options.retained_bytes = 4u << 20;
   options.max_body_bytes = 1u << 20;
   options.cache_mb = 0u; /* off unless asked for: a no-cache run never caches silently */
