@@ -377,6 +377,10 @@ type internal OwningProgramInfo =
       /// WrapScalar sites whose input is a literal the type's pure validator
       /// accepted at compile time; their runtime validator call is omitted.
       ProvenRefinedLiteralSites: Set<SourceSiteId>
+      /// WrapScalar instructions (by reference) in reachable function bodies
+      /// whose input is already valid for the type (provenValidatedWrapSites);
+      /// their runtime validator call is omitted too.
+      ProvenValidWraps: HashSet<IrInstruction>
       Layouts: OwningStackTypeLayout list }
 
 type internal OwningDiagnosticInfo =
@@ -1032,6 +1036,128 @@ module OwningStackAot =
 
     let private extent payload = max 8 payload
 
+    /// Operand and result counts of a straight-line IR operation; None for
+    /// operations that run nested blocks or transfer control.
+    let private straightLineEffect (operation: IrOperation) =
+        match operation with
+        | IrOperation.Constant _ | IrOperation.ListEmpty _ | IrOperation.OptionNone _ | IrOperation.LoadLocal _ -> Some(0, 1)
+        | IrOperation.Call call
+        | IrOperation.MakeRecord(call, _, _)
+        | IrOperation.GetRecordField(call, _, _)
+        | IrOperation.WrapScalar(call, _, _)
+        | IrOperation.UnwrapScalar(call, _)
+        | IrOperation.MakeEnumCase(call, _, _) -> Some(call.InputTypes.Length, call.OutputTypes.Length)
+        | IrOperation.HtmlTemplate(_, parts) -> Some(parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1), 1)
+        | IrOperation.ListSingleton _ | IrOperation.OptionSome _ | IrOperation.ResultOk _ | IrOperation.ResultError _
+        | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ -> Some(1, 1)
+        | IrOperation.ListOf(_, count) -> Some(count, 1)
+        | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
+        | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
+        | _ -> None
+
+    /// WrapScalar sites in one function body whose String input is already valid
+    /// for the wrapped type, so its (pure) validator would return true:
+    /// - the input is `UnwrapScalar` of the same type, as in
+    ///   `html.raw(Html.value(page))`, directly or through `let` locals;
+    /// - for Html (`string.html-fragment?`), the input is also built only from
+    ///   unwrapped Html, literal well-formed fragments and `string.concat` of
+    ///   them. A fragment leaves the checker in its start state (content, no open
+    ///   element), so concatenated fragments are fragments.
+    /// Anything else (a parameter, a var, a match binding, another call) keeps
+    /// its run-time check.
+    let private provenValidatedWrapSites (isHtmlKey: ProgramTypeKey -> bool) (body: IrBlock) : HashSet<IrInstruction> =
+        // A tag is the set of validated types the String is known to satisfy.
+        // HtmlKeys stands for every Html-validated type.
+        let fragmentTag = set [ None ]
+        let tagFor key = if isHtmlKey key then Set.ofList [ Some key; None ] else Set.singleton (Some key)
+        let satisfies (tag: Set<ProgramTypeKey option>) key = tag.Contains(Some key) || (isHtmlKey key && tag.Contains None)
+        let excluded = HashSet<LocalSlot>()
+        let rec collectBinders (block: IrBlock) =
+            for instruction in block.Code do
+                match instruction.Operation with
+                | IrOperation.AssignLocal slot -> excluded.Add slot |> ignore
+                | IrOperation.ForRange(index, inner) -> excluded.Add index |> ignore; collectBinders inner
+                | IrOperation.ForList(_, item, index, inner) ->
+                    excluded.Add item |> ignore
+                    index |> Option.iter (excluded.Add >> ignore)
+                    collectBinders inner
+                | IrOperation.MatchOption(some, left, right) -> excluded.Add some |> ignore; collectBinders left; collectBinders right
+                | IrOperation.MatchResult(ok, error, left, right) ->
+                    excluded.Add ok |> ignore
+                    excluded.Add error |> ignore
+                    collectBinders left
+                    collectBinders right
+                | IrOperation.Scope inner | IrOperation.Compact inner -> collectBinders inner
+                | IrOperation.If(left, right) -> collectBinders left; collectBinders right
+                | IrOperation.MatchEnum(_, cases) -> for _, inner in cases do collectBinders inner
+                | _ -> ()
+        collectBinders body
+        let mutable slotTags = Map.empty<LocalSlot, Set<ProgramTypeKey option>>
+        let mutable changed = true
+        let mutable rounds = 0
+        let proven = HashSet<IrInstruction>(HashIdentity.Reference)
+        while changed && rounds < 16 do
+            rounds <- rounds + 1
+            proven.Clear()
+            let stores = Dictionary<LocalSlot, Set<ProgramTypeKey option>>()
+            let rec visit (block: IrBlock) =
+                let mutable stack: Set<ProgramTypeKey option> list = List.replicate block.EntryShape.StackTypes.Length Set.empty
+                let mutable stopped = false
+                let pop count =
+                    let count = min count stack.Length
+                    let popped = stack |> List.skip (stack.Length - count)
+                    stack <- stack |> List.take (stack.Length - count)
+                    popped
+                let opaque (blocks: IrBlock list) exitLength =
+                    for inner in blocks do visit inner
+                    stack <- List.replicate exitLength Set.empty
+                for instruction in block.Code do
+                    if not stopped then
+                        match instruction.Operation with
+                        | IrOperation.Constant(LString text, IrString) ->
+                            stack <- stack @ [ (if HtmlMarkup.isFragment text then fragmentTag else Set.empty) ]
+                        | IrOperation.UnwrapScalar(_, key) ->
+                            pop 1 |> ignore
+                            stack <- stack @ [ tagFor key ]
+                        | IrOperation.WrapScalar(_, key, Some _) ->
+                            match pop 1 with
+                            | [ tag ] when satisfies tag key -> proven.Add instruction |> ignore
+                            | _ -> ()
+                            stack <- stack @ [ Set.empty ]
+                        | IrOperation.Call call when call.ResolvedTarget = PrimitiveTarget(PrimitiveId "string.concat") ->
+                            match pop 2 with
+                            | [ left; right ] -> stack <- stack @ [ Set.intersect left right |> Set.filter (fun tag -> tag = None) ]
+                            | _ -> stack <- stack @ [ Set.empty ]
+                        | IrOperation.LoadLocal slot ->
+                            stack <- stack @ [ slotTags.TryFind slot |> Option.defaultValue Set.empty ]
+                        | IrOperation.StoreLocal slot ->
+                            let tag = match pop 1 with [ tag ] -> tag | _ -> Set.empty
+                            stores[slot] <- (match stores.TryGetValue slot with | true, seen -> Set.intersect seen tag | _ -> tag)
+                        | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) ->
+                            opaque [ inner ] inner.ExitShape.StackTypes.Length
+                        | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
+                            opaque [ left; right ] left.ExitShape.StackTypes.Length
+                        | IrOperation.MatchEnum(_, cases) ->
+                            match cases with
+                            | (_, first) :: _ -> opaque (List.map snd cases) first.ExitShape.StackTypes.Length
+                            | [] -> stopped <- true
+                        | IrOperation.Break | IrOperation.Continue -> stopped <- true
+                        | operation ->
+                            match straightLineEffect operation with
+                            | Some(pops, pushes) ->
+                                pop pops |> ignore
+                                stack <- stack @ List.replicate pushes Set.empty
+                            | None -> stopped <- true
+            visit body
+            let next =
+                stores
+                |> Seq.filter (fun pair -> not (excluded.Contains pair.Key) && not pair.Value.IsEmpty)
+                |> Seq.map (fun pair -> pair.Key, pair.Value)
+                |> Map.ofSeq
+            changed <- next <> slotTags
+            slotTags <- next
+        proven
+
     let private makeProgramInfoForBodies allowValidatedScalars (nativeHostProfile: OwningNativeHostProfile option) (verifiedBodies: VerifiedIrBody list) =
         if List.isEmpty verifiedBodies then invalidArg (nameof verifiedBodies) "An owning module requires at least one verified body."
         for verifiedBody in verifiedBodies do
@@ -1484,7 +1610,7 @@ module OwningStackAot =
                   "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
                   "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
                   "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
-                  "list.append"; "list.concat"
+                  "list.append"; "list.concat"; "list.count"; "list.get"
                   "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
                 |> Set.union (OwningStdlib.operations |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
 
@@ -1525,6 +1651,8 @@ module OwningStackAot =
                 | ("string.contains" | "string.starts-with" | "string.ends-with"), [ IrString; IrString ], [ IrBool ] -> true
                 | "list.append", [ IrList item; value ], [ IrList result ] -> item = value && item = result
                 | "list.concat", [ IrList left; IrList right ], [ IrList result ] -> left = right && left = result
+                | "list.count", [ IrList _ ], [ IrInt ] -> true
+                | "list.get", [ IrList item; IrInt ], [ IrOption result ] -> item = result
                 | "string.byte-at-or", [ IrString; IrInt; IrInt ], [ IrInt ] -> true
                 | _ when OwningStdlib.operations.ContainsKey operation ->
                     let _, inputs, outputs = OwningStdlib.operations[operation]
@@ -1880,6 +2008,16 @@ module OwningStackAot =
             // detached entry bodies number sites from zero and may share ids.
             for fn in reachableFunctions do visit fn.FunctionBody
             Set.ofSeq found
+        // Values already valid for the type (html.raw(Html.value(page)) and Html
+        // built from Html) are retagged without re-running the validator. Keyed
+        // by instruction, so no other body's site id can match.
+        let provenValidWraps =
+            let isHtmlKey key =
+                validatedScalarValidators.TryFind(IrNominal key) |> Option.exists (Some >> IrHtml.isHtmlValidator)
+            let found = HashSet<IrInstruction>(HashIdentity.Reference)
+            for fn in reachableFunctions do
+                for instruction in provenValidatedWrapSites isHtmlKey fn.FunctionBody do found.Add instruction |> ignore
+            found
         { Program = program
           Body = body
           Bodies = bodies
@@ -1889,6 +2027,7 @@ module OwningStackAot =
           ValidatedScalarValidators = validatedScalarValidators
           ValidatedScalarConstructors = validatedScalarConstructors
           ProvenRefinedLiteralSites = provenRefinedLiteralSites
+          ProvenValidWraps = provenValidWraps
           Layouts = typeLayouts }
 
     let private makeProgramInfo (verifiedBody: VerifiedIrBody) =
@@ -2461,6 +2600,108 @@ module OwningStackAot =
             else item.Diagnostic
 
     let private slotValue (LocalSlot value) = value
+
+    /// A loop-carried List var built by `v = list.append(v, x)`: during an
+    /// iteration the var keeps its list and the appended elements collect in a
+    /// pending run (allocas holding offset, extent, payload and element count),
+    /// which the loop latch moves next to the list.
+    type private OwningLoopAccumulator =
+        { AccumulatorSlot: LocalSlot
+          AccumulatorType: IrType
+          PendingOffsetSlot: string
+          PendingExtentSlot: string
+          PendingPayloadSlot: string
+          PendingCountSlot: string }
+
+    let rec private blockMentionsSlot (slot: LocalSlot) (block: IrBlock) =
+        block.Code
+        |> List.exists (fun instruction ->
+            match instruction.Operation with
+            | IrOperation.LoadLocal s | IrOperation.AssignLocal s | IrOperation.StoreLocal s -> s = slot
+            | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> blockMentionsSlot slot inner
+            | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
+                blockMentionsSlot slot left || blockMentionsSlot slot right
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.exists (snd >> blockMentionsSlot slot)
+            | _ -> false)
+
+    /// Loop accumulation, `items = list.append(items, x)` on a List `var`. Returns
+    /// the pattern's append and assign instructions when every load of `slot` in
+    /// the loop body is the left operand of such an append (so the var's bytes
+    /// are never shared within an iteration) and no nested loop or compact block
+    /// mentions it. Other assignments of the var are allowed.
+    let private loopAccumulatorPattern (body: IrBlock) (slot: LocalSlot) =
+        let appends = HashSet<IrInstruction>(HashIdentity.Reference)
+        let assigns = HashSet<IrInstruction>(HashIdentity.Reference)
+        let loads = HashSet<IrInstruction>(HashIdentity.Reference)
+        let mutable ok = true
+        let isAppend (call: IrResolvedCall) =
+            match call.ResolvedTarget with
+            | PrimitiveTarget(PrimitiveId "list.append") -> true
+            | _ -> false
+        let rec visit (block: IrBlock) =
+            // Some marks the unmodified value of a load of `slot`.
+            let mutable stack: IrInstruction option list = List.replicate block.EntryShape.StackTypes.Length None
+            let code = Array.ofList block.Code
+            let mutable index = 0
+            let mutable stopped = false
+            let pop count =
+                if stack.Length < count then
+                    ok <- false
+                    []
+                else
+                    let popped = stack |> List.skip (stack.Length - count)
+                    stack <- stack |> List.take (stack.Length - count)
+                    if List.exists Option.isSome popped then ok <- false
+                    popped
+            let nested (blocks: IrBlock list) exitLength =
+                if List.exists Option.isSome stack then ok <- false
+                for inner in blocks do visit inner
+                stack <- List.replicate exitLength None
+            while ok && not stopped && index < code.Length do
+                let instruction = code[index]
+                match instruction.Operation with
+                | IrOperation.LoadLocal s when s = slot -> stack <- stack @ [ Some instruction ]
+                | IrOperation.Call call when
+                    isAppend call
+                    && index + 1 < code.Length
+                    && (match code[index + 1].Operation with IrOperation.AssignLocal s -> s = slot | _ -> false)
+                    && stack.Length >= 2
+                    && stack[stack.Length - 2].IsSome
+                    && stack[stack.Length - 1].IsNone ->
+                    loads.Add stack[stack.Length - 2].Value |> ignore
+                    appends.Add instruction |> ignore
+                    assigns.Add code[index + 1] |> ignore
+                    stack <- stack |> List.take (stack.Length - 2)
+                    index <- index + 1
+                | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) ->
+                    pop (match instruction.Operation with IrOperation.ForRange _ -> 2 | _ -> 1) |> ignore
+                    if blockMentionsSlot slot inner then ok <- false
+                    nested [] inner.ExitShape.StackTypes.Length
+                | IrOperation.Compact inner ->
+                    if blockMentionsSlot slot inner then ok <- false
+                    nested [] inner.ExitShape.StackTypes.Length
+                | IrOperation.Scope inner -> nested [ inner ] inner.ExitShape.StackTypes.Length
+                | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
+                    pop 1 |> ignore
+                    nested [ left; right ] left.ExitShape.StackTypes.Length
+                | IrOperation.MatchEnum(_, cases) ->
+                    pop 1 |> ignore
+                    match cases with
+                    | (_, first) :: _ -> nested (List.map snd cases) first.ExitShape.StackTypes.Length
+                    | [] -> ok <- false
+                | IrOperation.Break | IrOperation.Continue ->
+                    if List.exists Option.isSome stack then ok <- false
+                    stopped <- true
+                | operation ->
+                    match straightLineEffect operation with
+                    | Some(pops, pushes) ->
+                        pop pops |> ignore
+                        stack <- stack @ List.replicate pushes None
+                    | None -> ok <- false
+                index <- index + 1
+            if not stopped && List.exists Option.isSome stack then ok <- false
+        visit body
+        if ok && appends.Count > 0 then Some(appends, assigns, loads) else None
 
     let private blockStores (block: IrBlock) =
         let values = Dictionary<LocalSlot, ResizeArray<IrType>>()
@@ -4764,6 +5005,12 @@ module OwningStackAot =
 
             // (latch, exit) labels of the enclosing loops, innermost on top.
             let loopTargets = Stack<string * string>()
+            // Loop accumulators being emitted: their pattern appends and assigns,
+            // and the accumulator of each var (for other assignments).
+            let accumulatorAppends = Dictionary<IrInstruction, OwningLoopAccumulator>(HashIdentity.Reference)
+            let accumulatorAssigns = HashSet<IrInstruction>(HashIdentity.Reference)
+            let accumulatorLoads = HashSet<IrInstruction>(HashIdentity.Reference)
+            let accumulatorSlots = Dictionary<LocalSlot, OwningLoopAccumulator>()
             let rec dynamicEnvFlags (env: OwningDynamicLocalEnvPlan) : int list =
                 (env.Slots |> Map.toList |> List.map (fun (_, slotPlan) -> slotPlan.FlagId))
                 @ (env.Scopes |> Map.toList |> List.collect (snd >> dynamicEnvFlags))
@@ -5380,8 +5627,11 @@ module OwningStackAot =
                             stack <- stack @ [ registerEntry ty (resolveLocalScalar binding) ]
                         else
                             let descriptor = resolveLocalEntry binding ty
-                            emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
-                            emitDescriptorTransfer w descriptor failBody
+                            // An accumulator's pattern load only names the list its append
+                            // extends; nothing reads it, so it skips the descriptor checks.
+                            if not (accumulatorLoads.Contains instruction) then
+                                emitDescriptorBounds w descriptor (Some(string (typeId ty))) failBody
+                                emitDescriptorTransfer w descriptor failBody
                             stack <- push stack ty descriptor.Offset descriptor.Extent descriptor.Payload descriptor.OwnerEnd
                     | IrOperation.Scope inner ->
                         let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified descriptor Scope has no local plan.")
@@ -5457,12 +5707,21 @@ module OwningStackAot =
                             stack <- prefix @ [ { result with Offset = offset; OwnerEnd = ownerEnd } ]
                         locals <- localsBeforeScope
                         localTypes <- localTypesBeforeScope
+                    | IrOperation.AssignLocal _ when accumulatorAssigns.Contains instruction ->
+                        // The accumulator keeps its list; the append went to the pending run.
+                        let _, prefix = pop 1
+                        stack <- prefix
                     | IrOperation.AssignLocal slot ->
                         let values, prefix = pop 1
                         let source = List.head values
                         // The var now shares these bytes with every later load.
                         unaliasedLists <- Set.remove source.Offset unaliasedLists
                         emitStoreLocal (localBinding slot locals) source
+                        match accumulatorSlots.TryGetValue slot with
+                        | true, accumulator ->
+                            // A new value replaces the list and its pending elements.
+                            w.Inst($"store i32 0, ptr {accumulator.PendingCountSlot}, align 4")
+                        | _ -> ()
                         stack <- prefix
                     | IrOperation.Break
                     | IrOperation.Continue ->
@@ -5483,6 +5742,59 @@ module OwningStackAot =
                         let childEnv = env.Scopes.TryFind instruction.Site |> Option.defaultWith (fun () -> invalidOp "Verified loop has no local plan.")
                         let localsBeforeLoop = locals
                         let localTypesBeforeLoop = localTypes
+                        // Adds `count` elements to the list header at `offset`.
+                        let emitListCount (w: OwningLlvmWriter) offset count listType =
+                            let previous = w.Fresh "acc.header.count"
+                            w.Inst($"{previous} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {offset})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            let added = w.Fresh "acc.header.added"
+                            w.Inst($"{added} = zext i32 {count} to i64")
+                            let total = w.Fresh "acc.header.total"
+                            w.Inst($"{total} = add i64 {previous}, {added}")
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {offset}, i64 {total}, i32 {typeId listType})")
+                            emitRuntimeStatus w "%ctx" failBody
+                        // The accumulator's list with its pending elements: when any are
+                        // pending, a new list at the cursor (one copy of the list), else the
+                        // list itself. Returns offset, extent, payload and owner end.
+                        let emitAccumulatedList (w: OwningLlvmWriter) (listEntry: OwningDynamicStackEntry) hasPending count pendingOffset pendingExtent pendingPayload listType =
+                            let resultSlots =
+                                [ "offset"; "extent"; "payload"; "owner" ]
+                                |> List.map (fun name ->
+                                    let slot = w.Fresh $"acc.list.{name}"
+                                    w.Inst($"{slot} = alloca i32, align 4")
+                                    slot)
+                            let storeResult values = List.iter2 (fun slot value -> w.Inst($"store i32 {value}, ptr {slot}, align 4")) resultSlots values
+                            storeResult [ listEntry.Offset; listEntry.Extent; listEntry.Payload; listEntry.OwnerEnd ]
+                            let buildLabel = w.Label "acc.list.build"
+                            let doneLabel = w.Label "acc.list.done"
+                            w.Inst($"br i1 {hasPending}, label %%{buildLabel}, label %%{doneLabel}")
+                            w.Line($"{buildLabel}:")
+                            let cursor = emitContextLoad w "%ctx" 2
+                            let extent = emitOffset w listEntry.Extent pendingExtent
+                            let payload = emitOffset w listEntry.Payload pendingPayload
+                            let next = emitOffset w cursor extent
+                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a loop-accumulated list." currentOwner instructionSpan [] []
+                            emitReserve w next reserveError failBody
+                            let previous = w.Fresh "acc.list.count"
+                            w.Inst($"{previous} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {listEntry.Offset})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            let added = w.Fresh "acc.list.added"
+                            w.Inst($"{added} = zext i32 {count} to i64")
+                            let total = w.Fresh "acc.list.total"
+                            w.Inst($"{total} = add i64 {previous}, {added}")
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {total}, i32 {typeId listType})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            emitCopyRange w (emitOffset w cursor "8") (emitOffset w listEntry.Offset "8") (emitOffset w listEntry.Extent "-8") (emitOffset w listEntry.Payload "-8") (typeId listType) failBody
+                            emitCopyRange w (emitOffset w cursor listEntry.Extent) pendingOffset pendingExtent pendingPayload (typeId listType) failBody
+                            emitUpdateLive w "8" "0" failBody
+                            storeResult [ cursor; extent; payload; next ]
+                            w.Inst($"br label %%{doneLabel}")
+                            w.Line($"{doneLabel}:")
+                            resultSlots
+                            |> List.map (fun slot ->
+                                let value = w.Fresh "acc.list.value"
+                                w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                                value)
                         let loadI64 offset =
                             let value = w.Fresh "loop.load"
                             w.Inst($"{value} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {offset})")
@@ -5534,6 +5846,40 @@ module OwningStackAot =
                             |> Set.filter localTypesBeforeLoop.ContainsKey
                             |> Set.filter (fun slot -> not (isRegisterType localTypesBeforeLoop[slot]))
                             |> Set.toList
+                        // One carried List var built only by `v = list.append(v, x)` is a loop
+                        // accumulator (amortized O(element) appends). It is relocated first, so
+                        // once moved it stays at the mark and the latch only adds elements.
+                        let accumulator =
+                            if not rewind then None
+                            else
+                                carried
+                                |> List.tryPick (fun slot ->
+                                    match localTypesBeforeLoop[slot] with
+                                    | IrList _ as listType ->
+                                        loopAccumulatorPattern body slot
+                                        |> Option.map (fun (appends, assigns, loads) ->
+                                            let newSlot name =
+                                                let pointer = w.Fresh $"acc.pending.{name}"
+                                                w.Inst($"{pointer} = alloca i32, align 4")
+                                                w.Inst($"store i32 0, ptr {pointer}, align 4")
+                                                pointer
+                                            let state =
+                                                { AccumulatorSlot = slot
+                                                  AccumulatorType = listType
+                                                  PendingOffsetSlot = newSlot "offset"
+                                                  PendingExtentSlot = newSlot "extent"
+                                                  PendingPayloadSlot = newSlot "payload"
+                                                  PendingCountSlot = newSlot "count" }
+                                            for append in appends do accumulatorAppends[append] <- state
+                                            for assign in assigns do accumulatorAssigns.Add assign |> ignore
+                                            for load in loads do accumulatorLoads.Add load |> ignore
+                                            accumulatorSlots[slot] <- state
+                                            state, appends, assigns, loads)
+                                    | _ -> None)
+                        let carried =
+                            match accumulator with
+                            | Some(state, _, _, _) -> state.AccumulatorSlot :: (carried |> List.filter ((<>) state.AccumulatorSlot))
+                            | None -> carried
                         let bodyFlags = dynamicEnvFlags childEnv
                         for flagId in bodyFlags do removeLocal flagId
                         let childLocals = makeBindings childEnv locals
@@ -5646,27 +5992,139 @@ module OwningStackAot =
                                     let pointer = w.Fresh "loop.carried.field"
                                     w.Inst($"{pointer} = getelementptr inbounds [{4 * carried.Length} x i32], ptr {quads}, i32 0, i32 {4 * index + field}")
                                     pointer
+                                let storeQuad index (values: string list) =
+                                    values |> List.iteri (fun field value -> w.Inst($"store i32 {value}, ptr {fieldPointer index field}, align 4"))
                                 let resolved =
                                     carried
                                     |> List.mapi (fun index slot ->
                                         let ty = localTypesBeforeLoop[slot]
                                         let entry = resolveLocalEntry (localBinding slot localsBeforeLoop) ty
-                                        [ entry.Offset; entry.Extent; entry.Payload; entry.OwnerEnd ]
-                                        |> List.iteri (fun field value -> w.Inst($"store i32 {value}, ptr {fieldPointer index field}, align 4"))
+                                        storeQuad index [ entry.Offset; entry.Extent; entry.Payload; entry.OwnerEnd ]
                                         slot, entry)
-                                w.Inst($"call void @al_owning_loop_relocate(ptr %%ctx, i32 {mark}, i32 {carried.Length}, ptr {quads})")
-                                emitRuntimeStatus w "%ctx" failBody
-                                resolved
-                                |> List.iteri (fun index (slot, entry) ->
-                                    let load field prefixName =
-                                        let value = w.Fresh prefixName
-                                        w.Inst($"{value} = load i32, ptr {fieldPointer index field}, align 4")
-                                        value
-                                    let moved = { entry with Offset = load 0 "loop.carried.offset"; OwnerEnd = load 3 "loop.carried.owner.end" }
-                                    emitStoreLocal (localBinding slot localsBeforeLoop) moved)
+                                let loadQuad index field prefixName =
+                                    let value = w.Fresh prefixName
+                                    w.Inst($"{value} = load i32, ptr {fieldPointer index field}, align 4")
+                                    value
+                                match accumulator with
+                                | None ->
+                                    w.Inst($"call void @al_owning_loop_relocate(ptr %%ctx, i32 {mark}, i32 {carried.Length}, ptr {quads})")
+                                    emitRuntimeStatus w "%ctx" failBody
+                                    resolved
+                                    |> List.iteri (fun index (slot, entry) ->
+                                        let moved = { entry with Offset = loadQuad index 0 "loop.carried.offset"; OwnerEnd = loadQuad index 3 "loop.carried.owner.end" }
+                                        emitStoreLocal (localBinding slot localsBeforeLoop) moved)
+                                | Some(state, _, _, _) ->
+                                    let _, listEntry = List.head resolved
+                                    let count = w.Fresh "acc.latch.count"
+                                    w.Inst($"{count} = load i32, ptr {state.PendingCountSlot}, align 4")
+                                    let pendingOffset = w.Fresh "acc.latch.offset"
+                                    w.Inst($"{pendingOffset} = load i32, ptr {state.PendingOffsetSlot}, align 4")
+                                    let pendingExtent = w.Fresh "acc.latch.extent"
+                                    w.Inst($"{pendingExtent} = load i32, ptr {state.PendingExtentSlot}, align 4")
+                                    let pendingPayload = w.Fresh "acc.latch.payload"
+                                    w.Inst($"{pendingPayload} = load i32, ptr {state.PendingPayloadSlot}, align 4")
+                                    let hasPending = w.Fresh "acc.latch.has.pending"
+                                    w.Inst($"{hasPending} = icmp ne i32 {count}, 0")
+                                    let finalSlots =
+                                        [ "offset"; "extent"; "payload"; "owner" ]
+                                        |> List.map (fun name ->
+                                            let slot = w.Fresh $"acc.final.{name}"
+                                            w.Inst($"{slot} = alloca i32, align 4")
+                                            slot)
+                                    let storeFinal values = List.iter2 (fun slot value -> w.Inst($"store i32 {value}, ptr {slot}, align 4")) finalSlots values
+                                    let owned = w.Fresh "acc.owned"
+                                    w.Inst($"{owned} = icmp eq i32 {listEntry.Offset}, {mark}")
+                                    let ownedLabel = w.Label "acc.latch.owned"
+                                    let freshLabel = w.Label "acc.latch.fresh"
+                                    let joinLabel = w.Label "acc.latch.join"
+                                    w.Inst($"br i1 {owned}, label %%{ownedLabel}, label %%{freshLabel}")
+                                    // The list is this loop's own copy at the mark: relocate the pending
+                                    // run first, right after the list, then the other vars, and count
+                                    // the new elements in the list header. The list itself never moves.
+                                    w.Line($"{ownedLabel}:")
+                                    let runOffset = w.Fresh "acc.run.offset"
+                                    w.Inst($"{runOffset} = select i1 {hasPending}, i32 {pendingOffset}, i32 0")
+                                    let runExtent = w.Fresh "acc.run.extent"
+                                    w.Inst($"{runExtent} = select i1 {hasPending}, i32 {pendingExtent}, i32 0")
+                                    let runPayload = w.Fresh "acc.run.payload"
+                                    w.Inst($"{runPayload} = select i1 {hasPending}, i32 {pendingPayload}, i32 0")
+                                    storeQuad 0 [ runOffset; runExtent; runPayload; emitOffset w runOffset runExtent ]
+                                    let listEnd = emitOffset w mark listEntry.Extent
+                                    w.Inst($"call void @al_owning_loop_relocate(ptr %%ctx, i32 {listEnd}, i32 {carried.Length}, ptr {quads})")
+                                    emitRuntimeStatus w "%ctx" failBody
+                                    let headerLabel = w.Label "acc.latch.header"
+                                    let ownedDoneLabel = w.Label "acc.latch.owned.done"
+                                    w.Inst($"br i1 {hasPending}, label %%{headerLabel}, label %%{ownedDoneLabel}")
+                                    w.Line($"{headerLabel}:")
+                                    emitListCount w mark count state.AccumulatorType
+                                    w.Inst($"br label %%{ownedDoneLabel}")
+                                    w.Line($"{ownedDoneLabel}:")
+                                    let ownedExtent = emitOffset w listEntry.Extent runExtent
+                                    storeFinal [ mark; ownedExtent; emitOffset w listEntry.Payload runPayload; emitOffset w mark ownedExtent ]
+                                    w.Inst($"br label %%{joinLabel}")
+                                    // First iteration (or a reassigned var): build the list once at the
+                                    // cursor with its pending elements, then relocate as usual.
+                                    w.Line($"{freshLabel}:")
+                                    let built = emitAccumulatedList w listEntry hasPending count pendingOffset pendingExtent pendingPayload state.AccumulatorType
+                                    storeQuad 0 built
+                                    w.Inst($"call void @al_owning_loop_relocate(ptr %%ctx, i32 {mark}, i32 {carried.Length}, ptr {quads})")
+                                    emitRuntimeStatus w "%ctx" failBody
+                                    storeFinal [ loadQuad 0 0 "acc.fresh.offset"; List.item 1 built; List.item 2 built; loadQuad 0 3 "acc.fresh.owner.end" ]
+                                    w.Inst($"br label %%{joinLabel}")
+                                    w.Line($"{joinLabel}:")
+                                    w.Inst($"store i32 0, ptr {state.PendingCountSlot}, align 4")
+                                    resolved
+                                    |> List.iteri (fun index (slot, entry) ->
+                                        let moved =
+                                            if index = 0 then
+                                                let field position name =
+                                                    let value = w.Fresh name
+                                                    w.Inst($"{value} = load i32, ptr {List.item position finalSlots}, align 4")
+                                                    value
+                                                { entry with
+                                                    Offset = field 0 "acc.final.offset.value"
+                                                    Extent = field 1 "acc.final.extent.value"
+                                                    Payload = field 2 "acc.final.payload.value"
+                                                    OwnerEnd = field 3 "acc.final.owner.value" }
+                                            else
+                                                { entry with Offset = loadQuad index 0 "loop.carried.offset"; OwnerEnd = loadQuad index 3 "loop.carried.owner.end" }
+                                        emitStoreLocal (localBinding slot localsBeforeLoop) moved)
                         w.Inst($"br label %%{headLabel}")
                         w.Line($"{exitLabel}:")
                         for flagId in bodyFlags do removeLocal flagId
+                        match accumulator with
+                        | Some(state, appends, assigns, loads) ->
+                            // A break can leave elements pending: build the final list once.
+                            let count = w.Fresh "acc.exit.count"
+                            w.Inst($"{count} = load i32, ptr {state.PendingCountSlot}, align 4")
+                            let hasPending = w.Fresh "acc.exit.has.pending"
+                            w.Inst($"{hasPending} = icmp ne i32 {count}, 0")
+                            let flushLabel = w.Label "acc.exit.flush"
+                            let doneLabel = w.Label "acc.exit.done"
+                            w.Inst($"br i1 {hasPending}, label %%{flushLabel}, label %%{doneLabel}")
+                            w.Line($"{flushLabel}:")
+                            let load slot name =
+                                let value = w.Fresh name
+                                w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                                value
+                            let binding = localBinding state.AccumulatorSlot localsBeforeLoop
+                            let listEntry = resolveLocalEntry binding state.AccumulatorType
+                            let built =
+                                emitAccumulatedList w listEntry hasPending count
+                                    (load state.PendingOffsetSlot "acc.exit.offset") (load state.PendingExtentSlot "acc.exit.extent") (load state.PendingPayloadSlot "acc.exit.payload")
+                                    state.AccumulatorType
+                            match built with
+                            | [ offset; extent; payload; ownerEnd ] ->
+                                emitStoreLocal binding { listEntry with Offset = offset; Extent = extent; Payload = payload; OwnerEnd = ownerEnd }
+                            | _ -> invalidOp "Loop accumulator lost its list descriptor."
+                            w.Inst($"store i32 0, ptr {state.PendingCountSlot}, align 4")
+                            w.Inst($"br label %%{doneLabel}")
+                            w.Line($"{doneLabel}:")
+                            for append in appends do accumulatorAppends.Remove append |> ignore
+                            for assign in assigns do accumulatorAssigns.Remove assign |> ignore
+                            for load in loads do accumulatorLoads.Remove load |> ignore
+                            accumulatorSlots.Remove state.AccumulatorSlot |> ignore
+                        | None -> ()
                         stack <- prefix
                         locals <- localsBeforeLoop
                         localTypes <- localTypesBeforeLoop
@@ -5924,7 +6382,7 @@ module OwningStackAot =
                                 invalidOp "Validated scalar wrap diverged from its frozen type validator during emission."
                             // A literal proven at compile time by the same pure validator
                             // is retagged without re-running it.
-                            if not (info.ProvenRefinedLiteralSites.Contains instruction.Site) then
+                            if not (info.ProvenRefinedLiteralSites.Contains instruction.Site || info.ProvenValidWraps.Contains instruction) then
                                 emitFrozenValidatorCall w scalarType frozenValidator input true instructionSpan failBody
                         | None -> ()
                         stack <- push prefix (IrNominal key) input.Offset input.Extent input.Payload input.OwnerEnd
@@ -6169,6 +6627,133 @@ module OwningStackAot =
                                 let result = w.Fresh "byte.result"
                                 w.Inst($"{result} = select i1 {inside}, i64 {widened}, i64 {fallbackValue}")
                                 emitScalarResult IrInt result
+                            | ("list.count" | "list.get") as operation, listEntry :: rest ->
+                                // The count is the list header. list.get finds the element (fixed
+                                // stride, or one measure per earlier element) and copies it into a
+                                // fresh Option; an index outside [0, count) gives none.
+                                match runtimeProfile with
+                                | OwningRuntimeProfile.Diagnostic ->
+                                    let status = w.Fresh "list.check.status"
+                                    w.Inst($"{status} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {listEntry.Offset}, i32 8)")
+                                    emitStatusResult w status failBody
+                                | OwningRuntimeProfile.TrustedGenerated -> ()
+                                let dataPointer = w.Fresh "list.data.pointer"
+                                w.Inst($"{dataPointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                                let data = w.Fresh "list.data"
+                                w.Inst($"{data} = load ptr, ptr {dataPointer}, align 8")
+                                let header = w.Fresh "list.header"
+                                w.Inst($"{header} = getelementptr inbounds i8, ptr {data}, i32 {listEntry.Offset}")
+                                let count32 = w.Fresh "list.count32"
+                                w.Inst($"{count32} = load i32, ptr {header}, align 8")
+                                let count = w.Fresh "list.count"
+                                w.Inst($"{count} = zext i32 {count32} to i64")
+                                match operation, rest with
+                                | "list.count", [] -> emitScalarResult IrInt count
+                                | _, [ index ] ->
+                                    let itemType =
+                                        match listEntry.Type with
+                                        | IrList item -> item
+                                        | _ -> invalidOp "Verified list.get has a non-List operand."
+                                    let sumType = IrOption itemType
+                                    let indexValue = scalarValue index
+                                    let inside = w.Fresh "list.get.inside"
+                                    w.Inst($"{inside} = icmp ult i64 {indexValue}, {count}")
+                                    let index32 = w.Fresh "list.get.index32"
+                                    w.Inst($"{index32} = trunc i64 {indexValue} to i32")
+                                    let resultSlots =
+                                        [ "offset"; "extent"; "payload"; "owner" ]
+                                        |> List.map (fun name ->
+                                            let slot = w.Fresh $"list.get.result.{name}"
+                                            w.Inst($"{slot} = alloca i32, align 4")
+                                            slot)
+                                    let storeResult (entry: OwningDynamicStackEntry) =
+                                        List.iter2 (fun slot value -> w.Inst($"store i32 {value}, ptr {slot}, align 4")) resultSlots
+                                            [ entry.Offset; entry.Extent; entry.Payload; entry.OwnerEnd ]
+                                    let someLabel = w.Label "list.get.some"
+                                    let noneLabel = w.Label "list.get.none"
+                                    let joinLabel = w.Label "list.get.join"
+                                    w.Inst($"br i1 {inside}, label %%{someLabel}, label %%{noneLabel}")
+                                    w.Line($"{someLabel}:")
+                                    let itemInfo = typeInfo itemType
+                                    let listEnd = emitOffset w listEntry.Offset listEntry.Extent
+                                    let element =
+                                        if not itemInfo.IsDynamic && itemInfo.PayloadBytes > 0 then
+                                            let stride = w.Fresh "list.get.stride"
+                                            w.Inst($"{stride} = mul i32 {index32}, {itemInfo.ExtentBytes}")
+                                            let offset = emitOffset w (emitOffset w listEntry.Offset "8") stride
+                                            { Type = itemType; Offset = offset; Extent = string itemInfo.ExtentBytes; Payload = string itemInfo.PayloadBytes; OwnerEnd = listEnd; Register = None }
+                                        else
+                                            // Skip `index` elements, then measure the element itself.
+                                            let cursorSlot = w.Fresh "list.get.cursor"
+                                            let remainingSlot = w.Fresh "list.get.remaining"
+                                            w.Inst($"{cursorSlot} = alloca i32, align 4")
+                                            w.Inst($"{remainingSlot} = alloca i32, align 4")
+                                            let firstElement = emitOffset w listEntry.Offset "8"
+                                            w.Inst($"store i32 {firstElement}, ptr {cursorSlot}, align 4")
+                                            w.Inst($"store i32 {index32}, ptr {remainingSlot}, align 4")
+                                            let elementSize = w.Fresh "list.get.size"
+                                            w.Inst($"{elementSize} = alloca %%AlOwningValueSize, align 4")
+                                            let measureError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to measure a verified List element." currentOwner instructionSpan [] []
+                                            let measure () =
+                                                let at = w.Fresh "list.get.at"
+                                                w.Inst($"{at} = load i32, ptr {cursorSlot}, align 4")
+                                                let status = w.Fresh "list.get.measure.status"
+                                                w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {at}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                                                emitStatusResult w status failBody
+                                                let payloadPointer = w.Fresh "list.get.payload.pointer"
+                                                let extentPointer = w.Fresh "list.get.extent.pointer"
+                                                w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                                                w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                                                let payload = w.Fresh "list.get.payload"
+                                                let extent = w.Fresh "list.get.extent"
+                                                w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                                                w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                                                at, extent, payload
+                                            let skipHead = w.Label "list.get.skip.head"
+                                            let skipBody = w.Label "list.get.skip.body"
+                                            let found = w.Label "list.get.found"
+                                            w.Inst($"br label %%{skipHead}")
+                                            w.Line($"{skipHead}:")
+                                            let remaining = w.Fresh "list.get.remaining.value"
+                                            w.Inst($"{remaining} = load i32, ptr {remainingSlot}, align 4")
+                                            let more = w.Fresh "list.get.more"
+                                            w.Inst($"{more} = icmp ne i32 {remaining}, 0")
+                                            w.Inst($"br i1 {more}, label %%{skipBody}, label %%{found}")
+                                            w.Line($"{skipBody}:")
+                                            let at, extent, _ = measure ()
+                                            w.Inst($"store i32 {emitOffset w at extent}, ptr {cursorSlot}, align 4")
+                                            let fewer = emitSub w remaining "1"
+                                            w.Inst($"store i32 {fewer}, ptr {remainingSlot}, align 4")
+                                            w.Inst($"br label %%{skipHead}")
+                                            w.Line($"{found}:")
+                                            let at, extent, payload = measure ()
+                                            { Type = itemType; Offset = at; Extent = extent; Payload = payload; OwnerEnd = listEnd; Register = None }
+                                    let some = emitSumPayloadConstruction sumType 0 [] element instructionSpan |> List.last
+                                    storeResult some
+                                    w.Inst($"br label %%{joinLabel}")
+                                    w.Line($"{noneLabel}:")
+                                    let cursor = emitContextLoad w "%ctx" 2
+                                    let next = emitOffset w cursor "8"
+                                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve an Option None value." currentOwner instructionSpan [] []
+                                    emitReserve w next reserveError failBody
+                                    w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 1, i32 {typeId sumType})")
+                                    emitRuntimeStatus w "%ctx" failBody
+                                    emitUpdateLive w "8" "0" failBody
+                                    emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)" failBody
+                                    storeResult { Type = sumType; Offset = cursor; Extent = "8"; Payload = "8"; OwnerEnd = next; Register = None }
+                                    w.Inst($"br label %%{joinLabel}")
+                                    w.Line($"{joinLabel}:")
+                                    let loaded =
+                                        resultSlots
+                                        |> List.map (fun slot ->
+                                            let value = w.Fresh "list.get.result"
+                                            w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                                            value)
+                                    dropInputs ()
+                                    match loaded with
+                                    | [ offset; extent; payload; ownerEnd ] -> stack <- push prefix sumType offset extent payload ownerEnd
+                                    | _ -> invalidOp "list.get lost its result descriptor."
+                                | _ -> invalidOp "Verified list primitive has an unexpected operand count."
                             | operation, arguments when OwningStdlib.operations.ContainsKey operation ->
                                 // Standard library slice 1: one runtime dispatcher sizes then writes
                                 // each result (String, Bytes, Option or List) at the cursor.
@@ -6274,6 +6859,56 @@ module OwningStackAot =
                                     emitStatusResult w writeStatus failBody
                                     emitUpdateLive w resultPayload "0" failBody
                                     stack <- push prefix resultType cursor resultExtent resultPayload resultEnd
+                            | "list.append", [ left; right ] when accumulatorAppends.ContainsKey instruction ->
+                                // Loop accumulation: copy the element onto the pending run (O(element)).
+                                // The run continues while it ends at the cursor; otherwise it restarts
+                                // at the cursor (moving the run's earlier elements along with it).
+                                let accumulator = accumulatorAppends[instruction]
+                                let load slot name =
+                                    let value = w.Fresh $"acc.{name}"
+                                    w.Inst($"{value} = load i32, ptr {slot}, align 4")
+                                    value
+                                let count = load accumulator.PendingCountSlot "count"
+                                let pendingOffset = load accumulator.PendingOffsetSlot "offset"
+                                let pendingExtent = load accumulator.PendingExtentSlot "extent"
+                                let pendingPayload = load accumulator.PendingPayloadSlot "payload"
+                                let cursor = emitContextLoad w "%ctx" 2
+                                let hasPending = w.Fresh "acc.has.pending"
+                                w.Inst($"{hasPending} = icmp ne i32 {count}, 0")
+                                let pendingEnd = emitOffset w pendingOffset pendingExtent
+                                let atCursor = w.Fresh "acc.at.cursor"
+                                w.Inst($"{atCursor} = icmp eq i32 {pendingEnd}, {cursor}")
+                                let extend = w.Fresh "acc.extend"
+                                w.Inst($"{extend} = and i1 {hasPending}, {atCursor}")
+                                let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a loop-accumulated list element." currentOwner instructionSpan [] []
+                                let restartLabel = w.Label "acc.restart"
+                                let moveLabel = w.Label "acc.move"
+                                let appendLabel = w.Label "acc.append"
+                                w.Inst($"br i1 {extend}, label %%{appendLabel}, label %%{restartLabel}")
+                                w.Line($"{restartLabel}:")
+                                w.Inst($"store i32 {cursor}, ptr {accumulator.PendingOffsetSlot}, align 4")
+                                w.Inst($"br i1 {hasPending}, label %%{moveLabel}, label %%{appendLabel}")
+                                w.Line($"{moveLabel}:")
+                                let movedEnd = emitOffset w cursor pendingExtent
+                                emitReserve w movedEnd reserveError failBody
+                                emitCopyRange w cursor pendingOffset pendingExtent pendingPayload (typeId accumulator.AccumulatorType) failBody
+                                w.Inst($"br label %%{appendLabel}")
+                                w.Line($"{appendLabel}:")
+                                let restartExtent = w.Fresh "acc.restart.extent"
+                                let restartPayload = w.Fresh "acc.restart.payload"
+                                w.Inst($"{restartExtent} = select i1 {hasPending}, i32 {pendingExtent}, i32 0")
+                                w.Inst($"{restartPayload} = select i1 {hasPending}, i32 {pendingPayload}, i32 0")
+                                let destination = emitContextLoad w "%ctx" 2
+                                let elementEnd = emitOffset w destination right.Extent
+                                emitReserve w elementEnd reserveError failBody
+                                emitCopyRange w destination right.Offset right.Extent right.Payload (typeId right.Type) failBody
+                                let nextExtent = emitOffset w restartExtent right.Extent
+                                let nextPayload = emitOffset w restartPayload right.Payload
+                                let nextCount = emitOffset w count "1"
+                                w.Inst($"store i32 {nextExtent}, ptr {accumulator.PendingExtentSlot}, align 4")
+                                w.Inst($"store i32 {nextPayload}, ptr {accumulator.PendingPayloadSlot}, align 4")
+                                w.Inst($"store i32 {nextCount}, ptr {accumulator.PendingCountSlot}, align 4")
+                                stack <- prefix @ [ left ]
                             | ("list.append" | "list.concat") as operation, [ left; right ] ->
                                 // A sized result list. Unaliased lists are extended in place when
                                 // the runtime layout allows it; otherwise the left elements and the

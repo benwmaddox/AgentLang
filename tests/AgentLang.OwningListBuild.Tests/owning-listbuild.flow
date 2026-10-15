@@ -190,3 +190,254 @@ test native.lists.retag/two {
     native.lists.retag([Tag.new("x"), Tag.new("y")])
     => value ["x", "y"]
 }
+
+fn native.acc.ints(n: Int) -> List<Int> {
+    effects none
+    var items = list.empty<Int>()
+    for i in 0..n {
+        items = list.append(items, i)
+    }
+    items
+}
+
+test native.acc.ints/three {
+    native.acc.ints(3)
+    => value [0, 1, 2]
+}
+
+fn native.acc.strings(n: Int) -> List<String> {
+    effects none
+    var items = list.empty<String>()
+    for i in 0..n {
+        items = list.append(items, int.to-string(i))
+    }
+    items
+}
+
+test native.acc.strings/three {
+    native.acc.strings(3)
+    => value ["0", "1", "2"]
+}
+
+fn native.acc.records(n: Int) -> List<Pair> {
+    effects none
+    var items = [pair.new("start", 0)]
+    for i in 0..n {
+        items = list.append(items, pair.new(string.concat("p", int.to-string(i)), i))
+    }
+    items
+}
+
+test native.acc.records/two {
+    list.count(native.acc.records(2))
+    => value 3
+}
+
+fn native.acc.aliases(n: Int) -> List<List<Int>> {
+    effects none
+    var first = [7]
+    var second = first
+    let before = second
+    for i in 0..n {
+        second = list.append(second, i)
+    }
+    [first, before, second]
+}
+
+test native.acc.aliases/two {
+    native.acc.aliases(2)
+    => value [[7], [7], [7, 0, 1]]
+}
+
+fn native.acc.snapshots(n: Int) -> List<List<Int>> {
+    effects none
+    var items = list.empty<Int>()
+    var snapshots = list.empty<List<Int>>()
+    for i in 0..n {
+        snapshots = list.append(snapshots, items)
+        items = list.append(items, i)
+    }
+    list.append(snapshots, items)
+}
+
+test native.acc.snapshots/two {
+    list.count(native.acc.snapshots(2))
+    => value 3
+}
+
+fn native.acc.break(n: Int, stop: Int) -> List<Int> {
+    effects none
+    var items = list.empty<Int>()
+    for i in 0..n {
+        items = list.append(items, i)
+        if i == stop {
+            break
+        }
+    }
+    items
+}
+
+test native.acc.break/stop {
+    native.acc.break(10, 2)
+    => value [0, 1, 2]
+}
+
+fn native.acc.branches(n: Int) -> List<Int> {
+    effects none
+    var items = list.empty<Int>()
+    for i in 0..n {
+        if i % 3 == 0 {
+            continue
+        }
+        if i % 2 == 0 {
+            items = list.append(items, i)
+        } else {
+            items = list.append(items, i)
+            items = list.append(items, 100 + i)
+        }
+        if i == 4 {
+            items = [-1]
+        }
+    }
+    items
+}
+
+test native.acc.branches/eight {
+    native.acc.branches(8)
+    => value [-1, 5, 105, 7, 107]
+}
+
+fn native.acc.with-text(n: Int) -> List<String> {
+    effects none
+    var items = list.empty<String>()
+    var text = ""
+    for i in 0..n {
+        text = string.concat(text, "x")
+        items = list.append(items, int.to-string(i))
+    }
+    list.append(list.append(items, text), "end")
+}
+
+test native.acc.with-text/three {
+    native.acc.with-text(3)
+    => value ["0", "1", "2", "xxx", "end"]
+}
+
+fn native.acc.rows(n: Int) -> List<List<Int>> {
+    effects none
+    var rows = list.empty<List<Int>>()
+    for i in 0..n {
+        var row = list.empty<Int>()
+        for j in 0..i {
+            row = list.append(row, j)
+        }
+        rows = list.append(rows, row)
+    }
+    rows
+}
+
+test native.acc.rows/three {
+    list.count(native.acc.rows(3))
+    => value 3
+}
+
+fn native.acc.kept(parts: List<String>) -> List<String> {
+    effects none
+    var kept = list.empty<String>()
+    for part, index in parts {
+        if string.byte-length(part) > 0 {
+            kept = list.append(kept, part)
+        }
+    }
+    kept
+}
+
+test native.acc.kept/drops-empty {
+    native.acc.kept(["a", "", "b"])
+    => value ["a", "b"]
+}
+
+fn native.lists.get(values: List<String>, index: Int) -> Option<String> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get/second {
+    native.lists.get(["a", "b"], 1)
+    => value option.some<String>("b")
+}
+
+fn native.lists.get-int(values: List<Int>, index: Int) -> Option<Int> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-int/outside {
+    native.lists.get-int([1, 2], 2)
+    => value option.none<Int>()
+}
+
+fn native.lists.get-pair(values: List<Pair>, index: Int) -> Option<Pair> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-pair/negative {
+    native.lists.get-pair([pair.new("a", 1)], -1)
+    => value option.none<Pair>()
+}
+
+record Flags {
+    field size: Int
+    field on: Bool
+}
+
+fn native.lists.get-bool(values: List<Bool>, index: Int) -> Option<Bool> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-bool/second {
+    native.lists.get-bool([true, false], 1)
+    => value option.some<Bool>(false)
+}
+
+fn native.lists.get-float(values: List<Float>, index: Int) -> Option<Float> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-float/second {
+    native.lists.get-float([1.5, 2.5], 1)
+    => value option.some<Float>(2.5)
+}
+
+fn native.lists.get-flags(values: List<Flags>, index: Int) -> Option<Flags> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-flags/outside {
+    native.lists.get-flags([flags.new(1, true)], 1)
+    => value option.none<Flags>()
+}
+
+fn native.lists.get-nested(values: List<List<Int>>, index: Int) -> Option<List<Int>> {
+    effects none
+    list.get(values, index)
+}
+
+test native.lists.get-nested/second {
+    native.lists.get-nested([[1], [2, 3]], 1)
+    => value option.some<List<Int>>([2, 3])
+}
+
+fn native.lists.count(values: List<String>) -> Int {
+    effects none
+    list.count(values)
+}
+
+test native.lists.count/two {
+    native.lists.count(["a", "b"])
+    => value 2
+}
