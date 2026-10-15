@@ -4006,6 +4006,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
+        writer.Line("declare i64 @al_owning_stdlib_call(ptr, i32, i32, i32, i64, i32, i32, i64, i32, i32, i64, i32, i32, i64, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
@@ -4671,6 +4672,8 @@ module OwningStackAot =
                 | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
                 | "string.byte-at-or" -> true
                 | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
+                // The stdlib dispatcher materializes (or passes by value) only its own arguments (report 279).
+                | _ when OwningStdlib.operations.ContainsKey operation -> true
                 | _ -> false
             /// Instructions that accept register entries anywhere on the stack.
             /// Every other instruction sees the stack materialized first.
@@ -6173,6 +6176,14 @@ module OwningStackAot =
                                 if operation = "crypto.random-bytes" then usesOsRandom.Value <- true
                                 if isOsCryptoPrimitive operation then usesOsCrypto.Value <- true
                                 let resultType = List.exactlyOne outputs
+                                let trusted = runtimeProfile = OwningRuntimeProfile.TrustedGenerated
+                                // Stdlib calls are register-aware: Int arguments go by value to
+                                // al_owning_stdlib_call; the other entry points read arena slots.
+                                let directCall = trusted && arguments.Length <= 4 && resultType <> IrInt && resultType <> IrBool
+                                let inlineLength = trusted && operation = "bytes.length"
+                                let arguments =
+                                    if directCall || inlineLength then arguments
+                                    else arguments |> List.map (materializeEntry currentOwner instructionSpan)
                                 let slots = arguments |> List.collect (fun value -> [ value.Offset; value.Extent ])
                                 let slots = slots @ List.replicate (16 - slots.Length) "0"
                                 let slotArgs = slots |> List.map (fun value -> $"i32 {value}") |> String.concat ", "
@@ -6184,6 +6195,19 @@ module OwningStackAot =
                                     else
                                         addDiagnostic "RUNTIME_STDLIB_RESULT_RANGE" $"{operation} exceeds the bounded byte range." currentOwner instructionSpan [] []
                                 match resultType with
+                                | _ when inlineLength ->
+                                    // Trusted: the Bytes byte count is the u32 header (report 279).
+                                    let dataPointer = w.Fresh "stdlib.length.data.pointer"
+                                    w.Inst($"{dataPointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                                    let data = w.Fresh "stdlib.length.data"
+                                    w.Inst($"{data} = load ptr, ptr {dataPointer}, align 8")
+                                    let header = w.Fresh "stdlib.length.header"
+                                    w.Inst($"{header} = getelementptr inbounds i8, ptr {data}, i32 {(List.exactlyOne arguments).Offset}")
+                                    let count32 = w.Fresh "stdlib.length.count32"
+                                    w.Inst($"{count32} = load i32, ptr {header}, align 8")
+                                    let count = w.Fresh "stdlib.length.count"
+                                    w.Inst($"{count} = zext i32 {count32} to i64")
+                                    emitScalarResult IrInt count
                                 | IrInt | IrBool ->
                                     let result = w.Fresh "stdlib.scalar"
                                     w.Inst($"{result} = alloca i64, align 8")
@@ -6194,6 +6218,31 @@ module OwningStackAot =
                                     let loaded = w.Fresh "stdlib.scalar.value"
                                     w.Inst($"{loaded} = load i64, ptr {result}, align 8")
                                     emitScalarResult resultType loaded
+                                | _ when directCall ->
+                                    // Trusted: one call validates, sizes, reserves, writes and accounts
+                                    // for the result at the cursor (report 279).
+                                    let callArgs =
+                                        [ for value in arguments ->
+                                            if isRegisterType value.Type then $"i32 0, i32 0, i64 {scalarValue value}"
+                                            else $"i32 {value.Offset}, i32 {value.Extent}, i64 0" ]
+                                    let callArgs = callArgs @ List.replicate (4 - callArgs.Length) "i32 0, i32 0, i64 0" |> String.concat ", "
+                                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve exact {operation} output." currentOwner instructionSpan [] []
+                                    let cursor = emitContextLoad w "%ctx" 2
+                                    let packed = w.Fresh "stdlib.call.packed"
+                                    w.Inst($"{packed} = call i64 @al_owning_stdlib_call(ptr %%ctx, i32 {opId}, {callArgs}, i32 {errorId}, i32 {reserveError})")
+                                    let okay = w.Fresh "stdlib.call.ok"
+                                    let next = w.Label "stdlib.call.continue"
+                                    w.Inst($"{okay} = icmp sge i64 {packed}, 0")
+                                    w.Inst($"br i1 {okay}, label %%{next}, label %%{failBody}")
+                                    w.Line($"{next}:")
+                                    let resultExtent = w.Fresh "stdlib.call.extent"
+                                    w.Inst($"{resultExtent} = trunc i64 {packed} to i32")
+                                    let high = w.Fresh "stdlib.call.high"
+                                    w.Inst($"{high} = lshr i64 {packed}, 32")
+                                    let resultPayload = w.Fresh "stdlib.call.payload"
+                                    w.Inst($"{resultPayload} = trunc i64 {high} to i32")
+                                    let resultEnd = emitOffset w cursor resultExtent
+                                    stack <- push prefix resultType cursor resultExtent resultPayload resultEnd
                                 | _ ->
                                     let cursor = emitContextLoad w "%ctx" 2
                                     let payloadPointer = w.Fresh "stdlib.payload.pointer"

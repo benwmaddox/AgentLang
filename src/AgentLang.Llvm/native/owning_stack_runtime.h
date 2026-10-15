@@ -318,6 +318,12 @@ int32_t al_owning_stdlib_write(al_owning_stack_context *ctx, int32_t op,
                                uint32_t o5, uint32_t e5, uint32_t o6,
                                uint32_t e6, uint32_t o7, uint32_t e7,
                                uint32_t error_id);
+int64_t al_owning_stdlib_call(al_owning_stack_context *ctx, int32_t op,
+                              uint32_t o0, uint32_t e0, int64_t v0,
+                              uint32_t o1, uint32_t e1, int64_t v1,
+                              uint32_t o2, uint32_t e2, int64_t v2,
+                              uint32_t o3, uint32_t e3, int64_t v3,
+                              uint32_t error_id, uint32_t reserve_error_id);
 int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
                                 uint32_t o0, uint32_t e0, uint32_t o1,
                                 uint32_t e1, uint32_t error_id,
