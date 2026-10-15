@@ -4006,7 +4006,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
-        writer.Line("declare i64 @al_owning_stdlib_call(ptr, i32, i32, i32, i64, i32, i32, i64, i32, i32, i64, i32, i32, i64, i32, i32)")
+        writer.Line("declare i64 @al_owning_stdlib_call(ptr, i32, i64, i64, i64, i64, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
         writer.Line("declare i32 @al_owning_string_join_write(ptr, i32, i32, i32, i32, i32, i32)")
@@ -6221,11 +6221,21 @@ module OwningStackAot =
                                 | _ when directCall ->
                                     // Trusted: one call validates, sizes, reserves, writes and accounts
                                     // for the result at the cursor (report 279).
+                                    // One i64 per argument: an Int's value, or offset | extent << 32.
                                     let callArgs =
                                         [ for value in arguments ->
-                                            if isRegisterType value.Type then $"i32 0, i32 0, i64 {scalarValue value}"
-                                            else $"i32 {value.Offset}, i32 {value.Extent}, i64 0" ]
-                                    let callArgs = callArgs @ List.replicate (4 - callArgs.Length) "i32 0, i32 0, i64 0" |> String.concat ", "
+                                            if isRegisterType value.Type then $"i64 {scalarValue value}"
+                                            else
+                                                let offset = w.Fresh "stdlib.call.offset"
+                                                let extent = w.Fresh "stdlib.call.extent.wide"
+                                                let high = w.Fresh "stdlib.call.extent.high"
+                                                let packedArgument = w.Fresh "stdlib.call.argument"
+                                                w.Inst($"{offset} = zext i32 {value.Offset} to i64")
+                                                w.Inst($"{extent} = zext i32 {value.Extent} to i64")
+                                                w.Inst($"{high} = shl i64 {extent}, 32")
+                                                w.Inst($"{packedArgument} = or i64 {high}, {offset}")
+                                                $"i64 {packedArgument}" ]
+                                    let callArgs = callArgs @ List.replicate (4 - callArgs.Length) "i64 0" |> String.concat ", "
                                     let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" $"Unable to reserve exact {operation} output." currentOwner instructionSpan [] []
                                     let cursor = emitContextLoad w "%ctx" 2
                                     let packed = w.Fresh "stdlib.call.packed"
