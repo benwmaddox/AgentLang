@@ -217,18 +217,6 @@ test campfire.server.message-count/empty {
     expect campfire.server.message-count(list.empty<MessageWithCreator>()) == 0
 }
 
-fn campfire.server.tokened-message(secret: String, message: MessageWithCreator) -> TokenedMessage {
-    effects random.read
-    doc "campfire.csrf.tokened-message: a message with its eight boost forms' masked tokens."
-
-    tokenedMessage.new(message = message, boost-tokens = campfire.csrf.boost-tokens(secret, message.id))
-}
-
-test campfire.server.tokened-message/tokens {
-    let message = messageWithCreator.new(id = MessageId.new(3), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.none<String>())
-    expect string.byte-length(campfire.server.tokened-message("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", message).boost-tokens.fire) == 86
-}
-
 // ------------------------------------------------------- fragment cache
 //
 // Rails renders the room's messages with `render partial: "messages/message",
@@ -236,16 +224,16 @@ test campfire.server.tokened-message/tokens {
 // body in `cache [ message, "presentation-v3" ]`: one fragment per message
 // version, keyed by the template digest, the message id and its updated_at
 // cache version, and nothing about the viewer, the creator or the room. On a
-// hit Rails evaluates none of the partial, so the eight quick-boost forms keep
-// the authenticity tokens of the request that first rendered the fragment
-// (valid for that session only; Rails behaves the same). Editing a message or
+// hit Rails evaluates none of the partial. The fragments carry no authenticity
+// tokens (forgery protection is by Origin and Sec-Fetch-Site, as in the Rust
+// reference), so a cached fragment equals a fresh render. Editing a message or
 // adding/removing a boost (Boost belongs_to :message, touch: true) changes
 // updated_at and so the key; renaming the creator, changing their avatar or
 // renaming the room does not, in Rails as here.
 
 fn campfire.server.message-template-version() -> String {
     doc "Stands in for Rails' template digest of messages/_message and the partials it renders. The cache lives in the server process, so a rebuilt server starts empty; bump this when campfire.views.rails-message changes what it emits within one build."
-    "views/messages/_message:flow-1"
+    "views/messages/_message:flow-2"
 }
 
 test campfire.server.message-template-version/template {
@@ -260,23 +248,18 @@ fn campfire.server.message-cache-key(message: MessageWithCreator) -> String {
 
 test campfire.server.message-cache-key/version {
     let message = messageWithCreator.new(id = MessageId.new(3), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 1772465460123, client-message-id = "c", created-at = "", creator-name = "", creator-bio = "", creator-updated-at = "", creator-avatar-token = "", body = option.none<String>())
-    expect campfire.server.message-cache-key(message) == "views/messages/_message:flow-1/messages/3-1772465460123/presentation-v3"
+    expect campfire.server.message-cache-key(message) == "views/messages/_message:flow-2/messages/3-1772465460123/presentation-v3"
 }
 
-record FragmentContext {
-    page: MessageContext
-    secret: String
-}
-
-fn campfire.server.message-fragment(context: FragmentContext, message: MessageWithCreator) -> String {
-    effects cache.read, cache.write, random.read
-    doc "The markup of messages/_message for one message through the fragment cache: the cached fragment, else the rendered partial (with this request's boost tokens, from the session's CSRF secret), stored for later requests."
+fn campfire.server.message-fragment(context: MessageContext, message: MessageWithCreator) -> String {
+    effects cache.read, cache.write
+    doc "The markup of messages/_message for one message through the fragment cache: the cached fragment, else the rendered partial, stored for later requests."
 
     let key = campfire.server.message-cache-key(message)
     match cache.get(key) {
         some fragment => fragment
         none => {
-            let rendered = campfire.views.text(campfire.views.rails-message(context.page, campfire.server.tokened-message(context.secret, message)))
+            let rendered = campfire.views.text(campfire.views.rails-message(context, message))
             if cache.put(key, rendered) {
                 rendered
             } else {
@@ -289,10 +272,11 @@ fn campfire.server.message-fragment(context: FragmentContext, message: MessageWi
 test campfire.server.message-fragment/first-render-is-kept {
     let message = messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 9, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("x"))
     let page = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
-    let first = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"), message)
-    let again = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"), message)
-    let edited = campfire.server.message-fragment(fragmentContext.new(page = page, secret = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"), messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 10, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("y")))
+    let first = campfire.server.message-fragment(page, message)
+    let again = campfire.server.message-fragment(page, message)
+    let edited = campfire.server.message-fragment(page, messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 10, client-message-id = "c5", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("y")))
     expect first == again
+    expect first == campfire.views.text(campfire.views.rails-message(page, message))
     expect string.contains(edited, "data-message-updated-at=\"10\"")
     expect first != edited
 }
@@ -306,11 +290,11 @@ test campfire.server.messages-slot/element {
     expect campfire.server.messages-slot() == campfire.views.text(html"<flow-messages-slot></flow-messages-slot>")
 }
 
-fn campfire.server.cached-room-page(chrome: PageChrome, secret: String, messages: List<MessageWithCreator>) -> String {
-    effects cache.read, cache.write, random.read
+fn campfire.server.cached-room-page(chrome: PageChrome, messages: List<MessageWithCreator>) -> String {
+    effects cache.read, cache.write
     doc "campfire.views.creator-room-page with each message through campfire.server.message-fragment. The fragments are joined as text into the layout's message slot (as Rails concatenates cached fragments): wrapping each cached String back into Html would re-validate every fragment on every hit, which costs as much as rendering it."
 
-    let context = fragmentContext.new(page = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url), secret = secret)
+    let context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
     let fragments = messages.map(context, campfire.server.message-fragment)
     let page = campfire.views.text(campfire.views.page(chrome, [html"<flow-messages-slot></flow-messages-slot>"]))
     let slot = campfire.server.messages-slot()
@@ -333,32 +317,23 @@ fn campfire.server.cached-room-page(chrome: PageChrome, secret: String, messages
 
 test campfire.server.cached-room-page/hit-equals-miss {
     let message = messageWithCreator.new(id = MessageId.new(4), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 7, client-message-id = "c4", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("hi <b>"))
-    let chrome = campfire.views.room-chrome(roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "", updated-at = ""), authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x", "m", "c")
-    let first = campfire.server.cached-room-page(chrome, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", [message])
-    let second = campfire.server.cached-room-page(chrome, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", [message])
+    let chrome = campfire.views.room-chrome(roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "", updated-at = ""), authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x")
+    let first = campfire.server.cached-room-page(chrome, [message])
+    let second = campfire.server.cached-room-page(chrome, [message])
     expect first == second
+    expect first == campfire.views.creator-room-page(chrome, [message])
     expect string.contains(first, "hi &lt;b&gt;")
     expect bool.not(string.contains(first, "flow-messages-slot"))
     expect string.contains(first, "<div id=\"message_c4\"")
 }
 
 fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, cache.read, cache.write, random.read
+    effects db.read, db.write, cache.read, cache.write
     doc "campfire.http.show-room: the newest forty messages; last_room is set only when the cookie differs."
 
     match campfire.server.page-for-member(user.id, room.id, context) {
         error failure => campfire.server.response(500, HttpView.empty(), "", refresh)
         ok messages => {
-            let secret = campfire.csrf.session-secret(request.csrf-token)
-            let room-id = int.to-string(RoomId.value(room.id))
-            let meta-token = campfire.csrf.form-token(secret.value, "!real_csrf_token")
-            let composer-token = campfire.csrf.form-token(secret.value, string.concat(string.concat("/rooms/", room-id), "/messages#post"))
-            let secret-value = secret.value
-            let new-csrf-token = if secret.fresh {
-                option.some<String>(secret.value)
-            } else {
-                option.none<String>()
-            }
             let remember-room = match request.last-room {
                 none => option.some<RoomId>(room.id)
                 some prior => {
@@ -378,8 +353,8 @@ fn campfire.server.show-room(request: CampfireHttpRequest, user: AuthUser, room:
                 refresh-session-token = refresh,
                 remember-return-to = false,
                 last-room = remember-room,
-                new-csrf-token = new-csrf-token,
-                body = campfire.server.cached-room-page(campfire.views.room-chrome(room, user, request.base-url, meta-token, composer-token), secret-value, messages))
+                new-csrf-token = option.none<String>(),
+                body = campfire.server.cached-room-page(campfire.views.room-chrome(room, user, request.base-url), messages))
         }
     }
 }
@@ -391,12 +366,13 @@ test campfire.server.show-room/fixture {
     let shown = campfire.server.show-room(campfire.server.test-request(option.none<String>()), user, room, option.none<SessionToken>(), campfire.server.test-context())
     expect shown.status == 200
     expect shown.last-room == option.some<RoomId>(RoomId.new(1))
-    expect shown.new-csrf-token != option.none<String>()
+    expect shown.new-csrf-token == option.none<String>()
+    expect bool.not(string.contains(shown.body, "authenticity_token"))
     expect string.contains(shown.body, "second message")
 }
 
 fn campfire.server.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, cache.read, cache.write, random.read
+    effects db.read, db.write, cache.read, cache.write
     doc "campfire.http.room-read-route: the room through the user's membership, else the room-show redirect."
 
     match campfire.rooms.find-for-user(user.id, request.room-id) {
@@ -418,7 +394,7 @@ test campfire.server.room-read-route/missing-room {
 }
 
 fn campfire.server.room-read(request: CampfireHttpRequest, context: CampfireServerContext) -> CampfireHttpResponse {
-    effects db.read, db.write, cache.read, cache.write, random.read
+    effects db.read, db.write, cache.read, cache.write
     doc "campfire.http.room-read for GET/HEAD room-show: session cookie, bot key, gates, room."
 
     match request.route {
@@ -472,7 +448,7 @@ fn campfire.server.contract-valid?(response: CampfireHttpResponse) -> Bool {
     let no-route-data = response.room == option.none<RoomRow>() && response.message == option.none<MessageRow>()
     let text-empty = response.text == ""
     let no-last-room = response.last-room == option.none<RoomId>()
-    let csrf-ok = response.new-csrf-token == option.none<String>() || response.view == HttpView.room()
+    let csrf-ok = response.new-csrf-token == option.none<String>()
     let view-ok = match response.view {
         empty => no-route-data && text-empty && bool.not(response.remember-return-to) && no-last-room
         room => {
@@ -560,16 +536,20 @@ test campfire.server.add-cookie/invalid {
 
 fn campfire.server.response-cookies(response: CampfireHttpResponse, built: ServerRequest, target: String, context: CampfireServerContext) -> Option<List<HttpHeader>> {
     effects random.read
-    doc "Set-Cookie headers in the native host's order: _campfire_session (return-to, flash alert, new CSRF secret; HttpOnly, session lifetime), session_token (refreshed, signed, permanent, HttpOnly), last_room (permanent). None when a cookie cannot be written."
+    doc "Set-Cookie headers in the native host's order: _campfire_session (return-to, flash alert; decrypted only then; HttpOnly, session lifetime), session_token (refreshed, signed, permanent, HttpOnly), last_room (permanent). None when a cookie cannot be written."
 
     let now = UtcInstant.value(built.campfire.now)
     let alert = if response.view == HttpView.redirect-root() { option.some<String>(response.text) } else { option.none<String>() }
     let return-url = if response.remember-return-to { option.some<String>(string.concat(context.base-url, target)) } else { option.none<String>() }
-    let mutation = response.remember-return-to || alert != option.none<String>() || response.new-csrf-token != option.none<String>()
+    let mutation = response.remember-return-to || alert != option.none<String>()
     var headers = option.some<List<HttpHeader>>(list.empty<HttpHeader>())
     if mutation {
-        let session = match built.session { none => "{}"; some text => text }
-        headers = match campfire.server.mutate-session(session, return-url, alert, response.new-csrf-token) {
+        let decrypted = match built.session-cookie {
+            none => option.none<String>()
+            some raw => campfire.server.decrypt-session(context.encryption-key, raw, now)
+        }
+        let session = match decrypted { none => "{}"; some text => text }
+        headers = match campfire.server.mutate-session(session, return-url, alert) {
             none => option.none<List<HttpHeader>>()
             some mutated => campfire.server.add-cookie(headers, campfire.server.set-cookie("_campfire_session", campfire.server.encrypt-session(context.encryption-key, mutated, now), "", true))
         }
@@ -585,7 +565,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>())
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -620,7 +600,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>())
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -646,8 +626,14 @@ test campfire.server.handle/room-page {
     let request = httpRequest.new(method = "GET", target = "/rooms/1", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = cookie-header), httpHeader.new(name = "user-agent", value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")], body = bytes.from-utf8(""), remote-ip = "127.0.0.1", now-microseconds = 1791979200000000)
     let sent = campfire.server.handle(request, context)
     expect sent.status == 200
-    expect campfire.server.header-count(sent.headers, "Set-Cookie") == 2
+    // Only last_room: no CSRF secret means no _campfire_session rewrite (as the Rust reference).
+    expect campfire.server.header-count(sent.headers, "Set-Cookie") == 1
+    expect match campfire.server.header-last(sent.headers, "Set-Cookie") { none => false; some value => string.starts-with(value, "last_room=1;") }
     expect string.contains(sent.body, "first message")
+    expect bool.not(string.contains(sent.body, "authenticity_token"))
+    expect bool.not(string.contains(sent.body, "csrf"))
+    // No per-request tokens: the same request renders the same bytes.
+    expect campfire.server.handle(request, context).body == sent.body
 }
 
 // --------------------------------------------------------------- fixtures

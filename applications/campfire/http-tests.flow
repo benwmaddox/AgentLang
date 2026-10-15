@@ -3,14 +3,6 @@ test-file campfire-http-authenticate {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -155,14 +147,6 @@ test-file campfire-http-authenticate {
 test-file campfire-http-authenticated {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
-    }
-
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -311,14 +295,6 @@ test-file campfire-http-bot-or-redirect {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -431,14 +407,6 @@ test-file campfire-http-bot-or-redirect {
 test-file campfire-http-create-message {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
-    }
-
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -715,14 +683,6 @@ test-file campfire-http-dispatch {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -933,14 +893,6 @@ test-file campfire-http-response {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -1001,14 +953,6 @@ test-file campfire-http-response {
 test-file campfire-http-route {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
-    }
-
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
@@ -1189,14 +1133,6 @@ test-file campfire-http-show-room {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {
         result.ok<MessageRow, RoomMessageError>(messageRow.new(id = MessageId.new(1), room-id = RoomId.new(1), creator-id = UserId.new(1), client-message-id = "test", body = option.some<String>("Hello"), created-at = "2026-01-01", updated-at = "2026-01-01"))
     }
@@ -1309,14 +1245,6 @@ test-file campfire-http-show-room {
 test-file campfire-http-unauthenticated {
     override fn campfire.messages.page-for-member(user-id: UserId, room-id: RoomId) -> Result<List<MessageWithCreator>, RoomMessageError> {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
-    }
-
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
     }
 
     override fn campfire.messages.create-for-member(user-id: UserId, room-id: RoomId, client-message-id: Option<String>, body: Option<String>) -> Result<MessageRow, RoomMessageError> {

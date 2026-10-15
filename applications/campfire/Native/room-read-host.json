@@ -15,7 +15,7 @@
     "SessionId", "UserId", "RoomId", "MessageId", "SessionToken",
     "BotKey", "RemoteIp", "UtcInstant", "Role", "AuthUserStatus",
     "RoomKind", "DbError", "BrowserFamily", "HttpRoute", "RequestMethod",
-    "HttpFormError", "HttpView", "MessageWithCreator", "CsrfSecret", "BoostTokens"
+    "HttpFormError", "HttpView", "MessageWithCreator"
   ],
   "operations": [
     { "tag": 1, "name": "campfire.cookies.verify-session-token", "inputTypes": [ "String", "UtcInstant" ], "outputTypes": [ "Option<SessionToken>" ], "effects": [] },

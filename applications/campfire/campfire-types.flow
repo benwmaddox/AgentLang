@@ -79,27 +79,6 @@ record MessageWithCreator {
     body: Option<String>
 }
 
-record CsrfSecret {
-    value: String
-    fresh: Bool
-}
-
-record BoostTokens {
-    thumbs-up: String
-    clapping: String
-    waving-hand: String
-    muscle: String
-    red-heart: String
-    tears-of-joy: String
-    party-popper: String
-    fire: String
-}
-
-record TokenedMessage {
-    message: MessageWithCreator
-    boost-tokens: BoostTokens
-}
-
 record NewMessage {
     room-id: RoomId
     creator-id: UserId

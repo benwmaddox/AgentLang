@@ -7,8 +7,10 @@ Room-page parity: the Campfire Flow server (portable host) against the native HT
 Runs each server in turn on 127.0.0.1:<Port> against its own fresh copy of a
 Rails-login snapshot database, with the snapshot's session cookie, and records
 for a fixed request list the status, headers, Set-Cookie semantics and body.
-Bodies are compared with masked CSRF tokens replaced by a marker; the tokens
-themselves are checked by unmasking them with the session's CSRF secret.
+Bodies are compared byte for byte: since report 283 pages carry no CSRF tokens
+(forgery protection is by Origin and Sec-Fetch-Site, as in the Rust reference), so
+the script also checks that no token markup or session secret appears and that
+repeated requests render identical pages.
 Set-Cookie values are decrypted / verified with the fixture secret and compared
 by content (the encryption nonce, the IV and the expiry instant differ by run).
 Then harness loadgen validates the room_show contract for 2 s at 4 clients.
@@ -24,15 +26,14 @@ param(
     [int] $Port = 13773,
     [string] $Snapshot = 'snap-nc',
     [string] $Bench = 'D:\code\AgentLang\.agentlang\campfire-matched-258',
-    [string] $CsrfOracle = '',
     # With -LinuxServer (a WSL path, e.g. ~/linuxbench/flowhttp/campfire/flow_http_server)
     # the Flow side runs in WSL through scripts/campfire-flow-parity-linux.sh.
     [string] $LinuxServer = '',
     [string] $LinuxLoadgen = '/home/ben/cm258/loadgen-linux/release/loadgen',
     # The Flow server's --cache-mb (0 = no cache). With the cache on, message
-    # fragments (and their boost-form tokens) are reused from the first render,
-    # as Rails' `cache [ message, "presentation-v3" ]` does; bodies still match
-    # the uncached native host modulo token masks, and every token still verifies.
+    # fragments are reused from the first render, as Rails'
+    # `cache [ message, "presentation-v3" ]` does; bodies still match the
+    # uncached native host byte for byte.
     [int] $CacheMb = 32
 )
 $ErrorActionPreference = 'Stop'
@@ -190,8 +191,7 @@ function Read-Response([string] $Root, [string] $Name) {
     $bodyFile = Join-Path $Root "$Name.body.html"
     # curl -I writes the response head into the body file; HEAD has no body to compare.
     $body = if ((Test-Path $bodyFile) -and $Name -ne 'room-head') { [IO.File]::ReadAllText($bodyFile) } else { '' }
-    $masked = [regex]::Replace($body, '(name="authenticity_token" value="|<meta name="csrf-token" content=")[A-Za-z0-9_-]+', '$1<token>')
-    return [ordered]@{ status = $status; headers = (@($headers | Sort-Object) -join "`n"); cookies = ($cookies -join "`n"); body = $masked; bodyBytes = $body.Length }
+    return [ordered]@{ status = $status; headers = (@($headers | Sort-Object) -join "`n"); cookies = ($cookies -join "`n"); body = $body; bodyBytes = $body.Length }
 }
 $allSame = $true
 foreach ($case in $cases) {
@@ -207,59 +207,33 @@ foreach ($case in $cases) {
         [IO.File]::WriteAllText((Join-Path $out "$name.flow.txt"), "$($flow.status)`n$($flow.headers)`n$($flow.cookies)`n`n$($flow.body)")
     }
 }
-# CSRF: each masked token is pad || (pad XOR HMAC-SHA256(secret, identifier)),
-# with the session's _csrf_token (from the request's _campfire_session) as the
-# secret: meta "!real_csrf_token", composer "/rooms/<id>/messages#post", boost
-# "/messages/<id>/boosts#post". Prints counts only.
-function ConvertFrom-Base64Url([string] $Text) {
-    $t = $Text.Replace('-', '+').Replace('_', '/'); while ($t.Length % 4) { $t += '=' }
-    return [Convert]::FromBase64String($t)
-}
+# CSRF (report 283): no csrf meta tags, no authenticity_token fields and none of
+# the session's _csrf_token (a Rails-written session still carries one).
 $csrfSecret = $null
 $sessionPart = $cookie.Split(';') | ForEach-Object { $_.Trim() } | Where-Object { $_.StartsWith('_campfire_session=') } | Select-Object -First 1
 if ($sessionPart) {
     $pieces = [Uri]::UnescapeDataString($sessionPart.Substring(18)).Split('--'); $data = [Convert]::FromBase64String($pieces[0]); $plain = [byte[]]::new($data.Length)
     [Security.Cryptography.AesGcm]::new($encryptionKey, 16).Decrypt([Convert]::FromBase64String($pieces[1]), $data, [Convert]::FromBase64String($pieces[2]), $plain)
     $session = (Open-Envelope ([Text.Encoding]::UTF8.GetString($plain))).message | ConvertFrom-Json -AsHashtable
-    if ($session.ContainsKey('_csrf_token')) { $csrfSecret = ConvertFrom-Base64Url $session['_csrf_token'] }
+    if ($session.ContainsKey('_csrf_token')) { $csrfSecret = $session['_csrf_token'] }
 }
-function Test-Token([string] $Token, [string] $Identifier) {
-    $raw = ConvertFrom-Base64Url $Token
-    if ($raw.Length -ne 64) { return $false }
-    $expected = [Security.Cryptography.HMACSHA256]::HashData($csrfSecret, [Text.Encoding]::UTF8.GetBytes($Identifier))
-    for ($i = 0; $i -lt 32; $i++) { if (($raw[$i] -bxor $raw[32 + $i]) -ne $expected[$i]) { return $false } }
-    return $true
-}
-function Get-BoostTokens([string] $Body) {
-    return @([regex]::Matches($Body, 'action="(/messages/\d+/boosts)" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="([A-Za-z0-9_-]+)"') | ForEach-Object { , @($_.Groups[1].Value, $_.Groups[2].Value) })
-}
-function Test-PageTokens([string] $BodyFile) {
-    if ($null -eq $csrfSecret) { return 'no session _csrf_token' }
-    $body = [IO.File]::ReadAllText($BodyFile)
-    $meta = [regex]::Match($body, '<meta name="csrf-token" content="([A-Za-z0-9_-]+)"').Groups[1].Value
-    $composer = [regex]::Match($body, 'action="(/rooms/\d+/messages)"[^>]*><input type="hidden" name="authenticity_token" value="([A-Za-z0-9_-]+)"')
-    $boosts = Get-BoostTokens $body
-    $valid = @($boosts | Where-Object { Test-Token $_[1] "$($_[0])#post" }).Count
-    $masks = @($boosts | ForEach-Object { $_[1].Substring(0, 43) } | Sort-Object -Unique).Count
-    return "meta={0} composer={1} boost={2}/{3} distinct-masks={4}" -f (Test-Token $meta '!real_csrf_token'), ($composer.Success -and (Test-Token $composer.Groups[2].Value "$($composer.Groups[1].Value)#post")), $valid, $boosts.Count, $masks
+function Test-NoCsrf([string] $Body) {
+    return -not $Body.Contains('csrf') -and -not $Body.Contains('authenticity_token') -and ($null -eq $csrfSecret -or -not $Body.Contains($csrfSecret))
 }
 foreach ($kind in @('native', 'flow')) {
-    $check = if ($CsrfOracle -eq '') { Test-PageTokens (Join-Path $out "$kind/room-steady.body.html") } else { & $CsrfOracle -Body (Join-Path $out "$kind/room-steady.body.html") -CookieFile $cookieFile }
-    "{0,-7} csrf: {1}" -f $kind, ($check -join '; ')
-    "{0,-7} loadgen --validate 2 s: ok={1} invalid={2} errors={3}" -f $kind, $results[$kind].ok, $results[$kind].invalid, $results[$kind].errors
-}
-# Fragment cache: with the cache on, room-steady reuses room-first's message
-# fragments, boost tokens included (Rails' cached fragment does the same),
-# while the page's meta token is masked afresh; with it off, nothing repeats.
-foreach ($kind in @('native', 'flow')) {
-    $first = [IO.File]::ReadAllText((Join-Path $out "$kind/room-first.body.html"))
     $steady = [IO.File]::ReadAllText((Join-Path $out "$kind/room-steady.body.html"))
-    $firstBoosts = (Get-BoostTokens $first | ForEach-Object { $_[1] }) -join ','
-    $steadyBoosts = (Get-BoostTokens $steady | ForEach-Object { $_[1] }) -join ','
-    $metaPattern = '<meta name="csrf-token" content="([A-Za-z0-9_-]+)"'
-    "{0,-7} fragments: boost tokens repeated first->steady={1} meta token repeated={2} (flow --cache-mb {3})" -f $kind, ($firstBoosts -ne '' -and $firstBoosts -ceq $steadyBoosts), ([regex]::Match($first, $metaPattern).Groups[1].Value -ceq [regex]::Match($steady, $metaPattern).Groups[1].Value), $CacheMb
+    $first = [IO.File]::ReadAllText((Join-Path $out "$kind/room-first.body.html"))
+    $noCsrf = Test-NoCsrf $steady
+    # No per-request tokens: the first and the steady room page are the same bytes,
+    # with the fragment cache on or off.
+    $repeat = $first -ceq $steady
+    $allSame = $allSame -and $noCsrf -and $repeat
+    "{0,-7} csrf: no-token-markup={1} session-secret-present={2} first==steady={3} (flow --cache-mb {4})" -f $kind, $noCsrf, ($null -ne $csrfSecret), $repeat, $CacheMb
+    "{0,-7} loadgen --validate 2 s: ok={1} invalid={2} errors={3}" -f $kind, $results[$kind].ok, $results[$kind].invalid, $results[$kind].errors
 }
 $flowServerLog = Join-Path $out 'flow/server.stderr.log'
 if (Test-Path $flowServerLog) { "flow    {0}" -f ((Select-String -LiteralPath $flowServerLog -Pattern 'STOPPED' | Select-Object -Last 1).Line -replace '^.*(cache-mb=.*)$', '$1') }
-"loadgen bodies identical modulo tokens: {0}" -f (([regex]::Replace([IO.File]::ReadAllText((Join-Path $out 'native/loadgen-body.html')), '(name="authenticity_token" value="|<meta name="csrf-token" content=")[A-Za-z0-9_-]+', '$1<token>')) -ceq ([regex]::Replace([IO.File]::ReadAllText((Join-Path $out 'flow/loadgen-body.html')), '(name="authenticity_token" value="|<meta name="csrf-token" content=")[A-Za-z0-9_-]+', '$1<token>')))
+$loadgenSame = [IO.File]::ReadAllText((Join-Path $out 'native/loadgen-body.html')) -ceq [IO.File]::ReadAllText((Join-Path $out 'flow/loadgen-body.html'))
+$allSame = $allSame -and $loadgenSame
+"loadgen bodies identical: {0}" -f $loadgenSame
 "PARITY {0}" -f ($(if ($allSame) { 'PASS' } else { 'FAIL' }))

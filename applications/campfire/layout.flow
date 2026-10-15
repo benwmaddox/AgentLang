@@ -8,8 +8,6 @@ record PageChrome {
     body-class: String
     base-url: String
     account-version: String
-    csrf-token: String
-    composer-token: String
     user-avatar-url: String
     stream-name: String
     loaded-at: String
@@ -31,9 +29,6 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="csrf-param" content="authenticity_token" />
-<meta name="csrf-token" content="{chrome.csrf-token}" />
-    
     <meta name="current-user-id" content="{chrome.user-id}" /><meta name="current-user-name" content="{chrome.user-name}" />
     <meta name="action-cable-url" content="/cable">
 
@@ -415,7 +410,7 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
       <span class="for-screen-reader">Search</span>
 </a>
     <turbo-frame id="composer-frame">
-      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="/rooms/{chrome.room-id}/messages" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="{chrome.composer-token}" />
+      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="/rooms/{chrome.room-id}/messages" accept-charset="UTF-8" method="post">
         <fieldset data-composer-target="fields" contents>
           <div class="flex flex-column">
             <div class="composer__filelist flex flex--align-center gap flex-wrap" data-composer-target="fileList"></div>

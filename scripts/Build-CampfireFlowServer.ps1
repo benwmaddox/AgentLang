@@ -24,10 +24,10 @@ $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $campfire = Join-Path $repo 'applications/campfire'
 $shared = @(
     'campfire-types.flow', 'authentication-types.flow', 'http-types.flow', 'session-policy.flow',
-    'request-policy.flow', 'browser-types.flow', 'browser-policy.flow', 'user-agent.flow', 'csrf.flow',
+    'request-policy.flow', 'browser-types.flow', 'browser-policy.flow', 'user-agent.flow',
     'views.flow', 'layout.flow', 'message.flow', 'authentication.flow',
     # Attached tests: every committed word needs one.
-    'authentication-tests.flow', 'csrf-tests.flow', 'views-tests.flow', 'browser-tests.flow', 'user-agent-tests.flow')
+    'authentication-tests.flow', 'views-tests.flow', 'browser-tests.flow', 'user-agent-tests.flow')
 $sources = @($shared | ForEach-Object { Join-Path $campfire $_ })
 $sources += @(Get-ChildItem -LiteralPath (Join-Path $campfire 'server') -Filter '*.flow' | Sort-Object Name | ForEach-Object FullName)
 & (Join-Path $PSScriptRoot 'Build-FlowHttpServer.ps1') -App 'campfire.server' -Source $sources -Target $Target `

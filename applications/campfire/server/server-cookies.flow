@@ -298,39 +298,6 @@ test campfire.server.decrypt-session/node-cookie {
     expect campfire.server.decrypt-session(key, "a--b", 0) == option.none<String>()
 }
 
-fn campfire.server.session-csrf(session: String) -> Option<String> {
-    doc "The first top-level _csrf_token whose value is an ASCII string, as the native codec reads it."
-
-    match campfire.server.json-object(session) {
-        none => option.none<String>()
-        some root => {
-            let members = match json.count(root) { none => 0; some count => count }
-            var found = option.none<String>()
-            for index in 0..members {
-                let key = match json.key-at(root, index) { none => ""; some name => name }
-                let text = match json.index(root, index) {
-                    none => option.none<String>()
-                    some value => json.text(value)
-                }
-                if key == "_csrf_token" && text != option.none<String>() {
-                    found = match text {
-                        none => option.none<String>()
-                        some token => if campfire.server.ascii?(token) { option.some<String>(token) } else { option.none<String>() }
-                    }
-                    break
-                }
-            }
-            found
-        }
-    }
-}
-
-test campfire.server.session-csrf/first-string {
-    expect campfire.server.session-csrf("{\"_csrf_token\":1,\"_csrf_token\":\"a\",\"_csrf_token\":\"b\"}") == option.some<String>("a")
-    expect campfire.server.session-csrf("{\"session_id\":\"x\"}") == option.none<String>()
-    expect campfire.server.session-csrf("{\"_csrf_token\":\"é\",\"_csrf_token\":\"b\"}") == option.none<String>()
-}
-
 fn campfire.server.alert-value(alert: String) -> String {
     string.concat("{\"discard\":[],\"flashes\":{\"alert\":", string.concat(json.quote(alert), "}}"))
 }
@@ -349,8 +316,8 @@ test campfire.server.member/join {
     expect campfire.server.member("\"a\":1", "b", "2") == "\"a\":1,\"b\":2"
 }
 
-fn campfire.server.mutate-session(session: String, return-url: Option<String>, alert: Option<String>, csrf: Option<String>) -> Option<String> {
-    doc "Rewrites the session JSON as cookie_response_codec.c does: members keep their order, return_to_after_authenticating, _csrf_token and flash are replaced in place or appended in that order. Duplicate keys reject the session."
+fn campfire.server.mutate-session(session: String, return-url: Option<String>, alert: Option<String>) -> Option<String> {
+    doc "Rewrites the session JSON as cookie_response_codec.c does: members keep their order, return_to_after_authenticating and flash are replaced in place or appended in that order. Other members (a _csrf_token Rails wrote, say) are kept as they are. Duplicate keys reject the session."
 
     match campfire.server.json-object(session) {
         none => option.none<String>()
@@ -359,7 +326,6 @@ fn campfire.server.mutate-session(session: String, return-url: Option<String>, a
             var body = ""
             var duplicate = false
             var saw-return = false
-            var saw-csrf = false
             var saw-flash = false
             for index in 0..members {
                 let key = match json.key-at(root, index) { none => ""; some name => name }
@@ -372,9 +338,6 @@ fn campfire.server.mutate-session(session: String, return-url: Option<String>, a
                 if key == "return_to_after_authenticating" && return-url != option.none<String>() {
                     body = campfire.server.member(body, key, json.quote(match return-url { none => ""; some url => url }))
                     saw-return = true
-                } else if key == "_csrf_token" && csrf != option.none<String>() {
-                    body = campfire.server.member(body, key, json.quote(match csrf { none => ""; some token => token }))
-                    saw-csrf = true
                 } else if key == "flash" && alert != option.none<String>() {
                     body = campfire.server.member(body, key, campfire.server.alert-value(match alert { none => ""; some text => text }))
                     saw-flash = true
@@ -384,9 +347,6 @@ fn campfire.server.mutate-session(session: String, return-url: Option<String>, a
             }
             if bool.not(saw-return) && return-url != option.none<String>() {
                 body = campfire.server.member(body, "return_to_after_authenticating", json.quote(match return-url { none => ""; some url => url }))
-            }
-            if bool.not(saw-csrf) && csrf != option.none<String>() {
-                body = campfire.server.member(body, "_csrf_token", json.quote(match csrf { none => ""; some token => token }))
             }
             if bool.not(saw-flash) && alert != option.none<String>() {
                 body = campfire.server.member(body, "flash", campfire.server.alert-value(match alert { none => ""; some text => text }))
@@ -401,9 +361,9 @@ fn campfire.server.mutate-session(session: String, return-url: Option<String>, a
 }
 
 test campfire.server.mutate-session/replace-and-append {
-    expect campfire.server.mutate-session("{\"session_id\":\"s\", \"_csrf_token\":\"old\",\"n\":[1, 2]}", option.none<String>(), option.none<String>(), option.some<String>("new")) == option.some<String>("{\"session_id\":\"s\",\"_csrf_token\":\"new\",\"n\":[1, 2]}")
-    expect campfire.server.mutate-session("{}", option.some<String>("http://h/rooms/1"), option.some<String>("Gone"), option.some<String>("t")) == option.some<String>("{\"return_to_after_authenticating\":\"http://h/rooms/1\",\"_csrf_token\":\"t\",\"flash\":{\"discard\":[],\"flashes\":{\"alert\":\"Gone\"}}}")
-    expect campfire.server.mutate-session("{\"a\":1,\"a\":2}", option.none<String>(), option.none<String>(), option.some<String>("t")) == option.none<String>()
+    expect campfire.server.mutate-session("{\"session_id\":\"s\", \"_csrf_token\":\"old\",\"n\":[1, 2]}", option.some<String>("http://h/r"), option.none<String>()) == option.some<String>("{\"session_id\":\"s\",\"_csrf_token\":\"old\",\"n\":[1, 2],\"return_to_after_authenticating\":\"http://h/r\"}")
+    expect campfire.server.mutate-session("{}", option.some<String>("http://h/rooms/1"), option.some<String>("Gone")) == option.some<String>("{\"return_to_after_authenticating\":\"http://h/rooms/1\",\"flash\":{\"discard\":[],\"flashes\":{\"alert\":\"Gone\"}}}")
+    expect campfire.server.mutate-session("{\"a\":1,\"a\":2}", option.none<String>(), option.none<String>()) == option.none<String>()
 }
 
 fn campfire.server.slice-bytes(data: Bytes, start: Int, count: Int) -> Bytes {

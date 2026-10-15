@@ -9,9 +9,19 @@ silently.
 | Immutable strings | Strings are immutable and bump-allocated on the request data stack. Building a page copies pieces into joins. | Copy volume for large pages. Alternatives: last-use in-place append, or part lists written straight to the socket ([RESPONSE-STREAMING.md](RESPONSE-STREAMING.md)). | 2026-10-13 |
 | Workflow ceremony | A word must have a passing attached test before commit, and Flow code goes through define, commit and test. | Feels heavy when iterating on UI templates. Kept for now; review against agent authoring experience. | 2026-10-13 |
 | Per-call native overhead | Report 266 removed an 8 KB memo clear from every value measure. A 40-message room render still costs about 125 µs: field location through record scans, map callback frames, and copying list results. | Measure these per element and compare them with Rails and Rust before a full page lands. Map results are copied into the list and then into the page (three writes per byte). | 2026-10-13 |
-| CSRF parity with Rust (282) | Measured as-is: cached Rust 9,855 req/s at 0.40 ms vs Flow 2,389 at 1.70 ms. | The Rust reference uses header-only forgery protection (`Sec-Fetch-Site`/`Origin`, as Rails main's `using: :header_only`) and emits no CSRF tokens; Rails and Flow mask about 322 per page. Decide: header-only for all three, or Rails' tokens with Rust labeled as doing less work. | 2026-10-15 |
 | Rails worker count (282) | Rails runs the reference image's 3 puma workers and is wait-bound at ~0.79 of 4 vCPUs. CPU per request is the fair figure; req/s is not. | A supplementary `WEB_CONCURRENCY=4` run would let Rails use all 4 vCPUs, but it changes the reference configuration (user decision). | 2026-10-15 |
 | Shared response cache | Not implemented. Caching is disabled in all benchmark servers. | A cross-worker cache is a new cross-thread dependency. Discuss it before adopting ([RESPONSE-STREAMING.md](RESPONSE-STREAMING.md#cached-parts)). | 2026-10-13 |
+
+## Decided: forgery protection matches Rust (user, 2026-10-15)
+
+Flow Campfire uses header-only forgery protection, like the Rust reference
+(Rails main's `protect_from_forgery using: :header_only`): writes are checked by
+`Origin` and `Sec-Fetch-Site` (`campfire.request.forgery-check-passed?`, which
+was already the only check: no request path ever verified a token). Pages
+carry no CSRF meta tags or `authenticity_token` fields, so a room page is the
+same bytes on every request, and the server decrypts `_campfire_session` only
+when a response changes it. Rails keeps its token scheme in the benchmark and is
+labeled as the one server doing token work (report 283).
 
 ## Deferred usability work (user, 2026-10-13)
 
@@ -126,6 +136,7 @@ Then the stdlib restructure in report 271's "Next".
 
 | Item | Action | Deadline |
 | --- | --- | --- |
+| CSRF record fields (283) | `CampfireHttpRequest.csrf-token` and `CampfireHttpResponse.new-csrf-token` are always none since Flow matches Rust's header-only forgery protection (user, 2026-10-15). They stay only because the Windows native host (`request_encoder.c`, `campfire_http_renderer.c`, the `_csrf_token` writer in `cookie_response_codec.c`) and the .NET hosts encode those layouts. Remove the fields and that code when those hosts are deleted. | With stdlib step 5 |
 | `string.length` | Deprecated alias of `string.byte-length`, introduced with UTF-8 strings. Migrate every source, test and fixture (including hash-pinned frozen fixtures, through recorded transitions) to `string.byte-length` or `string.char-length`, then remove the alias (user, 2026-10-13). Known uses at report 265: `experiments/AgentLang.NativeValueStack/value-stack.flow` (source hash pinned by its fixture), `experiments/AgentLang.OwningMailbox/owning-mailbox-refinements.flow`, `tests/AgentLang.OwningCompact.Tests/owning-compact.flow`, `tests/AgentLang.OwningListBuild.Tests/owning-listbuild.flow`. | **2026-11-01** |
 
 ## Research: compile-time evaluation (user, 2026-10-13; not yet coded)

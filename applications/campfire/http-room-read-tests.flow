@@ -157,14 +157,6 @@ test-file campfire-http-room-read-route {
         result.ok<List<MessageWithCreator>, RoomMessageError>(list.empty<MessageWithCreator>())
     }
 
-    override fn campfire.csrf.session-secret(candidate: Option<String>) -> CsrfSecret {
-        csrfSecret.new(value = "test-csrf-secret", fresh = false)
-    }
-
-    override fn campfire.csrf.form-token(secret: String, identifier: String) -> String {
-        string.concat("test-token:", identifier)
-    }
-
     test campfire.http.room-read-route/member-room-renders {
         let response = campfire.http.room-read-route(
             campfireHttpRequest.new(

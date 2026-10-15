@@ -5,7 +5,10 @@
 
 record ServerRequest {
     campfire: CampfireHttpRequest
-    session: Option<String>
+    // The raw _campfire_session cookie. It is decrypted only when the response changes the
+    // session (as the Rust reference loads it lazily): a room GET without a mutation never
+    // touches it.
+    session-cookie: Option<String>
 }
 
 fn campfire.server.status(status: Int) -> HttpResponse {
@@ -363,7 +366,7 @@ test campfire.server.request/transport {
 }
 
 fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerContext, room-id: Int, is-head: Bool) -> Result<ServerRequest, HttpResponse> {
-    doc "The room-read CampfireHttpRequest: cookies (session_token, _campfire_session, last_room), the session's CSRF secret, the bot key, and fixed transport flags."
+    doc "The room-read CampfireHttpRequest: cookies (session_token, last_room; _campfire_session kept raw for a later mutation), the bot key, and fixed transport flags. No CSRF secret: pages carry no tokens."
 
     let cookie-count = campfire.server.header-count(incoming.headers, "cookie")
     let cookie-header = match campfire.server.header-last(incoming.headers, "cookie") { none => ""; some value => value }
@@ -382,14 +385,6 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                 ok session-cookie => match last-room {
                     error status => result.error<ServerRequest, HttpResponse>(campfire.server.status(status))
                     ok last-room-value => {
-                        let session = match session-cookie {
-                            none => option.none<String>()
-                            some raw => campfire.server.decrypt-session(context.encryption-key, raw, incoming.now-microseconds)
-                        }
-                        let csrf = match session {
-                            none => option.none<String>()
-                            some text => campfire.server.session-csrf(text)
-                        }
                         let built = campfireHttpRequest.new(
                             route = HttpRoute.room-show(),
                             method = if is-head { RequestMethod.head() } else { RequestMethod.get() },
@@ -410,8 +405,8 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                             accepts-turbo = false,
                             accepts-html = true,
                             last-room = last-room-value,
-                            csrf-token = csrf)
-                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session = session))
+                            csrf-token = option.none<String>())
+                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie))
                     }
                 }
             }
@@ -424,7 +419,7 @@ test campfire.server.room-request/cookies {
     let incoming = httpRequest.new(method = "HEAD", target = "/rooms/5?bot_key=1-x", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = "last_room=4; session_token=abc"), httpHeader.new(name = "user-agent", value = "UA")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7)
     let built = campfire.server.room-request(incoming, context, 5, true)
     expect match built { error response => false; ok request => request.campfire.last-room == option.some<String>("4") && request.campfire.session-token == option.some<String>("abc") && request.campfire.method == RequestMethod.head() }
-    expect match built { error response => false; ok request => request.campfire.bot-key == option.some<BotKey>(BotKey.new("1-x")) && request.campfire.csrf-token == option.none<String>() && request.session == option.none<String>() }
+    expect match built { error response => false; ok request => request.campfire.bot-key == option.some<BotKey>(BotKey.new("1-x")) && request.campfire.csrf-token == option.none<String>() && request.session-cookie == option.none<String>() }
     let duplicated = campfire.server.room-request(httpRequest.new(method = "GET", target = "/rooms/5", headers = [httpHeader.new(name = "cookie", value = "session_token=a; session_token=b")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7), context, 5, false)
     expect match duplicated { ok request => 0; error response => response.status } == 400
 }

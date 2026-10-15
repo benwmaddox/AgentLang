@@ -527,8 +527,6 @@ module Program =
               "applications/campfire/authentication.flow"
               "applications/campfire/authentication-tests.flow"
               "applications/campfire/message-policy.flow"
-              "applications/campfire/csrf.flow"
-              "applications/campfire/csrf-tests.flow"
               "applications/campfire/room-message.flow"
               "applications/campfire/room-message-tests.flow"
               "applications/campfire/request-policy.flow"
@@ -582,29 +580,23 @@ module Program =
               "campfire.rooms.find-for-user"; "campfire.membership.exists?"; "campfire.messages.last-page-with-creators" ]
         check (room.SetCookies |> List.exists (fun value -> value.StartsWith("last_room=", StringComparison.Ordinal))) "first successful room visit writes the last-room cookie"
 
-        // Report 271: Rails' CSRF model. A session without _csrf_token gets one,
-        // and every page token unmasks to HMAC-SHA256(secret, identifier).
-        currentCheck <- "room page renders Rails CSRF tokens for the session's secret"
-        let csrfState =
-            getCookie room "_campfire_session"
-            |> Option.bind (fun value -> cookies.DecryptRailsSession(value, clock.CurrentInstant))
-            |> Option.defaultWith (fun () -> failwith "a session without a CSRF secret must receive one in its Rails session cookie")
-        let csrfSecret = csrfState["_csrf_token"].GetValue<string>()
-        let fromUrlSafe (text: string) =
-            let padded = text.Replace('-', '+').Replace('_', '/')
-            Convert.FromBase64String(padded + String('=', (4 - padded.Length % 4) % 4))
-        let rawSecret = fromUrlSafe csrfSecret
-        equal 32 rawSecret.Length "the generated CSRF secret is 32 random bytes"
-        let unmasks (token: string) (identifier: string) =
-            let masked = fromUrlSafe token
-            masked.Length = 64
-            && (Array.map2 (^^^) masked[0..31] masked[32..63]) = HMACSHA256.HashData(rawSecret, Encoding.UTF8.GetBytes identifier)
-        let meta = Regex.Match(room.Body, "<meta name=\"csrf-token\" content=\"([^\"]+)\"").Groups[1].Value
-        check (unmasks meta "!real_csrf_token") "the csrf meta tag carries the masked global token"
-        let forms = Regex.Matches(room.Body, "action=\"(/messages/\d+/boosts)\"[^>]*method=\"post\"><input type=\"hidden\" name=\"authenticity_token\" value=\"([^\"]+)\"")
-        equal 320 forms.Count "forty messages render eight quick-boost forms each"
-        equal 320 (forms |> Seq.filter (fun (m: Match) -> unmasks m.Groups[2].Value (m.Groups[1].Value + "#post")) |> Seq.length) "every boost form token unmasks to its per-form HMAC"
-        equal 320 (forms |> Seq.map (fun (m: Match) -> m.Groups[2].Value) |> Set.ofSeq |> Set.count) "every form gets its own random mask"
+        // Report 283: forgery protection by Origin and Sec-Fetch-Site only, as the Rust reference
+        // (Rails main's `protect_from_forgery using: :header_only`). Pages carry no CSRF tokens, the
+        // session is not rewritten for a CSRF secret, and the same request renders the same bytes.
+        currentCheck <- "room page carries no CSRF tokens and does not rewrite the session"
+        check (not (room.Body.Contains("csrf", StringComparison.Ordinal))) "no csrf-param or csrf-token meta tags"
+        check (not (room.Body.Contains("authenticity_token", StringComparison.Ordinal))) "no authenticity_token form fields"
+        equal 320 (Regex.Matches(room.Body, "action=\"/messages/\d+/boosts\" accept-charset=\"UTF-8\" method=\"post\">\n            <input type=\"hidden\" name=\"boost\[content\]\"").Count) "forty messages render eight quick-boost forms each, without tokens"
+        check (getCookie room "_campfire_session" |> Option.isNone) "a session without a CSRF secret is not given one"
+        let again =
+            send client
+                { (baseSpec "GET" "/rooms/1") with
+                    Cookies = [ "session_token", token "fresh-token"; "last_room", "1" ]
+                    Accept = Some "text/html"
+                    FetchSite = Some "same-origin" }
+        expectStatus 200 again
+        equal room.Body again.Body "the same room renders byte-identical pages across requests"
+        check (getCookie again "_campfire_session" |> Option.isNone) "a steady-state room GET writes no session cookie"
 
         currentCheck <- "unauthenticated room redirect preserves encrypted existing state and return URL"
         let initialState = JsonObject()

@@ -33,23 +33,12 @@ fn campfire.http.unauthenticated() -> CampfireHttpResponse {
 }
 
 fn campfire.http.show-room(request: CampfireHttpRequest, user: AuthUser, room: RoomRow, refresh: Option<SessionToken>) -> CampfireHttpResponse {
-    effects db.read, random.read
-    doc "Lists the authorized room's newest forty messages. A last-room directive is emitted only when the incoming cookie differs."
+    effects db.read
+    doc "Lists the authorized room's newest forty messages. A last-room directive is emitted only when the incoming cookie differs. No CSRF tokens: forgery protection is by Origin and Sec-Fetch-Site (campfire.request.forgery-check-passed?), as in the Rust reference, so the page is the same on every request until what it shows changes."
 
     match campfire.messages.page-for-member(user.id, room.id) {
         error failure => campfire.http.response(500, HttpView.empty(), "", refresh)
         ok messages => {
-            let secret = campfire.csrf.session-secret(request.csrf-token)
-            let room-id = int.to-string(RoomId.value(room.id))
-            let meta-token = campfire.csrf.form-token(secret.value, "!real_csrf_token")
-            let composer-token = campfire.csrf.form-token(secret.value, string.concat(string.concat("/rooms/", room-id), "/messages#post"))
-            let secret-value = secret.value
-            let tokened = messages.map(secret-value, campfire.csrf.tokened-message)
-            let new-csrf-token = if secret.fresh {
-                option.some<String>(secret.value)
-            } else {
-                option.none<String>()
-            }
             let remember-room = match request.last-room {
                 none => option.some<RoomId>(room.id)
                 some prior => {
@@ -69,8 +58,8 @@ fn campfire.http.show-room(request: CampfireHttpRequest, user: AuthUser, room: R
                 refresh-session-token = refresh,
                 remember-return-to = false,
                 last-room = remember-room,
-                new-csrf-token = new-csrf-token,
-                body = campfire.views.creator-room-page(campfire.views.room-chrome(room, user, request.base-url, meta-token, composer-token), tokened)
+                new-csrf-token = option.none<String>(),
+                body = campfire.views.creator-room-page(campfire.views.room-chrome(room, user, request.base-url), messages)
             )
         }
     }
@@ -152,7 +141,7 @@ fn campfire.http.route(request: CampfireHttpRequest, user: AuthUser, refresh: Op
 }
 
 fn campfire.http.room-read-route(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>) -> CampfireHttpResponse {
-    effects db.read, random.read
+    effects db.read
     doc "Finds a room through the requesting user's membership before rendering it. Missing or inaccessible rooms retain the room-show redirect."
 
     match campfire.rooms.find-for-user(user.id, request.room-id) {
@@ -262,7 +251,7 @@ fn campfire.http.authenticate(request: CampfireHttpRequest) -> CampfireHttpRespo
 }
 
 fn campfire.http.room-read(request: CampfireHttpRequest) -> CampfireHttpResponse {
-    effects db.read, db.write, random.read
+    effects db.read, db.write
     doc "A narrow shared GET/HEAD entry for room reads. It rejects unrelated routes and unsafe methods before cookie, session, bot, or room providers are called."
 
     match request.route {

@@ -720,14 +720,3 @@ test-file campfire-creator-message-pages {
         }
     }
 }
-
-test-file campfire-csrf-tokened-messages {
-    override fn campfire.csrf.boost-tokens(secret: String, message-id: MessageId) -> BoostTokens {
-        boostTokens.new(thumbs-up = secret, clapping = "2", waving-hand = "3", muscle = "4", red-heart = "5", tears-of-joy = "6", party-popper = "7", fire = "8")
-    }
-
-    test campfire.csrf.tokened-message/pairs-tokens {
-        campfire.csrf.tokened-message("s", messageWithCreator.new(id = MessageId.new(5), room-id = RoomId.new(3), creator-id = UserId.new(9), created-at-ms = 0, updated-at-ms = 0, client-message-id = "c", created-at = "2026-01-01 00:00:00", creator-name = "A", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.none<String>())).boost-tokens.thumbs-up
-        => value "s"
-    }
-}

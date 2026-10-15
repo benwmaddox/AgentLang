@@ -101,8 +101,6 @@ try {
         'applications/campfire/campfire-types.flow',
         'applications/campfire/request-policy.flow',
         'applications/campfire/session-policy.flow',
-        'applications/campfire/csrf.flow',
-        'applications/campfire/csrf-tests.flow',
         'applications/campfire/room-message.flow',
         'applications/campfire/room-message-tests.flow',
         'applications/campfire/http-types.flow',

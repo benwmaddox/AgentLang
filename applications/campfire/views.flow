@@ -82,9 +82,9 @@ fn campfire.views.body(status: Int, view: HttpView, text: String) -> String {
     }
 }
 
-fn campfire.views.room-chrome(room: RoomRow, user: AuthUser, base-url: String, csrf-token: String, composer-token: String) -> PageChrome {
+fn campfire.views.room-chrome(room: RoomRow, user: AuthUser, base-url: String) -> PageChrome {
     effects none
-    doc "Layout values for a room page. Named gaps (report 268): CSRF tokens, signed avatar and stream names, the account logo version and the room's loaded-at time are still empty."
+    doc "Layout values for a room page. Named gaps (report 268): signed avatar and stream names, the account logo version and the room's loaded-at time are still empty."
 
     let kind = match room.kind {
         open => "open"
@@ -110,8 +110,6 @@ fn campfire.views.room-chrome(room: RoomRow, user: AuthUser, base-url: String, c
         body-class = body-class,
         base-url = base-url,
         account-version = "",
-        csrf-token = csrf-token,
-        composer-token = composer-token,
         user-avatar-url = "",
         stream-name = "",
         loaded-at = ""
@@ -125,7 +123,7 @@ fn campfire.views.room-page(chrome: PageChrome, messages: List<MessageRow>) -> S
     campfire.views.text(campfire.views.page(chrome, messages.map(campfire.views.message)))
 }
 
-fn campfire.views.creator-room-page(chrome: PageChrome, messages: List<TokenedMessage>) -> String {
+fn campfire.views.creator-room-page(chrome: PageChrome, messages: List<MessageWithCreator>) -> String {
     effects none
     doc "The room page: the Rails layout around each message's Rails partial, with the page values every partial shares passed as its context."
 
