@@ -35,6 +35,8 @@ type IrEffect =
     | ClockRead
     | RandomRead
     | ConsoleWrite
+    | CacheRead
+    | CacheWrite
 
 module IrEffects =
     let format = function
@@ -48,6 +50,8 @@ module IrEffects =
         | IrEffect.ClockRead -> "clock.read"
         | IrEffect.RandomRead -> "random.read"
         | IrEffect.ConsoleWrite -> "console.write"
+        | IrEffect.CacheRead -> "cache.read"
+        | IrEffect.CacheWrite -> "cache.write"
 
     let ofName = function
         | "fs.read" -> Some IrEffect.FileRead
@@ -60,6 +64,8 @@ module IrEffects =
         | "clock.read" -> Some IrEffect.ClockRead
         | "random.read" -> Some IrEffect.RandomRead
         | "console.write" -> Some IrEffect.ConsoleWrite
+        | "cache.read" -> Some IrEffect.CacheRead
+        | "cache.write" -> Some IrEffect.CacheWrite
         | _ -> None
 
     let names effects = effects |> Set.toList |> List.map format |> List.sort

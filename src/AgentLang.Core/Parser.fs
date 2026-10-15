@@ -439,7 +439,7 @@ module Parser =
                 | _ -> fail file line.Number 1 "PARSE_INVALID_REVISION" "Revision must be a positive integer."
             else bodyLines.Add line
         if not sawEffects then fail file header.Number 1 "PARSE_MISSING_EFFECTS" "Every word must declare 'effects none' or an explicit effect list."
-        let reserved = set [ "fs.read"; "fs.write"; "db.read"; "db.write"; "network.read"; "network.write"; "process.execute"; "clock.read"; "random.read"; "console.write" ]
+        let reserved = set [ "fs.read"; "fs.write"; "db.read"; "db.write"; "network.read"; "network.write"; "process.execute"; "clock.read"; "random.read"; "console.write"; "cache.read"; "cache.write" ]
         for effect in effects do
             if not (reserved.Contains effect) then fail file header.Number 1 "PARSE_UNKNOWN_EFFECT" $"Unknown effect '{effect}'."
         { Name = name

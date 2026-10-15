@@ -1,5 +1,6 @@
 // Example Flow HTTP app for the portable host tests: echo, a db-backed item
-// list, and a per-worker context derived once in worker-init.
+// list, the process-wide cache, and a per-worker context derived once in
+// worker-init.
 
 record CounterContext {
     greeting: String
@@ -135,8 +136,37 @@ fn counter.context-text(context: CounterContext) -> HttpResponse {
     counter.text(200, string.join([context.greeting, ",", key, ",", int.to-string(context.items-at-start)]))
 }
 
+fn counter.cache(request: HttpRequest) -> HttpResponse {
+    effects cache.read, cache.write
+    doc "GET /cache?<key>: hit:<value> or miss. POST /cache?<key> with the value as body: stored, or kept when the key was already cached (first writer wins)."
+    let key = http.query(request.target)
+    if request.method == "POST" {
+        let value = match bytes.to-utf8(request.body) {
+            none => ""
+            some text => text
+        }
+        if cache.put(key, value) {
+            counter.text(201, "stored")
+        } else {
+            counter.text(200, "kept")
+        }
+    } else {
+        match cache.get(key) {
+            none => counter.text(404, "miss")
+            some value => counter.text(200, string.concat("hit:", value))
+        }
+    }
+}
+
+test counter.cache/first-writer-wins {
+    expect counter.cache(counter.test-request("GET", "/cache?t1", "")).body == "miss"
+    expect counter.cache(counter.test-request("POST", "/cache?t1", "one")).body == "stored"
+    expect counter.cache(counter.test-request("POST", "/cache?t1", "two")).body == "kept"
+    expect counter.cache(counter.test-request("GET", "/cache?t1", "")).body == "hit:one"
+}
+
 fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse {
-    effects db.read, db.write
+    effects db.read, db.write, cache.read, cache.write
     let path = http.path(request.target)
     if path == "/hello" {
         counter.text(200, string.concat("hello ", context.greeting))
@@ -150,6 +180,8 @@ fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse
         counter.add-item(request)
     } else if path == "/item" {
         counter.find-item(request.target)
+    } else if path == "/cache" {
+        counter.cache(request)
     } else if path == "/bad-sql" {
         match db.execute("insert into missing_table values (?1)", [db.int-param(1)]) {
             error failure => counter.text(500, string.concat("db error ", int.to-string(failure.code)))

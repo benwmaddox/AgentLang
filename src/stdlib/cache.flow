@@ -1,0 +1,28 @@
+// Standard library: the process-wide fragment cache. The host operations are
+//   cache.get(key: String) -> Option<String>          effects cache.read
+//   cache.put(key: String, value: String) -> Bool     effects cache.write
+// One cache is shared by every worker of a server. Entries are immutable: put
+// stores the value only when the key is absent (first writer wins; a racing or
+// later put of the same key is dropped and returns false), so a key must name
+// one version of its value; put a record's version (for example its
+// updated_at) into the key. A hit is copied into the request. The native host
+// bounds the cache by --cache-mb (0 disables it: every get misses) and empties
+// it wholesale when full; the interpreter keeps a process-wide dictionary.
+
+fn cache.key(parts: List<String>) -> String {
+    doc "The parts joined with \"/\", the way Rails expands an array cache key."
+    var key = ""
+    for part, index in parts {
+        if index > 0 {
+            key = string.concat(key, "/")
+        }
+        key = string.concat(key, part)
+    }
+    key
+}
+
+test cache.key/parts {
+    expect cache.key(["views/messages/_message:v1", "messages/5-1772465460000", "presentation-v3"]) == "views/messages/_message:v1/messages/5-1772465460000/presentation-v3"
+    expect cache.key(list.empty<String>()) == ""
+    expect cache.key(["one"]) == "one"
+}

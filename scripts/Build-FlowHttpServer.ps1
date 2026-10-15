@@ -62,10 +62,11 @@ if ($Target -eq 'windows-x64') {
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-c', '-x', 'ir', 'module.ll', '-o', 'module.obj')
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-ffreestanding', '-fno-builtin', '-include', 'stddef.h', $defs, '-Isrc', '-c', 'src/owning_stack_runtime.c', '-o', 'runtime.obj')
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_db.c', '-o', 'db.obj')
+        Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_cache.c', '-o', 'cache.obj')
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_host.c', '-o', 'host.obj')
         $dllOutput = & $dlltool -m i386:x86-64 -d 'src/flow_http_sqlite.def' -l 'e_sqlite3.lib' 2>&1
         if ($LASTEXITCODE -ne 0) { throw "llvm-dlltool failed: $dllOutput" }
-        Invoke-Clang @('--target=x86_64-pc-windows-msvc', '-fuse-ld=lld', 'host.obj', 'db.obj', 'module.obj', 'runtime.obj', 'e_sqlite3.lib', '-lws2_32', '-lbcrypt', '-o', 'flow_http_server.exe')
+        Invoke-Clang @('--target=x86_64-pc-windows-msvc', '-fuse-ld=lld', 'host.obj', 'db.obj', 'cache.obj', 'module.obj', 'runtime.obj', 'e_sqlite3.lib', '-lws2_32', '-lbcrypt', '-o', 'flow_http_server.exe')
         $sqliteDll = Join-Path $repo 'src/AgentLang.FlowHttp/bin/Release/net9.0/runtimes/win-x64/native/e_sqlite3.dll'
         Copy-Item -LiteralPath $sqliteDll -Destination $out -Force
     }
