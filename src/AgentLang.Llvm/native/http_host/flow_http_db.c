@@ -263,13 +263,138 @@ static int32_t fh_cache_host(uint32_t worker, uint32_t operation, const fh_host_
   return 0;
 }
 
+/* ------------------------------------------------------------ worker store
+ * Host operations of src/AgentLang.FlowHttp/Store.fs (tags 5-17) over the
+ * worker's own store and response stream. Every offset is bounds-checked and
+ * Int accesses must be 8-byte aligned; a failed check is none/false. */
+#define FH_STORE_CAPACITY 5u
+#define FH_STORE_INT 6u
+#define FH_STORE_INTS 7u
+#define FH_STORE_SET_INT 8u
+#define FH_STORE_WRITE 9u
+#define FH_STORE_BYTES 10u
+#define FH_STORE_TEXT 11u
+#define FH_STORE_MATCHES 12u
+#define FH_STORE_HASH 13u
+#define FH_RESPONSE_WRITE 14u
+#define FH_RESPONSE_WRITE_STORE 15u
+#define FH_RESPONSE_WRITTEN 16u
+#define FH_RESPONSE_DISCARD 17u
+
+static int fh_input_i64(const fh_host_input *input, int64_t *value) {
+  if (input->extent_bytes < 8u) return 0;
+  memcpy(value, input->data, 8);
+  return 1;
+}
+
+static const uint8_t *fh_input_bytes(const fh_host_input *input, uint32_t *length) {
+  fh_reader r;
+  const uint8_t *data;
+  r.data = input->data; r.extent = input->extent_bytes; r.at = 0u; r.failed = 0;
+  data = fh_get_bytes(&r, length);
+  return r.failed ? 0 : data;
+}
+
+static int fh_store_range(const fh_provider *p, int64_t offset, int64_t length) {
+  return offset >= 0 && length >= 0 && (uint64_t)offset <= p->store_bytes &&
+         (uint64_t)length <= p->store_bytes - (uint64_t)offset;
+}
+
+static int fh_store_aligned(const fh_provider *p, int64_t offset) {
+  return (offset & 7) == 0 && fh_store_range(p, offset, 8);
+}
+
+static int fh_stream_append(fh_provider *p, const uint8_t *data, uint32_t length) {
+  if (length > p->stream_capacity - p->stream_used) return 0;
+  if (length > 0u) memcpy(p->stream + p->stream_used, data, length);
+  p->stream_used += length;
+  return 1;
+}
+
+static int32_t fh_store_host(fh_provider *p, uint32_t operation, const fh_host_input *inputs,
+                             uint32_t input_count, fh_writer *w) {
+  int64_t a = 0, b = 0;
+  const uint8_t *text;
+  uint32_t text_length = 0u;
+  if (inputs == 0 || input_count == 0u || input_count > 2u) return 1;
+  switch (operation) {
+    case FH_STORE_CAPACITY:
+      fh_put_i64(w, (int64_t)p->store_bytes);
+      return 0;
+    case FH_STORE_INT:
+      if (!fh_input_i64(&inputs[0], &a)) return 1;
+      if (fh_store_aligned(p, a)) { int64_t v; memcpy(&v, p->store + a, 8); fh_put_i64(w, 0); fh_put_i64(w, v); }
+      else fh_put_i64(w, 1);
+      return 0;
+    case FH_STORE_INTS:
+      if (input_count != 2u || !fh_input_i64(&inputs[0], &a) || !fh_input_i64(&inputs[1], &b)) return 1;
+      if (b >= 0 && b <= 64 && (a & 7) == 0 && fh_store_range(p, a, b * 8)) {
+        int64_t i;
+        fh_put_i64(w, 0);
+        fh_put_list_header(w, (uint32_t)b);
+        for (i = 0; i < b; ++i) { int64_t v; memcpy(&v, p->store + a + i * 8, 8); fh_put_i64(w, v); }
+      } else {
+        fh_put_i64(w, 1);
+      }
+      return 0;
+    case FH_STORE_SET_INT:
+      if (input_count != 2u || !fh_input_i64(&inputs[0], &a) || !fh_input_i64(&inputs[1], &b)) return 1;
+      if (fh_store_aligned(p, a)) { memcpy(p->store + a, &b, 8); fh_put_i64(w, 1); }
+      else fh_put_i64(w, 0);
+      return 0;
+    case FH_STORE_WRITE:
+    case FH_STORE_MATCHES:
+      if (input_count != 2u || !fh_input_i64(&inputs[0], &a) || (text = fh_input_bytes(&inputs[1], &text_length)) == 0) return 1;
+      if (!fh_store_range(p, a, text_length)) { fh_put_i64(w, 0); return 0; }
+      if (operation == FH_STORE_WRITE) {
+        if (text_length > 0u) memcpy(p->store + a, text, text_length);
+        fh_put_i64(w, 1);
+      } else {
+        fh_put_i64(w, text_length == 0u || memcmp(p->store + a, text, text_length) == 0 ? 1 : 0);
+      }
+      return 0;
+    case FH_STORE_BYTES:
+    case FH_STORE_TEXT:
+      if (input_count != 2u || !fh_input_i64(&inputs[0], &a) || !fh_input_i64(&inputs[1], &b)) return 1;
+      /* Text is validated by the runtime when it commits the host output. */
+      if (fh_store_range(p, a, b) && b <= 0x7fffffff) { fh_put_i64(w, 0); fh_put_bytes(w, p->store + a, (uint32_t)b); }
+      else fh_put_i64(w, 1);
+      return 0;
+    case FH_STORE_HASH: {
+      uint64_t hash = 14695981039346656037ull;
+      uint32_t i;
+      if ((text = fh_input_bytes(&inputs[0], &text_length)) == 0) return 1;
+      for (i = 0u; i < text_length; ++i) hash = (hash ^ text[i]) * 1099511628211ull;
+      fh_put_i64(w, (int64_t)hash);
+      return 0;
+    }
+    case FH_RESPONSE_WRITE:
+      if ((text = fh_input_bytes(&inputs[0], &text_length)) == 0) return 1;
+      fh_put_i64(w, fh_stream_append(p, text, text_length) ? 1 : 0);
+      return 0;
+    case FH_RESPONSE_WRITE_STORE:
+      if (input_count != 2u || !fh_input_i64(&inputs[0], &a) || !fh_input_i64(&inputs[1], &b)) return 1;
+      fh_put_i64(w, fh_store_range(p, a, b) && b <= 0x7fffffff && fh_stream_append(p, p->store + a, (uint32_t)b) ? 1 : 0);
+      return 0;
+    case FH_RESPONSE_WRITTEN:
+      fh_put_bytes(w, p->stream, p->stream_used);
+      return 0;
+    case FH_RESPONSE_DISCARD:
+      fh_put_i64(w, (int64_t)p->stream_used);
+      p->stream_used = 0u;
+      return 0;
+    default:
+      return 1;
+  }
+}
+
 int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
                              const al_owning_layout *layout,
                              const fh_host_input *inputs, uint32_t input_count,
                              uint32_t output_type_index, uint8_t *output,
                              uint32_t output_capacity_bytes,
                              uint32_t *output_extent_bytes) {
-  const fh_provider *provider = (const fh_provider *)provider_context;
+  fh_provider *provider = (fh_provider *)provider_context;
   fh_db *db = provider == 0 ? 0 : provider->db;
   fh_reader sql_reader, parameters;
   fh_writer w;
@@ -278,6 +403,13 @@ int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
   int32_t status;
   (void)layout;
   (void)output_type_index;
+  if (provider != 0 && output != 0 && operation >= FH_STORE_CAPACITY && operation <= FH_RESPONSE_DISCARD) {
+    w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
+    status = fh_store_host(provider, operation, inputs, input_count, &w);
+    if (status != 0 || w.failed) return 1;
+    *output_extent_bytes = w.used;
+    return 0;
+  }
   if (provider != 0 && output != 0 && (operation == FH_CACHE_GET || operation == FH_CACHE_PUT)) {
     w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
     status = fh_cache_host(provider->worker, operation, inputs, input_count, &w);

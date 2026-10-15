@@ -15,14 +15,19 @@ type FlowApp =
     { Engine: Runtime.Engine
       App: string
       ContextType: string
-      Provider: HostOperationProvider }
+      Provider: HostOperationProvider
+      /// The interpreter "worker": its store and response stream.
+      Worker: Store.WorkerState }
 
     interface IDisposable with
         member this.Dispose() = this.Provider.Dispose()
 
 module FlowApp =
-    let capabilities = Set.ofList [ "db.read"; "db.write"; "cache.read"; "cache.write"; "clock.read"; "random.read" ]
+    let capabilities = Set.ofList [ "db.read"; "db.write"; "cache.read"; "cache.write"; "clock.read"; "random.read"; "store.read"; "store.write"; "response.write" ]
+    /// Defined first, on a bootstrap engine: types the host manifest names, and words that call no host operation.
     let stdlibFiles = [ "http.flow"; "db.flow"; "cache.flow" ]
+    /// Defined with the app, once the host operations are bound (their words call them).
+    let hostStdlibFiles = [ "store.flow"; "worker-cache.flow" ]
 
     /// src/stdlib, found next to the executable (copied there) or in the repo.
     let stdlibDirectory () =
@@ -59,7 +64,7 @@ module FlowApp =
 
     /// Defines and commits the stdlib and app sources. `databasePath` backs
     /// the production db provider; attached tests get a fresh in-memory one.
-    let load (projectDirectory: string) (app: string) (sourcePaths: string list) (databasePath: string) =
+    let loadWithStore (projectDirectory: string) (app: string) (sourcePaths: string list) (databasePath: string) (storeBytes: int) =
         let stdlib = stdlibDirectory ()
         let stdlibSources = stdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
         let appSources = sourcePaths |> List.map File.ReadAllText
@@ -75,17 +80,29 @@ module FlowApp =
         dispatch bootstrap "commit" [] |> ignore
         // db: one connection (this interpreter "worker"); cache: the process-wide
         // store. Attached tests get an in-memory database and a fresh cache.
-        let provider = Cache.combine [ Db.createProvider databasePath; Cache.createProvider (Some Cache.processStore) ]
+        // store: this worker's region (storeBytes, 0 = no store); tests get a fresh one each.
+        let worker = Store.WorkerState(storeBytes, Store.streamCapacity)
+        let provider = Cache.combine [ Db.createProvider databasePath; Cache.createProvider (Some Cache.processStore); Store.createProvider worker ]
+        let merge (maps: Map<HostOperationId, HostOperationDefinition> list) = maps |> List.reduce (fun acc next -> Map.fold (fun a k v -> Map.add k v a) acc next)
         let environment =
-            { Manifest = Map.fold (fun acc key value -> Map.add key value acc) Db.manifest Cache.manifest
+            { Manifest = merge [ Db.manifest; Cache.manifest; Store.manifest ]
               ProductionProvider = provider
-              CreateTestProvider = fun () -> Ok(Cache.combine [ Db.createProvider ":memory:"; Cache.createProvider (Some(Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.Ordinal))) ]) }
+              CreateTestProvider =
+                fun () ->
+                    Ok(Cache.combine
+                        [ Db.createProvider ":memory:"
+                          Cache.createProvider (Some(Collections.Concurrent.ConcurrentDictionary<string, string>(StringComparer.Ordinal)))
+                          Store.createProvider (Store.WorkerState(Store.testCapacity, Store.streamCapacity)) ]) }
         let engine =
             Runtime.Engine(projectDirectory, capabilities, "2026-01-01T00:00:00Z",
                            fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities, hostOperations = environment)
-        define engine (String.concat "\n\n" appSources)
+        let hostStdlibSources = hostStdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
+        define engine (String.concat "\n\n" (hostStdlibSources @ appSources))
         dispatch engine "commit" [] |> ignore
-        { Engine = engine; App = app; ContextType = contextType; Provider = provider }
+        { Engine = engine; App = app; ContextType = contextType; Provider = provider; Worker = worker }
+
+    /// load with no worker store (store.capacity is 0).
+    let load projectDirectory app sourcePaths databasePath = loadWithStore projectDirectory app sourcePaths databasePath 0
 
     let workerInitSignature (app: FlowApp) = [ TList(TNamed "HttpHeader") ], [ TNamed app.ContextType ]
     let handleSignature (app: FlowApp) = [ TNamed "HttpRequest"; TNamed app.ContextType ], [ TNamed "HttpResponse" ]
@@ -111,8 +128,16 @@ module FlowApp =
                   "remote-ip", StringValue remoteIp
                   "now-microseconds", IntValue nowMicroseconds ])
 
+    /// One request, as the native host runs it: the response stream starts
+    /// empty, and a `streamed` response's body is the stream followed by `body`.
     let handle (app: FlowApp) (request: Value) (context: Value) =
-        invoke app $"{app.App}.handle" (handleSignature app) [ request; context ]
+        app.Worker.ResetStream()
+        match invoke app $"{app.App}.handle" (handleSignature app) [ request; context ] with
+        | RecordValue("HttpResponse", fields) when fields.TryFind "streamed" = Some(BoolValue true) ->
+            let tail = match fields.TryFind "body" with Some(StringValue text) -> text | _ -> ""
+            let streamed = Encoding.UTF8.GetString(app.Worker.Stream.ToArray())
+            RecordValue("HttpResponse", fields.Add("body", StringValue(streamed + tail)))
+        | response -> response
 
     /// Native host manifest for the db and cache operations (no app operations).
     let hostManifest (app: FlowApp) : OwningAppHostManifest =
@@ -126,7 +151,7 @@ module FlowApp =
           OutputLimitBytes = 16777216u
           BoundarySchemaNames = [ "HttpHeader"; "HttpRequest"; "HttpResponse"; "DbValue"; "DbRow"; "SqlError"; "DbValueKind"; app.ContextType ]
           Operations =
-            Db.nativeOperations @ Cache.nativeOperations
+            Db.nativeOperations @ Cache.nativeOperations @ Store.nativeOperations
             |> List.map (fun (tag, name, inputs, outputs, effects) ->
                 { Name = name; Tag = tag; InputTypes = inputs; OutputTypes = outputs; Effects = effects }) }
 

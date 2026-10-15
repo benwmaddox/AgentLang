@@ -185,3 +185,17 @@ test campfire.server.last-page-with-creators/fixture {
     expect match page { error failure => -1; ok messages => campfire.server.message-count(messages) } == 2
     expect match page { error failure => ""; ok messages => campfire.server.first-body(messages) } == "first message"
 }
+
+test campfire.server.page-keys-query/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.server.page-keys-query(RoomId.new(1)) == result.ok<List<PageKey>, DbError>([pageKey.new(id = 1, updated-at-ms = 1791972000250), pageKey.new(id = 2, updated-at-ms = 1791972300000)])
+    expect campfire.server.page-keys-query(RoomId.new(9)) == result.error<List<PageKey>, DbError>(DbError.not-found())
+}
+
+test campfire.server.messages-by-id/only-requested {
+    expect campfire.server.test-fixture() == 0
+    let loaded = campfire.server.messages-by-id([2], bytes.from-utf8("key"))
+    expect match loaded { error failure => -1; ok messages => list.count(messages) } == 1
+    expect match loaded { error failure => ""; ok messages => match list.get(messages, 0) { none => ""; some message => match message.body { none => ""; some text => text } } } == "second message"
+    expect campfire.server.messages-by-id(list.empty<Int>(), bytes.from-utf8("key")) == result.ok<List<MessageWithCreator>, DbError>(list.empty<MessageWithCreator>())
+}

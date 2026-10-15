@@ -14,7 +14,7 @@ record ServerRequest {
 fn campfire.server.status(status: Int) -> HttpResponse {
     doc "A bodiless transport-level response (the native host's send_empty_status)."
 
-    httpResponse.new(status = status, headers = [httpHeader.new(name = "Cache-Control", value = "no-store"), httpHeader.new(name = "X-Content-Type-Options", value = "nosniff")], body = "")
+    httpResponse.new(status = status, headers = [httpHeader.new(name = "Cache-Control", value = "no-store"), httpHeader.new(name = "X-Content-Type-Options", value = "nosniff")], body = "", streamed = false)
 }
 
 test campfire.server.status/empty {
@@ -335,7 +335,7 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
         some id-text => {
             if bool.not(is-get || is-head) {
                 let refused = campfire.server.status(405)
-                result.error<ServerRequest, HttpResponse>(httpResponse.new(status = 405, headers = list.append(refused.headers, httpHeader.new(name = "Allow", value = "GET, HEAD")), body = ""))
+                result.error<ServerRequest, HttpResponse>(httpResponse.new(status = 405, headers = list.append(refused.headers, httpHeader.new(name = "Allow", value = "GET, HEAD")), body = "", streamed = false))
             } else if bool.not(host-ok) {
                 result.error<ServerRequest, HttpResponse>(campfire.server.status(400))
             } else if campfire.server.header-bytes(incoming.headers) > 32768 {

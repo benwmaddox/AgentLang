@@ -37,6 +37,9 @@ type IrEffect =
     | ConsoleWrite
     | CacheRead
     | CacheWrite
+    | StoreRead
+    | StoreWrite
+    | ResponseWrite
 
 module IrEffects =
     let format = function
@@ -52,6 +55,9 @@ module IrEffects =
         | IrEffect.ConsoleWrite -> "console.write"
         | IrEffect.CacheRead -> "cache.read"
         | IrEffect.CacheWrite -> "cache.write"
+        | IrEffect.StoreRead -> "store.read"
+        | IrEffect.StoreWrite -> "store.write"
+        | IrEffect.ResponseWrite -> "response.write"
 
     let ofName = function
         | "fs.read" -> Some IrEffect.FileRead
@@ -66,6 +72,9 @@ module IrEffects =
         | "console.write" -> Some IrEffect.ConsoleWrite
         | "cache.read" -> Some IrEffect.CacheRead
         | "cache.write" -> Some IrEffect.CacheWrite
+        | "store.read" -> Some IrEffect.StoreRead
+        | "store.write" -> Some IrEffect.StoreWrite
+        | "response.write" -> Some IrEffect.ResponseWrite
         | _ -> None
 
     let names effects = effects |> Set.toList |> List.map format |> List.sort

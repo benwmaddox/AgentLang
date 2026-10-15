@@ -30,11 +30,11 @@ param(
     # the Flow side runs in WSL through scripts/campfire-flow-parity-linux.sh.
     [string] $LinuxServer = '',
     [string] $LinuxLoadgen = '/home/ben/cm258/loadgen-linux/release/loadgen',
-    # The Flow server's --cache-mb (0 = no cache). With the cache on, message
-    # fragments are reused from the first render, as Rails'
-    # `cache [ message, "presentation-v3" ]` does; bodies still match the
-    # uncached native host byte for byte.
-    [int] $CacheMb = 32
+    # The Flow server's --store-mb total (0 = no worker store, split between its
+    # 4 workers). With a store the room page is streamed through the worker
+    # cache (docs/WORKER-STORE-PLAN.md); bodies still match the native host
+    # byte for byte. The process-wide --cache-mb cache stays off.
+    [int] $StoreMb = 32
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -82,7 +82,7 @@ function Start-Server([string] $Kind, [string] $Root) {
     } else {
         $config = Join-Path $Root 'config.txt'
         & (Join-Path $PSScriptRoot 'Write-CampfireFlowServerConfig.ps1') -ReferenceEnv (Join-Path $Bench '../once-campfire-verification/fixtures/default/reference.env') -Port $Port -Out $config | Out-Null
-        $arguments = @('--port', "$Port", '--db', (Join-Path $db 'production.sqlite3'), '--config', $config, '--workers', '4', '--allow-control', '--cache-mb', "$CacheMb")
+        $arguments = @('--port', "$Port", '--db', (Join-Path $db 'production.sqlite3'), '--config', $config, '--workers', '4', '--allow-control', '--cache-mb', '0', '--store-mb', "$StoreMb")
         $exe = [System.IO.Path]::GetFullPath($FlowServer)
     }
     $process = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError (Join-Path $Root 'server.stderr.log')
@@ -132,7 +132,7 @@ foreach ($kind in @('native', 'flow')) {
         $wslArguments = @($LinuxServer, (ConvertTo-WslPath $tsv), (ConvertTo-WslPath $root),
             (ConvertTo-WslPath (Join-Path $Bench "private/native-db-$Snapshot/production.sqlite3")),
             (ConvertTo-WslPath (Join-Path $Bench '../once-campfire-verification/fixtures/default/reference.env')),
-            (ConvertTo-WslPath $cookieFile), $LinuxLoadgen, (ConvertTo-WslPath $contract), "$Port", (Split-Path -Leaf $out), "$CacheMb")
+            (ConvertTo-WslPath $cookieFile), $LinuxLoadgen, (ConvertTo-WslPath $contract), "$Port", (Split-Path -Leaf $out), "$StoreMb")
         $quoted = ($wslArguments | ForEach-Object { "'$_'" }) -join ' '
         & wsl -- bash -lc "tr -d '\r' < '$script' > /tmp/campfire-flow-parity-linux.sh && bash /tmp/campfire-flow-parity-linux.sh $quoted" | Select-Object -Last 1
         $validation = Get-Content -LiteralPath (Join-Path $root 'loadgen.json') -Raw | ConvertFrom-Json
@@ -228,11 +228,14 @@ foreach ($kind in @('native', 'flow')) {
     # with the fragment cache on or off.
     $repeat = $first -ceq $steady
     $allSame = $allSame -and $noCsrf -and $repeat
-    "{0,-7} csrf: no-token-markup={1} session-secret-present={2} first==steady={3} (flow --cache-mb {4})" -f $kind, $noCsrf, ($null -ne $csrfSecret), $repeat, $CacheMb
+    "{0,-7} csrf: no-token-markup={1} session-secret-present={2} first==steady={3} (flow --store-mb {4})" -f $kind, $noCsrf, ($null -ne $csrfSecret), $repeat, $StoreMb
     "{0,-7} loadgen --validate 2 s: ok={1} invalid={2} errors={3}" -f $kind, $results[$kind].ok, $results[$kind].invalid, $results[$kind].errors
 }
 $flowServerLog = Join-Path $out 'flow/server.stderr.log'
-if (Test-Path $flowServerLog) { "flow    {0}" -f ((Select-String -LiteralPath $flowServerLog -Pattern 'STOPPED' | Select-Object -Last 1).Line -replace '^.*(cache-mb=.*)$', '$1') }
+if (Test-Path $flowServerLog) {
+    "flow    {0}" -f ((Select-String -LiteralPath $flowServerLog -Pattern 'STOPPED' | Select-Object -Last 1).Line -replace '^.*(cache-mb=.*)$', '$1')
+    foreach ($line in (Select-String -LiteralPath $flowServerLog -Pattern '^worker \d+: ')) { "flow    {0}" -f ($line.Line -replace '^(worker \d+): .*(store-bytes=\d+ store-pages-used=\d+).*$', '$1 $2') }
+}
 $loadgenSame = [IO.File]::ReadAllText((Join-Path $out 'native/loadgen-body.html')) -ceq [IO.File]::ReadAllText((Join-Path $out 'flow/loadgen-body.html'))
 $allSame = $allSame -and $loadgenSame
 "loadgen bodies identical: {0}" -f $loadgenSame

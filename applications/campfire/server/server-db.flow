@@ -672,6 +672,75 @@ fn campfire.server.page-query(room-id: RoomId, avatar-key: Bytes) -> Result<List
     }
 }
 
+record PageKey {
+    id: Int
+    updated-at-ms: Int
+}
+
+fn campfire.server.page-keys-query(room-id: RoomId) -> Result<List<PageKey>, DbError> {
+    effects db.read
+    doc "The page's message ids and updated_at (ms), oldest first: the same forty rows as campfire.server.page-query (creator present), without their columns. Like the Rust reference's Message::last_page, it reads only what the fragment keys need."
+
+    match db.query("SELECT EXISTS (SELECT 1 FROM \"rooms\" WHERE \"id\" = $roomId)", [db.int-param(RoomId.value(room-id))]) {
+        error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+        ok exists-rows => {
+            let exists = match db.first-row(exists-rows) { none => false; some row => db.int(row, 0) != 0 }
+            if bool.not(exists) {
+                result.error<List<PageKey>, DbError>(DbError.not-found())
+            } else {
+                match db.query("WITH page AS (SELECT id, ROW_NUMBER() OVER (ORDER BY created_at DESC) AS position FROM messages WHERE room_id = $roomId ORDER BY created_at DESC LIMIT 40) SELECT messages.id, CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER) FROM page INNER JOIN messages ON messages.id = page.id INNER JOIN users ON users.id = messages.creator_id ORDER BY page.position DESC", [db.int-param(RoomId.value(room-id))]) {
+                    error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+                    ok rows => {
+                        var keys = list.empty<PageKey>()
+                        var valid = true
+                        for row in rows {
+                            let id = campfire.server.value-int(match list.get(row.values, 0) { none => db.null-param(); some value => value })
+                            let updated = campfire.server.value-int(match list.get(row.values, 1) { none => db.null-param(); some value => value })
+                            valid = valid && id != option.none<Int>() && updated != option.none<Int>()
+                            keys = list.append(keys, pageKey.new(id = campfire.server.int-or-zero(id), updated-at-ms = campfire.server.int-or-zero(updated)))
+                        }
+                        if valid { result.ok<List<PageKey>, DbError>(keys) } else { result.error<List<PageKey>, DbError>(DbError.unavailable()) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.id-list(ids: List<Int>) -> String {
+    doc "Ids as a JSON array, for json_each."
+    var text = "["
+    for id, index in ids {
+        if index > 0 {
+            text = string.concat(text, ",")
+        }
+        text = string.concat(text, int.to-string(id))
+    }
+    string.concat(text, "]")
+}
+
+test campfire.server.id-list/json {
+    expect campfire.server.id-list([3, 14]) == "[3,14]"
+    expect campfire.server.id-list(list.empty<Int>()) == "[]"
+}
+
+fn campfire.server.messages-by-id(ids: List<Int>, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
+    effects db.read
+    doc "The page rows (as campfire.server.page-query maps them) of just these message ids, in one query; any order."
+
+    if list.count(ids) == 0 {
+        result.ok<List<MessageWithCreator>, DbError>(list.empty<MessageWithCreator>())
+    } else {
+        match db.query("SELECT messages.id, messages.room_id, messages.creator_id, CAST(strftime('%s', messages.created_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.created_at), 4) AS INTEGER), CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER), messages.client_message_id, messages.created_at, users.name, COALESCE(users.bio, ''), users.updated_at, rich_text.body FROM messages INNER JOIN users ON users.id = messages.creator_id LEFT JOIN action_text_rich_texts AS rich_text ON rich_text.record_id = messages.id AND rich_text.record_type = 'Message' AND rich_text.name = 'body' WHERE messages.id IN (SELECT value FROM json_each($ids))", [db.text-param(campfire.server.id-list(ids))]) {
+            error failure => result.error<List<MessageWithCreator>, DbError>(campfire.server.db-error(failure))
+            ok rows => match campfire.server.message-page(rows, avatar-key) {
+                none => result.error<List<MessageWithCreator>, DbError>(DbError.unavailable())
+                some messages => result.ok<List<MessageWithCreator>, DbError>(messages)
+            }
+        }
+    }
+}
+
 fn campfire.server.last-page-with-creators(room-id: RoomId, avatar-key: Bytes) -> Result<List<MessageWithCreator>, DbError> {
     effects db.read, db.write
     doc "The room's newest forty messages, oldest first, with creators and avatar tokens, read in one deferred transaction (campfire.messages.last-page-with-creators)."

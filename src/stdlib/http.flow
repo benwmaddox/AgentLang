@@ -18,10 +18,15 @@ record HttpRequest {
     now-microseconds: Int
 }
 
+// streamed: the body is this request's response stream (response.write,
+// response.write-store; src/stdlib/store.flow) followed by `body`. When false
+// the stream is discarded, so an error or redirect built after partial writes
+// never carries them.
 record HttpResponse {
     status: Int
     headers: List<HttpHeader>
     body: String
+    streamed: Bool
 }
 
 fn http.header(headers: List<HttpHeader>, name: String) -> Option<String> {
@@ -89,11 +94,22 @@ test http.config/absent {
 
 fn http.response(status: Int, content-type: String, body: String) -> HttpResponse {
     doc "A response with one Content-Type header; the host adds Content-Length."
-    httpResponse.new(status = status, headers = [httpHeader.new(name = "content-type", value = content-type)], body = body)
+    httpResponse.new(status = status, headers = [httpHeader.new(name = "content-type", value = content-type)], body = body, streamed = false)
+}
+
+fn http.streamed(status: Int, headers: List<HttpHeader>, tail: String) -> HttpResponse {
+    doc "A response whose body is the response stream written so far, then tail."
+    httpResponse.new(status = status, headers = headers, body = tail, streamed = true)
 }
 
 test http.response/text {
     let response = http.response(404, "text/plain", "missing")
     expect response.status == 404
     expect response.body == "missing"
+}
+
+test http.streamed/flag {
+    let response = http.streamed(200, list.empty<HttpHeader>(), "tail")
+    expect response.streamed && response.body == "tail"
+    expect bool.not(http.response(200, "text/plain", "x").streamed)
 }

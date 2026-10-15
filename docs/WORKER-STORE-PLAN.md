@@ -206,3 +206,42 @@ All of the following lives inside the worker store.
   to the reserved memory.
 - **Target:** cached Flow CPU per request at or below Rust's in the same
   session.
+
+## As built (284)
+
+- **Host** (`native/http_host/flow_http_host.c`, adapter `flow_http_db.c`):
+  - `--store-mb N` is the total. Each worker gets `N MB / workers`, rounded
+    down to whole 16 KB pages, as a lazy zero-filled reservation. There is also
+    a per-worker response stream of `--retained-mb`.
+  - Tags 5-17 implement the operations in `src/AgentLang.FlowHttp/Store.fs`,
+    and the interpreter shares the same table.
+  - `HttpResponse.streamed` decides whether the stream is sent before `body`.
+    HEAD keeps the streamed `Content-Length`.
+  - At shutdown each worker logs `store-bytes` and `store-pages-used` (16 KB
+    pages holding any non-zero byte).
+- **Operations that take no argument** (`store.capacity`, `response.written`,
+  `response.discard`) carry an ignored Int input, because host operations need
+  at least one input today. `store.size()` wraps `store.capacity(0)`.
+- **Stdlib:** `store.flow` and `worker-cache.flow` call host operations, so
+  `FlowApp` defines them on the engine that binds them (`hostStdlibFiles`),
+  after the type-only stdlib.
+- **The page frame is split at run time.** Splitting `layout.flow` into head
+  and tail templates fails the compile-time markup check (a head leaves
+  `<html>`, `<body>` and the messages `<div>` open). Instead,
+  `campfire.server.page-frame` renders the page with no messages (about 33 KB)
+  and splits it just after the messages container's opening tag. A test checks
+  that head ++ messages ++ tail equals the page. A template form that may leave
+  elements open is listed in PENDING-REVIEW.
+- **Campfire:**
+  - With a store, the server streams the page through the worker cache:
+    narrow query, one batched miss query, in-order writes, then puts.
+  - Without a store, it renders the page in one piece with the single joined
+    query (`campfire.views.creator-room-page`). The process-wide
+    `cache.get`/`cache.put` cache is no longer used by Campfire.
+  - A room response with an empty body is the streamed one.
+- **Measured (Linux, 4 pinned vCPUs, 16 connections):**
+  - store on: 0.74 ms CPU per request;
+  - uncached, interleaved against 283: 1.17 against 1.31 ms (no regression);
+  - each worker uses 30 pages (about 480 KB) for the 40 fragments and the index.
+
+  Report 284 has the full interleaved sweep against Rust.

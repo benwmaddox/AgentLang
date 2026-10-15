@@ -63,6 +63,14 @@ let private cases =
       case "POST" "/cache?k1" [] "v1"                     // stored,
       case "POST" "/cache?k1" [] "v2"                     // second writer dropped,
       case "GET" "/cache?k1" [] ""                        // first value
+      case "GET" "/store?s1" [] ""                        // worker store: streamed miss,
+      case "POST" "/store?s1" [] "<b>é one</b>"           // put,
+      case "GET" "/store?s1" [] ""                        // hit copied from the store to the output,
+      case "GET" "/store-text?s1" [] ""                   // the same value through the data stack,
+      case "GET" "/store-text?s2" [] ""                   // absent,
+      case "GET" "/store-discard" [] ""                   // stream emptied by the app,
+      case "GET" "/store-error" [] ""                     // a non-streamed response drops partial writes,
+      case "GET" "/store?s1" [] ""                        // still a hit
       case "GET" "/nope" [] "" ]
 
 type private Response = { Status: int; Headers: (string * string) list; Body: string }
@@ -72,7 +80,8 @@ let private interpreterResponses () =
     Directory.CreateDirectory root |> ignore
     let database = Path.Combine(root, "app.db")
     createDatabase database
-    use app = FlowApp.load (Path.Combine(root, "engine")) "counter" [ appSource ] database
+    // One worker store of 1 MB, as each of the native servers' 3 workers gets from --store-mb 3.
+    use app = FlowApp.loadWithStore (Path.Combine(root, "engine")) "counter" [ appSource ] database 1048576
     let context = FlowApp.workerInit app config
     cases
     |> List.map (fun c ->
@@ -175,6 +184,7 @@ let private stopServer (server: Server) =
     let prepared = Text.RegularExpressions.Regex.Match(errors, @"max-prepared-statements=(\d+)")
     check $"{server.Label}: statements prepared once per literal ({prepared.Value})" (prepared.Success && int prepared.Groups[1].Value >= 1 && int prepared.Groups[1].Value <= 4)
     check $"{server.Label}: config values are never logged" (not (errors.Contains "s3cret") && not (server.Output.ToString().Contains "s3cret"))
+    check $"{server.Label}: store size per worker is logged" (errors.Contains "store-bytes=")
 
 // ---- checks against a running server ----
 
@@ -206,6 +216,11 @@ let private protocol label =
      check $"{label}: HEAD keeps content-length" (head |> Option.exists (fun r -> r.Status = 200 && r.Headers |> List.contains ("content-length", "11")))
      client.Send(encodeRequest (case "GET" "/hello" [] ""))
      check $"{label}: keep-alive after HEAD" (client.Read(false) |> Option.exists (fun r -> r.Body = "hello world"))
+     client.Send(encodeRequest (case "HEAD" "/store?none" [] ""))
+     let streamedHead = client.Read(true)
+     check $"{label}: HEAD of a streamed response has its content length" (streamedHead |> Option.exists (fun r -> r.Status = 404 && r.Headers |> List.contains ("content-length", "15")))
+     client.Send(encodeRequest (case "GET" "/hello" [] ""))
+     check $"{label}: keep-alive after streamed HEAD" (client.Read(false) |> Option.exists (fun r -> r.Body = "hello world"))
      // Connection: close is honored.
      client.Send(encodeRequest (case "GET" "/hello" [ "Connection", "close" ] ""))
      let closing = client.Read(false)
@@ -283,7 +298,7 @@ let private run () =
         let exe = build "windows-x64" winDir profile
         let database = Path.Combine(root, $"win-{profile}.db")
         createDatabase database
-        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
+        let server = startServer $"windows/{profile}" exe $"--port {port} --db \"{database}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8 --cache-mb 8 --store-mb 3"
         try
             parity $"windows/{profile}" expected
             protocol $"windows/{profile}"
@@ -301,6 +316,11 @@ let private run () =
                 check "cache-off: put dropped" (client.Read(false) |> Option.exists (fun r -> r.Body = "kept"))
                 client.Send(encodeRequest (case "GET" "/cache?k" [] ""))
                 check "cache-off: get misses" (client.Read(false) |> Option.exists (fun r -> r.Status = 404 && r.Body = "miss"))
+                // No --store-mb: the store has size 0, so the worker cache is never ready.
+                client.Send(encodeRequest (case "POST" "/store?k" [] "v"))
+                check "store-off: put refused" (client.Read(false) |> Option.exists (fun r -> r.Body = "refused"))
+                client.Send(encodeRequest (case "GET" "/store?k" [] ""))
+                check "store-off: get misses" (client.Read(false) |> Option.exists (fun r -> r.Status = 404 && r.Body = "store:none;miss"))
             finally stopServer disabled
 
         // Linux (WSL), unless skipped.
@@ -312,7 +332,7 @@ let private run () =
             let remote = "~/linuxbench/flowhttp/counter-test"
             let command =
                 $"cp '{wslPath linuxDatabase}' {remote}/test.db && rm -f {remote}/test.db-wal {remote}/test.db-shm && cp '{wslPath configPath}' {remote}/config.txt && " +
-                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8 --cache-mb 8"
+                $"cd {remote} && exec {binary} --port {port} --db test.db --config config.txt --workers 3 --allow-control --arena-mb 8 --cache-mb 8 --store-mb 3"
             let server = startServer $"linux/{profile}" "wsl.exe" $"-- bash -lc \"{command}\""
             try
                 parity $"linux/{profile}" expected

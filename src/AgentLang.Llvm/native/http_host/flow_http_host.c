@@ -78,6 +78,8 @@ typedef struct fh_options {
   int allow_control;
   uint32_t arena_bytes;
   uint32_t retained_bytes;
+  uint64_t store_bytes;   /* per worker, a multiple of 16 KB; 0 = no store */
+  uint32_t store_mb;      /* the --store-mb total, split between workers */
   uint32_t max_body_bytes;
   uint32_t cache_mb;
   const char *db_path;
@@ -118,6 +120,8 @@ typedef struct fh_worker {
   uint8_t *input;
   uint32_t input_capacity;
   uint8_t *retained;
+  uint8_t *store;  /* this worker's store (--store-mb total / workers), or NULL */
+  uint8_t *stream; /* this worker's response stream, retained_bytes long */
   uint32_t context_bytes;
   fh_connection *connections[FH_MAX_CONNECTIONS];
   uint32_t connection_count;
@@ -388,11 +392,16 @@ static int fh_ieq(const uint8_t *a, uint32_t length, const char *b) {
 }
 
 /* Writes the decoded HttpResponse; returns 0 when the value is malformed. */
-static int fh_write_response(fh_connection *c, const uint8_t *value, uint32_t extent, int head_only, int close) {
+/* HttpResponse is status, headers, body, streamed. A streamed response's body
+ * is the request's response stream followed by `body`; otherwise the stream
+ * is dropped. */
+static int fh_write_response(fh_connection *c, const uint8_t *value, uint32_t extent,
+                             const uint8_t *stream, uint32_t stream_used, int head_only, int close) {
   fh_reader r = {value, extent, 0u, 0};
   int64_t status = fh_get_i64(&r);
   uint32_t headers = fh_get_count(&r), i, body_length;
   const uint8_t *body;
+  int64_t streamed;
   char line[128];
   int n;
   uint32_t mark = c->out_used;
@@ -416,10 +425,18 @@ static int fh_write_response(fh_connection *c, const uint8_t *value, uint32_t ex
     fh_out_append(c, "\r\n", 2u);
   }
   body = fh_get_bytes(&r, &body_length);
-  if (r.failed) { c->out_used = mark; return 0; }
-  n = snprintf(line, sizeof(line), "content-length: %u\r\n%s\r\n", body_length, close ? "connection: close\r\n" : "");
+  streamed = fh_get_i64(&r);
+  if (r.failed || (streamed != 0 && streamed != 1) || (streamed && body_length > 0xffffffffu - stream_used)) {
+    c->out_used = mark;
+    return 0;
+  }
+  if (!streamed) stream_used = 0u;
+  n = snprintf(line, sizeof(line), "content-length: %u\r\n%s\r\n", stream_used + body_length, close ? "connection: close\r\n" : "");
   fh_out_append(c, line, (uint32_t)n);
-  if (!head_only) fh_out_body(c, body, body_length);
+  if (!head_only) {
+    if (stream_used > 0u) fh_out_body(c, stream, stream_used);
+    fh_out_body(c, body, body_length);
+  }
   return 1;
 }
 
@@ -539,6 +556,7 @@ static long fh_handle_one(fh_worker *worker, fh_connection *c) {
   extents[1] = worker->context_bytes;
 
   fh_context_reset(worker, &ctx);
+  worker->provider.stream_used = 0u; /* every request starts with an empty response stream */
   /* The cache epoch covers the whole handle call: cache.get copies a hit into
    * the arena inside it; the response is then in the worker's own buffer. */
   fh_cache_enter((uint32_t)worker->index);
@@ -551,6 +569,7 @@ static long fh_handle_one(fh_worker *worker, fh_connection *c) {
   if (w.used > worker->peak_input) worker->peak_input = w.used;
   if (status != 0 || ctx.status != 0 ||
       !fh_write_response(c, worker->retained, (uint32_t)ctx.retained_copy_bytes,
+                         worker->stream, worker->provider.stream_used,
                          method_length == 4u && memcmp(method, "HEAD", 4) == 0, !keep_alive)) {
     char line[160];
     ++worker->failures;
@@ -745,6 +764,14 @@ static void *fh_worker_main(void *argument)
   worker->input_capacity = FH_MAX_HEADER_BYTES * 2u + options->max_body_bytes;
   worker->input = (uint8_t *)fh_alloc(worker->input_capacity);
   worker->retained = (uint8_t *)fh_alloc(options->retained_bytes);
+  worker->stream = (uint8_t *)fh_alloc(options->retained_bytes);
+  worker->store = options->store_bytes > 0u ? (uint8_t *)fh_alloc((size_t)options->store_bytes) : 0;
+  if (worker->stream == 0 || (options->store_bytes > 0u && worker->store == 0)) { worker->state = -1; goto done; }
+  worker->provider.store = worker->store;
+  worker->provider.store_bytes = worker->store == 0 ? 0u : options->store_bytes;
+  worker->provider.stream = worker->stream;
+  worker->provider.stream_capacity = options->retained_bytes;
+  worker->provider.stream_used = 0u;
   if (worker->stack == 0 || worker->input == 0 || worker->retained == 0) { worker->state = -1; goto done; }
   worker->db = fh_db_open(options->db_path, reason, sizeof(reason));
   if (worker->db == 0) {
@@ -832,8 +859,9 @@ static int fh_load_config(fh_options *options) {
 
 static void fh_usage(void) {
   fh_log("usage: flow_http_host --port <p> --db <sqlite path> [--config <file>] [--workers N] [--pin]\n"
-         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--allow-control]\n"
-         "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 0 = disabled)\n");
+         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--store-mb N] [--allow-control]\n"
+         "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 0 = disabled)\n"
+         "  --store-mb N  total worker-store size, split evenly between workers (default 0 = no store)\n");
 }
 
 int main(int argc, char **argv) {
@@ -855,6 +883,7 @@ int main(int argc, char **argv) {
   options.retained_bytes = 4u << 20;
   options.max_body_bytes = 1u << 20;
   options.cache_mb = 0u; /* off unless asked for: a no-cache run never caches silently */
+  options.store_mb = 0u; /* no worker store unless asked for */
   for (i = 1; i < argc; ++i) {
     const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : 0;
     if (strcmp(a, "--port") == 0 && v) { options.port = atoi(v); ++i; }
@@ -865,16 +894,19 @@ int main(int argc, char **argv) {
     else if (strcmp(a, "--retained-mb") == 0 && v) { options.retained_bytes = (uint32_t)atoi(v) << 20; ++i; }
     else if (strcmp(a, "--max-body-kb") == 0 && v) { options.max_body_bytes = (uint32_t)atoi(v) << 10; ++i; }
     else if (strcmp(a, "--cache-mb") == 0 && v) { options.cache_mb = (uint32_t)atoi(v); ++i; }
+    else if (strcmp(a, "--store-mb") == 0 && v) { options.store_mb = (uint32_t)atoi(v); ++i; }
     else if (strcmp(a, "--pin") == 0) options.pin = 1;
     else if (strcmp(a, "--allow-control") == 0) options.allow_control = 1;
     else { fh_usage(); return 2; }
   }
   if (options.db_path == 0 || options.port <= 0 || options.port > 65535 || options.workers < 1 ||
       options.workers > FH_MAX_WORKERS || options.arena_bytes == 0u || options.arena_bytes > (1u << 30) ||
-      options.retained_bytes == 0u || options.max_body_bytes == 0u || options.cache_mb > (1u << 16)) {
+      options.retained_bytes == 0u || options.max_body_bytes == 0u || options.cache_mb > (1u << 16) || options.store_mb > (1u << 16)) {
     fh_usage();
     return 2;
   }
+  /* The store total is split evenly between workers, in whole 16 KB pages. */
+  options.store_bytes = (((uint64_t)options.store_mb << 20) / (uint64_t)options.workers) & ~(uint64_t)16383u;
   if (!fh_load_config(&options)) return 2;
   if (fh_cache_init((uint64_t)options.cache_mb << 20, (uint32_t)options.workers) != 0) { fh_log("cache allocation failed\n"); return 3; }
   {
@@ -953,10 +985,18 @@ int main(int argc, char **argv) {
     if (fh_db_prepared_count(workers[i].db) > max_prepared) max_prepared = fh_db_prepared_count(workers[i].db);
     fh_db_close(workers[i].db);
     if (workers[i].requests > 0u) {
-      char line[200];
-      snprintf(line, sizeof(line), "worker %d: requests=%llu peak-arena-bytes=%u peak-response-bytes=%u peak-input-bytes=%u context-bytes=%u\n",
+      char line[260];
+      uint64_t pages = 0u, page, at;
+      /* Store pages holding any non-zero byte (the store starts zero-filled). */
+      for (page = 0u; workers[i].store != 0 && page < options.store_bytes / 16384u; ++page)
+        for (at = 0u; at < 16384u; at += 8u) {
+          uint64_t word;
+          memcpy(&word, workers[i].store + page * 16384u + at, 8);
+          if (word != 0u) { ++pages; break; }
+        }
+      snprintf(line, sizeof(line), "worker %d: requests=%llu peak-arena-bytes=%u peak-response-bytes=%u peak-input-bytes=%u context-bytes=%u store-bytes=%llu store-pages-used=%llu\n",
                i, (unsigned long long)workers[i].requests, workers[i].peak_arena, workers[i].peak_response,
-               workers[i].peak_input, workers[i].context_bytes);
+               workers[i].peak_input, workers[i].context_bytes, (unsigned long long)options.store_bytes, (unsigned long long)pages);
       fh_log(line);
     }
     if (workers[i].stack && workers[i].context_bytes) memset(workers[i].stack, 0, workers[i].context_bytes); /* keys */
@@ -965,6 +1005,8 @@ int main(int argc, char **argv) {
     fh_free(workers[i].poison_bitmap, options.arena_bytes / 8u);
     fh_free(workers[i].input, workers[i].input_capacity);
     fh_free(workers[i].retained, options.retained_bytes);
+    fh_free(workers[i].stream, options.retained_bytes);
+    if (workers[i].store != 0) fh_free(workers[i].store, (size_t)options.store_bytes);
   }
 #if defined(_WIN32)
   fh_close_socket(shared_listener);

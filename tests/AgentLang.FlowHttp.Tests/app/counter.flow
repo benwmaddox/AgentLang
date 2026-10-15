@@ -1,6 +1,6 @@
 // Example Flow HTTP app for the portable host tests: echo, a db-backed item
-// list, the process-wide cache, and a per-worker context derived once in
-// worker-init.
+// list, the process-wide cache, the per-worker store with its worker cache and
+// response stream, and a per-worker context derived once in worker-init.
 
 record CounterContext {
     greeting: String
@@ -63,7 +63,7 @@ fn counter.echo(request: HttpRequest) -> HttpResponse {
     httpResponse.new(
         status = 200,
         headers = [httpHeader.new(name = "content-type", value = "text/plain"), httpHeader.new(name = "x-echo", value = probe)],
-        body = string.replace(string.join(lines), ";", "\n"))
+        body = string.replace(string.join(lines), ";", "\n"), streamed = false)
 }
 
 fn counter.line(row: DbRow) -> String {
@@ -165,8 +165,70 @@ test counter.cache/first-writer-wins {
     expect counter.cache(counter.test-request("GET", "/cache?t1", "")).body == "hit:one"
 }
 
+fn counter.store(request: HttpRequest) -> HttpResponse {
+    effects store.read, store.write, response.write
+    doc "The worker cache over the whole store. GET /store?<key>: streamed \"store:<value>;hit\" (the value copied from the store to the output) or \"store:none;miss\". POST /store?<key> with the value as body: stored or refused. GET /store-text?<key>: the value through the data stack, or absent."
+    let key = http.query(request.target)
+    let cache = worker-cache.open(0, store.size())
+    let path = http.path(request.target)
+    if request.method == "POST" {
+        let value = match bytes.to-utf8(request.body) {
+            none => ""
+            some text => text
+        }
+        if worker-cache.put(cache, key, value) {
+            counter.text(201, "stored")
+        } else {
+            counter.text(200, "refused")
+        }
+    } else if path == "/store-text" {
+        match worker-cache.text(cache, key) {
+            none => counter.text(404, "absent")
+            some value => counter.text(200, string.concat("text:", value))
+        }
+    } else {
+        let opened = response.write("store:")
+        if worker-cache.write-to-response(cache, key) {
+            http.streamed(200, [httpHeader.new(name = "content-type", value = "text/plain; charset=utf-8")], ";hit")
+        } else {
+            let wrote = response.write("none")
+            http.streamed(404, [httpHeader.new(name = "content-type", value = "text/plain; charset=utf-8")], ";miss")
+        }
+    }
+}
+
+test counter.store/miss-put-hit {
+    expect response.discard(0) == 0
+    expect counter.store(counter.test-request("GET", "/store?k", "")).status == 404
+    expect response.written(0) == "store:none"
+    expect response.discard(0) == 10
+    expect counter.store(counter.test-request("POST", "/store?k", "<b>é</b>")).body == "stored"
+    let hit = counter.store(counter.test-request("GET", "/store?k", ""))
+    expect hit.status == 200 && hit.streamed && hit.body == ";hit"
+    expect response.written(0) == "store:<b>é</b>"
+    expect counter.store(counter.test-request("GET", "/store-text?k", "")).body == "text:<b>é</b>"
+}
+
+fn counter.store-unstreamed(request: HttpRequest) -> HttpResponse {
+    effects response.write
+    doc "Writes to the response stream, then returns an ordinary response: the written bytes must not be sent. /store-discard empties the stream first; /store-error does not."
+    let wrote = response.write("junk")
+    if http.path(request.target) == "/store-discard" {
+        let dropped = response.discard(0)
+        counter.text(200, string.concat("clean:", int.to-string(dropped)))
+    } else {
+        counter.text(500, "error after partial writes")
+    }
+}
+
+test counter.store-unstreamed/drops {
+    expect counter.store-unstreamed(counter.test-request("GET", "/store-discard", "")).body == "clean:4"
+    let failed = counter.store-unstreamed(counter.test-request("GET", "/store-error", ""))
+    expect failed.status == 500 && bool.not(failed.streamed)
+}
+
 fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse {
-    effects db.read, db.write, cache.read, cache.write
+    effects db.read, db.write, cache.read, cache.write, store.read, store.write, response.write
     let path = http.path(request.target)
     if path == "/hello" {
         counter.text(200, string.concat("hello ", context.greeting))
@@ -182,6 +244,10 @@ fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse
         counter.find-item(request.target)
     } else if path == "/cache" {
         counter.cache(request)
+    } else if path == "/store" || path == "/store-text" {
+        counter.store(request)
+    } else if path == "/store-discard" || path == "/store-error" {
+        counter.store-unstreamed(request)
     } else if path == "/bad-sql" {
         match db.execute("insert into missing_table values (?1)", [db.int-param(1)]) {
             error failure => counter.text(500, string.concat("db error ", int.to-string(failure.code)))

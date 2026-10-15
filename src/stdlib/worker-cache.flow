@@ -1,0 +1,461 @@
+// Standard library: a cache inside the per-worker store (docs/WORKER-STORE-PLAN.md
+// section 3), written in Flow over the store primitives in store.flow.
+//
+// A cache owns the store bytes [base, base + size):
+//   header (128 bytes): magic, head, tail, wrap, seq, slots, ring-start,
+//     ring-end, live-entries, live-bytes, puts, evictions, refused, high-water
+//   index: `slots` slots of 24 bytes (key hash, entry offset, entry seq);
+//     a slot with seq 0 is free
+//   ring: entries packed 16-byte aligned from ring-start to ring-end. An entry
+//     is a 48-byte header (seq, key length, value length, total length, key
+//     hash, 0) followed by the key and value bytes.
+// Puts are oldest-first: an entry goes at head and, when there is no room,
+// entries are evicted from tail (as many as needed), each clearing its index
+// slot, so every indexed slot names a live entry. After a wrap, `wrap` marks
+// the end of the older span; the bytes from there to ring-end are a gap that
+// tail skips. An entry's seq is written last and the index slot after it, so a
+// put cut short by a failed request reads as a miss. A cache found in a zeroed
+// store is initialized on first open; the store is zero-filled at startup, so
+// the index needs no clearing.
+
+record WorkerCache {
+    base: Int
+    slots: Int
+    index: Int
+    ring-start: Int
+    ring-end: Int
+    ready: Bool
+}
+
+record CacheEntry {
+    offset: Int
+    length: Int
+}
+
+record WorkerCacheStats {
+    entries: Int
+    bytes: Int
+    capacity: Int
+    puts: Int
+    evictions: Int
+    refused: Int
+    pages-in-use: Int
+    pages-touched: Int
+}
+
+fn worker-cache.magic() -> Int {
+    doc "Marks an initialized cache header (\"WCACHE01\" as an Int)."
+    6293595036912670513
+}
+
+fn worker-cache.slot-count(size: Int) -> Int {
+    doc "Index slots for a cache of size bytes: a power of two near size / 2048, from 64 to 65536."
+    var slots = 64
+    for step in 0..10 {
+        if slots * 2048 >= size || slots >= 65536 {
+            break
+        }
+        slots = slots * 2
+    }
+    slots
+}
+
+test worker-cache.slot-count/sizes {
+    expect worker-cache.slot-count(16384) == 64
+    expect worker-cache.slot-count(8388608) == 4096
+    expect worker-cache.slot-count(2147483648) == 65536
+}
+
+fn worker-cache.not-ready(base: Int) -> WorkerCache {
+    doc "A cache that every operation treats as absent."
+    workerCache.new(base = base, slots = 0, index = 0, ring-start = 0, ring-end = 0, ready = false)
+}
+
+fn worker-cache.open(base: Int, size: Int) -> WorkerCache {
+    effects store.read, store.write
+    doc "The cache in store bytes [base, base + size): initialized when the bytes are still zero, not ready when the range is outside the store, too small, or holds something else."
+
+    let slots = worker-cache.slot-count(size)
+    let index = base + 128
+    let ring-start = store.align16(index + slots * 24)
+    let ring-end = (base + size) / 16 * 16
+    let geometry-ok = base >= 0 && base % 16 == 0 && size > 0 && base + size <= store.size() && ring-end - ring-start >= 4096
+    if bool.not(geometry-ok) {
+        worker-cache.not-ready(base)
+    } else {
+        let cache = workerCache.new(base = base, slots = slots, index = index, ring-start = ring-start, ring-end = ring-end, ready = true)
+        match store.ints(base, 8) {
+            none => worker-cache.not-ready(base)
+            some header => {
+                let magic = store.int-at(header, 0)
+                if magic == worker-cache.magic() {
+                    if store.int-at(header, 5) == slots && store.int-at(header, 6) == ring-start && store.int-at(header, 7) == ring-end {
+                        cache
+                    } else {
+                        worker-cache.not-ready(base)
+                    }
+                } else if magic == 0 {
+                    let written = store.set-int(base + 8, ring-start) && store.set-int(base + 16, ring-start) && store.set-int(base + 24, 0) && store.set-int(base + 32, 1) && store.set-int(base + 40, slots) && store.set-int(base + 48, ring-start) && store.set-int(base + 56, ring-end) && store.set-int(base, worker-cache.magic())
+                    if written { cache } else { worker-cache.not-ready(base) }
+                } else {
+                    worker-cache.not-ready(base)
+                }
+            }
+        }
+    }
+}
+
+fn worker-cache.slot-of(cache: WorkerCache, hash: Int, probe: Int) -> Int {
+    doc "The store offset of index slot (hash + probe) mod slots."
+    let start = (hash % cache.slots + cache.slots) % cache.slots
+    cache.index + (start + probe) % cache.slots * 24
+}
+
+fn worker-cache.find(cache: WorkerCache, key: String) -> Option<CacheEntry> {
+    effects store.read
+    doc "The live value stored under key: its store offset and length. Valid until the next put on this cache."
+
+    if bool.not(cache.ready) {
+        option.none<CacheEntry>()
+    } else {
+        let hash = store.hash(key)
+        let key-length = string.byte-length(key)
+        var found = option.none<CacheEntry>()
+        for probe in 0..8 {
+            let slot = store.ints(worker-cache.slot-of(cache, hash, probe), 3)
+            let values = match slot { none => [0, 0, 0]; some ints => ints }
+            let offset = store.int-at(values, 1)
+            let seq = store.int-at(values, 2)
+            if seq != 0 && store.int-at(values, 0) == hash {
+                let entry = match store.ints(offset, 3) { none => [0, 0, 0]; some ints => ints }
+                if store.int-at(entry, 0) == seq && store.int-at(entry, 1) == key-length && store.matches(offset + 48, key) {
+                    found = option.some<CacheEntry>(cacheEntry.new(offset = offset + 48 + key-length, length = store.int-at(entry, 2)))
+                    break
+                }
+            }
+        }
+        found
+    }
+}
+
+fn worker-cache.write-to-response(cache: WorkerCache, key: String) -> Bool {
+    effects store.read, response.write
+    doc "On a hit, appends the cached value straight from the store to the response stream (no arena copy, no validation) and returns true."
+
+    match worker-cache.find(cache, key) {
+        none => false
+        some entry => response.write-store(entry.offset, entry.length)
+    }
+}
+
+fn worker-cache.text(cache: WorkerCache, key: String) -> Option<String> {
+    effects store.read
+    doc "On a hit, the cached value as a String on the data stack (copied and UTF-8 validated)."
+
+    match worker-cache.find(cache, key) {
+        none => option.none<String>()
+        some entry => store.text(entry.offset, entry.length)
+    }
+}
+
+fn worker-cache.bytes(cache: WorkerCache, key: String) -> Option<Bytes> {
+    effects store.read
+    doc "On a hit, the cached value as Bytes on the data stack (copied, no validation)."
+
+    match worker-cache.find(cache, key) {
+        none => option.none<Bytes>()
+        some entry => store.bytes(entry.offset, entry.length)
+    }
+}
+
+fn worker-cache.unindex(cache: WorkerCache, offset: Int, seq: Int, hash: Int) -> Bool {
+    effects store.read, store.write
+    doc "Frees the index slot that names the entry (offset, seq), if any."
+
+    var cleared = true
+    for probe in 0..8 {
+        let slot = worker-cache.slot-of(cache, hash, probe)
+        let values = match store.ints(slot, 3) { none => [0, 0, 0]; some ints => ints }
+        if store.int-at(values, 1) == offset && store.int-at(values, 2) == seq {
+            cleared = store.set-int(slot + 16, 0)
+            break
+        }
+    }
+    cleared
+}
+
+fn worker-cache.claim-slot(cache: WorkerCache, hash: Int) -> Int {
+    effects store.read
+    doc "The index slot for a new entry: a free one in the probe window, else the one naming the oldest entry."
+
+    var chosen = worker-cache.slot-of(cache, hash, 0)
+    var oldest = -1
+    for probe in 0..8 {
+        let slot = worker-cache.slot-of(cache, hash, probe)
+        let seq = store.int-at(match store.ints(slot, 3) { none => [0, 0, 0]; some ints => ints }, 2)
+        if seq == 0 {
+            chosen = slot
+            break
+        }
+        if oldest < 0 || seq < oldest {
+            oldest = seq
+            chosen = slot
+        }
+    }
+    chosen
+}
+
+fn worker-cache.put(cache: WorkerCache, key: String, value: String) -> Bool {
+    effects store.read, store.write
+    doc "Stores value under key, evicting the oldest entries as needed. False when the cache is not ready or the entry exceeds a quarter of the ring. Invalidates CacheEntry values from earlier finds."
+
+    if bool.not(cache.ready) {
+        false
+    } else {
+        let base = cache.base
+        let header = match store.ints(base, 14) { none => list.empty<Int>(); some ints => ints }
+        let key-length = string.byte-length(key)
+        let value-length = string.byte-length(value)
+        let total = store.align16(48 + key-length + value-length)
+        let ring-start = cache.ring-start
+        let ring-end = cache.ring-end
+        if list.count(header) != 14 || total * 4 > ring-end - ring-start {
+            store.set-int(base + 96, store.int-at(header, 12) + 1) && false
+        } else {
+            var head = store.int-at(header, 1)
+            var tail = store.int-at(header, 2)
+            var wrap = store.int-at(header, 3)
+            let seq = store.int-at(header, 4)
+            var live = store.int-at(header, 8)
+            var live-bytes = store.int-at(header, 9)
+            var evictions = store.int-at(header, 11)
+            var place = -1
+            var sound = true
+            let steps = live + 3
+            for step in 0..steps {
+                if live == 0 {
+                    head = ring-start
+                    tail = ring-start
+                    wrap = 0
+                    live-bytes = 0
+                    place = head
+                    break
+                }
+                if wrap == 0 {
+                    if head + total <= ring-end {
+                        place = head
+                        break
+                    }
+                    wrap = head
+                    head = ring-start
+                } else {
+                    if tail - head >= total {
+                        place = head
+                        break
+                    }
+                    let entry = match store.ints(tail, 5) { none => [0, 0, 0, 0, 0]; some ints => ints }
+                    let entry-total = store.int-at(entry, 3)
+                    if entry-total < 48 || tail + entry-total > ring-end {
+                        sound = false
+                        break
+                    }
+                    sound = sound && worker-cache.unindex(cache, tail, store.int-at(entry, 0), store.int-at(entry, 4))
+                    tail = tail + entry-total
+                    live = live - 1
+                    live-bytes = live-bytes - entry-total
+                    evictions = evictions + 1
+                    if tail >= wrap {
+                        tail = ring-start
+                        wrap = 0
+                    }
+                }
+            }
+            if place < 0 || bool.not(sound) {
+                false
+            } else {
+                let hash = store.hash(key)
+                let entry-written = store.set-int(place, 0) && store.write(place + 48, key) && store.write(place + 48 + key-length, value) && store.set-int(place + 8, key-length) && store.set-int(place + 16, value-length) && store.set-int(place + 24, total) && store.set-int(place + 32, hash) && store.set-int(place + 40, 0) && store.set-int(place, seq)
+                let high-water = if place + total - ring-start > store.int-at(header, 13) { place + total - ring-start } else { store.int-at(header, 13) }
+                let header-written = entry-written && store.set-int(base + 8, place + total) && store.set-int(base + 16, tail) && store.set-int(base + 24, wrap) && store.set-int(base + 32, seq + 1) && store.set-int(base + 64, live + 1) && store.set-int(base + 72, live-bytes + total) && store.set-int(base + 80, store.int-at(header, 10) + 1) && store.set-int(base + 88, evictions) && store.set-int(base + 104, high-water)
+                let slot = worker-cache.claim-slot(cache, hash)
+                header-written && store.set-int(slot + 16, 0) && store.set-int(slot, hash) && store.set-int(slot + 8, place) && store.set-int(slot + 16, seq)
+            }
+        }
+    }
+}
+
+fn worker-cache.stats(cache: WorkerCache) -> WorkerCacheStats {
+    effects store.read
+    doc "Live entries and bytes, capacity, counters, and 16 KB pages in use and touched (the index plus the ring's high-water mark)."
+
+    let header = match store.ints(cache.base, 14) { none => list.empty<Int>(); some ints => ints }
+    let index-bytes = cache.ring-start - cache.base
+    workerCacheStats.new(
+        entries = store.int-at(header, 8),
+        bytes = store.int-at(header, 9),
+        capacity = cache.ring-end - cache.ring-start,
+        puts = store.int-at(header, 10),
+        evictions = store.int-at(header, 11),
+        refused = store.int-at(header, 12),
+        pages-in-use = (index-bytes + store.int-at(header, 9) + 16383) / 16384,
+        pages-touched = (index-bytes + store.int-at(header, 13) + 16383) / 16384
+    )
+}
+
+test worker-cache.open/initializes-and-reopens {
+    let first = worker-cache.open(0, 16384)
+    expect first.ready
+    expect first.slots == 64
+    expect first.ring-start == 1664
+    let again = worker-cache.open(0, 16384)
+    expect again.ready && again.ring-end == 16384
+    expect bool.not(worker-cache.open(8, 16384).ready)
+    expect bool.not(worker-cache.open(0, 1024).ready)
+    expect bool.not(worker-cache.open(0, store.size() + 16).ready)
+}
+
+test worker-cache.put/hit-miss-and-both-destinations {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.find(cache, "a") == option.none<CacheEntry>()
+    expect worker-cache.put(cache, "a", "<p>é one</p>")
+    expect worker-cache.text(cache, "a") == option.some<String>("<p>é one</p>")
+    expect worker-cache.bytes(cache, "a") == option.some<Bytes>(bytes.from-utf8("<p>é one</p>"))
+    expect response.discard(0) == 0
+    expect worker-cache.write-to-response(cache, "a")
+    expect bool.not(worker-cache.write-to-response(cache, "b"))
+    expect response.written(0) == "<p>é one</p>"
+    expect worker-cache.text(cache, "ab") == option.none<String>()
+    let stats = worker-cache.stats(cache)
+    expect stats.entries == 1 && stats.bytes == 64 && stats.puts == 1 && stats.pages-in-use == 1
+}
+
+test worker-cache.put/evicts-oldest-across-wraps {
+    let cache = worker-cache.open(0, 16384)
+    let value = string.join(["<div>", string.replace("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "x", "xxxxxxxxxx"), "</div>"])
+    var stored = 0
+    for i in 0..40 {
+        if worker-cache.put(cache, string.concat("k", int.to-string(i)), string.concat(value, int.to-string(i))) {
+            stored = stored + 1
+        }
+    }
+    expect stored == 40
+    expect worker-cache.text(cache, "k39") == option.some<String>(string.concat(value, "39"))
+    expect worker-cache.text(cache, "k0") == option.none<String>()
+    let stats = worker-cache.stats(cache)
+    expect stats.evictions == 40 - stats.entries
+    expect stats.entries >= 10
+    expect stats.bytes <= stats.capacity
+    var hits = 0
+    for i in 0..40 {
+        if worker-cache.find(cache, string.concat("k", int.to-string(i))) != option.none<CacheEntry>() {
+            hits = hits + 1
+        }
+    }
+    expect hits == stats.entries
+    expect worker-cache.text(cache, string.concat("k", int.to-string(40 - stats.entries))) != option.none<String>()
+}
+
+test worker-cache.put/large-put-evicts-several-and-quarter-limit {
+    let cache = worker-cache.open(0, 16384)
+    let small = "0123456789012345678901234567890123456789"
+    var stored = 0
+    for n in 0..140 {
+        if worker-cache.put(cache, string.concat("s", int.to-string(n)), small) {
+            stored = stored + 1
+        }
+    }
+    expect stored == 140
+    let before = worker-cache.stats(cache)
+    expect before.evictions == 0
+    var large = ""
+    for n in 0..75 {
+        large = string.concat(large, small)
+    }
+    expect string.byte-length(large) == 3000
+    expect worker-cache.put(cache, "large", large)
+    let after = worker-cache.stats(cache)
+    expect after.evictions >= 20
+    expect worker-cache.text(cache, "large") == option.some<String>(large)
+    expect worker-cache.text(cache, "s0") == option.none<String>()
+    expect worker-cache.text(cache, "s139") == option.some<String>(small)
+    let huge = string.concat(large, large)
+    expect bool.not(worker-cache.put(cache, "huge", huge))
+    expect worker-cache.stats(cache).refused == 1
+}
+
+test worker-cache.find/partial-put-is-a-miss {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.put(cache, "a", "first")
+    // A put cut short before its seq is written: zero the entry's seq field.
+    expect store.set-int(cache.ring-start, 0)
+    expect worker-cache.find(cache, "a") == option.none<CacheEntry>()
+}
+
+test worker-cache.open/separate-regions {
+    let one = worker-cache.open(0, 16384)
+    let two = worker-cache.open(16384, 16384)
+    expect worker-cache.put(one, "k", "one")
+    expect worker-cache.put(two, "k", "two")
+    expect worker-cache.text(one, "k") == option.some<String>("one")
+    expect worker-cache.text(two, "k") == option.some<String>("two")
+}
+
+test worker-cache.magic/nonzero {
+    expect worker-cache.magic() != 0
+}
+
+test worker-cache.not-ready/absent {
+    let cache = worker-cache.not-ready(0)
+    expect bool.not(cache.ready)
+    expect worker-cache.find(cache, "k") == option.none<CacheEntry>()
+    expect bool.not(worker-cache.put(cache, "k", "v"))
+}
+
+test worker-cache.slot-of/wraps-negative-hashes {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.slot-of(cache, -1, 0) == cache.index + 63 * 24
+    expect worker-cache.slot-of(cache, 5, 60) == cache.index + 1 * 24
+}
+
+test worker-cache.find/miss-on-empty {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.find(cache, "nothing") == option.none<CacheEntry>()
+}
+
+test worker-cache.write-to-response/hit-writes-value {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.put(cache, "k", "<b>v</b>")
+    expect worker-cache.write-to-response(cache, "k")
+    expect response.written(0) == "<b>v</b>"
+}
+
+test worker-cache.text/hit {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.put(cache, "k", "v")
+    expect worker-cache.text(cache, "k") == option.some<String>("v")
+}
+
+test worker-cache.bytes/hit {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.put(cache, "k", "v")
+    expect worker-cache.bytes(cache, "k") == option.some<Bytes>(bytes.from-utf8("v"))
+}
+
+test worker-cache.unindex/frees-slot {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.put(cache, "k", "v")
+    expect worker-cache.unindex(cache, cache.ring-start, 1, store.hash("k"))
+    expect worker-cache.find(cache, "k") == option.none<CacheEntry>()
+}
+
+test worker-cache.claim-slot/free-first {
+    let cache = worker-cache.open(0, 16384)
+    expect worker-cache.claim-slot(cache, 7) == worker-cache.slot-of(cache, 7, 0)
+    expect worker-cache.put(cache, "k", "v")
+    expect worker-cache.claim-slot(cache, store.hash("k")) == worker-cache.slot-of(cache, store.hash("k"), 1)
+}
+
+test worker-cache.stats/empty {
+    let stats = worker-cache.stats(worker-cache.open(0, 16384))
+    expect stats.entries == 0 && stats.bytes == 0 && stats.capacity == 16384 - 1664 && stats.pages-in-use == 1
+}

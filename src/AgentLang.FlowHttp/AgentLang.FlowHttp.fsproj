@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="Db.fs" />
     <Compile Include="Cache.fs" />
+    <Compile Include="Store.fs" />
     <Compile Include="FlowApp.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

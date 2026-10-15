@@ -6,7 +6,7 @@
 # never printed.
 #   campfire-flow-parity-linux.sh <server> <cases.tsv> <out dir> <snapshot db> <reference.env> <cookie file> <loadgen> <contract> <port> <run name> [cache mb]
 set -euo pipefail
-SERVER=$1; CASES=$2; OUT=$3; SNAPSHOT=$4; REFENV=$5; COOKIEFILE=$6; LOADGEN=$7; CONTRACT=$8; PORT=$9; RUN=${10}; CACHE_MB=${11:-32}
+SERVER=$1; CASES=$2; OUT=$3; SNAPSHOT=$4; REFENV=$5; COOKIEFILE=$6; LOADGEN=$7; CONTRACT=$8; PORT=$9; RUN=${10}; STORE_MB=${11:-32}
 PRIV=$HOME/linuxbench/private/cfs-parity-$RUN
 test ! -e "$PRIV" || { echo "run exists"; exit 2; }
 mkdir -p -m 700 "$PRIV"; mkdir -p "$OUT"
@@ -16,7 +16,7 @@ umask 077
 COOKIE=$(tr -d '\r\n' < "$COOKIEFILE")
 TOKEN_ONLY=$(printf '%s' "$COOKIE" | tr ';' '\n' | sed 's/^ *//' | grep '^session_token=' || true)
 BASE=http://127.0.0.1:$PORT
-"$SERVER" --port "$PORT" --db "$PRIV/production.sqlite3" --config "$PRIV/config.txt" --workers 4 --allow-control --cache-mb "$CACHE_MB" > "$OUT/server.log" 2> "$OUT/server.stderr.log" &
+"$SERVER" --port "$PORT" --db "$PRIV/production.sqlite3" --config "$PRIV/config.txt" --workers 4 --allow-control --cache-mb 0 --store-mb "$STORE_MB" > "$OUT/server.log" 2> "$OUT/server.stderr.log" &
 PID=$!
 for i in $(seq 1 300); do grep -q '^READY ' "$OUT/server.log" 2>/dev/null && break; sleep 0.1; done
 grep -q '^READY ' "$OUT/server.log" || { echo "server not READY"; kill $PID; exit 3; }

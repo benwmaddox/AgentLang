@@ -1,0 +1,68 @@
+// Standard library: the per-worker store and the in-order response stream
+// (docs/WORKER-STORE-PLAN.md). Host operations, bound by the HTTP host:
+//   store.capacity(ignored: Int) -> Int                       effects store.read
+//   store.int(offset: Int) -> Option<Int>                     effects store.read
+//   store.ints(offset: Int, count: Int) -> Option<List<Int>>  effects store.read
+//   store.set-int(offset: Int, value: Int) -> Bool            effects store.write
+//   store.write(offset: Int, text: String) -> Bool            effects store.write
+//   store.bytes(offset: Int, length: Int) -> Option<Bytes>    effects store.read
+//   store.text(offset: Int, length: Int) -> Option<String>    effects store.read
+//   store.matches(offset: Int, text: String) -> Bool          effects store.read
+//   store.hash(text: String) -> Int                           effects none
+//   response.write(text: String) -> Bool                      effects response.write
+//   response.write-store(offset: Int, length: Int) -> Bool    effects response.write, store.read
+//   response.written(ignored: Int) -> String                  effects response.write
+//   response.discard(ignored: Int) -> Int                     effects response.write
+// Each worker owns one zero-filled region of fixed size (the host's --store-mb
+// total split between workers); it is never shared and never grows. Offsets
+// are bounds-checked and Int accesses must be 8-byte aligned; a failed check
+// gives none or false. store.text validates UTF-8 (the region holds raw
+// bytes); store.bytes and response.write-store copy bytes without a check.
+// The response stream is emptied at the start of every request and sent
+// before HttpResponse.body when the response sets `streamed`
+// (http.streamed); otherwise it is dropped.
+
+fn store.size() -> Int {
+    effects store.read
+    doc "The worker store's size in bytes, 0 when the host gives no store."
+    store.capacity(0)
+}
+
+fn store.align16(n: Int) -> Int {
+    doc "n rounded up to a multiple of 16."
+    (n + 15) / 16 * 16
+}
+
+test store.align16/rounds {
+    expect store.align16(0) == 0
+    expect store.align16(1) == 16
+    expect store.align16(48) == 48
+}
+
+fn store.int-at(values: List<Int>, index: Int) -> Int {
+    doc "values[index], or 0 when out of range."
+    match list.get(values, index) {
+        none => 0
+        some value => value
+    }
+}
+
+test store.int-at/range {
+    expect store.int-at([4, 5], 1) == 5
+    expect store.int-at([4, 5], 2) == 0
+}
+
+fn response.write-html(html: Html) -> Bool {
+    effects response.write
+    doc "Appends trusted markup to the response stream."
+    response.write(Html.value(html))
+}
+
+test store.size/test-store {
+    expect store.size() == 262144
+}
+
+test response.write-html/appends {
+    expect response.write-html(html"<i>x</i>")
+    expect response.written(0) == "<i>x</i>"
+}

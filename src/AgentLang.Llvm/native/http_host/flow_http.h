@@ -97,10 +97,17 @@ int fh_db_provision(const char *path, char *reason, uint32_t reason_capacity);
 uint32_t fh_db_prepared_count(const fh_db *db);
 
 /* The provider context the generated module passes to the adapter: the
- * worker's database connection and its index (the cache epoch slot). */
+ * worker's database connection, its index (the cache epoch slot), its store
+ * (docs/WORKER-STORE-PLAN.md: a fixed, zero-filled region owned by this
+ * worker alone) and its response stream (emptied before every request). */
 typedef struct fh_provider {
   fh_db *db;
   uint32_t worker;
+  uint8_t *store;
+  uint64_t store_bytes;
+  uint8_t *stream;
+  uint32_t stream_capacity;
+  uint32_t stream_used;
 } fh_provider;
 
 /* The host adapter the generated module calls for db.query / db.execute /

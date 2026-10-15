@@ -23,6 +23,22 @@ same bytes on every request, and the server decrypts `_campfire_session` only
 when a response changes it. Rails keeps its token scheme in the benchmark and is
 labeled as the one server doing token work (report 283).
 
+## Language and stdlib follow-ups from the worker store (284)
+
+- **Html into the stdlib (user, 2026-10-15).** `Html` is still built into the
+  compiler (`HtmlMarkup.fs`, `Compiler.fs`). Move the type and its words into
+  `src/stdlib/html.flow` as a refined type over String. The compiler keeps
+  only the validation: literal and template checks at compile time, and the
+  proof that lets `html.raw` skip the runtime check.
+- **Templates that leave elements open.** A layout can't be split into
+  head/tail templates, because each half fails `FLOW_TEMPLATE_MARKUP`.
+  Campfire splits the rendered page at run time instead
+  (`campfire.server.page-frame`). Possible language support: a template form
+  checked as a pair (head opens exactly what tail closes), or a streaming hole
+  that names where the stream continues.
+- **Host operations with no inputs.** `store.capacity`, `response.written` and
+  `response.discard` take an ignored Int. Allow zero-input host operations.
+
 ## Deferred usability work (user, 2026-10-13)
 
 Noted for after the apples-to-apples Campfire comparison.
