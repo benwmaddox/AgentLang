@@ -164,3 +164,32 @@ runners for partials), diff, and port until 0 differing blocks.
    - account;
    - sign-in and sign-out (bcrypt needs a decision);
    - message and boost writes, with sanitization inbound when writes land.
+
+## Typed schema and validated migration (user, 2026-10-15)
+
+Flow types are the schema. Every table the server reads gets a row record
+built only through a validating decode:
+- refined types for constrained values: ids, tokens, `boosts.content`
+  (`limit: 16`), join codes, e-mail addresses;
+- enums for closed sets: `rooms.type` `Rooms::Open|Closed|Direct`,
+  `users.role` and `users.status` integers, `memberships.involvement`;
+- Option exactly where `db/schema.rb` allows NULL. Verified examples:
+  `push_subscriptions.endpoint` and its keys, `memberships.involvement`,
+  `rooms.name` and `users.bio` are nullable; `boosts.content` is not.
+
+The server's row readers already work this way (`campfire.server.message-row`
+rejects a row with a missing or invalid column). The extension:
+- a `campfire.schema.*` row decoder per table;
+- a migration/validation runner (interpreter) that reads every row, decodes it
+  against the types, and writes a report of rows that fail, with table, id
+  and reason. Failing rows are quarantined, never coerced.
+
+The inbound rich-text migration is the first user of this: it decodes
+`action_text_rich_texts` rows, sanitizes into RichHtml, and writes
+`flow_rich_text_presentations`, reporting refusals.
+
+The research notes (route inventory, tables, gaps such as bcrypt, Active
+Storage variants, ActionCable, FTS5 search, jobs) were checked against the
+reference source before use. The parts used here are confirmed. Some
+subagent claims were wrong (avatar tokens do not expire; the Flow server has
+no sign-in route) and are not relied on.
