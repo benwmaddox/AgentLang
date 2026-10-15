@@ -1066,7 +1066,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>())
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1102,7 +1102,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>())
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1111,13 +1111,351 @@ test campfire.server.http-response/redirect {
 
 // ------------------------------------------------------------------ entry
 
+// ------------------------------------------------------- message paging
+//
+// messages#index (/rooms/<id>/messages?before=|after=): the page's message
+// partials without the layout, with fresh_when's validators. The weak ETag is
+// ActiveSupport::Digest (SHA-256, first 32 hex digits) of the expanded cache
+// key [messages, template digest]: each message's cache_key_with_version
+// (messages/<id>-<updated_at %Y%m%d%H%M%S%6N>), then messages/index's
+// template digest, joined by '/'. Last-Modified is the newest updated_at.
+
+fn campfire.server.index-template-digest() -> String {
+    doc "ActionView::Digestor.digest of messages/index (html) in the reference app, read from Rails (as the asset digests are); it changes only when the reference templates change."
+    "8686c9089c0ca2724d567e0bf0e90539"
+}
+
+test campfire.server.index-template-digest/length {
+    expect string.byte-length(campfire.server.index-template-digest()) == 32
+}
+
+fn campfire.server.cache-version(updated-at: String) -> String {
+    doc "updated_at.to_fs(:usec) of a stored 'YYYY-MM-DD HH:MM:SS[.ffffff]' timestamp: its digits, the fraction padded or cut to six."
+    let whole = match string.slice(updated-at, 0, 19) { none => updated-at; some s => s }
+    let fraction = if string.byte-length(updated-at) > 20 { match string.slice(updated-at, 20, string.byte-length(updated-at) - 20) { none => ""; some s => s } } else { "" }
+    let padded = string.concat(fraction, "000000")
+    string.concat(string.replace(string.replace(string.replace(whole, "-", ""), ":", ""), " ", ""), match string.slice(padded, 0, 6) { none => "000000"; some s => s })
+}
+
+test campfire.server.cache-version/fraction {
+    expect campfire.server.cache-version("2026-02-28 10:27:00") == "20260228102700000000"
+    expect campfire.server.cache-version("2026-10-14 10:00:00.25") == "20261014100000250000"
+}
+
+fn campfire.server.paging-etag(ids: List<Int>, stamps: List<String>) -> String {
+    doc "fresh_when's weak ETag for these messages (see above); stamps are their updated_at texts in the same order."
+    var key = ""
+    for id, index in ids {
+        key = string.join([key, "messages/", int.to-string(id), "-", campfire.server.cache-version(match list.get(stamps, index) { none => ""; some stamp => stamp }), "/"])
+    }
+    key = string.concat(key, campfire.server.index-template-digest())
+    let digest = hex.encode(crypto.sha256(bytes.from-utf8(key)))
+    string.join(["W/\"", match string.slice(digest, 0, 32) { none => digest; some s => s }, "\""])
+}
+
+test campfire.server.paging-etag/shape {
+    let etag = campfire.server.paging-etag([1], ["2026-10-14 10:00:00.25"])
+    expect string.starts-with(etag, "W/\"") && string.byte-length(etag) == 36
+}
+
+fn campfire.server.days-from-civil(year: Int, month: Int, day: Int) -> Int {
+    doc "Days since 1970-01-01 of a proleptic Gregorian date (Hinnant's days_from_civil)."
+    let y = if month <= 2 { year - 1 } else { year }
+    let era = (if y >= 0 { y } else { y - 399 }) / 400
+    let yoe = y - era * 400
+    let mp = if month > 2 { month - 3 } else { month + 9 }
+    let doy = (153 * mp + 2) / 5 + day - 1
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+    era * 146097 + doe - 719468
+}
+
+test campfire.server.days-from-civil/epoch {
+    expect campfire.server.days-from-civil(1970, 1, 1) == 0 && campfire.server.days-from-civil(2026, 2, 28) == 20512
+}
+
+fn campfire.server.http-date(stamp: String) -> String {
+    doc "Time#httpdate of a stored UTC 'YYYY-MM-DD HH:MM:SS' timestamp (fractions dropped): 'Sat, 28 Feb 2026 15:00:00 GMT'."
+    let year = match int.parse(match string.slice(stamp, 0, 4) { none => "0"; some s => s }) { none => 1970; some n => n }
+    let month = match int.parse(match string.slice(stamp, 5, 2) { none => "1"; some s => s }) { none => 1; some n => n }
+    let day = match int.parse(match string.slice(stamp, 8, 2) { none => "1"; some s => s }) { none => 1; some n => n }
+    let days = campfire.server.days-from-civil(year, month, day)
+    let weekday = ((days % 7) + 11) % 7
+    let names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    string.join([match list.get(names, weekday) { none => ""; some n => n }, ", ", match string.slice(stamp, 8, 2) { none => ""; some s => s }, " ", match list.get(months, month - 1) { none => ""; some m => m }, " ", match string.slice(stamp, 0, 4) { none => ""; some s => s }, " ", match string.slice(stamp, 11, 8) { none => ""; some s => s }, " GMT"])
+}
+
+test campfire.server.http-date/rails {
+    expect campfire.server.http-date("2026-02-28 15:00:00") == "Sat, 28 Feb 2026 15:00:00 GMT"
+    expect campfire.server.http-date("1970-01-01 00:00:00.5") == "Thu, 01 Jan 1970 00:00:00 GMT"
+}
+
+fn campfire.server.query-param(target: String, name: String) -> Option<String> {
+    doc "The last value of a query parameter (Rack's plain-key rule), as given (paging ids need no decoding); none when absent."
+    let question = match string.index-of(target, "?", 0) { none => -1; some at => at }
+    let query = if question < 0 { "" } else { campfire.server.cut(target, question + 1, string.byte-length(target) - question - 1) }
+    var found = option.none<String>()
+    var at = 0
+    let length = string.byte-length(query)
+    let steps = length + 1
+    for step in 0..steps {
+        if at > length || length == 0 {
+            break
+        }
+        let stop = match string.index-of(query, "&", at) { none => length; some index => index }
+        let pair = campfire.server.cut(query, at, stop - at)
+        let equals = match string.index-of(pair, "=", 0) { none => string.byte-length(pair); some index => index }
+        if campfire.server.cut(pair, 0, equals) == name {
+            found = option.some<String>(if equals >= string.byte-length(pair) { "" } else { campfire.server.cut(pair, equals + 1, string.byte-length(pair) - equals - 1) })
+        }
+        at = stop + 1
+    }
+    found
+}
+
+test campfire.server.query-param/last-wins {
+    expect campfire.server.query-param("/rooms/1/messages?before=5&after=7&before=6", "before") == option.some<String>("6")
+    expect campfire.server.query-param("/rooms/1/messages", "before") == option.none<String>()
+    expect campfire.server.query-param("/rooms/1/messages?before", "before") == option.some<String>("")
+}
+
+fn campfire.server.paging-validators(ids: List<Int>) -> Result<List<String>, DbError> {
+    effects db.read
+    doc "fresh_when's [weak ETag, Last-Modified] for these messages (in page order), from their stored updated_at."
+    match db.query("SELECT id, updated_at FROM messages WHERE id IN (SELECT value FROM json_each($ids))", [db.text-param(campfire.server.id-list(ids))]) {
+        error failure => result.error<List<String>, DbError>(campfire.server.db-error(failure))
+        ok rows => {
+            var stamps = list.empty<String>()
+            var newest = ""
+            var newest-digits = -1
+            for id in ids {
+                var stamp = ""
+                for row in rows {
+                    if campfire.server.int-or-zero(db.optional-int(row, 0)) == id {
+                        stamp = campfire.server.text-or-empty(db.optional-text(row, 1))
+                    }
+                }
+                stamps = list.append(stamps, stamp)
+                let digits = match int.parse(match string.slice(campfire.server.cache-version(stamp), 0, 14) { none => "0"; some text => text }) { none => 0; some n => n }
+                if digits > newest-digits {
+                    newest = stamp
+                    newest-digits = digits
+                }
+            }
+            result.ok<List<String>, DbError>([campfire.server.paging-etag(ids, stamps), campfire.server.http-date(newest)])
+        }
+    }
+}
+
+test campfire.server.paging-validators/fixture {
+    expect campfire.server.test-fixture() == 0
+    let validators = match campfire.server.paging-validators([1, 2]) { error failure => list.empty<String>(); ok found => found }
+    expect list.get(validators, 1) == option.some<String>("Wed, 14 Oct 2026 10:05:00 GMT")
+}
+
+fn campfire.server.not-modified?(headers: List<HttpHeader>, etag: String, last-modified: String) -> Bool {
+    doc "Request#fresh?: with If-None-Match and/or If-Modified-Since, every one given must match (the ETag among the listed ones, weak or not, or '*'; Last-Modified not after the date). False when neither is given."
+    let none-match = campfire.server.header-last(headers, "if-none-match")
+    let since = campfire.server.header-last(headers, "if-modified-since")
+    let bare = string.replace(etag, "W/", "")
+    let etag-ok = match none-match {
+        none => true
+        some listed => string.contains(string.replace(string.replace(listed, "W/", ""), " ", ""), bare) || string.contains(listed, "*")
+    }
+    let since-ok = match since {
+        none => true
+        some date => {
+            let modified = match int.parse(campfire.server.http-date-key(last-modified)) { none => -1; some n => n }
+            let given = match int.parse(campfire.server.http-date-key(date)) { none => -1; some n => n }
+            modified >= 0 && given >= 0 && modified <= given
+        }
+    }
+    (none-match != option.none<String>() || since != option.none<String>()) && etag-ok && since-ok
+}
+
+test campfire.server.not-modified?/validators {
+    let etag = "W/\"abc\""
+    let date = "Sat, 28 Feb 2026 15:00:00 GMT"
+    expect campfire.server.not-modified?([httpHeader.new(name = "if-none-match", value = "W/\"abc\"")], etag, date)
+    expect bool.not(campfire.server.not-modified?([httpHeader.new(name = "if-none-match", value = "W/\"abd\"")], etag, date))
+    expect campfire.server.not-modified?([httpHeader.new(name = "if-modified-since", value = "Sun, 01 Mar 2026 00:00:00 GMT")], etag, date)
+    expect bool.not(campfire.server.not-modified?(list.empty<HttpHeader>(), etag, date))
+}
+
+fn campfire.server.http-date-key(date: String) -> String {
+    doc "A sortable YYYYMMDDHHMMSS of an IMF-fixdate ('Sat, 28 Feb 2026 15:00:00 GMT'); empty when it is not one."
+    let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    let name = campfire.server.cut(date, 8, 3)
+    var month = 0
+    for candidate, index in months {
+        if candidate == name {
+            month = index + 1
+        }
+    }
+    let month-text = if month < 10 { string.concat("0", int.to-string(month)) } else { int.to-string(month) }
+    if month == 0 || string.byte-length(date) != 29 || bool.not(string.ends-with(date, " GMT")) {
+        ""
+    } else {
+        string.join([campfire.server.cut(date, 12, 4), month-text, campfire.server.cut(date, 5, 2), string.replace(campfire.server.cut(date, 17, 8), ":", "")])
+    }
+}
+
+test campfire.server.http-date-key/order {
+    expect campfire.server.http-date-key("Sat, 28 Feb 2026 15:00:00 GMT") == "20260228150000" && campfire.server.http-date-key("nope") == ""
+}
+
+fn campfire.server.with-validators(sent: HttpResponse, status: Int, body: String, etag: String, last-modified: String, cache-control: String) -> HttpResponse {
+    doc "A response with fresh_when's headers: Cache-Control replaced, ETag and Last-Modified added when given; 204 and 304 carry no Content-Type and no body."
+    var headers = list.empty<HttpHeader>()
+    for header in sent.headers {
+        let lower = string.to-lower-ascii(header.name)
+        if lower != "cache-control" && bool.not(lower == "content-type" && (status == 204 || status == 304)) {
+            headers = list.append(headers, header)
+        }
+    }
+    headers = list.append(headers, httpHeader.new(name = "Cache-Control", value = cache-control))
+    if etag != "" {
+        headers = list.append(headers, httpHeader.new(name = "ETag", value = etag))
+        headers = list.append(headers, httpHeader.new(name = "Last-Modified", value = last-modified))
+    }
+    httpResponse.new(status = status, headers = headers, body = if status == 200 { body } else { "" }, streamed = false)
+}
+
+test campfire.server.with-validators/no-content {
+    let sent = httpResponse.new(status = 200, headers = [httpHeader.new(name = "Cache-Control", value = "no-store"), httpHeader.new(name = "Content-Type", value = "text/html; charset=utf-8")], body = "x", streamed = false)
+    let empty = campfire.server.with-validators(sent, 204, "", "", "", "no-cache")
+    expect empty.status == 204 && empty.body == "" && http.header(empty.headers, "Content-Type") == option.none<String>() && http.header(empty.headers, "Cache-Control") == option.some<String>("no-cache")
+}
+
+fn campfire.server.page-keys-side(room-id: RoomId, message-id: Int, before: Bool) -> Result<List<PageKey>, DbError> {
+    effects db.read
+    doc "page_before (the newest forty created before the message, oldest first) or page_after (the oldest forty created after it)."
+    let found = if before {
+        db.query("WITH target AS (SELECT created_at FROM messages WHERE room_id = $roomId AND id = $messageId), page AS (SELECT messages.id AS id, ROW_NUMBER() OVER (ORDER BY messages.created_at DESC) AS position FROM messages, target WHERE messages.room_id = $roomId AND messages.created_at < target.created_at ORDER BY messages.created_at DESC LIMIT 40) SELECT messages.id, CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER) FROM page INNER JOIN messages ON messages.id = page.id INNER JOIN users ON users.id = messages.creator_id ORDER BY page.position DESC", [db.int-param(RoomId.value(room-id)), db.int-param(message-id)])
+    } else {
+        db.query("WITH target AS (SELECT created_at FROM messages WHERE room_id = $roomId AND id = $messageId), page AS (SELECT messages.id AS id, ROW_NUMBER() OVER (ORDER BY messages.created_at) AS position FROM messages, target WHERE messages.room_id = $roomId AND messages.created_at > target.created_at ORDER BY messages.created_at LIMIT 40) SELECT messages.id, CAST(strftime('%s', messages.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', messages.updated_at), 4) AS INTEGER) FROM page INNER JOIN messages ON messages.id = page.id INNER JOIN users ON users.id = messages.creator_id ORDER BY page.position", [db.int-param(RoomId.value(room-id)), db.int-param(message-id)])
+    }
+    match found {
+        error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+        ok rows => {
+            var keys = list.empty<PageKey>()
+            for row in rows {
+                keys = list.append(keys, pageKey.new(id = campfire.server.int-or-zero(db.optional-int(row, 0)), updated-at-ms = campfire.server.int-or-zero(db.optional-int(row, 1))))
+            }
+            result.ok<List<PageKey>, DbError>(keys)
+        }
+    }
+}
+
+test campfire.server.page-keys-side/fixture {
+    expect campfire.server.test-fixture() == 0
+    let before = match campfire.server.page-keys-side(RoomId.new(1), 2, true) { error failure => list.empty<PageKey>(); ok keys => keys }
+    let after = match campfire.server.page-keys-side(RoomId.new(1), 2, false) { error failure => list.empty<PageKey>(); ok keys => keys }
+    expect list.count(before) == 1 && list.count(after) == 0
+}
+
+fn campfire.server.message-in-room?(room-id: RoomId, message-id: Int) -> Result<Bool, DbError> {
+    effects db.read
+    doc "@room.messages.find(id) succeeds."
+    match db.query("SELECT EXISTS (SELECT 1 FROM messages WHERE room_id = $roomId AND id = $messageId)", [db.int-param(RoomId.value(room-id)), db.int-param(message-id)]) {
+        error failure => result.error<Bool, DbError>(campfire.server.db-error(failure))
+        ok rows => result.ok<Bool, DbError>(match db.first-row(rows) { none => false; some row => db.int(row, 0) != 0 })
+    }
+}
+
+test campfire.server.message-in-room?/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.server.message-in-room?(RoomId.new(1), 2) == result.ok<Bool, DbError>(true) && campfire.server.message-in-room?(RoomId.new(1), 99) == result.ok<Bool, DbError>(false)
+}
+
+fn campfire.server.messages-index(request: CampfireHttpRequest, user: AuthUser, refresh: Option<SessionToken>, built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "messages#index: the member's room (else 404), the page before or after a message of it (else 404) or its last page, rendered without the layout; 204 when empty, 304 when the request's validators match."
+    let failed = campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", refresh), built, incoming.target, context)
+    let missing = campfire.server.http-response(campfire.server.response(404, HttpView.empty(), "", refresh), built, incoming.target, context)
+    match campfire.rooms.find-for-user(user.id, request.room-id) {
+        error failure => failed
+        ok maybe-room => match maybe-room {
+            none => missing
+            some room => {
+                let before = match built.before { none => ""; some text => text }
+                let after = match built.after { none => ""; some text => text }
+                let side = if bool.not(campfire.views.blank?(before)) { before } else { after }
+                let message-id = campfire.server.ruby-to-i(side)
+                let known = if campfire.views.blank?(side) { result.ok<Bool, DbError>(true) } else { campfire.server.message-in-room?(room.id, message-id) }
+                let keys = if campfire.views.blank?(side) { campfire.server.page-keys-query(room.id) } else { campfire.server.page-keys-side(room.id, message-id, bool.not(campfire.views.blank?(before))) }
+                match known {
+                    error failure => failed
+                    ok exists => {
+                        if bool.not(exists) {
+                            missing
+                        } else {
+                            match campfire.server.messages-for-keys(keys, context.avatar-key) {
+                                error failure => failed
+                                ok messages => {
+                                    var ids = list.empty<Int>()
+                                    for message in messages {
+                                        ids = list.append(ids, MessageId.value(message.id))
+                                    }
+                                    let chrome = campfire.server.page-chrome(room, user, request.base-url, context)
+                                    let message-context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
+                                    let boosts = match campfire.server.boosts-for(ids, context.avatar-key) { error failure => list.empty<BoostView>(); ok found => found }
+                                    let extras = campfire.server.page-extras(messages, context)
+                                    var body = "\n"
+                                    for message in messages {
+                                        body = string.concat(body, campfire.server.render-message(message-context, message, boosts, extras))
+                                    }
+                                    let page = campfireHttpResponse.new(status = 200, view = HttpView.room(), text = "", room = option.some<RoomRow>(room), message = option.none<MessageRow>(), refresh-session-token = refresh, remember-return-to = false, last-room = option.none<RoomId>(), new-csrf-token = option.none<String>(), body = body)
+                                    let sent = campfire.server.http-response(page, built, incoming.target, context)
+                                    if list.count(ids) == 0 {
+                                        campfire.server.with-validators(sent, 204, "", "", "", "no-cache")
+                                    } else {
+                                        match campfire.server.paging-validators(ids) {
+                                            error failure => failed
+                                            ok validators => {
+                                                let etag = match list.get(validators, 0) { none => ""; some value => value }
+                                                let modified = match list.get(validators, 1) { none => ""; some value => value }
+                                                let status = if campfire.server.not-modified?(incoming.headers, etag, modified) { 304 } else { 200 }
+                                                campfire.server.with-validators(sent, status, body, etag, modified, "max-age=0, private, must-revalidate")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn campfire.server.messages-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /rooms/<id>/messages: the room read's session and authentication, then messages#index."
+    let request = built.campfire
+    match campfire.server.restore-request-session(request, context) {
+        error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>()), built, incoming.target, context)
+        ok maybe-session => match maybe-session {
+            none => campfire.server.http-response(campfire.server.bot-or-redirect(request), built, incoming.target, context)
+            some restored => {
+                let refresh = campfire.server.refresh-token(restored)
+                match campfire.server.authenticated-user(request, restored, refresh) {
+                    error response => campfire.server.http-response(response, built, incoming.target, context)
+                    ok user => campfire.server.messages-index(request, user, refresh, built, incoming, context)
+                }
+            }
+        }
+    }
+}
+
 fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) -> HttpResponse {
     effects db.read, db.write, store.read, store.write, response.write, random.read
     doc "GET/HEAD /rooms/<id>: transport checks, the room-read chain, then the rendered response with its cookies."
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context)
+        ok built => if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
     }
 }
 
@@ -1203,4 +1541,39 @@ test campfire.server.whole-room-page/boosted {
         ok messages => campfire.server.whole-room-page(campfire.server.page-chrome(room, user, "http://x", campfire.server.test-context()), messages, campfire.server.test-context())
     }
     expect string.contains(page, "<div id=\"boost_7\"")
+}
+
+fn campfire.server.test-get(target: String, extra: List<HttpHeader>) -> HttpRequest {
+    doc "A signed-in GET for attached tests (the fixture's session-token-1, a supported browser)."
+    let context = campfire.server.test-context()
+    let cookie-header = string.concat("session_token=", cookie.escape(campfire.server.sign-session-token(context.signing-key, "session-token-1", 1791979200000000)))
+    let headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = cookie-header), httpHeader.new(name = "user-agent", value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")]
+    httpRequest.new(method = "GET", target = target, headers = list.concat(headers, extra), body = bytes.from-utf8(""), remote-ip = "127.0.0.1", now-microseconds = 1791979200000000)
+}
+
+test campfire.server.test-get/target {
+    expect campfire.server.test-get("/rooms/1/messages", list.empty<HttpHeader>()).target == "/rooms/1/messages"
+}
+
+test campfire.server.messages-read/page-before {
+    expect campfire.server.test-fixture() == 0
+    let sent = campfire.server.handle(campfire.server.test-get("/rooms/1/messages?before=2", list.empty<HttpHeader>()), campfire.server.test-context())
+    expect sent.status == 200 && bool.not(sent.streamed)
+    expect string.starts-with(sent.body, "\n  <div id=\"message_c1\"") && bool.not(string.contains(sent.body, "message_c2"))
+    expect http.header(sent.headers, "Cache-Control") == option.some<String>("max-age=0, private, must-revalidate")
+    expect match http.header(sent.headers, "ETag") { none => false; some etag => string.starts-with(etag, "W/\"") }
+}
+
+test campfire.server.messages-index/statuses {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let empty = campfire.server.handle(campfire.server.test-get("/rooms/1/messages?before=1", list.empty<HttpHeader>()), context)
+    expect empty.status == 204 && empty.body == "" && http.header(empty.headers, "Cache-Control") == option.some<String>("no-cache")
+    expect campfire.server.handle(campfire.server.test-get("/rooms/1/messages?after=99", list.empty<HttpHeader>()), context).status == 404
+    expect campfire.server.handle(campfire.server.test-get("/rooms/2/messages", list.empty<HttpHeader>()), context).status == 404
+    let last = campfire.server.handle(campfire.server.test-get("/rooms/1/messages", list.empty<HttpHeader>()), context)
+    expect last.status == 200 && string.contains(last.body, "message_c2")
+    let etag = match http.header(last.headers, "ETag") { none => ""; some value => value }
+    let again = campfire.server.handle(campfire.server.test-get("/rooms/1/messages", [httpHeader.new(name = "if-none-match", value = etag)]), context)
+    expect again.status == 304 && again.body == "" && http.header(again.headers, "ETag") == option.some<String>(etag)
 }

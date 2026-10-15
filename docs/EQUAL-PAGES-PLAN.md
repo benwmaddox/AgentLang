@@ -187,7 +187,14 @@ runners for partials), diff, and port until 0 differing blocks.
    dimensions in exponent form.
 2. **Routes beyond GET/HEAD `/rooms/<id>`,** one at a time:
    - the sidebar frame;
-   - message paging (`/rooms/<id>/@<message>`, before and after);
+   - message paging (`/rooms/<id>/@<message>`, before and after). **Done
+     (2026-10-15).** The page around a message: 81 messages, 812,594
+     bytes, and its last-page fallback. `messages?before=` and `after=`:
+     bodies match, and so do the ETag (SHA-256 over
+     `[messages, template digest]`, `index-template-digest` read from
+     Rails), Last-Modified, Cache-Control, 204 for an empty page and 304
+     on revalidation. A non-member's room or an unknown message is 404.
+     The 404 body is the host's, not Rails' `public/404.html`.
    - search;
    - users and avatars;
    - account;
