@@ -3504,6 +3504,9 @@ let private runOwningStackChain
     let mutable stableArenaCapacityControlReport: obj = null
     if repetition = 1 then
         let control = fixture.GetProperty("owningStack").GetProperty("stableArenaCapacityControl")
+        // Report 280 lowered the schedule below 512 bytes for N=8; the control
+        // now runs at its own fixture capacity so N=8 still overflows it.
+        let stackCapacity = control.GetProperty("controlCapacityBytes").GetInt32()
         let controlBuffer = Array.copy oldRetainedState
         let controlBefore = Array.copy controlBuffer
         let controlResult =
@@ -3528,13 +3531,13 @@ let private runOwningStackChain
                 && int64Property (box metrics) "InputCopyBytes" = int64 expectedInputBytes
                 && int64Property (box metrics) "MoveBytes" = 0L
                 && descriptorTransferMetricsPass metrics result.LayoutEvents
-            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control" controlPassed (jsonObject [
+            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-capacity-control" controlPassed (jsonObject [
                 "capacityBytes", box stackCapacity
                 "expectedSourceDerivedPeakCursorBytes", box expectedPeak
                 "actualPeakCursorBytes", box metrics.ReservedStackBytes
                 "resultMatchesSufficientCapacityRun", box (result.Values = firstValues && controlBuffer = firstOutput)
                 "metrics", box (metricSummary (box metrics)) ])
-            checkTraceUsable checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control-trace" metrics result.LayoutEvents |> ignore
+            checkTraceUsable checks failures $"owning-stack/{optimization}/N=1/stable-arena-capacity-control-trace" metrics result.LayoutEvents |> ignore
             stableArenaCapacityControlReport <- jsonObject [
                 "repetitionCount", box repetition
                 "capacityBytes", box stackCapacity
@@ -3544,9 +3547,12 @@ let private runOwningStackChain
                 "callerBufferMatchesSemanticRun", box (controlBuffer = firstOutput)
                 "metrics", box (metricSummary (box metrics)) ]
         | None ->
-            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-512-byte-capacity-control" false "The source-derived 184-byte N=1 schedule must fit the preserved 512-byte capacity."
+            recordCheck checks failures $"owning-stack/{optimization}/N=1/stable-arena-capacity-control" false "The source-derived N=1 schedule must fit the control capacity."
     elif repetition = 8 then
         let control = fixture.GetProperty("owningStack").GetProperty("stableArenaCapacityControl")
+        // Report 280 lowered the schedule below 512 bytes for N=8; the control
+        // now runs at its own fixture capacity so N=8 still overflows it.
+        let stackCapacity = control.GetProperty("controlCapacityBytes").GetInt32()
         let controlBuffer = Array.copy oldRetainedState
         let controlBefore = Array.copy controlBuffer
         let failure =
@@ -3566,8 +3572,8 @@ let private runOwningStackChain
                 int64 inputBytes
                 + int64 (control.GetProperty("preExerciseAllocationBytes").GetInt32())
                 + int64 (control.GetProperty("n8CompletedExercisesBeforeFailure").GetInt32()) * int64 (control.GetProperty("perExerciseAllocationBytes").GetInt32())
-                + int64 (control.GetProperty("n8SeventhExercisePrefixBytes").GetInt32())
-                + int64 (control.GetProperty("n8FinalIntResultBytes").GetInt32())
+                + int64 (control.GetProperty("n8PartialExerciseBytes").GetInt32())
+                + int64 (control.GetProperty("n8FailingTailBytes").GetInt32())
             let expectedRequired = int64 (control.GetProperty("sourceDerivedN8FirstRejectedReservationBytes").GetInt32())
             let traceTruncated = Convert.ToBoolean(getProperty metrics "TraceTruncated", CultureInfo.InvariantCulture)
             let controlPassed =
@@ -3584,7 +3590,7 @@ let private runOwningStackChain
                 && int64Property metrics "FinalCursorBytes" = 0L
                 && controlBuffer = controlBefore
                 && not traceTruncated
-            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-512-byte-capacity-control" controlPassed (jsonObject [
+            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-capacity-control" controlPassed (jsonObject [
                 "capacityBytes", box stackCapacity
                 "sourceDerivedFirstRejectedReservationBytes", box schedule
                 "actualFirstRejectedReservationBytes", box required
@@ -3605,7 +3611,7 @@ let private runOwningStackChain
                 "callerBufferUnchanged", box (controlBuffer = controlBefore)
                 "metrics", box (metricSummary metrics) ]
         | None ->
-            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-512-byte-capacity-control" false "The source-derived 632-byte N=8 schedule must exceed the preserved 512-byte capacity."
+            recordCheck checks failures $"owning-stack/{optimization}/N=8/stable-arena-capacity-control" false "The source-derived N=8 schedule must exceed the control capacity."
     let firstPublishedState = stateFromRetainedBytes firstOutput
     recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/turn-1-raw-publication-decodes-to-next-input" (firstValues = [ firstPublishedState ]) (jsonObject [
         "decodedFromRawRetainedHex", box (bytesHex firstOutput)
@@ -3766,14 +3772,19 @@ let private runOwningStackChain
     let directTraceComplete = checkTraceUsable checks failures $"owning-stack/{optimization}/N={repetition}/direct-trace-complete" directMetrics directEvents
     let directMetricsTyped = directMetrics :?> OwningStackMetrics
     let directTransferMetricsPass = descriptorTransferMetricsPass directMetricsTyped directEvents
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-dup-drop-keeps-survivor-address" (directDuplicateRangesPass && directTraceComplete && directTransferMetricsPass && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "DeepCopyBytes" = 40L) (jsonObject [
+    // Report 280: record fields from registers (Leaf.value, Envelope.tag) are
+    // stored, not copied, so construction copies only the nested Leaf (8 bytes)
+    // and the explicit dup copies 16: 24 deep-copied bytes (40 before).
+    let directMakeRecordConstructionBytes = 8L
+    let directExpectedDeepCopyBytes = directMakeRecordConstructionBytes + 16L
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/direct-dup-drop-keeps-survivor-address" (directDuplicateRangesPass && directTraceComplete && directTransferMetricsPass && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "DeepCopyBytes" = directExpectedDeepCopyBytes) (jsonObject [
         "duplicateEvents", box duplicateEvents
         "dropEvents", box dropEvents
         "matchingDroppedDuplicateEvents", box droppedDuplicates
         "callReturnMoveEvents", box callReturnEvents
         "descriptorTransferEvents", box descriptorTransferEvents
         "retainedCopyEvents", box retainedEvents
-        "expectedDeepCopyBytes", box 40
+        "expectedDeepCopyBytes", box directExpectedDeepCopyBytes
         "measuredDeepCopyBytes", box (int64Property directMetrics "DeepCopyBytes")
         "transferMetricsMatchCompleteTrace", box directTransferMetricsPass ])
     let allocatedScalars = directRanges |> Array.filter (fun event -> event.Kind = 1L && event.Extent = 8L && event.Payload = 8L) |> Array.sortBy (fun event -> event.Offset)
@@ -3784,10 +3795,10 @@ let private runOwningStackChain
         "localCompactEvents", box (directEvents |> List.filter (fun event -> event.Kind = "local-compact") |> layoutEventDetails)
         "moveBytes", box (int64Property directMetrics "MoveBytes") ])
     let directDeepCopyBytes = int64Property directMetrics "DeepCopyBytes"
-    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/record-construction-and-dup-copy-categories" (directDeepCopyBytes = 40L && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "InputCopyBytes" = 16L && int64Property directMetrics "RetainedCopyBytes" = 16L) (jsonObject [
-        "expectedMakeRecordConstructionBytes", box 24
+    recordCheck checks failures $"owning-stack/{optimization}/N={repetition}/record-construction-and-dup-copy-categories" (directDeepCopyBytes = directExpectedDeepCopyBytes && int64Property directMetrics "MoveBytes" = 0L && int64Property directMetrics "InputCopyBytes" = 16L && int64Property directMetrics "RetainedCopyBytes" = 16L) (jsonObject [
+        "expectedMakeRecordConstructionBytes", box directMakeRecordConstructionBytes
         "expectedExplicitDuplicateBytes", box 16
-        "expectedDeepCopyBytes", box 40
+        "expectedDeepCopyBytes", box directExpectedDeepCopyBytes
         "measuredDeepCopyBytes", box directDeepCopyBytes
         "moveBytes", box (int64Property directMetrics "MoveBytes")
         "inputCopyBytes", box (int64Property directMetrics "InputCopyBytes")
@@ -3886,7 +3897,8 @@ let private runOwningStackChain
             unitDropResult.Values = unitDropExpected
             && unitDropOutput = unitDropExpectedBytes
             && unitDropResult.RetainedBytesWritten = unitDropExpectedBytes.Length
-            && unitDropEvents.Length >= 1
+            // A dropped Unit is a register since report 273: it has no arena
+            // bytes, so there may be no drop event; the cursor still ends at 0.
             && int64Property unitDropMetrics "ReservedStackBytes" >= 8L
             && int64Property unitDropMetrics "MoveBytes" = 0L
             && int64Property unitDropMetrics "FinalCursorBytes" = 0L
@@ -4037,7 +4049,11 @@ let private runOwningStackChain
                 && event.OffsetBytes = stableDead.GetProperty("postRewindConstructionOffsetBytes").GetInt32()
                 && event.ExtentBytes = stableDead.GetProperty("postRewindConstructionExtentBytes").GetInt32()
                 && event.PayloadBytes = 8))
-        let stableDeadInputsRemainAtOriginalOffsetsPass = Array.sort stableDeadLoadsAfterReuse = [| 0; 8; 16; 24; 32; 40 |]
+        // Int locals are registers (reports 273/280): loading one emits no
+        // descriptor transfer, so the six pre-mark inputs are either reloaded
+        // at their original offsets or not reloaded from the arena at all.
+        let stableDeadInputsRemainAtOriginalOffsetsPass =
+            Array.sort stableDeadLoadsAfterReuse = [| 0; 8; 16; 24; 32; 40 |] || Array.isEmpty stableDeadLoadsAfterReuse
         let stableDeadReusePass =
             stableDeadAllocationBetweenRewindsPass
             && stableDeadConstructionBeforeOuterRewindPass
@@ -4868,12 +4884,19 @@ let private runStringWorkload
                 && transfer.PayloadBytes = field.PayloadBytes
                 && transfer.SourceExtentBytes = Some field.ExtentBytes
                 && transfer.SourceOffsetBytes = parent.SourceOffsetBytes))
+    // An Int field read leaves as a register (reports 273/280): it is then
+    // never a descriptor into the record (its output gets fresh bytes), so only
+    // the String projection must carry the parent's owner end.
+    let mixedSentinelIsRegister (parent: OwningStackLayoutEvent) =
+        mixedProjectionIndexedEvents
+        |> Array.forall (fun (_, event) ->
+            not (event.Kind = "descriptor-transfer" && event.TypeId = intTypeId && event.SourceOffsetBytes = parent.SourceOffsetBytes))
     let mixedProjectionOwnerEndPass =
         mixedProjectionParentTransfers
         |> Array.exists (fun (parentIndex, parent) ->
             let textFieldCarriesOwnerEnd = mixedProjectionTextExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent stringTypeId)
             let sentinelCarriesOwnerEnd = mixedProjectionSentinelExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent intTypeId)
-            textFieldCarriesOwnerEnd && sentinelCarriesOwnerEnd)
+            textFieldCarriesOwnerEnd && (sentinelCarriesOwnerEnd || mixedSentinelIsRegister parent))
     let mixedProjectionPassed =
         mixedProjectionResult.Values = [ StringValue mixedText; IntValue mixedSentinel ]
         && mixedProjectionOutput = mixedFixtureTextAndSentinelBytes
@@ -6056,7 +6079,9 @@ let private runSumConformance
             |> List.filter (fun event ->
                 match event.SourceExtentBytes with
                 | Some sourceExtent -> event.ExtentBytes = sourceExtent + 8
-                | None -> event.ExtentBytes = 8 && event.PayloadBytes = 8)
+                // Report 280: an Option<Int/Bool/Float> built in registers is
+                // materialized as tag+payload (16 bytes) with no source copy.
+                | None -> (event.ExtentBytes = 8 && event.PayloadBytes = 8) || (event.ExtentBytes = 16 && event.PayloadBytes = 16))
         let expectedSumNodes = sumConstructionCount expectedValue
         let sumCopiesPairedExactlyOnce =
             sumLayoutEvents
@@ -6069,7 +6094,7 @@ let private runSumConformance
                         && copyEvent.SourceExtentBytes = Some sourceExtent
                         && copyEvent.ExtentBytes = sourceExtent)
                     |> List.length = 1
-                | None, None -> sumEvent.ExtentBytes = 8 && sumEvent.PayloadBytes = 8
+                | None, None -> (sumEvent.ExtentBytes = 8 && sumEvent.PayloadBytes = 8) || (sumEvent.ExtentBytes = 16 && sumEvent.PayloadBytes = 16)
                 | _ -> false)
         let sumConstructionEventsExactlyMatchValue = sumLayoutEvents.Length = expectedSumNodes
         let constructionPassed =
@@ -6787,14 +6812,24 @@ let private runNominalIntConformance
     let scopeAllocation = indexedOwnerEvents |> Array.tryFind (fun (_, event) -> event.Kind = "allocate" && event.TypeId = 7u && event.ExtentBytes = scopeAllocationExtent)
     let laterAllocation = indexedOwnerEvents |> Array.tryFind (fun (index, event) -> event.Kind = "allocate" && event.TypeId = 7u && event.ExtentBytes = laterAllocationExtent && (scopeAllocation |> Option.exists (fun (scopeIndex, _) -> index > scopeIndex)))
     let lastOwnerTransfer = ownerTransfers |> Array.tryLast
+    let ownerTransferPass =
+        ownerTransfers.Length > 0
+        && (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+    // Report 280: a word's Int result returns in a register, so the projected
+    // field no longer leaves as a descriptor into the record. It must then be a
+    // fresh 8-byte Int written after the later allocation, never a stale range.
+    let registerResultPass =
+        ownerTransfers.Length = 0
+        && (indexedOwnerEvents |> Array.exists (fun (index, event) ->
+            event.Kind = "allocate" && event.TypeId = 1u && event.ExtentBytes = 8 && event.PayloadBytes = 8
+            && laterAllocation |> Option.exists (fun (laterIndex, _) -> index > laterIndex)))
     let ownerRangePass =
         interpretedOwnerProjection = [ IntValue ownerInputValue ]
         && ownerProjection.Values = interpretedOwnerProjection
         && ownerProjectionOutput = bytesFromHex (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString())
-        && ownerTransfers.Length > 0
         && scopeAllocation.IsSome
         && laterAllocation.IsSome
-        && (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        && (ownerTransferPass || registerResultPass)
         && int64Property (box ownerProjection.Metrics) "DeepCopyBytes" = oracle.GetProperty("ownerRangeTrace").GetProperty("literalDeepCopyBytes").GetInt64()
         && int64Property (box ownerProjection.Metrics) "MoveBytes" = 0L
     recordCheck checks failures $"nominal-int/{optimizationName}/scalar-first-record-preserves-full-owner-end" ownerRangePass (jsonObject [
@@ -6807,7 +6842,8 @@ let private runNominalIntConformance
         "actualDeepCopyBytes", box ownerProjection.Metrics.DeepCopyBytes
         "actualMoveBytes", box ownerProjection.Metrics.MoveBytes
         "laterAllocationFollowsScopeAllocation", box (scopeAllocation.IsSome && laterAllocation.IsSome)
-        "outputTransferFollowsLaterAllocation", box (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
+        "outputTransferFollowsLaterAllocation", box ownerTransferPass
+        "registerResultFollowsLaterAllocation", box registerResultPass
         "expectedRetainedBytes", box (ownerOracle.GetProperty("projectedOwnerBytesHex").GetString())
         "actualRetainedBytes", box (bytesHex ownerProjectionOutput)
         "arenaRewinds", box (ownerProjection.LayoutEvents |> List.filter (fun event -> event.Kind = "arena-rewind") |> layoutEventDetails)
@@ -6978,6 +7014,7 @@ let private runNominalIntConformance
         "signedFixtureCount", box (oracle.GetProperty("signedFixtures").GetArrayLength())
         "unsupportedDefinitionCount", box entries.UnsupportedCases.Length
         "ownerRangeTransferCount", box ownerTransfers.Length
+        "registerResult", box registerResultPass
         "ownerEndBytes", box (rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
         "scalarPayloadExtentBytes", box (rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()) ]
 
@@ -7963,7 +8000,8 @@ let private runRefinedStringConformance
     let inputOnlyPassed = inputResult.Values = [ hostValue ] && inputOutput = hostBytes
     let inputWordFunctions =
         inputIdentityProgram.LlvmIr.Split([| '\n' |], StringSplitOptions.RemoveEmptyEntries)
-        |> Array.filter (fun line -> line.StartsWith("define internal i32 @agentlang_word_", StringComparison.Ordinal))
+        // Report 280: each word is a descriptor adapter plus its `.reg` body; count words.
+        |> Array.filter (fun line -> line.StartsWith("define internal i32 @agentlang_word_", StringComparison.Ordinal) && not (line.Contains(".reg(", StringComparison.Ordinal)))
         |> Array.length
     record "host-identity-input-only-validator-closure" (inputOnlyPassed && inputWordFunctions = 1) (jsonObject [
         "owningValues", box (ValueInspection.toJson entries.CoreProgram inputResult.Values)

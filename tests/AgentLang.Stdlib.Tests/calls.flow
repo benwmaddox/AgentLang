@@ -1,0 +1,300 @@
+// Word calls (report 280): register calling for Int/Bool/Float/Unit arguments
+// and results, Option<Int/Bool/Float> in registers, and `inline fn`. Every
+// literal test below is replayed natively (O0, O2, trusted O2).
+
+inline fn calls.next(value: Int) -> Int {
+    value + 1
+}
+
+test calls.next/one {
+    calls.next(41)
+    => value 42
+}
+
+fn calls.sum-to(limit: Int) -> Int {
+    var total = 0
+    for index in 0..limit {
+        total = calls.next(total) + index
+    }
+    total
+}
+
+test calls.next/overflow {
+    calls.next(9223372036854775807)
+    => error RUNTIME_OVERFLOW
+}
+
+test calls.sum-to/ten {
+    calls.sum-to(10)
+    => value 55
+}
+
+fn calls.half(value: Float) -> Float {
+    float.divide(value, 2.0)
+}
+
+test calls.half/three {
+    calls.half(3.0)
+    => value 1.5
+}
+
+fn calls.float-round-trip(value: Int) -> Int {
+    float.to-int(float.multiply(calls.half(int.to-float(value)), 4.0))
+}
+
+test calls.float-round-trip/three {
+    calls.float-round-trip(3)
+    => value 6
+}
+
+test calls.float-round-trip/negative {
+    calls.float-round-trip(-7)
+    => value -14
+}
+
+fn calls.flip(flag: Bool) -> Bool {
+    bool.not(flag)
+}
+
+test calls.flip/true {
+    calls.flip(true)
+    => value false
+}
+
+fn calls.both(left: Bool, right: Bool) -> Bool {
+    calls.flip(calls.flip(left)) && right
+}
+
+test calls.both/yes {
+    calls.both(true, true)
+    => value true
+}
+
+test calls.both/no {
+    calls.both(true, false)
+    => value false
+}
+
+fn calls.ignore(value: Int) -> Unit {
+    unit
+}
+
+test calls.ignore/one {
+    calls.ignore(1)
+    => value unit
+}
+
+fn calls.after-unit(value: Int) -> Int {
+    let done = calls.ignore(value)
+    value * 2
+}
+
+test calls.after-unit/four {
+    calls.after-unit(4)
+    => value 8
+}
+
+fn calls.split(text: String, count: Int) -> (Int, String) {
+    return (count + string.byte-length(text), string.concat(text, "!"))
+}
+
+test calls.split/hi {
+    let (number, label) = calls.split("hi", 3)
+    expect number == 5
+    expect label == "hi!"
+}
+
+fn calls.use-split(text: String, count: Int) -> String {
+    let (number, label) = calls.split(text, count)
+    string.concat(label, int.to-string(number))
+}
+
+test calls.use-split/hi {
+    calls.use-split("hi", 3)
+    => value "hi!5"
+}
+
+fn calls.mix(prefix: String, value: Int, flag: Bool) -> String {
+    if flag { string.concat(prefix, int.to-string(value)) } else { prefix }
+}
+
+test calls.mix/on {
+    calls.mix("a", 1, true)
+    => value "a1"
+}
+
+test calls.mix/off {
+    calls.mix("a", 1, false)
+    => value "a"
+}
+
+fn calls.use-mix(prefix: String, value: Int) -> String {
+    string.concat(calls.mix(prefix, value, true), calls.mix(prefix, value + 1, false))
+}
+
+test calls.use-mix/a {
+    calls.use-mix("a", 7)
+    => value "a7a"
+}
+
+fn calls.space-at(text: String, index: Int) -> Option<Int> {
+    match string.byte-at(text, index) {
+        none => option.none<Int>()
+        some byte => if byte == 32 { option.some<Int>(index) } else { option.none<Int>() }
+    }
+}
+
+test calls.space-at/space {
+    calls.space-at("a b", 1)
+    => value option.some<Int>(1)
+}
+
+test calls.space-at/letter {
+    calls.space-at("a b", 0)
+    => value option.none<Int>()
+}
+
+test calls.space-at/outside {
+    calls.space-at("a b", 9)
+    => value option.none<Int>()
+}
+
+fn calls.count-spaces(text: String) -> Int {
+    var total = 0
+    let past = string.byte-length(text) + 2
+    for index in 0..past {
+        let found = match calls.space-at(text, index) {
+            none => 0
+            some at => at + 1
+        }
+        total = total + found
+    }
+    total
+}
+
+test calls.count-spaces/three {
+    calls.count-spaces("a b c ")
+    => value 12
+}
+
+fn calls.parse-or(text: String, fallback: Int) -> Int {
+    let parsed = int.parse(text)
+    match parsed {
+        none => fallback
+        some value => value
+    }
+}
+
+test calls.parse-or/number {
+    calls.parse-or("-42", 7)
+    => value -42
+}
+
+test calls.parse-or/text {
+    calls.parse-or("x", 7)
+    => value 7
+}
+
+fn calls.maybe-flag(value: Int) -> Option<Bool> {
+    if value > 0 { option.some<Bool>(value > 10) } else { option.none<Bool>() }
+}
+
+test calls.maybe-flag/big {
+    calls.maybe-flag(11)
+    => value option.some<Bool>(true)
+}
+
+test calls.maybe-flag/none {
+    calls.maybe-flag(0)
+    => value option.none<Bool>()
+}
+
+fn calls.flag-text(value: Int) -> String {
+    match calls.maybe-flag(value) {
+        none => "none"
+        some flag => if flag { "big" } else { "small" }
+    }
+}
+
+test calls.flag-text/big {
+    calls.flag-text(11)
+    => value "big"
+}
+
+test calls.flag-text/small {
+    calls.flag-text(3)
+    => value "small"
+}
+
+test calls.flag-text/none {
+    calls.flag-text(0)
+    => value "none"
+}
+
+fn calls.maybe-half(value: Int) -> Option<Float> {
+    if value == 0 { option.none<Float>() } else { option.some<Float>(calls.half(int.to-float(value))) }
+}
+
+test calls.maybe-half/three {
+    calls.maybe-half(3)
+    => value option.some<Float>(1.5)
+}
+
+test calls.maybe-half/zero {
+    calls.maybe-half(0)
+    => value option.none<Float>()
+}
+
+fn calls.keep-option(value: Int) -> Option<Float> {
+    let kept = calls.maybe-half(value)
+    kept
+}
+
+test calls.keep-option/three {
+    calls.keep-option(3)
+    => value option.some<Float>(1.5)
+}
+
+test calls.keep-option/zero {
+    calls.keep-option(0)
+    => value option.none<Float>()
+}
+
+fn calls.half-times-ten(value: Int) -> Int {
+    match calls.keep-option(value) {
+        none => -1
+        some half => float.to-int(float.multiply(half, 10.0))
+    }
+}
+
+test calls.half-times-ten/five {
+    calls.half-times-ten(5)
+    => value 25
+}
+
+test calls.half-times-ten/zero {
+    calls.half-times-ten(0)
+    => value -1
+}
+
+fn calls.byte-text(text: String, index: Int) -> String {
+    match string.byte-at(text, index) {
+        none => "-"
+        some byte => int.to-string(byte)
+    }
+}
+
+test calls.byte-text/inside {
+    calls.byte-text("AB", 1)
+    => value "66"
+}
+
+test calls.byte-text/outside {
+    calls.byte-text("AB", 2)
+    => value "-"
+}
+
+test calls.byte-text/negative {
+    calls.byte-text("AB", -1)
+    => value "-"
+}

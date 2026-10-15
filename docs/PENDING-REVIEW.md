@@ -188,9 +188,9 @@ object without LTO. Plan, in order:
    paths. Diagnostic builds keep calling the checked C. Add a TrustedGenerated
    O2 pass to the native parity harnesses so the inline code is tested, not
    only benched.
-3. `inline` attribute on `fn` (user approved, 2026-10-14): a hint that the
-   backend emits a small word's body at the call site instead of a native call
-   (`campfire.ua.byte`, `digit?` and similar helpers).
+3. Done (280): `inline fn` (docs/CURRENT-SYNTAX.md) marks the register-ABI
+   body `alwaysinline` at O2 when its emitted body is at most 400 LLVM
+   instructions; O0 never inlines. Six `campfire.ua` helpers carry it.
 4. O0 frame bookkeeping: every IR temporary gets its own stack slot at O0, so
    large words exceed the 64 KB per-frame screen (lean user-agent.flow had to
    be split for this). Reuse slots or emit the bookkeeping as SSA values so
@@ -207,89 +207,79 @@ cache) costs 3.62 ms CPU per request against Rust's 2.97 ms; the Windows
 HTTP.sys host with C cookie/db code cost 1.30 ms (272). Throughput looked
 level only because Flow saturated all 4 vCPUs. In rough order of expected size:
 
-1. **Profile the Linux portable path first** (`perf` under load). Moved from
-   C into Flow at once: cookie decrypt + JSON, generic `db.query` rows with
-   loop-based accessors, worker context copied into every request. Also
-   compare measurement scopes (cgroup on Linux vs process CPU on Windows).
-2. ~~**`html.raw` re-validates already-validated markup**~~ **Done (278).**
-   The owning backend skips the check when the String is provably valid Html:
-   `Html.value` of Html (directly or through `let`s), literal fragments, and
-   `string.concat` of those. Untrusted Strings, vars and parameters are still
-   checked (tests: `AgentLang.OwningTemplates.Tests`, reraw cases). Trusted O2,
-   21 KB page: `html.raw(Html.value(page))` 46.2 -> 27.5-31.1 us, equal to the
-   page alone (27.0-32.2 us). A String from `cache.get` is not provable and is
-   still checked.
-3. ~~**`list.append` in loops is O(n^2)**~~ **Done (278).** A loop-carried
-   `var` built only by `v = list.append(v, x)` is a loop accumulator: each
-   append copies the element once onto a pending run, and the loop latch moves
-   the run next to the list (which stays at the loop mark). Trusted O2, 10,000
-   appends: Int 20.96 ms -> 0.39 ms, String 40.1 ms -> 0.48 ms; copied bytes
-   400 MB -> 80 KB, peak arena 240 KB -> 80 KB; 5k -> 10k scales 2.0x in time,
-   copies and peak (`AgentLang.OwningListBuild.Tests`). The diagnostic profile
-   is linear in bytes but its per-instruction self-check still re-reads every
-   live local, so its time grows with the list.
-1. **Profile the Linux portable path first.** Done in 281; see "Linux
-   profile (281)" below. The dominant cost was `db.column`, 37% uncached and
-   44% cached. Each column read rescans the whole row. Campfire's message rows
-   now decode in one pass. Still open: compare measurement scopes (cgroup on
-   Linux vs process CPU on Windows).
-2. **`html.raw` re-validates already-validated markup** (cache agent's probe:
-   costs about as much as rendering). Trusted inputs should skip it.
-3. **`list.append` in loops is O(n^2)** (same probe, similar size). Needs an
-   amortized append / builder for loop accumulation.
-4. **Stdlib call overhead** ~70 ns per small byte/string op (plan + write
-   passes, argument scans), paid >1,000 times per page (CSRF alone ~0.2 ms).
-   Leaner small-op path or fused common sequences.
-   **Done (279), trusted builds:** one `al_owning_stdlib_call` per op of up to
-   four arguments. It validates each argument once (bounds plus header/extent
-   in trusted builds), takes Int arguments by value, sizes formula results
-   without a plan walk, then reserves, writes and does the accounting itself.
-   Stdlib calls no longer materialize register scalars elsewhere on the stack.
-   `bytes.length` is an inline header load. Byte loops write directly. The
-   Diagnostic profile keeps plan/reserve/write with full scans.
-   Measured (Windows, trusted O2, one op per loop iteration, ns, including
-   ~1-2 ns of loop and arena release; before -> after): concat 63 -> 18-19,
-   xor 76 -> 18-19, slice 63 -> 18-21, url-encode 62 -> 26-27, hex 75 -> 30,
-   bytes.length 15 -> 2, SHA-256 180 -> 150, HMAC 300 -> 250, url-decode
-   205 -> 150-180. The csrf-ops harness: mask 274 -> 177-189, xor-with-match
-   136 -> 72. The rest is `match` on the Option and the `string.byte-length`
-   call (items 5 and 7). Noise between runs is ±10-25%; other agents loaded the machine.
-5. **Word calls pass arguments through the arena** (~23 ns/call after
-   scalars-in-registers). Register calling for scalars, and the approved
-   `inline` attribute.
-6. **OpenSSL per-call setup** ~0.8 us x ~41 HMACs/page: per-worker cached
-   digest/HMAC objects (user approved; thread-local, no sharing).
-   **Done (279):** on Linux, each thread lazily fetches SHA-256 (`EVP_MD_fetch`)
-   with one reused `EVP_MD_CTX`. It also keeps one `EVP_MAC_CTX` per HMAC
-   digest (SHA-256, SHA-1), with the digest set once and re-keyed per call by
-   `EVP_MAC_init`. If an entry point is missing or a fetch fails, it falls back
-   to the one-shot calls. PBKDF2 and AES-GCM are unchanged. WSL, OpenSSL 3.0.13,
-   1,000-call loops, same IR: HMAC-SHA256 (32-byte key, 25-byte message)
-   0.88-0.91 -> 0.37 us; SHA-256 (25 bytes) 0.29-0.30 -> 0.12 us. The
-   known-answer probes (RFC 4231 case 2 with SHA-256 and SHA-1, empty key,
-   a second key on the same thread, SHA-256 of "") match the openssl CLI.
-   Windows BCrypt is unchanged.
-7. **`Option` results through the arena**: keep small Options in registers
-   when matched immediately; then decide whether `string.byte-at-or` stays.
-8. **Memory**: Flow PSS 171 MB vs Rust 85 MB; likely generous per-worker
-   arena and buffer reservations. Measure and right-size.
-9. **Worker context copied per request** (276 deviation): borrow it from a
-   protected region below the arena mark instead.
-10. ~~**Missing native `list.get` / `list.count`**~~ **Done (278).** Both
-    run natively with interpreter parity: `count` reads the header; `get` uses
-    a fixed stride for fixed-size elements, else one measure per earlier
-    element, and copies the element into the Option. 200 Strings, trusted O2:
-    count 6.2 -> 3.2 us, get [150] 5.9 -> 5.6 us (about 3.2 us of each is
-    input staging).
-8. **Memory**: done in 281. PSS went from 171 MB to 20 MB. The 171 MB came
-   from `memset`, which committed every reservation on every worker.
-9. **Worker context copied per request**: done in 281. The context is now
-   borrowed from the protected arena prefix. It is only 240 bytes, so the time
-   saved is under 0.1%.
-10. **Missing native `list.get` / `list.count`** (forces loop helpers).
+1. **Profile the Linux portable path.** Done (281); see "Linux profile (281)"
+   below. The dominant cost was `db.column`, 37% uncached and 44% cached:
+   each column read rescanned the whole row. Campfire's message rows now
+   decode in one pass. Still open: compare measurement scopes (cgroup on Linux
+   vs process CPU on Windows).
+2. **`html.raw` re-validation.** Done (278). The owning backend skips the
+   check when the String is provably valid Html: `Html.value` of Html
+   (directly or through `let`s), literal fragments, and `string.concat` of
+   those. Untrusted Strings, vars and parameters are still checked. Trusted
+   O2, 21 KB page: 46.2 -> 27.5-31.1 us (the page alone is 27.0-32.2 us). A
+   String from `cache.get` is not provable and is still checked.
+3. **`list.append` in loops was O(n^2).** Done (278). A loop-carried `var`
+   built only by `v = list.append(v, x)` is an accumulator: each append copies
+   the element once onto a pending run, and the latch moves the run next to
+   the list. Trusted O2, 10,000 appends: Int 20.96 -> 0.39 ms, String 40.1 ->
+   0.48 ms; copied bytes 400 MB -> 80 KB; peak arena 240 -> 80 KB. The
+   diagnostic profile is linear in bytes but its per-instruction self-check
+   still makes its time grow with the list.
+4. **Stdlib call overhead.** Done (279, trusted builds): one
+   `al_owning_stdlib_call` per op validates each argument once, takes Ints by
+   value, sizes formula results without a plan walk, then reserves, writes and
+   accounts itself; `bytes.length` is an inline header load. Windows, trusted
+   O2, ns per op: concat 63 -> 18-19, xor 76 -> 18-19, slice 63 -> 18-21,
+   url-encode 62 -> 26-27, hex 75 -> 30, bytes.length 15 -> 2; masking one
+   CSRF token 274 -> 177-189. Diagnostic builds keep plan/reserve/write.
+5. **Word calls passed arguments through the arena.** Done (280). Internal
+   words have a register ABI (`@word.reg`): scalars as i64 values, other
+   arguments as their four descriptor fields, Option<scalar> results as a
+   tag+payload pair; trusted builds enter/leave frames inline and skip
+   proven checks. `inline fn` inlines at O2 (body <= 400 instructions).
+   Small-word call loop 24 -> 2.6 ns per iteration (1.2 ns inline).
+6. **OpenSSL per-call setup.** Done (279): per-thread fetched SHA-256 and
+   reused EVP_MD_CTX / EVP_MAC_CTX (user approved; never shared). WSL,
+   OpenSSL 3.0.13: HMAC-SHA256 0.88-0.91 -> 0.37 us, SHA-256 0.29-0.30 -> 0.12 us.
+   Windows BCrypt unchanged.
+7. **`Option` results through the arena.** Done (280): `string.byte-at`,
+   `option.some`/`none` of scalars and word results are register tag+payload
+   read directly by `match`. `match string.byte-at` 93 -> 1.8-2.0 ns per
+   byte; `string.byte-at-or` stays (1.3 ns, existing code uses it).
+8. **Memory.** Done (281): Flow PSS 171 MB -> 20 MB. The 171 MB came from
+   `memset` committing every reservation on every worker; reservations are
+   now lazy `mmap`s.
+9. **Worker context copied per request.** Done (281): borrowed from the
+   protected arena prefix (240 bytes, so under 0.1% of time).
+10. **Native `list.get` / `list.count`.** Done (278), with interpreter parity:
+    200 Strings, count 6.2 -> 3.2 us, get [150] 5.9 -> 5.6 us (about 3.2 us of
+    each is input staging).
+
+Still open from the 281 profile: field lookups that re-scan String bytes and
+re-check type descriptors (~20% inclusive; take a String's length from its
+prefix in trusted builds), re-validating `cache.get` hits (8.6% of cached CPU;
+needs a trusted-output flag per host operation), HTML templates (~12%), arena
+copies of the 460 KB page (~5%), `session-row` still on `db.column` (~1%).
+
+280 results (trusted O2, Windows, min of 3000 runs, 999-byte input, before ->
+after; another agent's test suites ran on the machine meanwhile):
+
+| Loop body | Before | After |
+| --- | ---: | ---: |
+| call `fn small(Int, Int) -> Int` | 23.9-24.7 ns | 2.6-2.9 ns |
+| same word marked `inline fn` | - | 1.2-1.3 ns |
+| `campfire.ua.digit-end(text, 200)` (String arg) | 121-123 ns | 32 ns; 21.6 ns with inline helpers |
+| `match string.byte-at` | 93-94 ns | 1.8-2.0 ns (`byte-at-or` 1.3 ns) |
+| `match` on a word's `Option<Int>` result | - | 4.7-5.7 ns |
+| lean User-Agent, typical Chrome UA | 33.7-36.7 us | 26.3-27.3 us; 25.3-25.6 us with inline helpers |
+
+Per step on the small-word loop: register calling 24 -> ~3.6-4.2 ns (C frame
+calls still out of line); inline frame enter/leave -> 2.6 ns (digit-end loop
+38.6 -> 32-34 ns); descriptor fields as parameters and skipping proven
+argument/result checks were within timer noise (0.1 us) on every probe.
 
 Measured reference points: sum loop 0.52 ns/iteration; small-word call loop
-23 ns/iteration; lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
+23 ns/iteration (2.6 ns after 280); lean User-Agent 29-31 us; HMAC-SHA256 0.61 us (Windows,
 BCrypt) / 1.22 us (Linux, OpenSSL one-shot); stdlib ops: concat/encode ~72 ns,
 slice/xor ~125 ns, mask one CSRF token ~247 ns.
 

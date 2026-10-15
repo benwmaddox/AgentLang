@@ -140,6 +140,24 @@ Flow/2 still accepts older `::` call spellings when reading source. New Flow/2
 source and formatted output use dots. Flow/1 help and examples retain their
 version-1 spellings.
 
+## inline fn
+
+`inline` before `fn` marks a small helper whose body the native backend may
+emit at each call site instead of a native call:
+
+```flow
+inline fn campfire.ua.byte(text: String, index: Int) -> Int {
+    string.byte-at-or(text, index, -1)
+}
+```
+
+It is a hint. The interpreter ignores it; the optimized native build (O2)
+inlines the word when its emitted body is small, and otherwise calls it as
+usual (O0 builds never inline, to keep native frames small). Calls are never
+recursive in Flow, so any word may carry it. `inline` is a modifier only
+directly before a top-level `fn` (not on `override fn`), so names such as
+`inline` elsewhere are unaffected, and the formatter keeps it.
+
 ## Newlines and optional semicolons
 
 Newlines separate function and test statements, record fields, validator

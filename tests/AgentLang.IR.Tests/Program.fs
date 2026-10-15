@@ -95,7 +95,8 @@ let private functionDefinition owner revision inputs outputs declared inferred l
       FunctionDeclaredEffects = declared
       FunctionInferredEffects = inferred
       LocalNames = localNames
-      FunctionBody = body }
+      FunctionBody = body
+      FunctionInline = false }
 
 let private functionWithCode owner revision inputs outputs declared inferred localNames code =
     functionDefinition owner revision inputs outputs declared inferred localNames

@@ -2452,8 +2452,14 @@ let private testOwningRefinedIntSlice () =
                 result.Decode() |> ignore
                 None
             with LanguageException diagnostic -> Some diagnostic
-        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
-            use native = compileOwningNative toolchain ("owning-inline-depth-" + label) optimization body
+        // Trusted O2 enters and leaves word frames inline (report 280): same limit.
+        let builds =
+            [ LlvmOptimization.O0, None; LlvmOptimization.O2, None; LlvmOptimization.O2, Some OwningRuntimeProfile.TrustedGenerated ]
+        for optimization, trusted in builds do
+            use native =
+                match trusted with
+                | None -> compileOwningNative toolchain ("owning-inline-depth-" + label) optimization body
+                | Some profile -> OwningStackAot.compileWithRuntimeProfile toolchain optimization profile (Path.Combine(artifactRoot, "owning-inline-depth-" + label, "trusted")) body
             if finalIndex = 63 then
                 let result = native.Execute([], 4096, 16)
                 check ($"{optimization} {label} inline operation permits interpreter depth 64") (not result.Values.IsEmpty || deepOutputTypes.IsEmpty)
@@ -2482,6 +2488,15 @@ let private testOwningRefinedIntSlice () =
         [ Call("PlainDepthId.raw", span (name + ".agent") 2) ])
         [ Push(LInt 1L, span "owning-inline-unwrap-entry.agent" 2); Call("PlainDepthId.create", span "owning-inline-unwrap-entry.agent" 3) ]
         [ scalarDefinition "PlainDepthId" TInt None, "PlainDepthId.create", "PlainDepthId.raw" ]
+    // Int in, Int out through every frame: register calling at the depth limit.
+    runInlineDepthCase "register-int" 63 [ TInt ] [ TInt ] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("add", span (name + ".agent") 3) ])
+        [ Push(LInt 5L, span "owning-inline-register-entry.agent" 2) ] []
+    runInlineDepthCase "register-int-too-deep" 64 [ TInt ] [ TInt ] (fun name ->
+        [ Push(LInt 1L, span (name + ".agent") 2)
+          Call("add", span (name + ".agent") 3) ])
+        [ Push(LInt 5L, span "owning-inline-register-entry.agent" 2) ] []
     runInlineDepthCase "primitive" 63 [] [] (fun name ->
         [ Push(LBool true, span (name + ".agent") 2)
           Call("bool.not", span (name + ".agent") 3)
@@ -2802,11 +2817,11 @@ let private testOwningRefinedIntSlice () =
         && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
         && validMailboxTurn.Context.CallDepth = 0u)
     // The raw callback imports the 8-byte state and 16-byte turn once. In the
-    // verified begin body, MailboxContinuation construction copies its one
-    // 8-byte marker field. Admission only reads the imported root and adds no
-    // payload copy or move.
+    // verified begin body, MailboxContinuation construction stores its one
+    // 8-byte marker field straight from a register (report 280: no copy).
+    // Admission only reads the imported root and adds no payload copy or move.
     let expectedIntMailboxInputCopyBytes = uint64 (8 + (mailboxStringBytes "turn").Length)
-    let expectedIntMailboxBodyDeepCopyBytes = 8UL
+    let expectedIntMailboxBodyDeepCopyBytes = 0UL
     check ($"refined Int mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedIntMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedIntMailboxInputCopyBytes})") (
         validMailboxTurn.Context.DeepCopyBytes = expectedIntMailboxBodyDeepCopyBytes
         && validMailboxTurn.Context.MoveBytes = 0UL
@@ -3164,11 +3179,11 @@ let private testOwningRefinedStringSlice () =
         && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validMailboxTurn.Outputs = mailboxBeginOutputTypeIndexes
         && validMailboxTurn.Context.CallDepth = 0u)
     // The external MailboxState owner String is 24 bytes in UTF-16 form and
-    // the turn String is 16 bytes. The verified body has one 8-byte marker
-    // field copy in MailboxContinuation construction; admission adds no payload
-    // copy or move.
+    // the turn String is 16 bytes. The verified body stores its 8-byte marker
+    // field from a register in MailboxContinuation construction (report 280:
+    // no copy); admission adds no payload copy or move.
     let expectedStringMailboxInputCopyBytes = uint64 ((mailboxStringBytes "owner").Length + (mailboxStringBytes "turn").Length)
-    let expectedStringMailboxBodyDeepCopyBytes = 8UL
+    let expectedStringMailboxBodyDeepCopyBytes = 0UL
     check ($"refined String mailbox admission preserves verified body counters (deep={validMailboxTurn.Context.DeepCopyBytes}, expected-deep={expectedStringMailboxBodyDeepCopyBytes}, move={validMailboxTurn.Context.MoveBytes}, input={validMailboxTurn.Context.InputCopyBytes}, expected-input={expectedStringMailboxInputCopyBytes})") (
         validMailboxTurn.Context.DeepCopyBytes = expectedStringMailboxBodyDeepCopyBytes
         && validMailboxTurn.Context.MoveBytes = 0UL
@@ -3393,10 +3408,10 @@ let private testOwningNominalStringSlice () =
         // The callback imports a 16-byte dynamic MailboxState owner and a
         // 16-byte turn. `dup` of the imported state deep-copies its full 16-byte
         // owner range; the field accessor, nominal unwrap and String length
-        // read are zero-copy. MailboxContinuation construction copies its
-        // 8-byte marker field.
+        // read are zero-copy. MailboxContinuation construction stores its
+        // 8-byte marker field from a register (report 280: no copy).
         let expectedMailboxInputCopyBytes = uint64 (nulBytes.Length + turnBytes.Length)
-        let expectedMailboxBodyDeepCopyBytes = uint64 (nulBytes.Length + 8)
+        let expectedMailboxBodyDeepCopyBytes = uint64 nulBytes.Length
         check ($"{optimization} direct mailbox callback imports and roundtrips a nominal String owner (status={validTurn.Status}, output-types={validTurn.Outputs |> List.map (fun output -> output.TypeIndex)}, expected-types={outputTypeIndexes}, depth={validTurn.Context.CallDepth}, input={validTurn.Context.InputCopyBytes}, deep={validTurn.Context.DeepCopyBytes}, move={validTurn.Context.MoveBytes})") (
             validTurn.Status = 0
             && List.map (fun (output: RawMailboxOutputSlice) -> output.TypeIndex) validTurn.Outputs = outputTypeIndexes

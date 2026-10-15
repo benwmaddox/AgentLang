@@ -352,6 +352,7 @@ let private testIterativeAstDepthLimit () =
         |> List.fold (fun inner _ -> FlowExpression.Call("int.abs", [ FlowArgument.Positional inner ], sourceSpan)) (FlowExpression.Literal(LInt 1L, sourceSpan))
     let hostWord body =
         { Name = "host-built.depth"
+          Inline = false
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty
@@ -502,6 +503,27 @@ let private testFlow2Frontend () =
     check "Flow/2 renderer inserts a blank line after metadata" (renderedExplicit.Contains("    doc \"Flow/2 metadata\"\n\n    true", StringComparison.Ordinal))
     equal "Flow/2 word renderer round-trips metadata shape" renderedExplicit
         (renderedExplicit |> parseWordV2 |> FlowSource.renderWord)
+
+    // `inline fn` (report 280): a modifier only directly before fn.
+    let inlineSource =
+        """inline fn sample.next(value: Int) -> Int {
+    value + 1
+}"""
+    let inlineWord = parseWordV2 inlineSource
+    check "Flow/2 parses the inline fn modifier" inlineWord.Inline
+    check "Flow/2 plain fn is not inline" (not implicitEffects.Inline)
+    equal "Flow/2 renderer keeps the inline modifier" inlineSource (FlowSource.renderWord inlineWord)
+    check "inline fn source text keeps its modifier" (FlowSource.declaresInline inlineWord.SourceText)
+    check "plain fn source text is not inline" (not (FlowSource.declaresInline implicitEffects.SourceText))
+    check "a word named inline.x is not the modifier" (not (FlowSource.declaresInline "inline.x"))
+    match FlowParser.parseDocumentWithVersion 2 "<flow2-inline>" (inlineSource + "\n\nfn sample.use(value: Int) -> Int {\n    sample.next(value)\n}\n") with
+    | Ok document ->
+        let flags = document.Words |> List.map (fun word -> word.Name, word.Inline)
+        check "Flow/2 document keeps inline per word" (flags = [ "sample.next", true; "sample.use", false ])
+    | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    match FlowParser.parseDocumentWithVersion 2 "<flow2-inline-bad>" "inline sample.next(value: Int) -> Int {\n    value\n}\n" with
+    | Ok _ -> failwith "inline without fn should not parse"
+    | Error _ -> check "inline without fn is rejected" true
 
     for withBlankLine in [ false; true ] do
         let separator = if withBlankLine then "\n" else ""
@@ -3795,6 +3817,7 @@ let private testFlowCallBindingSources () =
     let duplicateSpan = span "<host-flow-ast>" 4 7 12
     let transientWord: FlowWordDefinition =
         { Name = "call-binding.same-span"
+          Inline = false
           Parameters = []
           Outputs = [ TInt ]
           Effects = Set.empty
