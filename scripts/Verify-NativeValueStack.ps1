@@ -580,7 +580,9 @@ try {
     $nominalRunsMissingCoverage = @($nominalRuns | Where-Object {
         $_['signedFixtureCount'] -ne $nominalExpectedSignedNames.Count -or
         $_['unsupportedDefinitionCount'] -ne 0 -or
-        $_['ownerRangeTransferCount'] -lt 1 -or
+        # Report 280: an Int word result returns in a register, so the projected
+        # field may leave as fresh bytes (registerResult) instead of a range.
+        ($_['ownerRangeTransferCount'] -lt 1 -and -not $_['registerResult']) -or
         $_['ownerEndBytes'] -ne $nominalExpectedOwnerEnd -or
         $_['scalarPayloadExtentBytes'] -ne $nominalExpectedScalarExtent
     }).Count

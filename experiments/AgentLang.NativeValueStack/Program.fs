@@ -3572,8 +3572,8 @@ let private runOwningStackChain
                 int64 inputBytes
                 + int64 (control.GetProperty("preExerciseAllocationBytes").GetInt32())
                 + int64 (control.GetProperty("n8CompletedExercisesBeforeFailure").GetInt32()) * int64 (control.GetProperty("perExerciseAllocationBytes").GetInt32())
-                + int64 (control.GetProperty("n8SeventhExercisePrefixBytes").GetInt32())
-                + int64 (control.GetProperty("n8FinalIntResultBytes").GetInt32())
+                + int64 (control.GetProperty("n8PartialExerciseBytes").GetInt32())
+                + int64 (control.GetProperty("n8FailingTailBytes").GetInt32())
             let expectedRequired = int64 (control.GetProperty("sourceDerivedN8FirstRejectedReservationBytes").GetInt32())
             let traceTruncated = Convert.ToBoolean(getProperty metrics "TraceTruncated", CultureInfo.InvariantCulture)
             let controlPassed =
@@ -4884,17 +4884,19 @@ let private runStringWorkload
                 && transfer.PayloadBytes = field.PayloadBytes
                 && transfer.SourceExtentBytes = Some field.ExtentBytes
                 && transfer.SourceOffsetBytes = parent.SourceOffsetBytes))
-    // An Int field read leaves as a register (reports 273/280): it then has no
-    // descriptor at all, so only the String projection must carry the owner end.
-    let mixedSentinelIsRegister =
+    // An Int field read leaves as a register (reports 273/280): it is then
+    // never a descriptor into the record (its output gets fresh bytes), so only
+    // the String projection must carry the parent's owner end.
+    let mixedSentinelIsRegister (parent: OwningStackLayoutEvent) =
         mixedProjectionIndexedEvents
-        |> Array.forall (fun (_, event) -> not (event.Kind = "descriptor-transfer" && event.TypeId = intTypeId))
+        |> Array.forall (fun (_, event) ->
+            not (event.Kind = "descriptor-transfer" && event.TypeId = intTypeId && event.SourceOffsetBytes = parent.SourceOffsetBytes))
     let mixedProjectionOwnerEndPass =
         mixedProjectionParentTransfers
         |> Array.exists (fun (parentIndex, parent) ->
             let textFieldCarriesOwnerEnd = mixedProjectionTextExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent stringTypeId)
             let sentinelCarriesOwnerEnd = mixedProjectionSentinelExtracts |> Array.exists (projectedFieldCarriesOwnerEnd parentIndex parent intTypeId)
-            textFieldCarriesOwnerEnd && (sentinelCarriesOwnerEnd || mixedSentinelIsRegister))
+            textFieldCarriesOwnerEnd && (sentinelCarriesOwnerEnd || mixedSentinelIsRegister parent))
     let mixedProjectionPassed =
         mixedProjectionResult.Values = [ StringValue mixedText; IntValue mixedSentinel ]
         && mixedProjectionOutput = mixedFixtureTextAndSentinelBytes
@@ -7012,6 +7014,7 @@ let private runNominalIntConformance
         "signedFixtureCount", box (oracle.GetProperty("signedFixtures").GetArrayLength())
         "unsupportedDefinitionCount", box entries.UnsupportedCases.Length
         "ownerRangeTransferCount", box ownerTransfers.Length
+        "registerResult", box registerResultPass
         "ownerEndBytes", box (rangeOracle.GetProperty("sourceOffsetBytesOwnerEnd").GetInt32())
         "scalarPayloadExtentBytes", box (rangeOracle.GetProperty("sourceExtentBytesPayloadExtent").GetInt32()) ]
 
@@ -8341,8 +8344,7 @@ let private runRefinedStringConformance
         "actualDeepCopyBytes", box ownerProjection.Metrics.DeepCopyBytes
         "actualMoveBytes", box ownerProjection.Metrics.MoveBytes
         "laterAllocationFollowsScopeAllocation", box (scopeAllocation.IsSome && laterAllocation.IsSome)
-        "outputTransferFollowsLaterAllocation", box ownerTransferPass
-        "registerResultFollowsLaterAllocation", box registerResultPass
+        "outputTransferFollowsLaterAllocation", box (lastOwnerTransfer |> Option.exists (fun (transferIndex, _) -> laterAllocation |> Option.exists (fun (laterIndex, _) -> transferIndex > laterIndex)))
         "expectedRetainedBytesHex", box (bytesHex ownerOutputBytes)
         "actualRetainedBytesHex", box (bytesHex ownerProjectionOutput)
         "events", box (layoutEventDetails ownerProjection.LayoutEvents) ])
