@@ -92,6 +92,13 @@ no host operation. The parent snapshot is the dictionary already running.
 4. Publish cost on a one-word add (done, PR #5).
 5. Two-part build (done, PR #6).
 6. Replacement through the caller closure (PR #7, below).
+7. Status-only commits re-fingerprint the parent snapshot instead of
+   recompiling it, quadratic commit scans are removed, and per-case test
+   overhead is cut (PR #8). The verified Campfire commit went from 36.5 s to
+   about 11 s.
+
+The project was archived on 16 October 2026; see
+[the final report](../reports/final-report/index.html).
 
 ## Replacing a word (as built)
 

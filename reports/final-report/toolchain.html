@@ -177,8 +177,9 @@ protocol checks against it.</p>
     <ul>
       <li>It came too late. Most of the project ran on a 5–10 minute loop,
       which shaped every other result.</li>
-      <li>The incremental path is a second compiler path, about 2,100 lines
-      across 8 PRs. Its soundness rests on unenforced invariants: lowering
+      <li>The incremental path is a second compiler path. The eight PRs added
+      about 2,100 lines in total, most of the incremental path in #3, #4, #5
+      and #7. Its soundness rests on unenforced invariants: lowering
       ignores status, unqualified calls resolve by short name, and retained
       entries keep object identity.</li>
       <li>The differential check is opt-in through an environment variable,

@@ -96,17 +96,19 @@ separating "the workflow" from "a new language".</p>
     <h4>Building a language to test a workflow hypothesis</h4>
     <p>The hypothesis was about <em>accumulated, discoverable vocabulary</em>.
     Testing it with a new language mixed that mechanism with language
-    unfamiliarity and a chatty protocol. Both effects worked against the
-    hypothesis. The language had to win despite them, and it didn't. Test the
+    unfamiliarity and a chatty protocol. Both plausibly worked against the
+    hypothesis, and the small studies could not separate them from the
+    mechanism. The language had to win despite them, and it didn't. Test the
     mechanism in a language agents already know.</p>
   </div>
   <div class="card bad">
     <h4>Command-only editing</h4>
-    <p>Editing through <code>define</code>, <code>describe</code> and
-    <code>source</code> calls cost 2–4× the interactions of file patches. It
-    also let collateral test edits slip in, because whole test sets were
-    re-submitted. Keep files as the editing surface and add structured query
-    tools beside them.</p>
+    <p>In the later matched comparisons, agents editing through
+    <code>define</code>, <code>describe</code> and <code>source</code> calls
+    needed about 1.7–5× the broker exchanges of F# agents patching files.
+    Re-submitting whole test sets may also have let collateral test edits slip
+    in. That is a likely contributor, not an isolated cause. Keep files as the
+    editing surface and add structured query tools beside them.</p>
   </div>
   <div class="card bad">
     <h4>Slow feedback loops</h4>

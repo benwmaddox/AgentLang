@@ -28,7 +28,8 @@
 
 <p class="lede">The project existed to test one idea: whether an accumulated,
 discoverable, strongly typed vocabulary helps fresh AI coding agents make
-reliable changes. Twenty-odd agent studies ran between day 2 and day 8. They
+reliable changes. Twenty-odd agent studies ran between day 1 (the first
+subagent pilot, report 004) and day 8. They
 showed the mechanism works. They did not show it beats an ordinary language.</p>
 
 <h2>The hypothesis as stated</h2>
@@ -104,7 +105,7 @@ checkpoint reached the same split conclusion.</p>
 <tr><td><a href="../199-efficacy-decision-after-reference-maintenance.md">199</a></td><td>10 Oct</td><td>Typed-reference cohort (196): 5 of 6 passed 18/18; a retained agent rewrote all three inherited examples.</td><td>Keep strong types and coverage, but they "cannot establish that assertions express the intended behavior". F# 35 vs 137–176 exchanges.</td></tr>
 <tr><td><a href="../203-efficacy-decision-after-organic-creation.md">203</a> / <a href="../212-efficacy-after-public-vocabulary-reuse.md">212</a></td><td>11 Oct</td><td>Organic creation (200, 210): correct, but no reusable helper either time. Public reuse (211): a fresh agent found and used an earlier agent's functions.</td><td>Handoff mechanism demonstrated once. Agents did not factor abstractions on their own.</td></tr>
 <tr><td><a href="../215-efficacy-after-paired-vocabulary-pilot.md">215</a> / <a href="../219-efficacy-after-typed-batch-maintenance.md">219</a></td><td>11 Oct</td><td>Paired availability (213): both correct, retained 31 vs reset 39 exchanges. Typed batch maintenance (217): both 9/9; the reset agent failed normal finalization.</td><td>A narrower, useful mechanism. Superiority still unproven.</td></tr>
-<tr><td><a href="../222-typed-batch-fresh-results.md">222</a>, <a href="../228-scheduled-renewal-interactive-comparison.md">228</a>, <a href="../231-grouped-renewal-timing-comparison.md">231</a></td><td>11 Oct</td><td>Three fresh matched AgentLang/F# pairs.</td><td>All correct. F# cheaper in all three. AgentLang failed preservation in 222 and 231.</td></tr>
+<tr><td><a href="../222-typed-batch-fresh-results.md">222</a>, <a href="../228-scheduled-renewal-interactive-comparison.md">228</a>, <a href="../231-grouped-renewal-timing-comparison.md">231</a></td><td>11 Oct</td><td>Three fresh matched AgentLang/F# pairs.</td><td>All correct. F# used fewer exchanges in all three, and shorter sessions in 228 and 231. AgentLang failed preservation in 222 and 231.</td></tr>
 </tbody>
 </table>
 
@@ -124,8 +125,11 @@ tokens. Session time excludes thinking outside the broker. In 222, the
 AgentLang session was shorter (6 min 27 s vs 7 min 9 s), but F# needed half
 the exchanges.</p>
 
-<h3>Why AgentLang cost more interactions</h3>
-<p>The traces show friction in discovery and test authoring, not in the domain logic:</p>
+<h3>Likely contributors to the extra interactions (not isolated)</h3>
+<p>The traces show friction in discovery and test authoring, not in the domain
+logic. With one or two agents per arm, these are observations, not measured
+causes. The reports also list task familiarity, interface payload size, caller
+topology, agent stochasticity and the fixed launch order as confounders.</p>
 <ul>
   <li><strong>Name and selector errors.</strong> In 231, the agent tried
   <code>RenewalTiming.new</code>; the generated constructor is the lower-camel
@@ -141,14 +145,18 @@ the exchanges.</p>
   No amount of in-runtime help fully closes that gap in one session.</li>
 </ul>
 
-<h3>Why preservation failed only in AgentLang</h3>
+<h3>The preservation failures, and likely contributors (not isolated)</h3>
 <p>In both failures (222, 231), the agent changed an unrelated inherited test
 input, the ID <code>30000000-…-0001</code> to <code>33000000-…-0001</code>.
 The test still passed, because that case short-circuits on an earlier failure.
 Stable IDs and revision history made the change visible to reviewers, but
-nothing prevented it. The definition-level edit model meant agents
-re-submitted whole test sets, so collateral edits rode along. F# agents patched
-narrow hunks of a file.</p>
+nothing prevented it.</p>
+<p>One plausible contributor is the definition-level edit model. AgentLang
+agents re-submitted whole test sets, so a collateral edit could ride along,
+while F# agents patched narrow hunks of a file. Report 231 offers this as a
+hypothesis to test, together with smaller edit boundaries and a visible
+before/after test diff. It is not an established cause; the confounders above
+apply.</p>
 
 <h2>What the gates did and did not prove</h2>
 <div class="grid2">

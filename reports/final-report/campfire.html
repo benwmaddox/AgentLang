@@ -132,7 +132,8 @@ protocol was declared before the first run.</p>
       CPU per request. Flow serves Rails' exact page; Rust's differs from it
       by 925 bytes.</li>
       <li>Memory is a sixth of Rust's uncached, and similar cached.</li>
-      <li>Against Rails: 35–60× the throughput at about 1/50th of the memory.</li>
+      <li>Against Rails: 35–60× the throughput, at about 1/50th of the memory
+      uncached (15 vs ~815 MB) and about 1/16th cached (48 vs ~775 MB).</li>
       <li>Every cell validated, with zero invalid responses across 72 cells
       in 282 and every 285 lifetime.</li>
     </ul>

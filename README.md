@@ -12,8 +12,9 @@
 >   0.6–0.8× a Rust port's throughput in a fraction of its memory.
 > - The central hypothesis was not supported. That hypothesis was that an
 >   agent-oriented typed vocabulary makes AI agents' edits more reliable than in
->   a mainstream language. F# was equally correct, needed 2–4× fewer
->   interactions, and preserved inherited tests where AgentLang twice did not.
+>   a mainstream language. F# was equally correct, needed about 1.7–5× fewer
+>   broker exchanges in the later comparisons, and preserved inherited tests
+>   where AgentLang twice did not.
 >
 > The rest of this README describes the project as it stood during development.
 
