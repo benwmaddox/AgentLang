@@ -1073,8 +1073,18 @@ module Compiler =
                     irFailure "IR_UNKNOWN_EFFECT" $"Host operation '{definition.WordName}' declares an effect outside the closed executable vocabulary." (Some definition.WordName) None (IrEffects.names Set.empty) [ effect ]
         contextTypes context
 
+    /// A word entry's fingerprint digest, kept with the name and identity it was computed under.
+    type private WordEntryDigest = { DigestName: string; DigestId: string; Digest: string }
+
+    /// Entries are immutable, and a dictionary that gains a word keeps every other entry
+    /// object, so each entry's digest is computed once (by reference) across snapshots.
+    let private wordEntryDigests = System.Runtime.CompilerServices.ConditionalWeakTable<WordEntry, WordEntryDigest>()
+
+    /// The compiler-input fingerprint: a hash over one digest per word entry and the
+    /// serialized catalogs and origin map. Equal inputs give equal fingerprints whether
+    /// the context was built from scratch or by adding words to an earlier one.
     let private snapshotFingerprint (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
-        let builder = System.Text.StringBuilder()
+        let mutable builder = System.Text.StringBuilder()
         let appendText (value: string) =
             if isNull value then builder.Append("N;") |> ignore
             else builder.Append('S').Append(value.Length).Append(':').Append(value).Append(';') |> ignore
@@ -1186,11 +1196,16 @@ module Compiler =
             | Some(EnumCaseConstructor(typeName, caseName)) -> appendText "enum-case-constructor"; appendText typeName; appendText caseName
         let appendMaturity = function | ProjectWord -> appendText "project" | LibraryWord -> appendText "library"
         let appendStatus = function | Primitive -> appendText "primitive" | Candidate -> appendText "candidate" | Temporary -> appendText "temporary" | Persistent -> appendText "persistent"
-        appendText "agentlang-ir-snapshot-v4"
-        for KeyValue(name, entry) in context.Words do
+        let digestOf (fill: unit -> unit) =
+            let outer = builder
+            builder <- System.Text.StringBuilder()
+            fill ()
+            let digest = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(builder.ToString())))
+            builder <- outer
+            digest
+        let appendWordEntry name value (entry: WordEntry) =
             appendText "word"
             appendText name
-            let (WordId value) = context.WordIds[name]
             appendText value
             appendInt entry.Revision
             appendBuiltin entry.Builtin
@@ -1206,6 +1221,18 @@ module Compiler =
             appendText entry.Definition.SourceText
             appendSpan entry.Definition.Span
             appendExpressions entry.Definition.Body
+        appendText "agentlang-ir-snapshot-v5"
+        for KeyValue(name, entry) in context.Words do
+            let (WordId value) = context.WordIds[name]
+            let digest =
+                match wordEntryDigests.TryGetValue entry with
+                | true, known when known.DigestName = name && known.DigestId = value -> known.Digest
+                | _ ->
+                    let digest = digestOf (fun () -> appendWordEntry name value entry)
+                    wordEntryDigests.AddOrUpdate(entry, { DigestName = name; DigestId = value; Digest = digest })
+                    digest
+            appendText "word-digest"
+            appendText digest
         for KeyValue(HostOperationId identity, definition) in context.HostOperations do
             appendText "host-operation-manifest"
             appendText identity
