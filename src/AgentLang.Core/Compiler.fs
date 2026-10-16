@@ -2035,6 +2035,45 @@ module Compiler =
                   CheckedBase = None })
         verified, sourceOrigins
 
+    /// Whether two entries differ at most in status and maturity (the entry's and its definition's).
+    let sameExceptStatus (left: WordEntry) (right: WordEntry) =
+        obj.ReferenceEquals(left, right)
+        || { left with Status = right.Status; Maturity = right.Maturity; Definition = { left.Definition with Maturity = right.Definition.Maturity } } = right
+
+    /// The verified program for `context` when it is `parentContext` with only the status and
+    /// maturity of the words `restated` changed. Lowering reads neither, so the parent's IR is
+    /// this context's IR; only the snapshot fingerprint (which covers both) changes.
+    let restatusIrProgram (parentContext: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (parentProgram: VerifiedIrProgram) (context: IrLoweringContext) (restated: Set<string>) =
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog parentProgram
+        let parentFacts = factsFor parentContext
+        match parentProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = cachedFingerprint parentFacts parentContext sourceOrigins -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "A re-stated program's parent does not match the context it was compiled from." None None [ "same compiler snapshot fingerprint" ] []
+        let notStatusOnly detail =
+            irFailure "IR_EXTEND_NOT_STATUS_ONLY" "A program can be re-stated only when word status or maturity alone changed." None None [ "only status and maturity changed" ] [ detail ]
+        let same (left: 'value) (right: 'value) = obj.ReferenceEquals(left, right) || left = right
+        if not (same parentContext.Records context.Records && same parentContext.Scalars context.Scalars && same parentContext.Enums context.Enums
+                && same parentContext.HostOperations context.HostOperations && same parentContext.WordIds context.WordIds) then notStatusOnly "catalogs"
+        if parentContext.Words.Count <> context.Words.Count then notStatusOnly "word count"
+        for KeyValue(name, entry) in parentContext.Words do
+            match context.Words.TryFind name with
+            | Some kept when obj.ReferenceEquals(kept, entry) -> ()
+            | Some changed when restated.Contains name && sameExceptStatus changed entry -> ()
+            | _ -> notStatusOnly name
+        let fingerprint = snapshotFingerprint context sourceOrigins
+        let verified = IrVerifier.refingerprintCompilerProgram parentProgram fingerprint
+        match contextFacts.TryGetValue context with
+        | true, _ -> ()
+        | _ ->
+            contextFacts.AddOrUpdate(
+                context,
+                { Markers = parentFacts.Markers
+                  Types = parentFacts.Types
+                  TestScopeWords = restated |> Set.fold (fun words name -> if testIntrinsics.ContainsKey name then words else Map.add name context.Words[name] words) parentFacts.TestScopeWords
+                  Fingerprint = Some(sourceOrigins, fingerprint)
+                  CheckedBase = None })
+        verified
+
     let rec private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
         let facts = factsFor context
         validateSourceOrigins sourceOrigins

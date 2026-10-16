@@ -473,6 +473,21 @@ module IrInterpreter =
             fail "IR_TEST_DISPATCH_PROGRAM_SHAPE" "The test-specific verified program contains source-map entries outside its original snapshot and mapped fixtures." None None
                 [ "original or fixture-owned source sites" ] (unexpectedSourceSites |> List.map (sprintf "%A"))
 
+    /// Overlay programs whose dispatch was already validated against an original program,
+    /// with that original and dispatch map (by reference): every case of one test file
+    /// shares them, and the check is a pure function of the three.
+    let private validatedDispatches = ConditionalWeakTable<VerifiedIrProgram, (VerifiedIrProgram * Map<IrCallTarget, IrCallTarget>) list>()
+
+    let private validateTestDispatchOnce (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) (dispatch: Map<IrCallTarget, IrCallTarget>) =
+        let known =
+            match validatedDispatches.TryGetValue expandedProgram with
+            | true, entries -> entries
+            | _ -> []
+        let seen = known |> List.exists (fun (original, map) -> obj.ReferenceEquals(original, originalProgram) && obj.ReferenceEquals(map, dispatch))
+        if not seen then
+            validateTestDispatch originalProgram expandedProgram dispatch
+            validatedDispatches.AddOrUpdate(expandedProgram, (originalProgram, dispatch) :: (known |> List.truncate 7))
+
     /// Standard library slice 1 (report 272): pure byte, text and crypto primitives.
     /// Kept out of executePrimitive so its locals do not enlarge that recursive frame.
     /// An empty result means the arguments do not match (every stdlib primitive returns one value).
@@ -651,7 +666,7 @@ module IrInterpreter =
         requireBackendRegistry verifiedProgram
         match testOriginalProgram with
         | Some original when not (Object.ReferenceEquals(original, verifiedProgram)) ->
-            validateTestDispatch original verifiedProgram testDispatch
+            validateTestDispatchOnce original verifiedProgram testDispatch
         | Some _ when Map.isEmpty testDispatch -> ()
         | Some _ ->
             fail "IR_TEST_DISPATCH_PROGRAM_MISMATCH" "A test overlay must use a distinct verified program from its original production snapshot." None None
@@ -711,9 +726,10 @@ module IrInterpreter =
                         [ "finite Float" ] [ string number ]
                 | _ -> ()
 
-        let sourceMap = Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap
+        // Only diagnostics read source spans, so the merged map is built on first use.
+        let sourceMap = lazy (Map.fold (fun found site source -> Map.add site source found) program.SourceMap body.BodySourceMap)
 
-        let sourceSpan site = sourceAt sourceMap site
+        let sourceSpan site = sourceAt sourceMap.Value site
         let failValueLimit currentWord site dimension expected actual =
             fail "RUNTIME_VALUE_LIMIT" $"Runtime value exceeds the {dimension} safety limit." (Some currentWord) (site |> Option.bind sourceSpan) [ expected ] [ actual ]
 
@@ -729,7 +745,22 @@ module IrInterpreter =
             if metrics.EstimatedOutputBytes > maxRuntimeValueOutputBytes then
                 failValueLimit currentWord site "output-size" $"estimated UTF-8 output bytes <= {maxRuntimeValueOutputBytes}" (string metrics.EstimatedOutputBytes)
 
-        let typeFootprint currentWord site rootType =
+        // A type's footprint depends only on the type: computed once per type (successes only,
+        // so a limit failure still reports the word and site that hit it).
+        let typeFootprints = Dictionary<IrType, struct (int * int64)>(HashIdentity.Structural)
+
+        let rec typeFootprint currentWord site rootType =
+            match rootType with
+            | IrInt | IrFloat | IrBool | IrString | IrBytes | IrJson | IrUnit -> 1, 32L
+            | _ ->
+                match typeFootprints.TryGetValue rootType with
+                | true, struct (depth, outputBytes) -> depth, outputBytes
+                | _ ->
+                    let depth, outputBytes = typeFootprintWalk currentWord site rootType
+                    typeFootprints[rootType] <- struct (depth, outputBytes)
+                    depth, outputBytes
+
+        and typeFootprintWalk currentWord site rootType =
             let pending = Stack<IrType * int>()
             pending.Push((rootType, 1))
             let mutable nodes = 0L
@@ -805,6 +836,8 @@ module IrInterpreter =
             { ExpandedNodes = 1L
               Depth = ownDepth
               EstimatedOutputBytes = ownBytes }
+        // One work stack for every runtimeMetrics walk (a walk runs to completion before the next).
+        let metricsPending = Stack<RuntimeValue * bool>(64)
         let runtimeMetrics currentWord site root =
             let tryCachedMetrics value =
                 if isChildless value then Some(childlessMetrics currentWord site value)
@@ -814,7 +847,8 @@ module IrInterpreter =
                 if isChildless root then checkValueMetrics currentWord site cached
                 cached
             | None ->
-                let pending = Stack<RuntimeValue * bool>()
+                let pending = metricsPending
+                pending.Clear()
                 pending.Push((root, false))
                 while pending.Count > 0 do
                     let value, expanded = pending.Pop()
@@ -868,6 +902,24 @@ module IrInterpreter =
 
         let checkRuntimeValueRoots currentWord site values =
             aggregateRuntimeValues currentWord site values |> ignore
+
+        /// checkRuntimeValueRoots over the stack, then the locals (in slot order), without
+        /// building a sequence: it runs after every instruction.
+        let checkStackAndLocals currentWord site (stack: RuntimeValue list) (locals: Map<LocalSlot, RuntimeValue>) =
+            let mutable nodes = 0L
+            let mutable depth = 0
+            let mutable outputBytes = 0L
+            let add value =
+                let metrics = runtimeMetrics currentWord site value
+                nodes <- saturatingAdd maxRuntimeValueNodes nodes metrics.ExpandedNodes
+                depth <- max depth metrics.Depth
+                outputBytes <- saturatingAdd maxRuntimeValueOutputBytes outputBytes metrics.EstimatedOutputBytes
+                checkValueMetrics currentWord site
+                    { ExpandedNodes = nodes
+                      Depth = depth
+                      EstimatedOutputBytes = outputBytes }
+            for value in stack do add value
+            for KeyValue(_, value) in locals do add value
 
         let validateHostTypeMetadata currentWord site rootType =
             let pending = Stack<LangType * int>()
@@ -1492,7 +1544,7 @@ module IrInterpreter =
         and executeBlock (depth: int) (currentWord: string) (localNames: Map<LocalSlot, string>) (block: IrBlock) (initialStack: RuntimeValue list) (initialLocals: Map<LocalSlot, RuntimeValue>) =
             let mutable stack = initialStack
             let mutable locals = initialLocals
-            checkRuntimeValueRoots currentWord None (Seq.append stack (locals |> Map.toSeq |> Seq.map snd))
+            checkStackAndLocals currentWord None stack locals
             let popArguments name (inputTypes: IrType list) =
                 if stack.Length < inputTypes.Length then
                     fail "RUNTIME_STACK_UNDERFLOW" $"'{name}' requires {inputTypes.Length} value(s)." (Some name) None
@@ -1858,7 +1910,7 @@ module IrInterpreter =
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     let result = invokeResolved depth call arguments (Some instruction.Site)
                     stack <- prefix @ result
-                checkRuntimeValueRoots currentWord (Some instruction.Site) (Seq.append stack (locals |> Map.toSeq |> Seq.map snd))
+                checkStackAndLocals currentWord (Some instruction.Site) stack locals
             stack, locals
 
         let initialStack =

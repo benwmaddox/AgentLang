@@ -1265,6 +1265,14 @@ module IrVerifier =
         verifyProgram catalog hostCatalog program
         VerifiedIrProgram(program, catalog, hostCatalog, true, Some snapshotFingerprint)
 
+    /// A compiler-verified program with the same IR and a new compiler-snapshot fingerprint:
+    /// for a context that differs from the parent's only in what the fingerprint covers and
+    /// lowering never reads (word status and maturity).
+    let internal refingerprintCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint =
+        if not parent.BackendExecutable then
+            failure "IR_BACKEND_UNTRUSTED_PROGRAM" "Only a compiler-verified program can be re-fingerprinted." [ "compiler-lowered verified snapshot" ] [ "verifier-only snapshot" ]
+        VerifiedIrProgram(parent.Program, parent.Catalog, parent.HostCatalog, true, Some snapshotFingerprint)
+
     /// The user functions a block calls directly, counting a generated target's validator
     /// as called (the edges verifyAcyclicCallGraph walks, one step).
     let internal directCallees (program: IrProgram) (block: IrBlock) : Set<WordId> =

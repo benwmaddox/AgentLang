@@ -124,7 +124,11 @@ module Runtime =
           Words: Set<string>
           Recompiled: Set<string>
           Attachments: Set<string>
-          TestFiles: Set<string> }
+          TestFiles: Set<string>
+          /// Only the status and maturity of `Words` (and the status of the types
+          /// `RestatedTypes`) changed: nothing is recompiled.
+          StatusOnly: bool
+          RestatedTypes: Set<string> }
 
     /// Successful output from invoking one fixed, checked Flow word.
     type FlowEntryPointResult =
@@ -2344,10 +2348,26 @@ module Runtime =
         /// takes a full compile (which re-checks every binding).
         let dictionaryDelta (parent: DictionaryState) (state: DictionaryState) =
             let same (left: 'value) (right: 'value) = obj.ReferenceEquals(left, right) || left = right
-            if not (same parent.Deprecated state.Deprecated
-                    && same parent.Records state.Records
-                    && same parent.Scalars state.Scalars
-                    && same parent.Enums state.Enums
+            // Types whose definitions are unchanged; the names of those whose status changed.
+            let restated (before: Map<string, 'entry>) (after: Map<string, 'entry>) (definition: 'entry -> obj) (status: 'entry -> WordStatus) =
+                if obj.ReferenceEquals(before, after) then Some Set.empty
+                elif before.Count <> after.Count then None
+                else
+                    before
+                    |> Map.fold (fun found name entry ->
+                        match found, after.TryFind name with
+                        | Some names, Some kept when obj.ReferenceEquals(kept, entry) -> Some names
+                        | Some names, Some kept when (definition kept).Equals(definition entry) ->
+                            Some(if status kept = status entry then names else Set.add name names)
+                        | _ -> None) (Some Set.empty)
+            let restatedTypes =
+                match restated parent.Records state.Records (fun entry -> box entry.Definition) (fun entry -> entry.Status),
+                      restated parent.Scalars state.Scalars (fun entry -> box entry.Definition) (fun entry -> entry.Status),
+                      restated parent.Enums state.Enums (fun entry -> box entry.Definition) (fun entry -> entry.Status) with
+                | Some records, Some scalars, Some enums -> Some(Set.unionMany [ records; scalars; enums ])
+                | _ -> None
+            if restatedTypes.IsNone
+               || not (same parent.Deprecated state.Deprecated
                     && same parent.TypeSources state.TypeSources
                     && same parent.TypeReplacements state.TypeReplacements
                     && same parent.TypeEvolutionGroups state.TypeEvolutionGroups) then None
@@ -2374,7 +2394,7 @@ module Runtime =
                         match before.TryFind key with
                         | Some prior when obj.ReferenceEquals(prior, value) -> true
                         | _ -> owners.Contains(owner value))
-                if owners.IsEmpty
+                if (owners.IsEmpty && restatedTypes.Value.IsEmpty)
                    || state.WordIds.Count <> parent.WordIds.Count + added.Count
                    || not (Set.isSubset added stateFlow)
                    || not (Set.isSubset changed parentFlow && Set.isSubset changed stateFlow) then None
@@ -2384,7 +2404,7 @@ module Runtime =
                           && rowsKept parent.FlowTests state.FlowTests (fun item -> item.Source.OwnerName)
                           && rowsKept parent.FlowExamples state.FlowExamples (fun item -> item.Source.OwnerName)
                           && rowsKept parent.FlowTestFiles state.FlowTestFiles (fun file -> file.OwnerName)) then None
-                elif added.IsEmpty then Some(added, changed)
+                elif added.IsEmpty then Some(added, changed, restatedTypes.Value)
                 else
                     match requestedShortNames parent with
                     | None -> None
@@ -2392,7 +2412,7 @@ module Runtime =
                         let shadows (name: string) =
                             let index = name.LastIndexOf('.')
                             requested.Contains(if index < 0 then name else name.Substring(index + 1))
-                        if added |> Set.exists shadows then None else Some(added, changed)
+                        if added |> Set.exists shadows then None else Some(added, changed, restatedTypes.Value)
 
         /// Each function's direct callers in a verified program (by reference, computed once).
         let callersByProgram = System.Runtime.CompilerServices.ConditionalWeakTable<VerifiedIrProgram, Map<WordId, Set<WordId>>>()
@@ -2417,7 +2437,7 @@ module Runtime =
         /// reach them, or they would be callers too) and every test file whose cases can reach
         /// one of them. None when that would recompile a type validator, a Stack-authored word
         /// or case, or most of the dictionary.
-        let extensionFor (parent: RuntimeSnapshot) (state: DictionaryState) (added: Set<string>) (changed: Set<string>) =
+        let extensionFor (parent: RuntimeSnapshot) (state: DictionaryState) (added: Set<string>) (changed: Set<string>) (restatedTypes: Set<string>) =
             let parentIr = VerifiedIrProgram.inspect parent.Program
             let idOf name = parent.State.WordIds.TryFind name |> Option.map WordId
             let changedIds = changed |> Seq.choose idOf |> Set.ofSeq
@@ -2440,7 +2460,30 @@ module Runtime =
                     (state.Scalars |> Map.toSeq |> Seq.choose (fun (_, item) -> item.Definition.Validator))
                 |> Set.ofSeq
             let words = Set.union added recompiled
-            if recompiled.Count <> recompiledIds.Count
+            let sameRows (before: Map<string, 'value>) (after: Map<string, 'value>) =
+                obj.ReferenceEquals(before, after)
+                || (before.Count = after.Count
+                    && before |> Map.forall (fun key value -> match after.TryFind key with Some kept -> obj.ReferenceEquals(kept, value) | None -> false))
+            let statusOnly =
+                added.IsEmpty
+                && changed |> Set.forall (fun name -> Compiler.sameExceptStatus state.Words[name] parent.State.Words[name])
+                && sameRows parent.State.FlowWords state.FlowWords
+                && sameRows parent.State.Tests state.Tests
+                && sameRows parent.State.Examples state.Examples
+                && sameRows parent.State.FlowTests state.FlowTests
+                && sameRows parent.State.FlowExamples state.FlowExamples
+                && sameRows parent.State.FlowTestFiles state.FlowTestFiles
+            if statusOnly then
+                Some
+                    { Parent = parent
+                      Words = changed
+                      Recompiled = changed
+                      Attachments = Set.empty
+                      TestFiles = Set.empty
+                      StatusOnly = true
+                      RestatedTypes = restatedTypes }
+            elif not restatedTypes.IsEmpty then None
+            elif recompiled.Count <> recompiledIds.Count
                || not (Set.isSubset recompiled flowOwners)
                || not (Set.isEmpty (Set.intersect recompiled validators))
                || (words.Count > 16 && words.Count * 3 > state.FlowWords.Count) then None
@@ -2488,7 +2531,39 @@ module Runtime =
                           Words = words
                           Recompiled = recompiled
                           Attachments = attachments
-                          TestFiles = files }
+                          TestFiles = files
+                          StatusOnly = false
+                          RestatedTypes = Set.empty }
+
+        /// The snapshot of `state` when it differs from the extension's parent only in the
+        /// status and maturity of its words (a commit of words just defined): the parent's
+        /// program, bodies and overlays, with the words' new entries and a new fingerprint.
+        let restatusRuntimeSnapshot (extension: SnapshotExtension) (state: DictionaryState) =
+            let parent = extension.Parent
+            let flowContext =
+                parent.FlowContext
+                |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_EXTEND_PARENT" "Only a Flow snapshot can be re-stated." None None [] [])
+            let generated =
+                if extension.RestatedTypes.IsEmpty then Map.empty
+                else
+                    makeGenerated state
+                    |> Map.filter (fun _ entry ->
+                        match entry.Builtin with
+                        | Some(RecordConstructor owner) | Some(RecordAccessor(owner, _)) | Some(ScalarConstructor owner) | Some(ScalarAccessor owner)
+                        | Some(EnumCaseConstructor(owner, _)) -> extension.RestatedTypes.Contains owner
+                        | _ -> false)
+            let restated = generated |> Map.fold (fun found name _ -> Set.add name found) extension.Words
+            let words =
+                extension.Words |> Set.fold (fun found name -> Map.add name state.Words[name] found) flowContext.CompilerContext.Words
+                |> fun found -> Map.fold (fun current name entry -> Map.add name entry current) found generated
+            let compilerContext = { flowContext.CompilerContext with Words = words }
+            let program = Compiler.restatusIrProgram flowContext.CompilerContext flowContext.SourceOrigins parent.Program compilerContext restated
+            { parent with
+                State = state
+                Words = words
+                Context = compilerContext
+                Program = program
+                FlowContext = Some { flowContext with CompilerContext = compilerContext } }
 
         /// AGENTLANG_INCREMENTAL_CHECK=1: an extended snapshot must match a from-scratch compile
         /// of the same state in its program, attached bodies and stored call bindings.
@@ -2573,11 +2648,13 @@ module Runtime =
                             if not compatible || parent.FlowContext.IsNone || Map.isEmpty parent.State.FlowWords then None
                             else
                                 dictionaryDelta parent.State state
-                                |> Option.bind (fun (added, changed) -> extensionFor parent state added changed))
+                                |> Option.bind (fun (added, changed, restatedTypes) -> extensionFor parent state added changed restatedTypes))
                 let snapshot =
                     match extension with
                     | Some extension ->
-                        let snapshot = compileRuntimeSnapshotCore (Some extension) allowDeferredHostNominalTypes state
+                        let snapshot =
+                            if extension.StatusOnly then restatusRuntimeSnapshot extension state
+                            else compileRuntimeSnapshotCore (Some extension) allowDeferredHostNominalTypes state
                         if incrementalCheck then requireSameAsFullCompile snapshot (compileRuntimeSnapshotWith allowDeferredHostNominalTypes state)
                         match Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_LOG" with
                         | null | "" -> ()
@@ -2731,12 +2808,19 @@ module Runtime =
                               $"Execution requires capabilities not granted by the host: {names}.", Some name, definitionSpan name
                           | None -> "The expression requires effects not granted by the host.", None, None
                       error "CAPABILITY_DENIED" message failureWord failureSpan expected (grantedCapabilities |> Set.toList)
+              // The source site matters only for the word whose coverage is measured.
               ChargeInstruction = fun currentWord site ->
-                  let sourceInfo = source site
-                  countInstruction trace currentWord site sourceInfo.SiteSpan (isAuthoredCoverageSite sourceInfo)
+                  match trace.CoverageTarget with
+                  | Some target when target = currentWord ->
+                      let sourceInfo = source site
+                      countInstruction trace currentWord site sourceInfo.SiteSpan (isAuthoredCoverageSite sourceInfo)
+                  | _ -> trace.Steps <- trace.Steps + 1
               RecordBranchOutcome = fun currentWord site outcome ->
-                  let sourceInfo = source site
-                  countBranchOutcome trace currentWord site outcome (isAuthoredCoverageSite sourceInfo)
+                  match trace.CoverageTarget with
+                  | Some target when target = currentWord ->
+                      let sourceInfo = source site
+                      countBranchOutcome trace currentWord site outcome (isAuthoredCoverageSite sourceInfo)
+                  | _ -> ()
               RecordUse = fun name -> log "use" name
               InvokeEffect = fun command ->
                   match command with
@@ -4225,8 +4309,9 @@ module Runtime =
                     match candidateWords.TryFind name with
                     | None -> wordClosure rest found
                     | Some value ->
-                        let dependencies = Compiler.dependencies value.Definition.Body |> Set.toList
-                        wordClosure (rest @ dependencies) (Set.add name found)
+                        // The result is a set, so the visit order is free: prepend, not append.
+                        let pendingNext = Compiler.dependencies value.Definition.Body |> Set.fold (fun list dependency -> dependency :: list) rest
+                        wordClosure pendingNext (Set.add name found)
 
             let rec namedTypes (typeValue: LangType) =
                 match typeValue with
@@ -4246,13 +4331,23 @@ module Runtime =
 
             let ownerOfGeneratedWord name = ownerOfGeneratedWordIn currentWords name
 
+            // One effective word map per state (by reference), not one per word asked about.
+            let priorWords = System.Runtime.CompilerServices.ConditionalWeakTable<DictionaryState, Map<string, WordEntry>>()
+            let priorWordsOf (state: DictionaryState) =
+                match priorWords.TryGetValue state with
+                | true, words -> words
+                | _ ->
+                    let words = effectiveWordsForPriorState state
+                    priorWords.AddOrUpdate(state, words)
+                    words
+
             let typeReferencesForState (state: DictionaryState) (name: string) =
                 match state.Words.TryFind name with
                 | None -> Set.empty
                 | Some value ->
                     let signatures = value.Definition.Inputs @ value.Definition.Outputs |> List.map namedTypes |> Set.unionMany
                     let generatedDependencies =
-                        let words = effectiveWordsForPriorState state
+                        let words = priorWordsOf state
                         Compiler.dependencies value.Definition.Body
                         |> Set.toList
                         |> List.choose (ownerOfGeneratedWordIn words)
@@ -4454,8 +4549,9 @@ module Runtime =
                     TypeReplacements = data.TypeReplacements |> Map.filter (fun name _ -> not (selectedTypes.Contains name))
                     TypeEvolutionGroups = data.TypeEvolutionGroups |> Map.filter (fun name _ -> not (completedTypeEvolutionIds.Contains name)) }
             phase "propose"
+            let proposedEffectiveWords = effectiveWords proposed
             for name in selectedWords do
-                rejectUnqualifiedLibraryDependencies (effectiveWords proposed) name
+                rejectUnqualifiedLibraryDependencies proposedEffectiveWords name
             phase "library-check"
             compileRuntimeSnapshot proposed |> ignore
             phase "snapshot-proposed"
@@ -4569,10 +4665,11 @@ module Runtime =
                 callers <- Set.union callers nextCallers
                 changedNames <- Set.union changedNames nextCallers
                 foundCallers <- not nextCallers.IsEmpty
+            let durableEffectiveWords = lazy (effectiveWords durableProposed)
             for caller in callers do
                 if not (selectedWords.Contains caller)
                    && (durableProposed.Words.TryFind caller |> Option.exists (fun entry -> entry.Maturity = LibraryWord)) then
-                    rejectUnqualifiedLibraryDependencies (effectiveWords durableProposed) caller
+                    rejectUnqualifiedLibraryDependencies durableEffectiveWords.Value caller
             let callerResults =
                 callers
                 |> Set.filter (fun caller -> not (selectedWords.Contains caller))
