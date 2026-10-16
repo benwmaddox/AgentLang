@@ -1887,7 +1887,7 @@ module Program =
                   "documentation", jstr "metadata is inline"
                   "extra", jbool true ]
             |> expectError "FLOW_RUNTIME_UNKNOWN_ARGUMENT"
-        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "expectedTypeSources"; "frontend"; "removeAttachments"; "replace"; "source"; "syntaxVersion"; "temporary"; "testChanges"; "tests" ]
+        equal [ "examples"; "expectedRevision"; "expectedRevisions"; "expectedTypeSources"; "frontend"; "removeAttachments"; "replace"; "source"; "sources"; "syntaxVersion"; "temporary"; "testChanges"; "tests" ]
             (jsonArrayStrings unknownTopLevel.["error"].["expected"]) "unknown Flow field error returns the allowed field set"
         equal [ "code"; "documentation"; "extra" ] (jsonArrayStrings unknownTopLevel.["error"].["actual"]) "unknown Flow fields are reported in sorted order"
         let unknownMessage = stringValue unknownTopLevel.["error"].["message"]

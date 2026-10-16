@@ -189,10 +189,10 @@ runners for partials), diff, and port until 0 differing blocks.
    - the sidebar frame. **Done (2026-10-15):** `/users/me/sidebar` is
      byte-identical to Rails without CSRF (30,806 bytes, for the snapshot
      admin with direct rooms, placeholders and shared rooms). Its layout
-     shares `head-assets` and `lightbox` with the room page. Not carried:
-     Ruby's Unicode `capitalize` for initials (ASCII only); a member's
-     sidebar and `restrict_room_creation_to_administrators` aren't yet
-     checked against Rails.
+     shares `head-assets` and `lightbox` with the room page. A member's sidebar
+     (Kevin) is identical too. Not carried: Ruby's Unicode `capitalize` for
+     initials (ASCII only); `restrict_room_creation_to_administrators` set to
+     true isn't yet checked against Rails.
    - message paging (`/rooms/<id>/@<message>`, before and after). **Done
      (2026-10-15).** The page around a message: 81 messages, 812,594
      bytes, and its last-page fallback. `messages?before=` and `after=`:
@@ -240,9 +240,9 @@ runners for partials), diff, and port until 0 differing blocks.
      admin), including the join-link QR id, the user list (admins, separator,
      members; banned users for administrators) and the version badge. The
      version is `app_version` in the host config: Rails' APP_VERSION, else
-     GIT_REVISION, else "0". The member view is written from the template but
-     not yet compared: a second session needs harness support, since Flow has
-     no sign-in yet. The account logo (`/account/logo`) is still to do; its
+     GIT_REVISION, else "0". The member view (Kevin) is identical too: the page
+     script can sign in as a second user (`PAGE_LOGIN`, a session row and a
+     signed cookie for Flow; Rails signs in). The account logo (`/account/logo`) is still to do; its
      stock icons are app assets, not storage files.
      The Flow server project outgrew the parser's 100,000-token limit for one
      source. `define` now takes `sources` (objects `{file, source}`): each file
