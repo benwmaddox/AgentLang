@@ -180,8 +180,15 @@ type StorageFailurePoint =
 /// failure injector; production callers should use Storage.create.
 [<Sealed>]
 type Store internal (root: string, failureInjector: StorageFailurePoint -> unit) =
+    let verified = System.Collections.Concurrent.ConcurrentDictionary<string, struct (int64 * DateTime)>(StringComparer.Ordinal)
     member internal _.Root = root
     member internal _.Inject(point) = failureInjector point
+    /// Object and manifest files this store has checked against their content hash (or
+    /// written), with the size and last write time they had then.
+    member internal _.Verified = verified
+    /// The manifest this store last loaded or committed: its hash, source references, parsed
+    /// form (parsed on first use after a commit) and project source.
+    member val internal LastManifest: (string * SourceRef list * Lazy<ProjectManifest> * string) option = None with get, set
 
 [<RequireQualifiedAccess>]
 module StorageLimits =
@@ -246,12 +253,22 @@ module Storage =
 
     let private utf8 = UTF8Encoding(false, true)
 
+    /// Content hashes by string (strings are immutable): a project re-publishes the same
+    /// source strings on every commit.
+    let private contentHashes = System.Runtime.CompilerServices.ConditionalWeakTable<string, string>()
+
     let private sha256 (content: string) =
-        content
-        |> utf8.GetBytes
-        |> SHA256.HashData
-        |> Convert.ToHexString
-        |> fun value -> value.ToLowerInvariant()
+        match contentHashes.TryGetValue content with
+        | true, hash -> hash
+        | _ ->
+            let hash =
+                content
+                |> utf8.GetBytes
+                |> SHA256.HashData
+                |> Convert.ToHexString
+                |> fun value -> value.ToLowerInvariant()
+            contentHashes.AddOrUpdate(content, hash)
+            hash
 
     let sourceObject kind content =
         { Reference = { Kind = kind; Hash = sha256 content }
@@ -1345,12 +1362,46 @@ module Storage =
         if not (String.Equals(actual, reference.Hash, StringComparison.Ordinal)) then
             failure "STORAGE_HASH_MISMATCH" "Stored source bytes do not match their content hash." (Some path)
 
+    let private fileStamp (path: string) =
+        let info = FileInfo path
+        struct (info.Length, info.LastWriteTimeUtc)
+
+    /// Whether this store already checked the file at `path` and it is unchanged since.
+    let private isVerified (store: Store) (path: string) =
+        match store.Verified.TryGetValue path with
+        | true, stamp -> File.Exists path && fileStamp path = stamp
+        | _ -> false
+
+    /// Records a check of `path` made on bytes read while it had `stamp`, unless the file
+    /// changed since (a swap during the check is never trusted later).
+    let private markVerified (store: Store) (path: string) stamp =
+        if fileStamp path = stamp then store.Verified[path] <- stamp
+
     let private readSourceCore (store: Store) (reference: SourceRef) =
         validateHash None reference.Hash
         let path = objectPath store reference
+        let stamp = if File.Exists path then fileStamp path else struct (-1L, DateTime.MinValue)
         let bytes = readBytes StorageLimits.MaxObjectBytes path
         verifyObjectBytes path reference bytes
-        decodeUtf8 path bytes
+        let text = decodeUtf8 path bytes
+        markVerified store path stamp
+        text
+
+    /// readSourceCore for its checks alone: an object this store already verified and that
+    /// is unchanged on disk is not read and hashed again.
+    let private verifySourceCore (store: Store) (reference: SourceRef) =
+        validateHash None reference.Hash
+        let path = objectPath store reference
+        // One file-system query answers existence, the reparse-point check and the stamp.
+        let info = FileInfo path
+        if info.Exists && info.Attributes.HasFlag FileAttributes.ReparsePoint then
+            failure "STORAGE_REPARSE_POINT" "Storage refuses to read or write through a reparse point." (Some path)
+        let unchanged =
+            info.Exists
+            && (match store.Verified.TryGetValue path with
+                | true, stamp -> stamp = struct (info.Length, info.LastWriteTimeUtc)
+                | _ -> false)
+        if not unchanged then readSourceCore store reference |> ignore
 
     let private jsonBytes (node: JsonNode) = node.ToJsonString(JsonSerializerOptions(WriteIndented = false)) |> utf8.GetBytes
 
@@ -1369,7 +1420,15 @@ module Storage =
         finally
             if File.Exists temporary then File.Delete temporary
 
-    let private writeImmutable (path: string) (bytes: byte array) =
+    let rec private writeImmutableIn (store: Store) (path: string) (bytes: byte array) =
+        // A content-addressed file this store already verified and that is unchanged
+        // holds these bytes (its name is their hash), so it is neither re-read nor rewritten.
+        rejectReparsePoint path
+        if not (isVerified store path) then
+            writeImmutable path bytes
+            store.Verified[path] <- fileStamp path
+
+    and private writeImmutable (path: string) (bytes: byte array) =
         rejectReparsePoint path
         if File.Exists path then
             let existing = readBytes (max StorageLimits.MaxObjectBytes StorageLimits.MaxMetadataBytes) path
@@ -1476,7 +1535,7 @@ module Storage =
         for reference in references |> List.distinct do
             match providedByRef.TryFind reference with
             | Some item -> sourceObjectBytes item |> ignore
-            | None -> readSourceCore store reference |> ignore
+            | None -> verifySourceCore store reference
         providedByRef
 
     let private manifestHashPath (store: Store) (manifest: ProjectManifest) =
@@ -1486,9 +1545,21 @@ module Storage =
         let hash = SHA256.HashData bytes |> Convert.ToHexString |> fun value -> value.ToLowerInvariant()
         hash, bytes
 
-    let private loadManifestCore store hash =
+    let rec private loadManifestCore (store: Store) hash =
         validateHash None hash
         let path = manifestPath store hash
+        rejectReparsePoint path
+        match store.LastManifest with
+        | Some(lastHash, references, manifest, projectSource) when lastHash = hash && isVerified store path ->
+            // The manifest this store last loaded or wrote, unchanged on disk: its parsed
+            // form is reused and only its source objects are checked (each skipped when
+            // already verified and unchanged).
+            for reference in references |> List.distinct do verifySourceCore store reference
+            manifest.Force(), projectSource
+        | _ -> loadManifestCoreFully store hash path
+
+    and private loadManifestCoreFully (store: Store) hash path =
+        let stamp = if File.Exists path then fileStamp path else struct (-1L, DateTime.MinValue)
         let bytes = readBytes StorageLimits.MaxMetadataBytes path
         let actual = bytes |> SHA256.HashData |> Convert.ToHexString |> fun value -> value.ToLowerInvariant()
         if actual <> hash then failure "STORAGE_HASH_MISMATCH" "Manifest bytes do not match their content hash." (Some path)
@@ -1499,7 +1570,9 @@ module Storage =
         let refs = allSourceRefs manifest
         let projectSource = readSourceCore store manifest.ProjectSource
         for reference in refs |> List.distinct do
-            if reference <> manifest.ProjectSource then readSourceCore store reference |> ignore
+            if reference <> manifest.ProjectSource then verifySourceCore store reference
+        markVerified store path stamp
+        store.LastManifest <- Some(hash, refs, Lazy<ProjectManifest>.CreateFromValue manifest, projectSource)
         manifest, projectSource
 
     let private loadCore store =
@@ -1692,6 +1765,21 @@ module Storage =
     /// Validate and publish a new immutable manifest. The only authoritative
     /// commit point is the atomic replacement of CURRENT; export refresh occurs
     /// after that point and reports a warning rather than a false failed commit.
+    /// The current generation, after the same checks loadCore makes; when the current
+    /// manifest is the one this store last wrote or loaded and is unchanged on disk, it is
+    /// not parsed again (only its objects are checked).
+    let private currentGenerationForCommit (store: Store) =
+        ensureReadLayout store
+        match currentPointer store, store.LastManifest with
+        | Some({ Authority = ManifestAuthority hash } as pointer), Some(lastHash, references, _, _) when lastHash = hash ->
+            let path = manifestPath store hash
+            rejectReparsePoint path
+            if isVerified store path then
+                for reference in references |> List.distinct do verifySourceCore store reference
+                pointer.Generation
+            else (loadCore store).Generation
+        | _ -> (loadCore store).Generation
+
     let commit
         (store: Store)
         (expectedGeneration: int64)
@@ -1700,8 +1788,8 @@ module Storage =
         (exportText: string)
         : Result<StorageCommitResult, StorageError> =
         withWriterLock store (fun () ->
-            let current = loadCore store
-            ensureExpectedGeneration expectedGeneration current.Generation
+            let currentGeneration = currentGenerationForCommit store
+            ensureExpectedGeneration expectedGeneration currentGeneration
             let provided = validateManifestReferences store sources manifest None
             let projectSource =
                 match provided.TryFind manifest.ProjectSource with
@@ -1714,12 +1802,21 @@ module Storage =
             for KeyValue(reference, item) in provided do
                 if referenced.Contains reference then
                     let path = objectPath store reference
-                    writeImmutable path (sourceObjectBytes item)
+                    writeImmutableIn store path (sourceObjectBytes item)
 
             let hash, bytes = manifestHashPath store manifest
             let manifestFile = manifestPath store hash
-            writeImmutable manifestFile bytes
-            commitPointer store current.Generation (ManifestAuthority hash) (Some exportText))
+            writeImmutableIn store manifestFile bytes
+            let committed = commitPointer store currentGeneration (ManifestAuthority hash) (Some exportText)
+            // What a later load parses from these exact bytes (parsing normalizes the manifest).
+            // A later load gets what parsing these exact bytes gives (parsing normalizes).
+            let reloaded =
+                lazy
+                    (let parsed = parseJsonBytes manifestFile bytes |> parseManifest (Some manifestFile)
+                     validateManifest parsed (Some manifestFile)
+                     parsed)
+            store.LastManifest <- Some(hash, allSourceRefs manifest, reloaded, exportText)
+            committed)
 
     /// Restore a captured authority without manufacturing revisions. This is a
     /// new pointer generation whose manifest/history identity remains unchanged.
