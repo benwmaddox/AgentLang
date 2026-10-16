@@ -92,7 +92,7 @@ fn campfire.server.test-fixture() -> Int {
     doc "Creates the tables the room read touches in the attached tests' in-memory database and seeds two users, two rooms, one session (user 1, token session-token-1, active 2026-10-14 11:30Z), two messages in room 1 and one ban. Returns the number of failed statements."
 
     var failed = 0
-    failed = failed + campfire.server.run(db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, bio TEXT, updated_at TEXT NOT NULL, created_at TEXT)", list.empty<DbValue>()))
+    failed = failed + campfire.server.run(db.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, role INTEGER NOT NULL, status INTEGER NOT NULL, bot_token TEXT, bio TEXT, updated_at TEXT NOT NULL, created_at TEXT, email_address TEXT)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE sessions (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, token TEXT NOT NULL, ip_address TEXT, user_agent TEXT, last_active_at TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE rooms (id INTEGER PRIMARY KEY, name TEXT, type TEXT NOT NULL, creator_id INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)", list.empty<DbValue>()))
     failed = failed + campfire.server.run(db.execute("CREATE TABLE memberships (user_id INTEGER NOT NULL, room_id INTEGER NOT NULL, involvement TEXT DEFAULT 'mentions', unread_at TEXT)", list.empty<DbValue>()))

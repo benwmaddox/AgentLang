@@ -215,7 +215,18 @@ runners for partials), diff, and port until 0 differing blocks.
      Approximated: Ruby's Unicode `[:word:]` in the query cleanup (non-ASCII
      bytes are kept). Not yet done: POST `/searches` (recording a search) and
      clearing recent searches, which are writes;
-   - users and avatars;
+   - users and avatars. **users#show done (2026-10-16):** `/users/<id>` is
+     byte-identical to Rails without CSRF for the admin viewing themselves, a
+     member, a bot, a deactivated user, a banned user and a deactivated bot. An
+     unknown id serves Rails' static `public/404.html` with 404. The session
+     transfer link (User#transfer_id, a signed_id expiring 4 hours after the
+     request) is masked in the comparison, since it changes every request, as
+     CSRF tokens do. Its signature verifies with the same signed_id key as
+     Rails', and the payload has the same shape, so either server accepts the
+     other's links. The admin-only parts (email, transfer link, ban button)
+     follow `can_administer?`. **Avatars not done:** avatar images are binary
+     (WebP variants from Active Storage) and need byte bodies from the host. The
+     initials SVG and the default bot SVG come next with them;
    - account;
    - sign-in and sign-out. Passwords: Rails' bcrypt digests are verified and created
      with the system libxcrypt `crypt_r()` as a native host op (user, 2026-10-16:

@@ -1,0 +1,159 @@
+// users#show for the portable server: the user row, the viewer's rights and the
+// session transfer link (User#transfer_id: a signed_id that expires four hours
+// after the request).
+
+fn campfire.server.civil-from-days(days: Int) -> List<Int> {
+    doc "[year, month, day] of a day count since 1970-01-01 (Hinnant's civil_from_days)."
+    let z = days + 719468
+    let era = (if z >= 0 { z } else { z - 146096 }) / 146097
+    let doe = z - era * 146097
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    let mp = (5 * doy + 2) / 153
+    let day = doy - (153 * mp + 2) / 5 + 1
+    let month = if mp < 10 { mp + 3 } else { mp - 9 }
+    [yoe + era * 400 + (if month <= 2 { 1 } else { 0 }), month, day]
+}
+
+test campfire.server.civil-from-days/round-trip {
+    expect campfire.server.civil-from-days(0) == [1970, 1, 1] && campfire.server.civil-from-days(20512) == [2026, 2, 28]
+}
+
+fn campfire.server.pad(value: Int, width: Int) -> String {
+    var text = int.to-string(value)
+    for step in 0..width {
+        if string.byte-length(text) >= width {
+            break
+        }
+        text = string.concat("0", text)
+    }
+    text
+}
+
+test campfire.server.pad/zeros {
+    expect campfire.server.pad(7, 3) == "007" && campfire.server.pad(1234, 3) == "1234"
+}
+
+fn campfire.server.iso8601-ms(micros: Int) -> String {
+    doc "Time#iso8601(3) in UTC of a microsecond epoch time, as MessageVerifier writes exp: '2026-10-16T13:32:47.754Z'."
+    let seconds = micros / 1000000
+    let days = seconds / 86400
+    let rest = seconds % 86400
+    let date = campfire.server.civil-from-days(days)
+    string.join([
+        campfire.server.pad(match list.get(date, 0) { none => 0; some n => n }, 4), "-",
+        campfire.server.pad(match list.get(date, 1) { none => 0; some n => n }, 2), "-",
+        campfire.server.pad(match list.get(date, 2) { none => 0; some n => n }, 2), "T",
+        campfire.server.pad(rest / 3600, 2), ":", campfire.server.pad(rest % 3600 / 60, 2), ":", campfire.server.pad(rest % 60, 2), ".",
+        campfire.server.pad(micros % 1000000 / 1000, 3), "Z"])
+}
+
+test campfire.server.iso8601-ms/format {
+    expect campfire.server.iso8601-ms(1791979200000000 + 754000) == "2026-10-14T12:00:00.754Z"
+}
+
+fn campfire.server.transfer-id(avatar-key: Bytes, user-id: Int, now-micros: Int) -> String {
+    doc "User#transfer_id: signed_id(purpose: :transfer, expires_in: 4.hours) - the unpadded URL-safe Base64 of the JSON envelope with its exp, '--', hex HMAC-SHA256 with the signed_id key."
+    let exp = campfire.server.iso8601-ms(now-micros + 4 * 3600 * 1000000)
+    let envelope = string.join(["{\"_rails\":{\"data\":", int.to-string(user-id), ",\"exp\":\"", exp, "\",\"pur\":\"user/transfer\"}}"])
+    let encoded = base64.url-encode(bytes.from-utf8(envelope))
+    string.join([encoded, "--", hex.encode(crypto.hmac-sha256(avatar-key, bytes.from-utf8(encoded)))])
+}
+
+test campfire.server.transfer-id/envelope {
+    let id = campfire.server.transfer-id(bytes.from-utf8("k"), 712064548, 1791979200000000)
+    expect match string.index-of(id, "--", 0) { none => false; some at => base64.url-decode(match string.slice(id, 0, at) { none => ""; some s => s }) == option.some<Bytes>(bytes.from-utf8("{\"_rails\":{\"data\":712064548,\"exp\":\"2026-10-14T16:00:00.000Z\",\"pur\":\"user/transfer\"}}")) }
+}
+
+fn campfire.server.padded-url-base64(text: String) -> String {
+    doc "Base64.urlsafe_encode64 (padded), as the QR code id."
+    let bare = base64.url-encode(bytes.from-utf8(text))
+    let missing = (4 - string.byte-length(bare) % 4) % 4
+    if missing == 2 { string.concat(bare, "==") } else if missing == 1 { string.concat(bare, "=") } else { bare }
+}
+
+test campfire.server.padded-url-base64/padding {
+    expect campfire.server.padded-url-base64("a") == "YQ==" && campfire.server.padded-url-base64("abc") == "YWJj"
+}
+
+fn campfire.server.user-page-row(user-id: Int) -> Result<Option<List<String>>, DbError> {
+    effects db.read
+    doc "User.find: [name, role, status, email, bio, updated_at] as text, none when there is no such user."
+    match db.query("SELECT name, role, status, COALESCE(email_address, ''), COALESCE(bio, ''), updated_at FROM users WHERE id = $userId", [db.int-param(user-id)]) {
+        error failure => result.error<Option<List<String>>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<List<String>>, DbError>(option.none<List<String>>())
+            some row => result.ok<Option<List<String>>, DbError>(option.some<List<String>>([
+                campfire.server.text-or-empty(db.optional-text(row, 0)),
+                int.to-string(campfire.server.int-or-zero(db.optional-int(row, 1))),
+                int.to-string(campfire.server.int-or-zero(db.optional-int(row, 2))),
+                campfire.server.text-or-empty(db.optional-text(row, 3)),
+                campfire.server.text-or-empty(db.optional-text(row, 4)),
+                campfire.server.text-or-empty(db.optional-text(row, 5))]))
+        }
+    }
+}
+
+test campfire.server.user-page-row/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect match campfire.server.user-page-row(2) { error failure => false; ok found => match found { none => false; some row => list.get(row, 0) == option.some<String>("Bo") } }
+    expect campfire.server.user-page-row(99) == result.ok<Option<List<String>>, DbError>(option.none<List<String>>())
+}
+
+fn campfire.server.users-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /users/<id>: the user's page; Rails' public/404.html with 404 when there is no such user."
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => {
+            let segment = campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 7)
+            let user-id = campfire.server.ruby-to-i(segment)
+            let empty = campfire.server.http-response(campfire.server.response(200, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+            match campfire.server.user-page-row(user-id) {
+                error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                ok found => match found {
+                    none => {
+                        let page = campfire.server.html-page(empty, campfire.views.not-found-page())
+                        httpResponse.new(status = 404, headers = page.headers, body = page.body, streamed = false)
+                    }
+                    some row => {
+                        let name = match list.get(row, 0) { none => ""; some v => v }
+                        let role = match list.get(row, 1) { none => ""; some v => v }
+                        let status = match list.get(row, 2) { none => ""; some v => v }
+                        let viewer-admin = signed.user.role == Role.administrator()
+                        let viewer-self = UserId.value(signed.user.id) == user-id
+                        let active = status == "0"
+                        let transfer = if viewer-admin && active && role != "2" { string.join([built.campfire.base-url, "/session/transfers/", campfire.server.transfer-id(context.avatar-key, user-id, incoming.now-microseconds)]) } else { "" }
+                        let page-user = userPage.new(
+                            id = user-id,
+                            name = name,
+                            email = match list.get(row, 3) { none => ""; some v => v },
+                            bio = match list.get(row, 4) { none => ""; some v => v },
+                            avatar-url = campfire.server.user-avatar-path(context.avatar-key, user-id, match list.get(row, 5) { none => ""; some v => v }),
+                            status = if active { "active" } else if status == "1" { "deactivated" } else { "banned" },
+                            bot = role == "2",
+                            viewer-admin = viewer-admin,
+                            viewer-self = viewer-self,
+                            transfer-url = transfer,
+                            transfer-qr = if transfer == "" { "" } else { campfire.server.padded-url-base64(transfer) })
+                        let referrer = match campfire.server.header-last(incoming.headers, "referer") { none => ""; some value => value }
+                        let back = if referrer == "" || referrer == string.concat(built.campfire.base-url, incoming.target) { "/" } else { referrer }
+                        let stamps = campfire.server.chrome-stamps(signed.user.id)
+                        let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
+                        let head = campfire.views.head-assets(int.to-string(UserId.value(signed.user.id)), signed.user.name, if account-stamp == "" { "" } else { campfire.server.number-stamp(account-stamp) })
+                        let body-class = if viewer-admin { "admin" } else { "" }
+                        campfire.server.html-page(empty, campfire.views.text(campfire.views.user-page(head, body-class, campfire.views.user-nav(back, viewer-self), page-user)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.users-read/pages {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let other = campfire.server.handle(campfire.server.test-get("/users/2", list.empty<HttpHeader>()), context)
+    expect other.status == 200 && string.contains(other.body, "<title>Bo</title>") && bool.not(string.contains(other.body, "Edit my profile"))
+    expect campfire.server.handle(campfire.server.test-get("/users/99", list.empty<HttpHeader>()), context).status == 404
+}
