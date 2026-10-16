@@ -16,6 +16,8 @@ record CampfireServerContext {
     avatar-key: Bytes
     turbo-key: Bytes
     storage-key: Bytes
+    // Rails.application.config.app_version: APP_VERSION, else GIT_REVISION, else "0" (config app_version / git_revision).
+    app-version: String
 }
 
 fn campfire.server.worker-init(config: List<HttpHeader>) -> CampfireServerContext {
@@ -30,7 +32,8 @@ fn campfire.server.worker-init(config: List<HttpHeader>) -> CampfireServerContex
         signing-key = campfire.server.rails-key(secret, "signed cookie", 64),
         avatar-key = campfire.server.rails-key(secret, "active_record/signed_id", 64),
         turbo-key = campfire.server.rails-key(secret, "turbo/signed_stream_verifier_key", 64),
-        storage-key = campfire.server.rails-key(secret, "ActiveStorage", 64))
+        storage-key = campfire.server.rails-key(secret, "ActiveStorage", 64),
+        app-version = if http.config(config, "app_version") != "" { http.config(config, "app_version") } else if http.config(config, "git_revision") != "" { http.config(config, "git_revision") } else { "0" })
 }
 
 test campfire.server.worker-init/keys {
@@ -1118,7 +1121,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false, account = false)
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1154,7 +1157,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false, account = false)
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1497,7 +1500,7 @@ fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) 
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => if built.avatar { campfire.server.avatars-read(built, request, context) } else if built.user-page { campfire.server.users-read(built, request, context) } else if built.search { campfire.server.search-read(built, request, context) } else if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
+        ok built => if built.account { campfire.server.account-read(built, request, context) } else if built.avatar { campfire.server.avatars-read(built, request, context) } else if built.user-page { campfire.server.users-read(built, request, context) } else if built.search { campfire.server.search-read(built, request, context) } else if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
     }
 }
 
@@ -1557,8 +1560,7 @@ test campfire.server.test-request/room {
 
 test campfire.server.chrome-stamps/fixture {
     expect campfire.server.test-fixture() == 0
-    // The fixture has no accounts table: the account stamp is empty.
-    expect campfire.server.chrome-stamps(UserId.new(1)) == ["", ""]
+    expect campfire.server.chrome-stamps(UserId.new(1)) == ["2026-01-01 00:00:00", "2026-01-01 00:00:00"]
 }
 
 test campfire.server.room-class/kinds {

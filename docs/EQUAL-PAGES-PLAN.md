@@ -235,7 +235,20 @@ runners for partials), diff, and port until 0 differing blocks.
      pass through a Flow String. The token is a signed_id checked in constant
      time; a bad one is 404 with an empty body, a missing user Rails' 404 page,
      and a matching If-None-Match gives 304;
-   - account;
+   - account. **accounts#edit done for administrators (2026-10-16):**
+     `/account/edit` is byte-identical to Rails without CSRF (the snapshot
+     admin), including the join-link QR id, the user list (admins, separator,
+     members; banned users for administrators) and the version badge. The
+     version is `app_version` in the host config: Rails' APP_VERSION, else
+     GIT_REVISION, else "0". The member view is written from the template but
+     not yet compared: a second session needs harness support, since Flow has
+     no sign-in yet. The account logo (`/account/logo`) is still to do; its
+     stock icons are app assets, not storage files.
+     The Flow server project outgrew the parser's 100,000-token limit for one
+     source. `define` now takes `sources` (objects `{file, source}`): each file
+     is parsed on its own, so the per-source limits apply per file and
+     diagnostics name the file. They form one document, with duplicate names
+     checked across files. FlowApp builds apps this way;
    - sign-in and sign-out. Passwords: Rails' bcrypt digests are verified and created
      with the system libxcrypt `crypt_r()` as a native host op (user, 2026-10-16:
      libcrypto has no bcrypt; chosen over vendoring OpenBSD bcrypt or a new KDF).

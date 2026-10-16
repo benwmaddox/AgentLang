@@ -1,0 +1,96 @@
+// accounts#edit for the portable server: the account, its people as the page lists
+// them, and the join link.
+
+fn campfire.server.last-room-visited(user: AuthUser, last-room: Option<String>) -> Int {
+    effects db.read
+    doc "TrackedRoomVisit#last_room_visited: the last_room cookie's room when it is one of the user's, else the user's oldest room (Room.original); 0 when the user has none."
+    let cookie-room = match last-room { none => 0; some text => campfire.server.ruby-to-i(text) }
+    let remembered = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.id = $roomId", [db.int-param(UserId.value(user.id)), db.int-param(cookie-room)]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
+    let oldest = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId ORDER BY rooms.created_at LIMIT 1", [db.int-param(UserId.value(user.id))]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
+    if remembered != 0 { remembered } else { oldest }
+}
+
+test campfire.server.last-room-visited/fallback {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    expect campfire.server.last-room-visited(user, option.some<String>("2")) == 1 && campfire.server.last-room-visited(user, option.none<String>()) == 1
+}
+
+fn campfire.server.account-users(viewer-admin: Bool, avatar-key: Bytes) -> List<AccountUserRow> {
+    effects db.read
+    doc "AccountsController#edit's people: active and banned users for an administrator, active ones otherwise, without bots, by LOWER(name)."
+    let found = if viewer-admin {
+        db.query("SELECT id, name, COALESCE(bio, ''), role, status, updated_at FROM users WHERE status IN (0, 2) AND role != 2 ORDER BY LOWER(name)", list.empty<DbValue>())
+    } else {
+        db.query("SELECT id, name, COALESCE(bio, ''), role, status, updated_at FROM users WHERE status = 0 AND role != 2 ORDER BY LOWER(name)", list.empty<DbValue>())
+    }
+    let rows = match found { error failure => list.empty<DbRow>(); ok loaded => loaded }
+    var users = list.empty<AccountUserRow>()
+    for row in rows {
+        let id = campfire.server.int-or-zero(db.optional-int(row, 0))
+        let name = campfire.server.text-or-empty(db.optional-text(row, 1))
+        users = list.append(users, accountUserRow.new(
+            id = id,
+            name = name,
+            title = campfire.views.user-title(name, campfire.server.text-or-empty(db.optional-text(row, 2))),
+            avatar-url = campfire.server.user-avatar-path(avatar-key, id, campfire.server.text-or-empty(db.optional-text(row, 5))),
+            administrator = campfire.server.int-or-zero(db.optional-int(row, 3)) == 1,
+            banned = campfire.server.int-or-zero(db.optional-int(row, 4)) == 2))
+    }
+    users
+}
+
+test campfire.server.account-users/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect list.count(campfire.server.account-users(true, bytes.from-utf8("k"))) == 2
+}
+
+fn campfire.server.account-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /account/edit: the account settings page."
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => {
+            let empty = campfire.server.http-response(campfire.server.response(200, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+            match db.query("SELECT id, name, join_code, COALESCE(json_extract(settings, '$.restrict_room_creation_to_administrators'), 0), (SELECT COUNT(*) FROM active_storage_attachments WHERE record_type = 'Account' AND name = 'logo' AND record_id = accounts.id) FROM accounts ORDER BY id LIMIT 1", list.empty<DbValue>()) {
+                error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                ok rows => match db.first-row(rows) {
+                    none => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                    some row => {
+                        let viewer-admin = signed.user.role == Role.administrator()
+                        let account-id = int.to-string(campfire.server.int-or-zero(db.optional-int(row, 0)))
+                        let account-name = campfire.server.text-or-empty(db.optional-text(row, 1))
+                        let join-url = string.join([built.campfire.base-url, "/join/", campfire.server.text-or-empty(db.optional-text(row, 2))])
+                        let stamps = campfire.server.chrome-stamps(signed.user.id)
+                        let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
+                        let logo-version = if account-stamp == "" { "" } else { campfire.server.number-stamp(account-stamp) }
+                        let admin = if viewer-admin {
+                            campfire.views.account-admin(account-id, account-name, logo-version, campfire.server.int-or-zero(db.optional-int(row, 3)) != 0, campfire.server.int-or-zero(db.optional-int(row, 4)) > 0)
+                        } else {
+                            campfire.views.account-member(account-name, logo-version)
+                        }
+                        var administrators = list.empty<Html>()
+                        var members = list.empty<Html>()
+                        for user in campfire.server.account-users(viewer-admin, context.avatar-key) {
+                            let rendered = campfire.views.account-user(user, UserId.value(signed.user.id), viewer-admin)
+                            if user.administrator {
+                                administrators = list.append(administrators, rendered)
+                            } else {
+                                members = list.append(members, rendered)
+                            }
+                        }
+                        let head = campfire.views.head-assets(int.to-string(UserId.value(signed.user.id)), signed.user.name, logo-version)
+                        let page = campfire.views.account-page(head, if viewer-admin { "admin" } else { "" }, int.to-string(campfire.server.last-room-visited(signed.user, built.campfire.last-room)), viewer-admin, admin, join-url, campfire.server.padded-url-base64(join-url), campfire.views.account-users(administrators, members), context.app-version)
+                        campfire.server.html-page(empty, campfire.views.text(page))
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.account-read/page {
+    expect campfire.server.test-fixture() == 0
+    let sent = campfire.server.handle(campfire.server.test-get("/account/edit", list.empty<HttpHeader>()), campfire.server.test-context())
+    expect sent.status == 200 && string.contains(sent.body, "<title>Account settings</title>")
+}

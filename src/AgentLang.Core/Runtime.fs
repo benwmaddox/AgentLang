@@ -6097,11 +6097,57 @@ module Runtime =
                 registerFlowAttachmentsOnlyLegacy arguments syntaxVersion document
 
         let registerFlowParsed (arguments: JsonObject) syntaxVersion =
-            let source = requiredFlowString arguments "source"
-            let document =
-                match FlowParser.parseDocumentWithVersion syntaxVersion "<flow-project>" source with
+            let parse file text =
+                match FlowParser.parseDocumentWithVersion syntaxVersion file text with
                 | Ok value -> value
                 | Error diagnostic -> raise (LanguageException diagnostic)
+            let source, document =
+                match arguments["sources"] with
+                | :? JsonArray as rows ->
+                    if arguments.ContainsKey "source" then
+                        flowArgumentError "sources" "either source or sources, not both" "both"
+                    let files =
+                        rows
+                        |> Seq.mapi (fun index row ->
+                            match row with
+                            | :? JsonObject as item ->
+                                let text (name: string) =
+                                    match item[name] with
+                                    | :? JsonValue as value ->
+                                        let mutable found = ""
+                                        if value.TryGetValue<string>(&found) then found
+                                        else flowArgumentError $"sources[{index}].{name}" "a string" "another JSON type"
+                                    | _ -> flowArgumentError $"sources[{index}].{name}" "a string" "missing"
+                                text "file", text "source"
+                            | _ -> flowArgumentError $"sources[{index}]" "an object {file, source}" "another JSON type")
+                        |> Seq.toList
+                    if files.IsEmpty then flowArgumentError "sources" "at least one file" "none"
+                    let documents = files |> List.map (fun (file, text) -> parse file text)
+                    // Each file is checked on its own; names must also be unique across files.
+                    let seenTypes = HashSet<string>(StringComparer.Ordinal)
+                    let seenWords = HashSet<string>(StringComparer.Ordinal)
+                    for item in documents do
+                        let types = (item.Records |> List.map (fun r -> r.Name, r.Span)) @ (item.Scalars |> List.map (fun s -> s.Name, s.Span)) @ (item.Enums |> List.map (fun e -> e.Name, e.Span))
+                        for name, span in types do
+                            if not (seenTypes.Add name) then
+                                error "FLOW_PROJECT_DUPLICATE_TYPE" $"Type name '{name}' is declared more than once in the Flow project." (Some name) (Some span) [] [ name ]
+                        for word in item.Words do
+                            if not (seenWords.Add word.Name) then
+                                error "FLOW_PROJECT_DUPLICATE_WORD" $"Word '{word.Name}' is declared more than once in the Flow project." (Some word.Name) (Some word.Span) [] [ word.Name ]
+                    let combined = files |> List.map snd |> String.concat "\n\n"
+                    combined,
+                    { SyntaxVersion = syntaxVersion
+                      SourceText = combined
+                      Records = documents |> List.collect (fun item -> item.Records)
+                      Scalars = documents |> List.collect (fun item -> item.Scalars)
+                      Enums = documents |> List.collect (fun item -> item.Enums)
+                      Words = documents |> List.collect (fun item -> item.Words)
+                      Tests = documents |> List.collect (fun item -> item.Tests)
+                      Examples = documents |> List.collect (fun item -> item.Examples)
+                      TestFiles = documents |> List.collect (fun item -> item.TestFiles) }
+                | _ ->
+                    let source = requiredFlowString arguments "source"
+                    source, parse "<flow-project>" source
             // Html is built in: declared once, automatically, by the first Flow/2
             // document that uses it (an html template, Html, or html.raw).
             let document =

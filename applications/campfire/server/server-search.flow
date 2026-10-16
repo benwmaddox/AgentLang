@@ -70,15 +70,12 @@ fn campfire.server.search-state(user: AuthUser, raw-q: Option<String>, last-room
             for row in recent-rows {
                 recents = list.append(recents, campfire.server.text-or-empty(db.optional-text(row, 0)))
             }
-            let cookie-room = match last-room { none => 0; some text => campfire.server.ruby-to-i(text) }
-            let remembered = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.id = $roomId", [db.int-param(UserId.value(user.id)), db.int-param(cookie-room)]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
-            let oldest = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId ORDER BY rooms.created_at LIMIT 1", [db.int-param(UserId.value(user.id))]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
             result.ok<SearchState, DbError>(searchState.new(
                 query = if present { option.some<String>(cleaned) } else { option.none<String>() },
                 value = raw-q,
                 messages = messages,
                 recents = recents,
-                return-room = if remembered != 0 { remembered } else { oldest }))
+                return-room = campfire.server.last-room-visited(user, last-room)))
         }
     }
 }

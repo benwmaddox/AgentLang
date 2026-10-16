@@ -45,6 +45,16 @@ module FlowApp =
             failwith $"Flow {operation} failed: {response.ToJsonString()}"
         response
 
+    let private defineFiles engine (files: (string * string) list) =
+        // Each file is parsed on its own (the per-source limits), as one project.
+        let rows = JsonArray()
+        for file, source in files do
+            let row = JsonObject()
+            row["file"] <- JsonValue.Create(file)
+            row["source"] <- JsonValue.Create(source)
+            rows.Add(row)
+        dispatch engine "define" [ "frontend", JsonValue.Create("flow") :> JsonNode; "syntaxVersion", JsonValue.Create(2) :> JsonNode; "sources", rows :> JsonNode ]
+
     let private define engine (source: string) =
         dispatch engine "define"
             [ "frontend", JsonValue.Create("flow") :> JsonNode
@@ -97,7 +107,8 @@ module FlowApp =
             Runtime.Engine(projectDirectory, capabilities, "2026-01-01T00:00:00Z",
                            fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities, hostOperations = environment)
         let hostStdlibSources = hostStdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
-        define engine (String.concat "\n\n" (hostStdlibSources @ appSources))
+        let named = (List.zip (hostStdlibFiles |> List.map (fun name -> "stdlib/" + name)) hostStdlibSources) @ (List.zip (sourcePaths |> List.map Path.GetFileName) appSources)
+        defineFiles engine named |> ignore
         dispatch engine "commit" [] |> ignore
         { Engine = engine; App = app; ContextType = contextType; Provider = provider; Worker = worker }
 
