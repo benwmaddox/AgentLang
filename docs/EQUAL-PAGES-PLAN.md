@@ -204,7 +204,10 @@ runners for partials), diff, and port until 0 differing blocks.
    - search;
    - users and avatars;
    - account;
-   - sign-in and sign-out (bcrypt needs a decision);
+   - sign-in and sign-out. Passwords: Rails' bcrypt digests are verified and created
+     with the system libxcrypt `crypt_r()` as a native host op (user, 2026-10-16:
+     libcrypto has no bcrypt; chosen over vendoring OpenBSD bcrypt or a new KDF).
+     Linux server only; a Windows host would need its own decision;
    - message and boost writes, with sanitization inbound when writes land.
 
 ## Typed schema and validated migration (user, 2026-10-15)
