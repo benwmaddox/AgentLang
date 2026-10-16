@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — Campfire port</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html" aria-current="page">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>The Campfire port</h1>
+
+<p class="lede">From 11 October, the project's priority became porting
+Campfire to Flow and serving it natively. Campfire is 37signals' open-source
+Rails chat app, MIT-licensed. The read side reached byte-for-byte equality
+with Rails. The native server runs at 0.6–0.8× the throughput of a hand-written
+Rust port in a fraction of the memory. The write side and real-time features
+were not finished.</p>
+
+<h2>How the port proceeded</h2>
+<table>
+<thead><tr><th>Reports</th><th>Dates</th><th>Step</th></tr></thead>
+<tbody>
+<tr><td>234–245</td><td>11–12 Oct</td><td>Policies (message administration, request and session policy, cookies), SQLite persistence, session restore, sign-in and logout. These ran in the interpreter behind a .NET Kestrel host adapter.</td></tr>
+<tr><td>246–258</td><td>12–13 Oct</td><td>Export of verified entry IR, then a native AOT room-page host: SQLite adapter, owning lists, message markup and a release profile.</td></tr>
+<tr><td><a href="../259-campfire-room-benchmark.md">259</a></td><td>13 Oct</td><td>First benchmark. Labelled <em>not apples-to-apples</em>: Flow served a 10 KB contract-minimal page, while Rails and Rust served the full ~420 KB page.</td></tr>
+<tr><td>260–272</td><td>13–14 Oct</td><td>Language work driven by the page:
+  <ul class="tight">
+    <li>list traversal without instruction limits;</li>
+    <li>compact blocks;</li>
+    <li>UTF-8 strings;</li>
+    <li>HTML templates and a built-in <code>Html</code> type;</li>
+    <li>Rails message partials;</li>
+    <li>CSRF tokens;</li>
+    <li>the stdlib.</li>
+  </ul></td></tr>
+<tr><td><a href="../281-portable-flow-server-linux.md">273–281</a></td><td>14–15 Oct</td><td>CSRF in Flow, OS crypto, and a portable C HTTP host. Campfire ran on Linux (WSL2), where the fair comparison could happen.</td></tr>
+<tr><td><a href="../282-linux-concurrency-sweep.md">282</a>–<a href="../284-per-worker-store.md">284</a></td><td>15 Oct</td><td>Fair interleaved Linux sweep at 16–128 connections, forgery protection matching Rust, and a per-worker fragment store.</td></tr>
+<tr><td><a href="../285-equal-pages.md">285</a></td><td>15–16 Oct</td><td>Equal pages: Rails' rich-text pipeline mirrored in Flow, so Flow's pages are Rails' bytes. More routes followed: paging, sidebar, search, users, avatars and account.</td></tr>
+</tbody>
+</table>
+
+<h2>How parity was proven</h2>
+<p>Parity was decided by comparing bytes against the running Rails reference on
+the same database snapshot, not by review. The method:</p>
+<ol>
+  <li>Run the pinned Rails app on a fixed snapshot, and capture each page and
+  partial with Rails-issued sessions.</li>
+  <li>For computed fields, run a <strong>Rails oracle</strong> (<code>rails
+  runner</code>) that prints the reference value for every input. Examples are
+  message presentations, signed IDs and ETags.</li>
+  <li>Make the Flow server produce the same bytes, with one exception: Rails'
+  CSRF elements, which Flow and Rust both leave out by design.</li>
+  <li>Keep a page-check harness that diffs every route on every build.</li>
+</ol>
+<p>That made "done" objective and caught many subtle details:</p>
+<ul>
+  <li>ERB whitespace and trim rules;</li>
+  <li>Ruby's shortest round-trip <code>Float#to_s</code> for image dimensions;</li>
+  <li>CRC-32 avatar colours;</li>
+  <li><code>fresh_when</code>'s weak ETag: SHA-256 of
+  <code>[messages, template digest]</code>, cut to 32 hex digits;</li>
+  <li>ActiveStorage signed blob IDs (PBKDF2, then HMAC-SHA1);</li>
+  <li>Turbo signed stream names;</li>
+  <li><code>CGI.escape</code> and Rack form decoding;</li>
+  <li>FTS5 porter-stemmed search.</li>
+</ul>
+
+<h3>Byte-identical routes (Rails without CSRF)</h3>
+<table>
+<thead><tr><th>Route</th><th>Cases checked</th></tr></thead>
+<tbody>
+<tr><td>Room page <code>/rooms/&lt;id&gt;</code></td><td>Benchmark room (417,052 bytes); room 654632876 (sounds, embeds, mentions, attachments, emoji; 356,704 bytes); a direct room</td></tr>
+<tr><td><code>/rooms/&lt;id&gt;/@&lt;message&gt;</code></td><td>An 81-message window (812,594 bytes); an unknown message falling back to the last page</td></tr>
+<tr><td><code>/rooms/&lt;id&gt;/messages?before=|after=</code></td><td>Both directions (384,885 bytes), 204 on empty, 304 on matching validators, 404s; ETag, Last-Modified and Cache-Control equal to Rails'</td></tr>
+<tr><td><code>/users/me/sidebar</code></td><td>Admin and member views</td></tr>
+<tr><td>Search</td><td>Four cases, including FTS5 porter stemming</td></tr>
+<tr><td><code>/users/&lt;id&gt;</code></td><td>Seven cases, including 404 with Rails' <code>public/404.html</code></td></tr>
+<tr><td>Avatars</td><td>Initials SVG, uploaded image variant, default bot avatar, with response headers</td></tr>
+<tr><td><code>/account/edit</code></td><td>Admin and member views</td></tr>
+<tr><td>Message presentation (oracle)</td><td>All 169 messages: 164 text and sound messages, plus 5 attachments</td></tr>
+</tbody>
+</table>
+
+<p class="note">Honest caveat on how templates were produced: the large static
+markup segments were cut by scripts from Rails' own rendered pages into
+checked Flow templates. The dynamic holes, the data access and every computed
+field were written in Flow. It is a faithful port of the behaviour, but not a
+line-by-line translation of the ERB, and the method relies on having the
+reference app running.</p>
+
+<h2>Performance</h2>
+<p>This is the fair Linux sweep from <a href="../285-equal-pages.md">report 285</a>.
+All three servers ran natively in WSL2 on the same snapshot, each pinned to
+4 vCPUs, with the load generator on separate vCPUs. There were 3 interleaved
+repetitions of 6 configurations, every response was validated, and the
+protocol was declared before the first run.</p>
+<table>
+<thead><tr><th>Room page (417 KB)</th><th class="num">Requests/s (peak)</th><th class="num">CPU ms / request</th><th class="num">p50 / p99 at 16 conn.</th><th class="num">Memory (PSS)</th></tr></thead>
+<tbody>
+<tr><td><strong>Flow, uncached</strong></td><td class="num">1,221</td><td class="num">3.34</td><td class="num">9.9 / 39.4 ms</td><td class="num">15 MB</td></tr>
+<tr><td>Rust, uncached</td><td class="num">1,554</td><td class="num">2.40</td><td class="num">9.8 / 21.0 ms</td><td class="num">88 MB</td></tr>
+<tr><td>Rails, uncached</td><td class="num">21 (wait-bound)</td><td class="num">150</td><td class="num">~744 / 1,000 ms</td><td class="num">~815 MB</td></tr>
+<tr><td><strong>Flow, cached</strong></td><td class="num">5,916</td><td class="num">0.67</td><td class="num">—</td><td class="num">48 MB</td></tr>
+<tr><td>Rust, cached</td><td class="num">9,868</td><td class="num">0.40</td><td class="num">—</td><td class="num">52 MB</td></tr>
+<tr><td>Rails, cached</td><td class="num">174 (wait-bound)</td><td class="num">19.0</td><td class="num">—</td><td class="num">~775 MB</td></tr>
+</tbody>
+<caption>"Cached" means message-fragment caches only (Redis for Rails, in-process for Rust and Flow), with no full-response cache. A quick re-run on 16 October matched within single-run noise.</caption>
+</table>
+
+<div class="grid2">
+  <div class="card good">
+    <h4>What the numbers support</h4>
+    <ul>
+      <li>Uncached, Flow reaches 0.8× Rust's throughput at about 1.4× its
+      CPU per request. Flow serves Rails' exact page; Rust's differs from it
+      by 925 bytes.</li>
+      <li>Memory is a sixth of Rust's uncached, and similar cached.</li>
+      <li>Against Rails: 35–60× the throughput, at about 1/50th of the memory
+      uncached (15 vs ~815 MB) and about 1/16th cached (48 vs ~775 MB).</li>
+      <li>Every cell validated, with zero invalid responses across 72 cells
+      in 282 and every 285 lifetime.</li>
+    </ul>
+  </div>
+  <div class="card bad">
+    <h4>What they do not support</h4>
+    <ul>
+      <li>Rails never saturated its CPUs (3 puma workers, wait-bound), so the
+      Rails gap is real but not a clean peak comparison.</li>
+      <li>Flow's p99 is about twice Rust's, and cached Flow is at 0.6×.</li>
+      <li>Matching Rails' rich-text pipeline cut Flow's uncached throughput
+      from 3,488 to 1,221 req/s (284 → 285). Rendering uses about 650 KB of
+      arena per message for about 10 KB of HTML.</li>
+      <li>These are the project's own benchmarks on one machine, not an
+      independent benchmark.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>What is missing</h2>
+<p>Campfire is a chat app, and the hard parts of a chat app were not ported.</p>
+<ul>
+  <li><strong>Real-time.</strong> There are no ActionCable or Turbo Stream
+  WebSockets, so live message delivery does not exist.</li>
+  <li><strong>Writes on the native server.</strong> Posting messages, boosts,
+  <code>POST /searches</code> and clearing, with inbound sanitization. Message
+  creation worked only in the earlier interpreter and .NET slice (242).</li>
+  <li><strong>Sign-in and out on the portable server.</strong> A bcrypt
+  decision was made (system libxcrypt on Linux, vendored crypt_blowfish on
+  Windows), but the work wasn't finished.</li>
+  <li><strong>Other pages and parts:</strong>
+    <ul>
+      <li>account logo upload;</li>
+      <li>room creation with <code>restrict_room_creation</code>;</li>
+      <li>bots and webhooks;</li>
+      <li>push notifications;</li>
+      <li>background jobs;</li>
+      <li>file uploads;</li>
+      <li>asset serving parity;</li>
+      <li>deployment.</li>
+    </ul></li>
+  <li><strong>Approximations.</strong>
+    <ul>
+      <li>Plain text for lists, quotes and captions (used only for emoji
+      detection and URL comparison).</li>
+      <li>ASCII-only initials upper-casing.</li>
+      <li>Metadata dimensions in exponent form.</li>
+    </ul></li>
+  <li><strong>A typed schema and validated migrations</strong> were planned and
+  not built.</li>
+</ul>
+
+<h2>Assessment</h2>
+<p>The port is the project's most convincing artifact. It proves that the
+language can express a real application <em>exactly</em> and serve it
+efficiently, and that oracle-driven porting works. It is also where the
+language's gaps cost the most time. Every missing stdlib function or
+operator became a detour, and builds took 5–10 minutes for most of this phase.
+The read side of a chat app is the easy part. Real-time delivery and writes,
+where Campfire's complexity actually lives, were not reached in 13 days.</p>
+
+<div class="pager"><a href="language.html">← Language &amp; runtime</a><a href="toolchain.html">Build &amp; interactivity →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>

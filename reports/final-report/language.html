@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — language and runtime</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html" aria-current="page">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>The language and runtime</h1>
+
+<p class="lede">Flow is a small, strictly typed data-flow language with
+C-family syntax. It compiles to one verified typed IR. An interpreter runs that
+IR for tests and development, and an LLVM backend runs it natively for serving.
+It turned out to be a good target for exact, safe, efficient code. It was a poor
+place to write code quickly.</p>
+
+<h2>What it looks like</h2>
+<p>A database-reading function from the Campfire port. Effects are declared,
+every function has documentation, and an attached test follows it:</p>
+<pre><code>fn campfire.server.last-room-visited(user: AuthUser, last-room: Option&lt;String&gt;) -&gt; Int {
+    effects db.read
+    doc "TrackedRoomVisit#last_room_visited: the last_room cookie's room when it is one of
+         the user's, else the user's oldest room; 0 when the user has none."
+    let cookie-room = match last-room { none =&gt; 0; some text =&gt; campfire.server.ruby-to-i(text) }
+    let remembered = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ...
+                                     WHERE memberships.user_id = $userId AND rooms.id = $roomId",
+                                     [db.int-param(UserId.value(user.id)), db.int-param(cookie-room)]) {
+        error failure =&gt; 0
+        ok rows =&gt; match db.first-row(rows) { none =&gt; 0; some row =&gt; db.int(row, 0) } }
+    ...
+    if remembered != 0 { remembered } else { oldest }
+}
+
+test campfire.server.last-room-visited/fallback {
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    expect campfire.server.last-room-visited(user, option.some&lt;String&gt;("2")) == 1
+}</code></pre>
+<p>HTML is written as compile-checked templates. The checker rejects a hole
+in an attribute-name position or an unclosed element:</p>
+<pre><code>fn campfire.views.lightbox() -&gt; Html {
+    effects none
+    html"""    &lt;dialog class="lightbox" aria-label="Image Viewer (Press escape to close)" ...&gt;
+  &lt;img src="" class="lightbox__image" data-lightbox-target="zoomedImage" /&gt;
+  ...
+"""
+}</code></pre>
+
+<h2>Architecture</h2>
+<table>
+<thead><tr><th>Layer</th><th>What it does</th><th class="num">Size</th></tr></thead>
+<tbody>
+<tr><td>Frontends</td><td>Flow/1 and Flow/2 parsers (C-family syntax), plus the original Stack/RPN frontend (kept for history). All lower to the same checked AST.</td><td class="num">~2k lines</td></tr>
+<tr><td>Checker and lowering</td><td>Type inference and checking, nominal and refined types, records, enums, Option/Result, exhaustive matches, effects. Flow lowering resolves calls and records call-site bindings.</td><td class="num">~6k lines</td></tr>
+<tr><td>Verified typed IR</td><td>One immutable, verified program per dictionary snapshot. Each snapshot is fingerprinted, and every backend and test body checks the fingerprint.</td><td class="num">~1.5k lines</td></tr>
+<tr><td>Interpreter</td><td>Executes verified IR. It enforces runtime value limits, tracks coverage and isolates test providers.</td><td class="num">~2k lines</td></tr>
+<tr><td>Runtime and dictionary</td><td>The JSON-lines command protocol, define, commit, replace, rename, history, tasks and snapshots. Library gates and test running.</td><td class="num">~8.6k lines</td></tr>
+<tr><td>Storage</td><td>Content-addressed source objects, a manifest per generation, an atomic pointer, and a crash-safe write order.</td><td class="num">~2k lines</td></tr>
+<tr><td>LLVM backend</td><td>"Owning" native lowering of the same IR. It produces arena-allocated values, a C runtime and host adapters (Windows HTTP.sys, portable POSIX, SQLite, crypto).</td><td class="num">~14k F# + ~27k C</td></tr>
+</tbody>
+</table>
+
+<h2>Design choices, judged</h2>
+<table>
+<thead><tr><th>Choice</th><th>Verdict</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>One verified IR shared by interpreter and native code</td><td><span class="tag good">Keep</span></td><td>Tests run fast in the interpreter and the server runs natively, with no semantic drift. This made byte-exact parity possible.</td></tr>
+<tr><td>Declared, enforced effects, plus capabilities granted by the host</td><td><span class="tag good">Keep</span></td><td>"Can this code touch the database or files?" is visible in every signature and enforced. No mainstream web stack enforces this.</td></tr>
+<tr><td>Compile-checked HTML templates with typed <code>Html</code> / <code>RichHtml</code></td><td><span class="tag good">Keep</span></td><td>It is structurally hard to write XSS. It forced safer designs; one rejected design was <code>&lt;input {value}class=…&gt;</code>. The cost: templates can't leave an element open, so some partials had to be restructured.</td></tr>
+<tr><td>Nominal and refined types, exhaustive matching</td><td><span class="tag good">Keep</span></td><td>These caught real mistakes before commit, in agent studies and in the port.</td></tr>
+<tr><td>A mandatory attached test for every committed function</td><td><span class="tag mixed">Mixed</span></td><td>It kept the codebase continuously exercised and made changes checkable. It did not certify correct behaviour. It added friction (one test per word, even trivial ones) and invited tests that echo the implementation.</td></tr>
+<tr><td>Full coverage and finite-case qualification for library words</td><td><span class="tag mixed">Mixed</span></td><td>Rigorous, but expensive for agents and still blind to wrong expected values.</td></tr>
+<tr><td>Code as a dictionary of words edited through commands, not files</td><td><span class="tag bad">Reconsider</span></td><td>It made changes atomic and inspectable. In the later matched comparisons, agents also needed about 1.7–5× more broker exchanges than F# agents editing files, and the "Campfire as files" build had to bolt a <code>sources</code> file mode onto <code>define</code>.</td></tr>
+<tr><td>No lambdas, statically named callbacks only</td><td><span class="tag bad">Reconsider</span></td><td>It kept effects and types simple, but made ordinary code awkward: list processing, sorting, callbacks carrying context.</td></tr>
+<tr><td>Per-request arena memory, owning value stack natively</td><td><span class="tag mixed">Mixed</span></td><td>It gives very low, predictable memory (15–48 MB per server) and needs no GC. But rendering uses about 650 KB of arena per message for about 10 KB of HTML, because strings are built by immutable concatenation.</td></tr>
+<tr><td>Crypto only from OS libraries (BCrypt, libcrypto, libxcrypt)</td><td><span class="tag good">Keep</span></td><td>Correct policy. Flow composed protocols such as signed IDs, the ActiveStorage verifier and CSRF tokens on top of trusted primitives.</td></tr>
+</tbody>
+</table>
+
+<h2>Strengths and weaknesses</h2>
+<div class="grid2">
+  <div class="card good">
+    <h3>Strengths</h3>
+    <ul>
+      <li><strong>Safety by construction.</strong>
+        <ul>
+          <li>Effects in types.</li>
+          <li>Templates with no unsafe holes.</li>
+          <li>The database, files and crypto reachable only through narrow host
+          operations, and literal-only SQL enforced at build.</li>
+        </ul></li>
+      <li><strong>Exactness.</strong>
+        <ul>
+          <li>The port reproduces Rails' bytes, including Ruby's
+          <code>Float#to_s</code>, CRC-32 avatar colours, weak ETags, CGI
+          escaping and Rack form decoding.</li>
+          <li>The language could express every one of those precisely.</li>
+        </ul></li>
+      <li><strong>Efficiency.</strong> Native throughput is near Rust's, memory
+      is tiny, and there are no GC pauses.</li>
+      <li><strong>Determinism.</strong> The same IR gives the same answers in the
+      interpreter and natively. Tests are isolated through fresh virtual
+      providers.</li>
+      <li><strong>Inspectability.</strong> Stable word IDs, revision history,
+      structured error codes, and call-site bindings recorded per source site.</li>
+    </ul>
+  </div>
+  <div class="card bad">
+    <h3>Weaknesses</h3>
+    <ul>
+      <li><strong>Missing basics.</strong>
+        <ul>
+          <li>No lambdas or closures.</li>
+          <li>No <code>&lt;</code> or <code>&gt;</code> on strings, no bitwise
+          operators.</li>
+          <li><code>match</code> can't be a statement, and <code>break</code> must
+          be last in its block.</li>
+          <li>Option handling is verbose.</li>
+          <li>Several builtins have no native lowering (<code>string.trim</code>,
+          <code>list.tail</code>, <code>int.max</code>). Code that passed in the
+          interpreter failed the native build.</li>
+        </ul></li>
+      <li><strong>No ecosystem.</strong> For one app, the port hand-wrote:
+        <ul>
+          <li>CRC-32, using arithmetic in place of XOR;</li>
+          <li>Base64 byte helpers and URL form encoding;</li>
+          <li>an HTML5 tag tokenizer and an auto-linker;</li>
+          <li>a decimal float parser and civil-date arithmetic;</li>
+          <li>Ruby's <code>to_sentence</code> and <code>truncate</code>.</li>
+        </ul>
+        There is no ORM, no migrations, no background jobs, no WebSockets and no
+        mailer.</li>
+      <li><strong>Parser and tool limits.</strong>
+        <ul>
+          <li>A 100,000-token limit per define.</li>
+          <li>Template rules that fight partial markup.</li>
+          <li>Escaping problems in generated sources.</li>
+        </ul></li>
+      <li><strong>Bus factor.</strong> The compiler, runtime, native host and
+      standard library are all bespoke, so every gap is the project's to fix.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Example of the cost: CRC-32 without bitwise operators</h3>
+<p>Campfire picks avatar colours with Ruby's <code>Zlib.crc32</code>. Flow has no
+XOR, so the port emulates it bit by bit with division and remainder:</p>
+<pre><code>// value ^= 0xEDB88320
+var poly = 3988292384
+var result = 0
+var place = 1
+var left = value
+for k in 0..32 {
+    if left % 2 != poly % 2 { result = result + place }
+    left = left / 2
+    poly = poly / 2
+    place = place * 2
+}</code></pre>
+<p>It is correct and tested against zlib's values, but it is about 40 lines
+for what is one operator elsewhere. Several hand-written stdlib pieces look
+like this.</p>
+
+<h2>The native memory and concurrency research</h2>
+<p>From day 4, a second track explored a native runtime built around arenas,
+an owning value stack and Erlang-style mailboxes. It ran in parallel with the
+agent studies (reports 103–214).</p>
+<ul>
+  <li><span class="tag good">Worked</span> Inline nested values with
+  independent owners, arena rewinds during a handler, and native mailboxes with
+  suspension and real I/O correctness (128, 130, 131, 133).</li>
+  <li><span class="tag mixed">Mixed</span> In the matched mailbox load test
+  (<a href="../140-matched-mailbox-load.md">140</a>), native process memory was
+  lower than the F# reference. Native RETURN mode's best short-run point
+  (8,000/s) failed its 30-second confirmation, so no throughput advantage was
+  established. With a 5 ms delay, native and F# qualified at the same rate.</li>
+  <li><span class="tag bad">Did not qualify</span> In the completion-service
+  diagnostic (<a href="../214-completion-service-diagnostic.md">214</a>),
+  every overload group failed rejection qualification. No arena policy won.</li>
+</ul>
+<p>The track was set aside when the priority moved to native Campfire. The
+Campfire server ended up with a simpler model: one arena per request per
+worker, a per-worker store, and no mailboxes. That model performed well (see
+<a href="campfire.html">Campfire port</a>). The more ambitious async-arena
+design was never validated.</p>
+
+<h2>Compared with mainstream web stacks</h2>
+<table>
+<thead><tr><th></th><th>Flow (AgentLang)</th><th>Rails / Django</th><th>Go</th><th>Rust (Axum)</th><th>TypeScript (Node)</th><th>Elixir (Phoenix)</th><th>ASP.NET Core</th></tr></thead>
+<tbody>
+<tr><td>Throughput / CPU</td><td>High: 0.6–0.8× Rust</td><td>Low</td><td>High</td><td>Highest</td><td>Medium</td><td>Medium–high</td><td>High</td></tr>
+<tr><td>Memory</td><td>Very low (15–48 MB)</td><td>High</td><td>Low</td><td>Low</td><td>Medium</td><td>Medium</td><td>Medium</td></tr>
+<tr><td>XSS safety</td><td>Checked templates, no unsafe holes</td><td>Auto-escape; <code>raw</code> is easy</td><td>Context escaping</td><td>Escaping templates</td><td>JSX escaping</td><td>HEEx escaping</td><td>Razor escaping</td></tr>
+<tr><td>Effects visible and enforced</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
+<tr><td>Tests</td><td>Required per function</td><td>Optional</td><td>Optional</td><td>Optional</td><td>Optional</td><td>Optional</td><td>Optional</td></tr>
+<tr><td>Ecosystem</td><td>Almost none</td><td>Huge</td><td>Large</td><td>Large</td><td>Huge</td><td>Medium</td><td>Large</td></tr>
+<tr><td>Database layer</td><td>Literal SQL, hand row mapping</td><td>ORM + migrations</td><td>sqlc/GORM</td><td>sqlx/Diesel</td><td>Prisma/Drizzle</td><td>Ecto</td><td>EF Core</td></tr>
+<tr><td>Real-time</td><td>None</td><td>ActionCable/Channels</td><td>Libraries</td><td>Libraries</td><td>Libraries</td><td>Excellent</td><td>SignalR</td></tr>
+<tr><td>Edit–run loop</td><td>~0.2 s per word now; 5–10 min builds for most of the project</td><td>Instant reload</td><td>Fast</td><td>Slow</td><td>Fast</td><td>Fast</td><td>Medium</td></tr>
+<tr><td>Agents already know it</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Partly</td><td>Yes</td></tr>
+</tbody>
+</table>
+
+<h2>How useful is it?</h2>
+<div class="grid2">
+  <div class="card bad">
+    <h4>As a production web stack: not useful</h4>
+    <p>Rails or Django ship features faster. Go, Rust or ASP.NET match or beat
+    the performance with mature ecosystems. Flow's speed over Rails is real,
+    but mainstream compiled stacks already provide it without building a
+    language.</p>
+  </div>
+  <div class="card mixed">
+    <h4>As a research vehicle: valuable, but now finished</h4>
+    <p>A small number of language properties were valuable together, and few
+    mainstream stacks combine them:</p>
+    <ul>
+      <li>effects that are visible and enforced;</li>
+      <li>no possible XSS;</li>
+      <li>every function tested;</li>
+      <li>native density.</li>
+    </ul>
+    <p>The most plausible niche is sandboxed, agent-generated or multi-tenant
+    code, where capability control matters more than ecosystem. Most of those
+    properties can be approximated in an existing language with lint rules,
+    typed template libraries and CI gates. That is cheaper to test first (see
+    <a href="lessons.html">Lessons</a>).</p>
+  </div>
+</div>
+
+<div class="pager"><a href="hypothesis.html">← Agent research</a><a href="campfire.html">Campfire port →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>

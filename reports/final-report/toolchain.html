@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — build time and interactivity</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html" aria-current="page">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>Build time and interactivity</h1>
+
+<p class="lede">For most of the project, building the Campfire server took
+over ten minutes, and adding one function to a loaded project took 99 seconds.
+The developer asked for Forth-like interactivity on the final day. Eight pull
+requests brought adding or replacing a function under a second, made the
+verified build more than 15× faster, and added a two-part build. The cost was a
+second, incremental compile path, which is now the project's most intricate
+code.</p>
+
+<h2>Starting point</h2>
+<table>
+<thead><tr><th>Operation (Campfire, 445 Flow words, ~500 attached cases)</th><th class="num">Before</th></tr></thead>
+<tbody>
+<tr><td>Emit the native module (load project, run all tests, lower to LLVM)</td><td class="num">603 s</td></tr>
+<tr><td>Full server build (emit plus clang O2 plus link)</td><td class="num">&gt; 10 min</td></tr>
+<tr><td>Define one new word in the loaded project</td><td class="num">99 s</td></tr>
+<tr><td>Commit that word (runs its tests, publishes to storage)</td><td class="num">~8 min</td></tr>
+</tbody>
+</table>
+<p>Profiling showed no single culprit. It found accumulated per-item work that
+should have been per-batch, and whole-program work repeated for every
+operation:</p>
+<ul>
+  <li>Program-level checks were redone for every one of ~500 attached test
+  cases.</li>
+  <li>Commit compiled the same dictionary four times, for proposed, durable,
+  final and final-durable states.</li>
+  <li>Every compile re-lowered every word and attachment from source, even when
+  one word changed.</li>
+  <li>There were quadratic scans: the effective word map was rebuilt once per
+  word in commit selection, and list-append closures ran over the whole batch.</li>
+  <li>Publish re-read and re-hashed every stored object about three times per
+  commit.</li>
+  <li>The interpreter re-checked runtime value limits over the whole stack after
+  every instruction. It did so through lazy sequences, and looked up source
+  sites in an ordered map with structural key comparison.</li>
+</ul>
+
+<h2>What changed, PR by PR</h2>
+<table>
+<thead><tr><th>PR</th><th>Change</th><th>Effect on the Campfire probe</th><th class="num">Diff</th></tr></thead>
+<tbody>
+<tr><td>#1</td><td>Reuse compiled snapshots across commit's four states. Check program-level facts once per batch, not once per case.</td><td>Emit 603 → ~60 s; full build &gt; 10 min → 78 s; define 99 → 5.8 s; commit ~8 min → 14.9 s</td><td class="num">+233 / −31</td></tr>
+<tr><td>#2</td><td>Skip the caller and type-evolution scans on a pure add.</td><td>Commit 14.9 → 7.3 s</td><td class="num">+146 / −42</td></tr>
+<tr><td>#3</td><td>Make the snapshot fingerprint a hash of per-entry digests, memoized per word.</td><td>Groundwork for #4</td><td class="num">+31 / −4</td></tr>
+<tr><td>#4</td><td><strong>Live dictionary, adds.</strong> Extend the running snapshot: compile only new words and their cases, and keep every earlier definition bound to the program it was verified in.</td><td>Define 6.0 → 0.3 s; commit 7.1 → 1.4 s</td><td class="num">+586 / −46</td></tr>
+<tr><td>#5</td><td>Make extend cost proportional to the change. Publish skips unchanged objects.</td><td>Define → 0.2 s; commit → 0.6–0.8 s</td><td class="num">+230 / −100</td></tr>
+<tr><td>#6</td><td><strong>Two-part build.</strong> An unverified O0 exe first, then the verified O2 build.</td><td>Unverified exe at 18.7 s; verified at 81 s</td><td class="num">+125 / −19</td></tr>
+<tr><td>#7</td><td><strong>Live dictionary, replacement.</strong> Recompile the changed words, their transitive callers, and every case or test file that reaches them. The commit gate also runs tests that reach the change.</td><td>Replace: define 5.7 → 0.3 s; commit 6.1 → 0.7 s</td><td class="num">+524 / −110</td></tr>
+<tr><td>#8</td><td>Commits that change only status re-fingerprint instead of recompiling. Faster test running (dispatch, source-site and value-check costs). Quadratic commit scans removed.</td><td>Full verified commit 36.5 → ~11 s (tests 22.6 → ~8.5 s); two-part build 81 → 54.7 s</td><td class="num">+225 / −29</td></tr>
+</tbody>
+</table>
+
+<h2>Where it ended</h2>
+<div class="grid3">
+  <div class="stat"><div class="big">0.2 s</div><div class="label">define a new word (was 99 s)</div></div>
+  <div class="stat"><div class="big">0.5 s</div><div class="label">commit it, running its tests and publishing (was ~8 min)</div></div>
+  <div class="stat"><div class="big">0.4 / 0.7 s</div><div class="label">replace a word that has callers: define / commit (was 5.7 / 6.1 s)</div></div>
+  <div class="stat"><div class="big" id="fast-build">16.5 s</div><div class="label">to a runnable, unverified Campfire exe (warm)</div></div>
+  <div class="stat"><div class="big" id="verified-build">~38 s</div><div class="label">for the verified O2 build on its own, with every attached test (54.7 s for both parts back to back; was &gt; 10 min)</div></div>
+  <div class="stat"><div class="big">~11 s</div><div class="label">commit of the whole project with every test (was 36.5 s at the start of #8)</div></div>
+</div>
+
+<h2>The live dictionary (the Forth model)</h2>
+<p>In Forth, a definition is added to a running dictionary, and earlier words
+keep the code they were compiled against. The final design does the same
+thing over a verified program:</p>
+<ul>
+  <li><strong>Extend, don't rebuild.</strong> If a new state only adds Flow words,
+  the new snapshot reuses the running one and verifies only the new functions.
+  The check is that every other entry is the same object; history is
+  ignored. Earlier test bodies stay bound to the program they were verified
+  in, which the new program contains unchanged.</li>
+  <li><strong>Replace by caller closure.</strong> A changed word is recompiled
+  together with everything that can reach it:
+    <ul>
+      <li>its transitive callers over the IR call graph (validator calls through
+      generated constructors count);</li>
+      <li>every case that calls one of them;</li>
+      <li>every test-file overlay that can reach one of them.</li>
+    </ul>
+  The verifier rejects any kept function that still calls a replaced one.</li>
+  <li><strong>Re-stated, not recompiled.</strong> When a commit only changes
+  word or type status, the IR is identical, so only the snapshot fingerprint
+  changes. Lowering never reads status or maturity.</li>
+  <li><strong>Guards that force a full compile:</strong>
+    <ul>
+      <li>An added word whose short name some unqualified call site already
+      requested. Flow resolves unqualified calls by short name, so this could
+      rebind the call.</li>
+      <li>A replaced type validator.</li>
+      <li>A Stack-authored word or case in the closure.</li>
+      <li>A closure larger than a third of the dictionary.</li>
+    </ul></li>
+</ul>
+
+<h3>How it is kept honest</h3>
+<p>With <code>AGENTLANG_INCREMENTAL_CHECK=1</code>, every incremental snapshot is
+also compiled from scratch and compared. The comparison covers:</p>
+<ul>
+  <li>functions, types, generated targets, the source map and coverage;</li>
+  <li>every test, expectation and example body;</li>
+  <li>stored call bindings;</li>
+  <li>whether any body bound to an earlier program could still reach a changed
+  function, which IR comparison alone cannot see.</li>
+</ul>
+<p>Every suite was run in both modes before each merge. On the final runs,
+311 incremental snapshots in Flow.Runtime and 61 across the FlowHttp and
+Campfire suites all matched a full compile. New test groups exercise
+adding, replacing, test-file overlays, the shadowing fallback and reopening
+a project.</p>
+
+<h3>A real bug it surfaced</h3>
+<p>A test was attached to one word but called a caller of a replaced word.
+Replacing that word did not run the test, and the full-compile path had the
+same gap. The commit gate ran only the tests of words whose
+<em>bodies</em> call the change. It now also runs the tests of every owner
+with a case whose compiled body reaches the change. That fits "all tests run
+against all code". It is also a behaviour change: some replacements now run
+more tests.</p>
+
+<h2>Two-part build</h2>
+<p><code>scripts/Build-CampfireFlowServer.ps1 -TwoPart</code> runs in two parts.</p>
+<ul>
+  <li><strong>Part 1</strong> defines but doesn't commit, so it runs no tests,
+  then compiles at O0. The code is still parsed, type-checked and
+  IR-verified. The output is marked <code>UNVERIFIED.txt</code>.</li>
+  <li><strong>Part 2</strong> is the normal verified build: commit, every
+  attached test, then O2. A failing test fails part 2.</li>
+</ul>
+<p>The FlowHttp tests build an app unverified and run the same parity and
+protocol checks against it.</p>
+
+<h2>Assessment</h2>
+<div class="grid2">
+  <div class="card good">
+    <h4>Good</h4>
+    <ul>
+      <li>The goal was met. Defining, committing and replacing a word all take
+      well under a second, with every relevant test still run.</li>
+      <li>Most gains came from ordinary engineering: caching per batch,
+      removing quadratic scans, and skipping redundant I/O. None of it
+      weakened a check.</li>
+      <li>The differential check made the fast path safe to ship, and found a
+      gap in the original semantics.</li>
+    </ul>
+  </div>
+  <div class="card bad">
+    <h4>Bad</h4>
+    <ul>
+      <li>It came too late. Most of the project ran on a 5–10 minute loop,
+      which shaped every other result.</li>
+      <li>The incremental path is a second compiler path. The eight PRs added
+      about 2,100 lines in total, most of the incremental path in #3, #4, #5
+      and #7. Its soundness rests on unenforced invariants: lowering
+      ignores status, unqualified calls resolve by short name, and retained
+      entries keep object identity.</li>
+      <li>The differential check is opt-in through an environment variable,
+      and CI is manual. If an invariant breaks, nothing catches it unless a
+      checked test exercises that case.</li>
+      <li>Identity-based caching is fast but fragile. A refactor that copies
+      objects silently turns the fast path off. It fails slow, not wrong.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pager"><a href="campfire.html">← Campfire port</a><a href="lessons.html">Lessons →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>

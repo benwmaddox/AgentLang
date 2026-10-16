@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — appendix</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html" aria-current="page">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>Appendix</h1>
+
+<h2>Timeline</h2>
+<table>
+<thead><tr><th>Day</th><th>Date</th><th class="num">Commits</th><th>Reports</th><th>Main activity</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>4 Oct</td><td class="num">10</td><td>001–007</td><td>First usable prototype: typed stack vocabulary, durable project state, introspection, the first subagent vocabulary pilot.</td></tr>
+<tr><td>2</td><td>5 Oct</td><td class="num">36</td><td>008–044</td><td>Standalone IR backend and runtime cutover to verified IR. The Flow data-flow frontend replaced RPN at the developer's request. Durable manifest v2.</td></tr>
+<tr><td>3</td><td>6 Oct</td><td class="num">37</td><td>045–077</td><td>Flow became the default. Early agent pilot and the repeated five-task comparison (064). Business-language foundation. Readiness assessment.</td></tr>
+<tr><td>4</td><td>7 Oct</td><td class="num">93</td><td>078–115</td><td>Retention studies, including 084, the first "coverage passes, oracle fails" result. Quick four-way comparison (099), efficacy review (101) and LLVM architecture (103).</td></tr>
+<tr><td>5</td><td>8 Oct</td><td class="num">26</td><td>116–140</td><td>Finite library coverage, record validators. Matched repair pair (125), shared-summary study (135). Native owning stack and mailboxes, matched mailbox load (140).</td></tr>
+<tr><td>6</td><td>9 Oct</td><td class="num">33</td><td>141–166</td><td>Maintenance and reuse studies, native enums/Option/Result, real files and test isolation, test-file overlays, atomic replacement staging.</td></tr>
+<tr><td>7</td><td>10 Oct</td><td class="num">37</td><td>167–199</td><td>Preview repair/migration (179), typed-reference cohort (196), atomic record evolution. Efficacy checkpoints 177, 182 and 199.</td></tr>
+<tr><td>8</td><td>11 Oct</td><td class="num">45</td><td>198–242</td><td>Organic creation (200, 210), public reuse (211), paired availability (213), typed batch (217). Matched F# pairs 222, 228 and 231 were <strong>the last agent studies</strong>. The priority moved to Campfire, with policy, SQLite, HTTP and sign-in slices (234–242).</td></tr>
+<tr><td>9</td><td>12 Oct</td><td class="num">13</td><td>243–255</td><td>Sign-in and logout, verified entry IR export, native room host, native SQLite, native Campfire HTTP.</td></tr>
+<tr><td>10</td><td>13 Oct</td><td class="num">27</td><td>256–269</td><td>Native profiling, first room benchmark (259), compact blocks, UTF-8, HTML templates and <code>Html</code>.</td></tr>
+<tr><td>11</td><td>14 Oct</td><td class="num">115</td><td>270–272</td><td>Rails message partials, CSRF tokens and stdlib loops. Most of the work behind report 273–281 also happened today: OS crypto, and a portable Flow server that brought Campfire to Linux. The report was filed the next day.</td></tr>
+<tr><td>12</td><td>15 Oct</td><td class="num">20</td><td>273–281 (one report), 282–285</td><td>Fair Linux sweep (282), forgery protection (283), per-worker store (284), equal pages and the sweep (285).</td></tr>
+<tr><td>13</td><td>16 Oct</td><td class="num">15</td><td>PRs #1–#9</td><td>Equal pages for paging, sidebar, search, users, avatars and account. Then build time and interactivity: the live dictionary, the two-part build, faster test runs. Archive.</td></tr>
+</tbody>
+<caption>Commit counts are by author date from <code>git log</code>. Report numbers are the dates each file was first added.</caption>
+</table>
+
+<h2>Inventory at archive</h2>
+<table>
+<thead><tr><th>Area</th><th>Location</th><th class="num">Lines</th></tr></thead>
+<tbody>
+<tr><td>Core: parser, checker, lowering, IR, interpreter, runtime, storage</td><td><code>src/AgentLang.Core</code></td><td class="num">31,400 F#</td></tr>
+<tr><td>LLVM backend and native runtimes and hosts</td><td><code>src/AgentLang.Llvm</code></td><td class="num">14,000 F# + 26,800 C</td></tr>
+<tr><td>Flow HTTP build tool</td><td><code>src/AgentLang.FlowHttp</code></td><td class="num">760 F#</td></tr>
+<tr><td>CLI</td><td><code>src/AgentLang.Cli</code></td><td class="num">820 F#</td></tr>
+<tr><td>Flow standard library</td><td><code>src/stdlib</code></td><td class="num">2,060 Flow</td></tr>
+<tr><td>Campfire port (49 Flow files, plus host adapters)</td><td><code>applications/campfire</code></td><td class="num">21,800 Flow</td></tr>
+<tr><td>Tests (45 test projects)</td><td><code>tests/</code></td><td class="num">51,000 F#</td></tr>
+<tr><td>Agent trials, harness, benchmarks</td><td><code>experiments/</code></td><td class="num">38 trial directories</td></tr>
+<tr><td>Design documents</td><td><code>docs/</code></td><td class="num">77 files, 12,500 lines</td></tr>
+<tr><td>Numbered reports and evidence</td><td><code>reports/</code></td><td class="num">280 files, 29,600 lines</td></tr>
+</tbody>
+</table>
+
+<h3>Main test suites at archive</h3>
+<p>All pass with <code>AGENTLANG_INCREMENTAL_CHECK=1</code> and without it.</p>
+<table>
+<thead><tr><th>Suite</th><th class="num">Assertions</th><th class="num">Checked incremental extensions</th></tr></thead>
+<tbody>
+<tr><td>Storage</td><td class="num">572</td><td class="num">0</td></tr>
+<tr><td>Flow (compiler)</td><td class="num">1,488</td><td class="num">0</td></tr>
+<tr><td>Flow.Runtime</td><td class="num">2,616</td><td class="num">311</td></tr>
+<tr><td>Acceptance</td><td class="num">640</td><td class="num">0</td></tr>
+<tr><td>IR.Interpreter</td><td class="num">161</td><td class="num">0</td></tr>
+<tr><td>FlowHttp (native Windows and Linux parity)</td><td class="num">657</td><td class="num">11</td></tr>
+<tr><td>CampfireViews</td><td class="num">15</td><td class="num">4</td></tr>
+<tr><td>Campfire.Http</td><td class="num">475</td><td class="num">32</td></tr>
+<tr><td>Campfire.Integration</td><td class="num">583</td><td class="num">14</td></tr>
+</tbody>
+</table>
+
+<h2>Key reports</h2>
+<table>
+<thead><tr><th>Topic</th><th>Reports</th></tr></thead>
+<tbody>
+<tr><td>Purpose and design</td><td><a href="../../docs/PRD.md">PRD</a>, <a href="../../docs/DECISIONS.md">DECISIONS</a>, <a href="../018-related-language-comparison.md">018 related languages</a>, <a href="../PROJECT-READINESS-2026-10-06.md">readiness 6 Oct</a></td></tr>
+<tr><td>Efficacy checkpoints</td><td><a href="../101-approach-efficacy-review.md">101</a>, <a href="../124-efficacy-assessment.md">124</a>, <a href="../151-efficacy-checkpoint.md">151</a>, <a href="../177-reliability-and-vocabulary-checkpoint.md">177</a>, <a href="../182-efficacy-decision-checkpoint.md">182</a>, <a href="../199-efficacy-decision-after-reference-maintenance.md">199</a>, <a href="../203-efficacy-decision-after-organic-creation.md">203</a>, <a href="../212-efficacy-after-public-vocabulary-reuse.md">212</a>, <a href="../215-efficacy-after-paired-vocabulary-pilot.md">215</a>, <a href="../219-efficacy-after-typed-batch-maintenance.md">219</a></td></tr>
+<tr><td>Matched F# comparisons</td><td><a href="../064-repeat-agent-purpose-review.md">064</a>, <a href="../099-quick-agent-comparison.md">099</a>, <a href="../125-matched-pair-repair.md">125</a>, <a href="../179-preview-repair-and-record-migration.md">179</a>, <a href="../196-typed-reference-maintenance-cohort-results.md">196</a>, <a href="../222-typed-batch-fresh-results.md">222</a>, <a href="../228-scheduled-renewal-interactive-comparison.md">228</a>, <a href="../231-grouped-renewal-timing-comparison.md">231</a></td></tr>
+<tr><td>Gates are not correctness</td><td><a href="../084-retention-study-flat-discount-result.md">084</a>, <a href="../182-efficacy-decision-checkpoint.md">182</a></td></tr>
+<tr><td>Native runtime research</td><td><a href="../103-llvm-architecture-and-native-slice.md">103</a>, <a href="../128-owning-value-stack.md">128</a>, <a href="../140-matched-mailbox-load.md">140</a>, <a href="../214-completion-service-diagnostic.md">214</a></td></tr>
+<tr><td>Campfire</td><td><a href="../242-campfire-authenticated-http.md">242</a>, <a href="../259-campfire-room-benchmark.md">259</a>, <a href="../266-html-templates.md">266</a>, <a href="../281-portable-flow-server-linux.md">273–281</a>, <a href="../282-linux-concurrency-sweep.md">282</a>, <a href="../284-per-worker-store.md">284</a>, <a href="../285-equal-pages.md">285</a>, <a href="../../docs/EQUAL-PAGES-PLAN.md">EQUAL-PAGES-PLAN</a></td></tr>
+<tr><td>Build and interactivity</td><td><a href="../../docs/LIVE-DICTIONARY-PLAN.md">LIVE-DICTIONARY-PLAN</a>, GitHub PRs #1–#8</td></tr>
+</tbody>
+</table>
+
+<h2>Reproducing the main results</h2>
+<pre><code># Build and test (Windows, .NET 9, PowerShell or Git Bash)
+dotnet build src/AgentLang.FlowHttp -c Release
+dotnet run -c Release --project tests/AgentLang.Flow.Runtime.Tests
+
+# Campfire server: unverified exe first, then the verified O2 build
+scripts/Build-CampfireFlowServer.ps1 -TwoPart -OutDir .agentlang/campfire-flow-server/windows
+
+# Linux build (WSL2); see docs/LINUX-SERVER-PLAN.md for the benchmark harness
+scripts/Build-CampfireFlowServer.ps1 -Target linux-x64 -OutDir .agentlang/campfire-flow-server/linux
+
+# Build-time probe: time to define, commit and replace one word in the loaded Campfire project
+AGENTLANG_BUILD_TIMING=1 AGENTLANG_BUILD_ADD_PROBE=1 \
+  dotnet src/AgentLang.FlowHttp/bin/Release/net9.0/AgentLang.FlowHttp.dll emit \
+  --app campfire.server --target windows-x64 --out &lt;dir&gt; --source &lt;each Campfire .flow file&gt;</code></pre>
+
+<h3>Switches</h3>
+<table>
+<thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>AGENTLANG_INCREMENTAL=0</code></td><td>Disables incremental snapshot extension (always compile from scratch).</td></tr>
+<tr><td><code>AGENTLANG_INCREMENTAL_CHECK=1</code></td><td>Also compiles every extension from scratch and fails on any difference, including stale bindings.</td></tr>
+<tr><td><code>AGENTLANG_INCREMENTAL_LOG=&lt;file&gt;</code></td><td>Appends one line per extension: added, recompiled, attachments, files.</td></tr>
+<tr><td><code>AGENTLANG_BUILD_TIMING=1</code></td><td>Prints phase timings for define, commit, lowering, publish and emit.</td></tr>
+<tr><td><code>AGENTLANG_BUILD_ADD_PROBE=1</code></td><td>During <code>emit</code>, adds, commits and replaces probe words, and checks that their tests ran.</td></tr>
+</tbody>
+</table>
+
+<h2>Caveats</h2>
+<ul>
+  <li><strong>Benchmarks.</strong> They are the project's own, on one machine
+  (WSL2 on Windows, pinned vCPUs), with a pre-declared protocol. Rails was
+  wait-bound in every cell. The Rust reference is another port, not an
+  official implementation.</li>
+  <li><strong>Agent studies.</strong> They used one or two participants per arm,
+  a fixed launch order, and unequal seeds in places. Broker exchanges and wire
+  bytes are protocol measures, not model tokens. Results from different
+  protocols were never pooled, and this report doesn't pool them either.</li>
+  <li><strong>Who built it.</strong> AI coding agents did most of the
+  implementation, directed by one developer. That is itself a data point about
+  agent-built toolchains. It also means the code reflects many short sessions,
+  not a single designer.</li>
+  <li><strong>Private data.</strong> Fixture credentials and other private
+  evidence are excluded from the repository. Evidence archives were scanned
+  for secret values before publication.</li>
+</ul>
+
+<h2>Open items at archive</h2>
+<ul class="tight">
+  <li>Campfire: WebSockets and live updates, writes on the portable server,
+  sign-in and out with libxcrypt or crypt_blowfish, account logo, room
+  creation, bots, uploads, a typed schema and migrations.</li>
+  <li>Language: lambdas, string ordering, bitwise operators, <code>match</code>
+  as a statement, and native lowering for every builtin.</li>
+  <li>Performance: a string builder to cut ~650 KB of scratch per message, and
+  the cached gap to Rust (0.6×).</li>
+  <li>Tooling: make the incremental cross-check mandatory in tests. Reduce the
+  ~8 s full test run and the ~2 s first publish.</li>
+  <li>Research: the matched mainstream-language study proposed in
+  <a href="lessons.html">Lessons</a>.</li>
+</ul>
+
+<div class="pager"><a href="lessons.html">← Lessons</a><a href="index.html">Back to summary</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>
