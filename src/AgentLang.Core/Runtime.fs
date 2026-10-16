@@ -4091,51 +4091,61 @@ module Runtime =
                 touchedTypeEvolutionGroups
                 |> List.map (fun group -> group.Types)
                 |> Set.unionMany
+            // A commit that evolves no type and replaces no persistent word changes no caller:
+            // each scan below is empty by construction, so it is skipped rather than run.
             let generatedWordsForTypes (state: DictionaryState) =
-                let words = effectiveWordsForPriorState state
-                words
-                |> Map.toSeq
-                |> Seq.choose (fun (name, _) ->
-                    ownerOfGeneratedWordIn words name
-                    |> Option.filter evolvedTypeNames.Contains
-                    |> Option.map (fun _ -> name))
-                |> Set.ofSeq
+                if Set.isEmpty evolvedTypeNames then Set.empty
+                else
+                    let words = effectiveWordsForPriorState state
+                    words
+                    |> Map.toSeq
+                    |> Seq.choose (fun (name, _) ->
+                        ownerOfGeneratedWordIn words name
+                        |> Option.filter evolvedTypeNames.Contains
+                        |> Option.map (fun _ -> name))
+                    |> Set.ofSeq
             let changedGeneratedWords = Set.union (generatedWordsForTypes durableBefore) (generatedWordsForTypes durableProposed)
             let signatureAffectedOwners (state: DictionaryState) =
-                state.Words
-                |> Map.toSeq
-                |> Seq.choose (fun (name, item) ->
-                    if item.Builtin.IsNone
-                       && item.Status = Persistent
-                       && not (Set.isEmpty (Set.intersect evolvedTypeNames (typeReferencesForState state name))) then Some name
-                    else None)
-                |> Set.ofSeq
+                if Set.isEmpty evolvedTypeNames then Set.empty
+                else
+                    state.Words
+                    |> Map.toSeq
+                    |> Seq.choose (fun (name, item) ->
+                        if item.Builtin.IsNone
+                           && item.Status = Persistent
+                           && not (Set.isEmpty (Set.intersect evolvedTypeNames (typeReferencesForState state name))) then Some name
+                        else None)
+                    |> Set.ofSeq
             let metadataAffectedOwners =
-                let tests =
-                    data.Tests
-                    |> Map.toSeq
-                    |> Seq.choose (fun (_, test) ->
-                        if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences (testExpressions test)))) then Some test.Word
-                        else None)
-                let examples =
-                    data.Examples
-                    |> Map.toSeq
-                    |> Seq.choose (fun (_, example) ->
-                        if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences example.Body))) then Some example.Word
-                        else None)
-                Seq.append tests examples |> Set.ofSeq
+                if Set.isEmpty evolvedTypeNames then Set.empty
+                else
+                    let tests =
+                        data.Tests
+                        |> Map.toSeq
+                        |> Seq.choose (fun (_, test) ->
+                            if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences (testExpressions test)))) then Some test.Word
+                            else None)
+                    let examples =
+                        data.Examples
+                        |> Map.toSeq
+                        |> Seq.choose (fun (_, example) ->
+                            if not (Set.isEmpty (Set.intersect evolvedTypeNames (expressionTypeReferences example.Body))) then Some example.Word
+                            else None)
+                    Seq.append tests examples |> Set.ofSeq
             let generatedMetadataAffectedOwners =
-                let generatedDependencies (body: Expr list) =
-                    not (Set.isEmpty (Set.intersect changedGeneratedWords (Compiler.dependencies body)))
-                let tests =
-                    data.Tests
-                    |> Map.toSeq
-                    |> Seq.choose (fun (_, test) -> if generatedDependencies (testExpressions test) then Some test.Word else None)
-                let examples =
-                    data.Examples
-                    |> Map.toSeq
-                    |> Seq.choose (fun (_, example) -> if generatedDependencies example.Body then Some example.Word else None)
-                Seq.append tests examples |> Set.ofSeq
+                if Set.isEmpty changedGeneratedWords then Set.empty
+                else
+                    let generatedDependencies (body: Expr list) =
+                        not (Set.isEmpty (Set.intersect changedGeneratedWords (Compiler.dependencies body)))
+                    let tests =
+                        data.Tests
+                        |> Map.toSeq
+                        |> Seq.choose (fun (_, test) -> if generatedDependencies (testExpressions test) then Some test.Word else None)
+                    let examples =
+                        data.Examples
+                        |> Map.toSeq
+                        |> Seq.choose (fun (_, example) -> if generatedDependencies example.Body then Some example.Word else None)
+                    Seq.append tests examples |> Set.ofSeq
             let directTypeAffectedOwners =
                 Set.unionMany [ signatureAffectedOwners durableBefore
                                 signatureAffectedOwners durableProposed
@@ -4143,7 +4153,7 @@ module Runtime =
                                 generatedMetadataAffectedOwners ]
             let mutable changedNames = Set.unionMany [ replacing; changedGeneratedWords; directTypeAffectedOwners ]
             let mutable callers = directTypeAffectedOwners
-            let mutable foundCallers = true
+            let mutable foundCallers = not changedNames.IsEmpty
             while foundCallers do
                 let nextCallers =
                     durableBefore.Words
@@ -4193,7 +4203,9 @@ module Runtime =
                     let previous = found.TryFind name |> Option.defaultValue []
                     Map.add name (previous @ [ proposedWords[name].Definition ]) found) data.History
             let finalState = { proposed with History = history }
+            phase "coverage"
             let compiledFinalSnapshot = compileRuntimeSnapshot finalState
+            phase "snapshot-final"
             let committedFlowHistory: Map<string, FlowAuthoredWord list> =
                 selectedWords
                 |> Set.fold (fun (found: Map<string, FlowAuthoredWord list>) name ->
@@ -4210,8 +4222,11 @@ module Runtime =
                 { compiledFinalSnapshot with
                     State = { compiledFinalSnapshot.State with FlowHistory = committedFlowHistory } }
             let durableSnapshot = compileRuntimeSnapshot (durableState finalSnapshot.State)
+            phase "snapshot-final-durable"
             publish data durableSnapshot.State actor
+            phase "publish"
             activateRuntimeSnapshot finalSnapshot
+            phase "activate"
             lastResults <- results
             results
 
