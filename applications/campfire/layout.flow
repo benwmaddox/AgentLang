@@ -16,6 +16,8 @@ record PageChrome {
 fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     effects none
     doc "The Rails room page layout (layouts/application and rooms/show chrome), generated from Campfire's markup with every request, user, room and account value as a hole."
+    let head = campfire.views.head-assets(chrome.user-id, chrome.user-name, chrome.account-version)
+    let lightbox = campfire.views.lightbox()
 
     html"""
 <!DOCTYPE html>
@@ -23,21 +25,236 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
   <head>
     <title>{chrome.room-name}</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
+{head}
+    <meta name="turbo-cache-control" content="no-preview">  
+  <meta name="current-room-id" content="{chrome.room-id}">
+
+  </head>
+
+  <body class="{chrome.body-class}" data-controller="local-time lightbox">
+    <a href="#main-content" class="skip-navigation btn">Skip to main content</a>
+
+    <nav id="nav">
+        
+
+  <span class="btn btn--reversed btn--faux room--current">
+    <h1 class="room__contents txt-medium overflow-ellipsis">
+
+      {chrome.room-name}
+    </h1>
+</span>
+  <a class="btn" style="view-transition-name: edit-room-{chrome.room-id}" data-room-id="{chrome.room-id}" href="/rooms/{chrome.room-path}/{chrome.room-id}/edit">
+    <img aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" width="20" height="20" />
+    <span class="for-screen-reader">Settings for this room</span>
+</a>
+  <span>
+  <span class="button_to_change_notifying"
+      data-controller="notifications" data-notifications-subscriptions-url-value="/users/me/push_subscriptions" data-notifications-attention-class="btn--pulsing">
+    <turbo-frame data-controller="turbo-frame" data-action="notifications:ready@window-&gt;turbo-frame#load" data-turbo-frame-url-param="/rooms/{chrome.room-id}/involvement" id="involvement_{chrome.room-key}_{chrome.room-id}">
+      <button class="btn" data-action="click->notifications#attemptToSubscribe" data-notifications-target="bell">
+        <img aria-hidden="true" src="/assets/notification-bell-loading-7533ce55.svg" width="20" height="20" />
+        <img aria-hidden="true" hidden="hidden" src="/assets/notification-bell-alert-b467cde7.svg" width="20" height="20" />
+        <span class="for-screen-reader">Notification settings for this room</span>
+      </button>
+</turbo-frame>
+    <dialog data-notifications-target="notAllowedNotice" class="dialog pad center center-block border-radius border shadow" style="--inline-space: var(--block-space)">
+      <div class="flex flex-column txt-align-center">
+        <span class="btn btn--faux center txt-x-large">
+          <img aria-hidden="true" src="/assets/notification-bell-alert-b467cde7.svg" width="48" height="48" />
+          <span class="for-screen-reader">Notifications alert</span>
+        </span>
+
+        <section>
+          <h1 class="txt-large margin-none">Notifications aren’t allowed</h1>
+          <div class="txt-align-start margin-block-start">
+              <details class="notifications-help" data-notifications-target="details">
+    <summary class="btn">
+      <img aria-hidden="true" src="/assets/external/web-24ffe636.svg" width="20" height="20" />
+      <strong>Check your Mozilla settings</strong>
+      <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
+    </summary>
+
+        <p>Ensure notifications are enabled for <em>{chrome.base-url}/</em> in your web browser settings.</p>
+  </details>
+
+            <details class="notifications-help hide-in-browser" data-notifications-target="details">
+  <summary class="btn">
+    <img aria-hidden="true" src="/assets/external/gear-50e77d2b.svg" width="20" height="20" />
+    <strong>Check your  settings</strong>
+    <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
+  </summary>
+
+      <p>Ensure notifications are allowed for Mozilla in your system settings.</p>
+</details>
+
+              <details class="notifications-help pwa__instructions hide-in-pwa" data-controller="pwa-install" data-pwa-install-prompting-class="pwa--can-install" data-notifications-target="details">
+    <summary class="btn">
+      <img aria-hidden="true" src="/assets/external/install-f762b3be.svg" width="20" height="20" />
+      <strong>Install Campfire as a web app.</strong>
+      <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
+    </summary>
+
+        <p>Some platforms require you to install Campfire as a web app to receive push notifications.</p>
+
+    <div class="margin-block-start txt-align-center pwa__installer">
+      <hr class="separator margin-block">
+      <button class="btn btn--reversed center" data-action="pwa-install#promptInstall">
+        <img aria-hidden="true" src="/assets/external/install-f762b3be.svg" />
+        Install now
+      </button>
+    </div>
+  </details>
+
+          </div>
+        </section>
+
+        <form method="dialog" class="flex align-center gap center">
+          <button class="btn dialog__close" autofocus="true">
+            <span class="for-screen-reader">Close</span>
+            <img aria-hidden="true" src="/assets/remove-0e7a045d.svg" width="20" height="20" />
+          </button>
+        </form>
+      </div>
+    </dialog>
+  </span>
+</span>
+
+
+    </nav>
+
+
+    <main id="main-content">
+      
+
+
+
+<div id="message-area" class="message-area" contents="true" data-controller="messages presence drop-target" data-action="turbo:before-stream-render@document-&gt;messages#beforeStreamRender keydown.up@document-&gt;messages#editMyLastMessage dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop visibilitychange@document-&gt;presence#visibilityChanged" data-messages-first-of-day-class="message--first-of-day" data-messages-formatted-class="message--formatted" data-messages-me-class="message--me" data-messages-mentioned-class="message--mentioned" data-messages-threaded-class="message--threaded" data-messages-page-url-value="{chrome.base-url}/rooms/{chrome.room-id}/messages">
+  <script type="text/template" data-messages-target="template">
+  <div class="message message--me $messageClasses$"
+      id="message_$clientMessageId$"
+      data-format-message-target="message"
+      data-user-id="{chrome.user-id}"
+      data-message-timestamp="$messageTimestamp$"
+      data-messages-target="message">
+    <div class="message__day-separator"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="date"></time></div>
+
+    <figure class="avatar message__avatar">
+      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{chrome.user-id}"><img aria-hidden="true" src="{chrome.user-avatar-url}" width="48" height="48" /></a>
+    </figure>
+
+    <div class="message__body">
+      <div class="message__body-content">
+        <div class="message__meta">
+          <h3 class="message__heading">
+            <span class="message__author"><strong>{chrome.user-name}</strong></span>
+            <span class="message__permalink"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="time"></time></span>
+          </h3>
+          <div class="message__actions">
+            <div class="position-relative">
+              <span class="btn message__action-btn message__options-btn">
+                <img class="colorize--black" aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" />
+                <span class="for-screen-reader">Message options</span>
+              </span>
+            </div class="position-relative">
+          </div>
+        </div>
+        $body$
+      </div>
+    </div>
+  </div>
+</script>
+
+
+  <div id="messages_{chrome.room-key}_{chrome.room-id}" class="messages" data-controller="maintain-scroll refresh-room" data-action="turbo:before-stream-render@document-&gt;maintain-scroll#beforeStreamRender visibilitychange@document-&gt;refresh-room#visibilityChanged online@window-&gt;refresh-room#online" data-messages-target="messages" data-refresh-room-loaded-at-value="{chrome.loaded-at}" data-refresh-room-url-value="{chrome.base-url}/rooms/{chrome.room-id}/refresh">
+    
+    
+{messages}</div>
+  <turbo-cable-stream-source channel="RoomMessagesChannel" signed-stream-name="{chrome.stream-name}"></turbo-cable-stream-source>
+  <button class="message-area__return-to-latest btn" data-action="messages#returnToLatest" data-messages-target="latest" hidden="hidden"><img aria-hidden="true" src="/assets/arrow-down-3f174d76.svg" width="20" height="20" /><span class="for-screen-reader">Jump to newest message</span></button>
+</div>
+
+
+
+      <footer id="footer">
+          <div class="composer flex align-end gap position-relative"
+      data-controller="typing-notifications" data-typing-notifications-active-class="typing-indicator--active">
+    <a class="btn flex-item-no-shrink margin-block-end composer__context-btn" style="view-transition-name: input-switcher" href="/searches">
+      <img aria-hidden="true" src="/assets/search-5f29565f.svg" width="20" height="20" />
+      <span class="for-screen-reader">Search</span>
+</a>
+    <turbo-frame id="composer-frame">
+      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="/rooms/{chrome.room-id}/messages" accept-charset="UTF-8" method="post">
+        <fieldset data-composer-target="fields" contents>
+          <div class="flex flex-column">
+            <div class="composer__filelist flex flex--align-center gap flex-wrap" data-composer-target="fileList"></div>
+
+            <div class="flex composer__input input input--actor fill-white min-width" style="--input-border-radius: 1.3rem">
+              <div class="flex align-end gap full-width">
+                <img aria-hidden="true" class="composer__input-hint colorize--black" style="view-transition-name: input-btn;" src="/assets/messages-outlined-87ff0331.svg" width="22" height="22" />
+
+                <div class="flex flex-column flex-item-grow min-width gap">
+                  <lexxy-editor rows="1" class="input lexxy-content" style="order: -1" aria-multiline="true" aria-label="Write a message" permitted-attachment-types="application/vnd.campfire.mention application/vnd.actiontext.opengraph-embed" data-controller="unfurl" data-action="lexxy:change-&gt;typing-notifications#start keydown-&gt;composer#submitByKeyboard:capture lexxy:change-&gt;composer#saveDraft lexxy:insert-link-&gt;unfurl#unfurl" data-composer-target="text" data-direct-upload-url="{chrome.base-url}/rails/active_storage/direct_uploads" data-blob-url-template="{chrome.base-url}/rails/active_storage/blobs/redirect/:signed_id/:filename" id="message_body" input="message_body_trix_input_message" name="message[body]">
+                    <lexxy-prompt trigger="@" name="mention" src="/autocompletable/users?room_id={chrome.room-id}" remote-filtering="true" empty-results="No matches"></lexxy-prompt>
+</lexxy-editor>                </div>
+
+                <label class="btn btn--borderless txt-small flex-item-no-shrink composer__attachment-btn input--file">
+                  <img class="colorize--black" aria-hidden="true" src="/assets/attachment-8bcccab0.svg" width="22" height="22" />
+                  <input type="file" data-action="composer#filePicked" multiple />
+                  <span class="for-screen-reader">Attach a file</span>
+                </label>
+
+                <button class="btn btn--borderless txt-small flex-item-no-shrink composer__rich-text-btn" type="button" data-action="composer#toggleToolbar">
+                  <img class="colorize--black" aria-hidden="true" src="/assets/text-options-055e0d16.svg" width="20" height="20" />
+                  <span class="for-screen-reader">Rich text</span>
+                </button>
+
+                <button name="send" type="submit" data-action="composer#submit" class="btn btn--reversed flex-item-no-shrink txt-small">
+                  <img aria-hidden="true" src="/assets/arrow-up-f96b3895.svg" width="20" height="20" />
+                  <span class="for-screen-reader">Send Message</span>
+</button>              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="typing-indicator gap txt-small align-center flex-inline" data-typing-notifications-target="indicator">
+          <div class="typing-indicator__author spinner" data-typing-notifications-target="author"></div>
+        </div>
+
+        <input data-composer-target="clientid" type="hidden" name="message[client_message_id]" id="message_client_message_id" />
+</form>    </turbo-frame>
+  </div>
+
+      </footer>
+    </main>
+
+    <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
+      <turbo-frame data-turbo-permanent="true" data-controller="rooms-list read-rooms turbo-frame" data-rooms-list-unread-class="unread" data-action="presence:present@window->rooms-list#read read-rooms:read->rooms-list#read turbo:frame-load->rooms-list#loaded refresh-room:visible@window->turbo-frame#reload" id="user_sidebar" src="/users/me/sidebar" target="_top"></turbo-frame>
+    </aside>
+
+{lightbox}  </body>
+</html>
+
+"""
+}
+
+fn campfire.views.head-assets(user-id: String, user-name: String, account-version: String) -> Html {
+    effects none
+    doc "layouts/application's head after the title: meta tags (no CSRF tags: forgery protection is header-only), the current user, the account logo, stylesheets and the import map."
+    html"""    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content">
     <meta name="view-transition" content="same-origin">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="current-user-id" content="{chrome.user-id}" /><meta name="current-user-name" content="{chrome.user-name}" />
+    <meta name="current-user-id" content="{user-id}" /><meta name="current-user-name" content="{user-name}" />
     <meta name="action-cable-url" content="/cable">
 
     <meta name="vapid-public-key" content="BCOG9YrYlk5F6QTJlCR3kCBNJcRn0Vpf481FoUhcrImqrp70QepZa-lIl_fngUx5fOYrxGkvR3ksTHBkmyVZbwE=">
     <meta name="turbo-prefetch" content="true">
 
     <link rel="manifest" href="/webmanifest.json">
-    <link rel="icon" href="/account/logo?v={chrome.account-version}" type="image/png">
-    <link rel="apple-touch-icon" href="/account/logo?v={chrome.account-version}">
+    <link rel="icon" href="/account/logo?v={account-version}" type="image/png">
+    <link rel="apple-touch-icon" href="/account/logo?v={account-version}">
 
     <link rel="stylesheet" href="/assets/_reset-9c3efd7b.css" data-turbo-track="reload" />
 <link rel="stylesheet" href="/assets/actiontext-7b8d51ea.css" data-turbo-track="reload" />
@@ -255,213 +472,17 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
 <link rel="modulepreload" href="/assets/languages/sql-642be05a.js">
 <link rel="modulepreload" href="/assets/languages/xml-fa7f1eda.js">
 <script type="module">import "application"</script>
+"""
+}
 
-    <meta name="turbo-cache-control" content="no-preview">  
-  <meta name="current-room-id" content="{chrome.room-id}">
+test campfire.views.head-assets/user {
+    expect string.contains(campfire.views.text(campfire.views.head-assets("7", "Ann", "1")), "<meta name=\"current-user-id\" content=\"7\" />")
+}
 
-  </head>
-
-  <body class="{chrome.body-class}" data-controller="local-time lightbox">
-    <a href="#main-content" class="skip-navigation btn">Skip to main content</a>
-
-    <nav id="nav">
-        
-
-  <span class="btn btn--reversed btn--faux room--current">
-    <h1 class="room__contents txt-medium overflow-ellipsis">
-
-      {chrome.room-name}
-    </h1>
-</span>
-  <a class="btn" style="view-transition-name: edit-room-{chrome.room-id}" data-room-id="{chrome.room-id}" href="/rooms/{chrome.room-path}/{chrome.room-id}/edit">
-    <img aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" width="20" height="20" />
-    <span class="for-screen-reader">Settings for this room</span>
-</a>
-  <span>
-  <span class="button_to_change_notifying"
-      data-controller="notifications" data-notifications-subscriptions-url-value="/users/me/push_subscriptions" data-notifications-attention-class="btn--pulsing">
-    <turbo-frame data-controller="turbo-frame" data-action="notifications:ready@window-&gt;turbo-frame#load" data-turbo-frame-url-param="/rooms/{chrome.room-id}/involvement" id="involvement_{chrome.room-key}_{chrome.room-id}">
-      <button class="btn" data-action="click->notifications#attemptToSubscribe" data-notifications-target="bell">
-        <img aria-hidden="true" src="/assets/notification-bell-loading-7533ce55.svg" width="20" height="20" />
-        <img aria-hidden="true" hidden="hidden" src="/assets/notification-bell-alert-b467cde7.svg" width="20" height="20" />
-        <span class="for-screen-reader">Notification settings for this room</span>
-      </button>
-</turbo-frame>
-    <dialog data-notifications-target="notAllowedNotice" class="dialog pad center center-block border-radius border shadow" style="--inline-space: var(--block-space)">
-      <div class="flex flex-column txt-align-center">
-        <span class="btn btn--faux center txt-x-large">
-          <img aria-hidden="true" src="/assets/notification-bell-alert-b467cde7.svg" width="48" height="48" />
-          <span class="for-screen-reader">Notifications alert</span>
-        </span>
-
-        <section>
-          <h1 class="txt-large margin-none">Notifications aren’t allowed</h1>
-          <div class="txt-align-start margin-block-start">
-              <details class="notifications-help" data-notifications-target="details">
-    <summary class="btn">
-      <img aria-hidden="true" src="/assets/external/web-24ffe636.svg" width="20" height="20" />
-      <strong>Check your Mozilla settings</strong>
-      <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
-    </summary>
-
-        <p>Ensure notifications are enabled for <em>{chrome.base-url}/</em> in your web browser settings.</p>
-  </details>
-
-            <details class="notifications-help hide-in-browser" data-notifications-target="details">
-  <summary class="btn">
-    <img aria-hidden="true" src="/assets/external/gear-50e77d2b.svg" width="20" height="20" />
-    <strong>Check your  settings</strong>
-    <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
-  </summary>
-
-      <p>Ensure notifications are allowed for Mozilla in your system settings.</p>
-</details>
-
-              <details class="notifications-help pwa__instructions hide-in-pwa" data-controller="pwa-install" data-pwa-install-prompting-class="pwa--can-install" data-notifications-target="details">
-    <summary class="btn">
-      <img aria-hidden="true" src="/assets/external/install-f762b3be.svg" width="20" height="20" />
-      <strong>Install Campfire as a web app.</strong>
-      <img aria-hidden="true" class="disclosure" src="/assets/disclosure-26d63471.svg" width="10" height="10" />
-    </summary>
-
-        <p>Some platforms require you to install Campfire as a web app to receive push notifications.</p>
-
-    <div class="margin-block-start txt-align-center pwa__installer">
-      <hr class="separator margin-block">
-      <button class="btn btn--reversed center" data-action="pwa-install#promptInstall">
-        <img aria-hidden="true" src="/assets/external/install-f762b3be.svg" />
-        Install now
-      </button>
-    </div>
-  </details>
-
-          </div>
-        </section>
-
-        <form method="dialog" class="flex align-center gap center">
-          <button class="btn dialog__close" autofocus="true">
-            <span class="for-screen-reader">Close</span>
-            <img aria-hidden="true" src="/assets/remove-0e7a045d.svg" width="20" height="20" />
-          </button>
-        </form>
-      </div>
-    </dialog>
-  </span>
-</span>
-
-
-    </nav>
-
-
-    <main id="main-content">
-      
-
-
-
-<div id="message-area" class="message-area" contents="true" data-controller="messages presence drop-target" data-action="turbo:before-stream-render@document-&gt;messages#beforeStreamRender keydown.up@document-&gt;messages#editMyLastMessage dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop visibilitychange@document-&gt;presence#visibilityChanged" data-messages-first-of-day-class="message--first-of-day" data-messages-formatted-class="message--formatted" data-messages-me-class="message--me" data-messages-mentioned-class="message--mentioned" data-messages-threaded-class="message--threaded" data-messages-page-url-value="{chrome.base-url}/rooms/{chrome.room-id}/messages">
-  <script type="text/template" data-messages-target="template">
-  <div class="message message--me $messageClasses$"
-      id="message_$clientMessageId$"
-      data-format-message-target="message"
-      data-user-id="{chrome.user-id}"
-      data-message-timestamp="$messageTimestamp$"
-      data-messages-target="message">
-    <div class="message__day-separator"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="date"></time></div>
-
-    <figure class="avatar message__avatar">
-      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{chrome.user-id}"><img aria-hidden="true" src="{chrome.user-avatar-url}" width="48" height="48" /></a>
-    </figure>
-
-    <div class="message__body">
-      <div class="message__body-content">
-        <div class="message__meta">
-          <h3 class="message__heading">
-            <span class="message__author"><strong>{chrome.user-name}</strong></span>
-            <span class="message__permalink"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="time"></time></span>
-          </h3>
-          <div class="message__actions">
-            <div class="position-relative">
-              <span class="btn message__action-btn message__options-btn">
-                <img class="colorize--black" aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" />
-                <span class="for-screen-reader">Message options</span>
-              </span>
-            </div class="position-relative">
-          </div>
-        </div>
-        $body$
-      </div>
-    </div>
-  </div>
-</script>
-
-
-  <div id="messages_{chrome.room-key}_{chrome.room-id}" class="messages" data-controller="maintain-scroll refresh-room" data-action="turbo:before-stream-render@document-&gt;maintain-scroll#beforeStreamRender visibilitychange@document-&gt;refresh-room#visibilityChanged online@window-&gt;refresh-room#online" data-messages-target="messages" data-refresh-room-loaded-at-value="{chrome.loaded-at}" data-refresh-room-url-value="{chrome.base-url}/rooms/{chrome.room-id}/refresh">
-    
-    
-{messages}</div>
-  <turbo-cable-stream-source channel="RoomMessagesChannel" signed-stream-name="{chrome.stream-name}"></turbo-cable-stream-source>
-  <button class="message-area__return-to-latest btn" data-action="messages#returnToLatest" data-messages-target="latest" hidden="hidden"><img aria-hidden="true" src="/assets/arrow-down-3f174d76.svg" width="20" height="20" /><span class="for-screen-reader">Jump to newest message</span></button>
-</div>
-
-
-
-      <footer id="footer">
-          <div class="composer flex align-end gap position-relative"
-      data-controller="typing-notifications" data-typing-notifications-active-class="typing-indicator--active">
-    <a class="btn flex-item-no-shrink margin-block-end composer__context-btn" style="view-transition-name: input-switcher" href="/searches">
-      <img aria-hidden="true" src="/assets/search-5f29565f.svg" width="20" height="20" />
-      <span class="for-screen-reader">Search</span>
-</a>
-    <turbo-frame id="composer-frame">
-      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="/rooms/{chrome.room-id}/messages" accept-charset="UTF-8" method="post">
-        <fieldset data-composer-target="fields" contents>
-          <div class="flex flex-column">
-            <div class="composer__filelist flex flex--align-center gap flex-wrap" data-composer-target="fileList"></div>
-
-            <div class="flex composer__input input input--actor fill-white min-width" style="--input-border-radius: 1.3rem">
-              <div class="flex align-end gap full-width">
-                <img aria-hidden="true" class="composer__input-hint colorize--black" style="view-transition-name: input-btn;" src="/assets/messages-outlined-87ff0331.svg" width="22" height="22" />
-
-                <div class="flex flex-column flex-item-grow min-width gap">
-                  <lexxy-editor rows="1" class="input lexxy-content" style="order: -1" aria-multiline="true" aria-label="Write a message" permitted-attachment-types="application/vnd.campfire.mention application/vnd.actiontext.opengraph-embed" data-controller="unfurl" data-action="lexxy:change-&gt;typing-notifications#start keydown-&gt;composer#submitByKeyboard:capture lexxy:change-&gt;composer#saveDraft lexxy:insert-link-&gt;unfurl#unfurl" data-composer-target="text" data-direct-upload-url="{chrome.base-url}/rails/active_storage/direct_uploads" data-blob-url-template="{chrome.base-url}/rails/active_storage/blobs/redirect/:signed_id/:filename" id="message_body" input="message_body_trix_input_message" name="message[body]">
-                    <lexxy-prompt trigger="@" name="mention" src="/autocompletable/users?room_id={chrome.room-id}" remote-filtering="true" empty-results="No matches"></lexxy-prompt>
-</lexxy-editor>                </div>
-
-                <label class="btn btn--borderless txt-small flex-item-no-shrink composer__attachment-btn input--file">
-                  <img class="colorize--black" aria-hidden="true" src="/assets/attachment-8bcccab0.svg" width="22" height="22" />
-                  <input type="file" data-action="composer#filePicked" multiple />
-                  <span class="for-screen-reader">Attach a file</span>
-                </label>
-
-                <button class="btn btn--borderless txt-small flex-item-no-shrink composer__rich-text-btn" type="button" data-action="composer#toggleToolbar">
-                  <img class="colorize--black" aria-hidden="true" src="/assets/text-options-055e0d16.svg" width="20" height="20" />
-                  <span class="for-screen-reader">Rich text</span>
-                </button>
-
-                <button name="send" type="submit" data-action="composer#submit" class="btn btn--reversed flex-item-no-shrink txt-small">
-                  <img aria-hidden="true" src="/assets/arrow-up-f96b3895.svg" width="20" height="20" />
-                  <span class="for-screen-reader">Send Message</span>
-</button>              </div>
-            </div>
-          </div>
-        </fieldset>
-
-        <div class="typing-indicator gap txt-small align-center flex-inline" data-typing-notifications-target="indicator">
-          <div class="typing-indicator__author spinner" data-typing-notifications-target="author"></div>
-        </div>
-
-        <input data-composer-target="clientid" type="hidden" name="message[client_message_id]" id="message_client_message_id" />
-</form>    </turbo-frame>
-  </div>
-
-      </footer>
-    </main>
-
-    <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
-      <turbo-frame data-turbo-permanent="true" data-controller="rooms-list read-rooms turbo-frame" data-rooms-list-unread-class="unread" data-action="presence:present@window->rooms-list#read read-rooms:read->rooms-list#read turbo:frame-load->rooms-list#loaded refresh-room:visible@window->turbo-frame#reload" id="user_sidebar" src="/users/me/sidebar" target="_top"></turbo-frame>
-    </aside>
-
-    <dialog class="lightbox" aria-label="Image Viewer (Press escape to close)" data-lightbox-target="dialog" data-action="close->lightbox#reset">
+fn campfire.views.lightbox() -> Html {
+    effects none
+    doc "layouts/_lightbox and the app logo that close every page."
+    html"""    <dialog class="lightbox" aria-label="Image Viewer (Press escape to close)" data-lightbox-target="dialog" data-action="close->lightbox#reset">
   <img src="" class="lightbox__image" data-lightbox-target="zoomedImage" />
 
   <form method="dialog" class="lightbox__btn">
@@ -490,8 +511,51 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     <a href="https://once.com" id="app-logo" target="_blank" aria-label="Once software from 37signals home page">
       <img alt="Campfire logo" width="256" height="216" src="/assets/campfire-icon-3d9986c5.png" />
     </a>
-  </body>
-</html>
-
 """
+}
+
+test campfire.views.lightbox/dialog {
+    expect string.starts-with(campfire.views.text(campfire.views.lightbox()), "    <dialog class=\"lightbox\"")
+}
+
+fn campfire.views.sidebar-page(head: Html, body-class: String, frame: Html) -> Html {
+    effects none
+    doc "users/sidebars#show inside layouts/application: the frame in main, an empty nav and sidebar."
+    let lightbox = campfire.views.lightbox()
+    html"""<!DOCTYPE html>
+<html>
+  <head>
+    <title>Campfire</title>
+
+{head}
+    
+  </head>
+
+  <body class="{body-class}" data-controller="local-time lightbox">
+    <a href="#main-content" class="skip-navigation btn">Skip to main content</a>
+
+    <nav id="nav">
+      
+    </nav>
+
+
+    <main id="main-content">
+{frame}
+      <footer id="footer">
+        
+      </footer>
+    </main>
+
+    <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
+      
+    </aside>
+
+{lightbox}  </body>
+</html>
+"""
+}
+
+test campfire.views.sidebar-page/frame {
+    let text = campfire.views.text(campfire.views.sidebar-page(html"<x></x>", "admin", html"<y></y>"))
+    expect string.contains(text, "<title>Campfire</title>") && string.contains(text, "<body class=\"admin\"")
 }

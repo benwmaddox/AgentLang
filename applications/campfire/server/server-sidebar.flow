@@ -1,0 +1,179 @@
+// users/sidebars#show for the portable server: the rows the sidebar shows,
+// loaded as SidebarsController loads them, and the page around the frame.
+
+fn campfire.server.signed-stream(turbo-key: Bytes, name: String) -> String {
+    doc "Turbo's signed stream name for a stream name already joined from its streamables (campfire.server.signed-stream-name does this for a room's messages)."
+    let encoded = base64.encode(bytes.from-utf8(json.quote(name)))
+    string.join([encoded, "--", hex.encode(crypto.hmac-sha256(turbo-key, bytes.from-utf8(encoded)))])
+}
+
+test campfire.server.signed-stream/rooms {
+    expect string.starts-with(campfire.server.signed-stream(bytes.from-utf8("k"), "rooms"), "InJvb21zIg==--")
+}
+
+fn campfire.server.user-avatar-path(avatar-key: Bytes, user-id: Int, updated-at: String) -> String {
+    doc "fresh_user_avatar_path: the signed avatar path versioned by updated_at.to_fs(:number)."
+    string.join(["/users/", campfire.server.avatar-token(avatar-key, user-id), "/avatar?v=", campfire.server.number-stamp(updated-at)])
+}
+
+test campfire.server.user-avatar-path/version {
+    expect string.ends-with(campfire.server.user-avatar-path(bytes.from-utf8("k"), 1, "2026-01-02 16:00:00"), "/avatar?v=20260102160000")
+}
+
+fn campfire.server.sidebar-members(room-id: Int, user: AuthUser, user-updated-at: String, avatar-key: Bytes) -> List<SidebarMember> {
+    effects db.read
+    doc "membership.room.users.without(membership.user).presence || [membership.user], in the order SQLite returns the association (the same query shape as Rails')."
+    var members = list.empty<SidebarMember>()
+    let found = db.query("SELECT users.id, users.name, users.updated_at FROM users INNER JOIN memberships ON users.id = memberships.user_id WHERE memberships.room_id = $roomId AND users.id != $userId", [db.int-param(room-id), db.int-param(UserId.value(user.id))])
+    let rows = match found { error failure => list.empty<DbRow>(); ok loaded => loaded }
+    for row in rows {
+        let id = campfire.server.int-or-zero(db.optional-int(row, 0))
+        members = list.append(members, sidebarMember.new(name = campfire.server.text-or-empty(db.optional-text(row, 1)), avatar-url = campfire.server.user-avatar-path(avatar-key, id, campfire.server.text-or-empty(db.optional-text(row, 2)))))
+    }
+    if list.count(members) == 0 { [sidebarMember.new(name = user.name, avatar-url = campfire.server.user-avatar-path(avatar-key, UserId.value(user.id), user-updated-at))] } else { members }
+}
+
+test campfire.server.sidebar-members/self-when-alone {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let members = campfire.server.sidebar-members(99, user, "2026-01-01 00:00:00", bytes.from-utf8("k"))
+    expect list.count(members) == 1 && match list.get(members, 0) { none => ""; some member => member.name } == "Ann"
+}
+
+fn campfire.server.sidebar-view(user: AuthUser, context: CampfireServerContext) -> Result<SidebarView, DbError> {
+    effects db.read
+    doc "SidebarsController#show: visible memberships with their rooms by LOWER(name); direct rooms newest-updated first; up to twenty minus the excluded count of active users with no direct room with the user, by created_at; shared rooms with their unread flags."
+    let user-id = UserId.value(user.id)
+    let stamps = campfire.server.chrome-stamps(user.id)
+    let user-updated-at = match list.get(stamps, 0) { none => ""; some text => text }
+    match db.query("SELECT rooms.id, rooms.type, COALESCE(rooms.name, ''), CAST(strftime('%s', rooms.updated_at) AS INTEGER) * 1000 + CAST(substr(strftime('%f', rooms.updated_at), 4) AS INTEGER), memberships.unread_at IS NOT NULL FROM memberships INNER JOIN rooms ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND memberships.involvement != 'invisible' ORDER BY LOWER(rooms.name)", [db.int-param(user-id)]) {
+        error failure => result.error<SidebarView, DbError>(campfire.server.db-error(failure))
+        ok rows => {
+            var directs = list.empty<SidebarDirect>()
+            var shared = list.empty<SidebarRoom>()
+            for row in rows {
+                let room-id = campfire.server.int-or-zero(db.optional-int(row, 0))
+                let kind = campfire.server.text-or-empty(db.optional-text(row, 1))
+                let unread = campfire.server.int-or-zero(db.optional-int(row, 4)) != 0
+                if kind == "Rooms::Direct" {
+                    let direct = sidebarDirect.new(room-id = room-id, unread = unread, updated-at-ms = campfire.server.int-or-zero(db.optional-int(row, 3)), members = campfire.server.sidebar-members(room-id, user, user-updated-at, context.avatar-key))
+                    // sort_by(updated_at).reverse: insert before the first older room.
+                    var placed = list.empty<SidebarDirect>()
+                    var inserted = false
+                    for other in directs {
+                        if bool.not(inserted) && other.updated-at-ms < direct.updated-at-ms {
+                            placed = list.append(placed, direct)
+                            inserted = true
+                        }
+                        placed = list.append(placed, other)
+                    }
+                    directs = if inserted { placed } else { list.append(placed, direct) }
+                } else {
+                    shared = list.append(shared, sidebarRoom.new(room-id = room-id, kind = if kind == "Rooms::Open" { "open" } else { "closed" }, name = campfire.server.text-or-empty(db.optional-text(row, 2)), unread = unread))
+                }
+            }
+            let excluded = match db.query("SELECT COUNT(DISTINCT user_id) FROM memberships WHERE room_id IN (SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.type = 'Rooms::Direct')", [db.int-param(user-id)]) { error failure => 0; ok counted => match db.first-row(counted) { none => 0; some row => db.int(row, 0) } }
+            // Array#including appends the user's own id even when it is already listed.
+            let limit = if 20 - (excluded + 1) > 0 { 20 - (excluded + 1) } else { 0 }
+            var placeholders = list.empty<SidebarPlaceholder>()
+            let placeholder-rows = match db.query("SELECT id, name, updated_at FROM users WHERE status = 0 AND id != $userId AND id NOT IN (SELECT DISTINCT user_id FROM memberships WHERE room_id IN (SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.type = 'Rooms::Direct')) ORDER BY created_at LIMIT $limit", [db.int-param(user-id), db.int-param(limit)]) { error failure => list.empty<DbRow>(); ok loaded => loaded }
+            for row in placeholder-rows {
+                let id = campfire.server.int-or-zero(db.optional-int(row, 0))
+                placeholders = list.append(placeholders, sidebarPlaceholder.new(user-id = id, name = campfire.server.text-or-empty(db.optional-text(row, 1)), avatar-url = campfire.server.user-avatar-path(context.avatar-key, id, campfire.server.text-or-empty(db.optional-text(row, 2)))))
+            }
+            let restricted = match db.query("SELECT COALESCE(json_extract(settings, '$.restrict_room_creation_to_administrators'), 0) FROM accounts ORDER BY id LIMIT 1", list.empty<DbValue>()) { error failure => 0; ok found => match db.first-row(found) { none => 0; some row => db.int(row, 0) } }
+            let administrator = user.role == Role.administrator()
+            let gid = string.concat("gid://campfire/User/", int.to-string(user-id))
+            result.ok<SidebarView, DbError>(sidebarView.new(
+                rooms-stream = campfire.server.signed-stream(context.turbo-key, "rooms"),
+                user-rooms-stream = campfire.server.signed-stream(context.turbo-key, string.concat(base64.url-encode(bytes.from-utf8(gid)), ":rooms")),
+                directs = directs,
+                placeholders = placeholders,
+                shared = shared,
+                can-create-rooms = administrator || restricted == 0,
+                user-id = user-id,
+                user-avatar-url = campfire.server.user-avatar-path(context.avatar-key, user-id, user-updated-at)))
+        }
+    }
+}
+
+test campfire.server.sidebar-view/fixture {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let view = match campfire.server.sidebar-view(user, campfire.server.test-context()) { error failure => option.none<SidebarView>(); ok found => option.some<SidebarView>(found) }
+    expect match view { none => false; some found => list.count(found.shared) == 1 && list.count(found.placeholders) == 1 && found.can-create-rooms }
+}
+
+record SignedIn {
+    user: AuthUser
+    refresh: Option<SessionToken>
+}
+
+fn campfire.server.signed-in(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> Result<SignedIn, HttpResponse> {
+    effects db.read, db.write, random.read
+    doc "The room read's session and authentication for the other GET routes: the signed-in user and any session refresh, else the response the room read gives (the bot path or login redirect, a gate, a 500)."
+    let request = built.campfire
+    match campfire.server.restore-request-session(request, context) {
+        error failure => result.error<SignedIn, HttpResponse>(campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>()), built, incoming.target, context))
+        ok maybe-session => match maybe-session {
+            none => result.error<SignedIn, HttpResponse>(campfire.server.http-response(campfire.server.bot-or-redirect(request), built, incoming.target, context))
+            some restored => {
+                let refresh = campfire.server.refresh-token(restored)
+                match campfire.server.authenticated-user(request, restored, refresh) {
+                    error response => result.error<SignedIn, HttpResponse>(campfire.server.http-response(response, built, incoming.target, context))
+                    ok user => result.ok<SignedIn, HttpResponse>(signedIn.new(user = user, refresh = refresh))
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.signed-in/anonymous {
+    expect campfire.server.test-fixture() == 0
+    let incoming = httpRequest.new(method = "GET", target = "/users/me/sidebar", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773")], body = bytes.from-utf8(""), remote-ip = "127.0.0.1", now-microseconds = 1791979200000000)
+    let built = match campfire.server.request(incoming, campfire.server.test-context()) { error response => option.none<ServerRequest>(); ok request => option.some<ServerRequest>(request) }
+    expect match built { none => false; some request => match campfire.server.signed-in(request, incoming, campfire.server.test-context()) { ok signed => false; error response => response.status == 302 } }
+}
+
+fn campfire.server.html-page(sent: HttpResponse, body: String) -> HttpResponse {
+    doc "A 200 HTML page with the headers and cookies of an empty response."
+    var headers = list.empty<HttpHeader>()
+    for header in sent.headers {
+        if string.to-lower-ascii(header.name) == "content-type" {
+            headers = list.append(headers, httpHeader.new(name = header.name, value = "text/html; charset=utf-8"))
+        } else {
+            headers = list.append(headers, header)
+        }
+    }
+    httpResponse.new(status = 200, headers = headers, body = body, streamed = false)
+}
+
+test campfire.server.html-page/content-type {
+    let page = campfire.server.html-page(httpResponse.new(status = 200, headers = [httpHeader.new(name = "Content-Type", value = "text/plain; charset=utf-8")], body = "", streamed = false), "<p></p>")
+    expect http.header(page.headers, "Content-Type") == option.some<String>("text/html; charset=utf-8") && page.body == "<p></p>"
+}
+
+fn campfire.server.sidebar-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /users/me/sidebar: the signed-in user's sidebar inside the application layout."
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => match campfire.server.sidebar-view(signed.user, context) {
+            error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+            ok view => {
+                let stamps = campfire.server.chrome-stamps(signed.user.id)
+                let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
+                let head = campfire.views.head-assets(int.to-string(UserId.value(signed.user.id)), signed.user.name, if account-stamp == "" { "" } else { campfire.server.number-stamp(account-stamp) })
+                let body-class = if signed.user.role == Role.administrator() { "admin" } else { "" }
+                let page = campfire.views.text(campfire.views.sidebar-page(head, body-class, campfire.views.sidebar-frame(view)))
+                campfire.server.html-page(campfire.server.http-response(campfire.server.response(200, HttpView.empty(), "", signed.refresh), built, incoming.target, context), page)
+            }
+        }
+    }
+}
+
+test campfire.server.sidebar-read/page {
+    expect campfire.server.test-fixture() == 0
+    let sent = campfire.server.handle(campfire.server.test-get("/users/me/sidebar", list.empty<HttpHeader>()), campfire.server.test-context())
+    expect sent.status == 200 && string.contains(sent.body, "id=\"shared_rooms\"") && string.contains(sent.body, "<title>Campfire</title>")
+}

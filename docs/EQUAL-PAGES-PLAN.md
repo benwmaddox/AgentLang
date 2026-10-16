@@ -186,7 +186,13 @@ runners for partials), diff, and port until 0 differing blocks.
    and for the emoji test), whitespace-only bios beyond ASCII, metadata
    dimensions in exponent form.
 2. **Routes beyond GET/HEAD `/rooms/<id>`,** one at a time:
-   - the sidebar frame;
+   - the sidebar frame. **Done (2026-10-15):** `/users/me/sidebar` is
+     byte-identical to Rails without CSRF (30,806 bytes, for the snapshot
+     admin with direct rooms, placeholders and shared rooms). Its layout
+     shares `head-assets` and `lightbox` with the room page. Not carried:
+     Ruby's Unicode `capitalize` for initials (ASCII only); a member's
+     sidebar and `restrict_room_creation_to_administrators` aren't yet
+     checked against Rails.
    - message paging (`/rooms/<id>/@<message>`, before and after). **Done
      (2026-10-15).** The page around a message: 81 messages, 812,594
      bytes, and its last-page fallback. `messages?before=` and `after=`:

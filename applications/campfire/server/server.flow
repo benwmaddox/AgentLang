@@ -1066,7 +1066,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false)
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1102,7 +1102,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>())
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false)
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1433,19 +1433,9 @@ fn campfire.server.messages-index(request: CampfireHttpRequest, user: AuthUser, 
 fn campfire.server.messages-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
     effects db.read, db.write, random.read
     doc "GET/HEAD /rooms/<id>/messages: the room read's session and authentication, then messages#index."
-    let request = built.campfire
-    match campfire.server.restore-request-session(request, context) {
-        error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", option.none<SessionToken>()), built, incoming.target, context)
-        ok maybe-session => match maybe-session {
-            none => campfire.server.http-response(campfire.server.bot-or-redirect(request), built, incoming.target, context)
-            some restored => {
-                let refresh = campfire.server.refresh-token(restored)
-                match campfire.server.authenticated-user(request, restored, refresh) {
-                    error response => campfire.server.http-response(response, built, incoming.target, context)
-                    ok user => campfire.server.messages-index(request, user, refresh, built, incoming, context)
-                }
-            }
-        }
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => campfire.server.messages-index(built.campfire, signed.user, signed.refresh, built, incoming, context)
     }
 }
 
@@ -1455,7 +1445,7 @@ fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) 
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
+        ok built => if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
     }
 }
 

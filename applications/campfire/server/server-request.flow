@@ -15,6 +15,8 @@ record ServerRequest {
     paging: Bool
     before: Option<String>
     after: Option<String>
+    // GET/HEAD /users/me/sidebar (users/sidebars#show).
+    sidebar: Bool
 }
 
 fn campfire.server.status(status: Int) -> HttpResponse {
@@ -411,7 +413,8 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
     let host = if campfire.server.header-count(incoming.headers, "host") == 1 { campfire.server.header-last(incoming.headers, "host") } else { option.none<String>() }
     let host-ok = match host { none => false; some value => campfire.server.equal-ignoring-case?(value, context.authority) }
     let length-status = campfire.server.content-length-status(incoming.headers)
-    match campfire.server.room-path(path) {
+    let routed = if path == "/users/me/sidebar" { option.some<RoomPath>(roomPath.new(room = "0", around = option.none<String>(), paging = false)) } else { campfire.server.room-path(path) }
+    match routed {
         none => result.error<ServerRequest, HttpResponse>(campfire.server.status(404))
         some room-path => {
             let id-text = room-path.room
@@ -489,7 +492,7 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                             accepts-html = true,
                             last-room = last-room-value,
                             csrf-token = option.none<String>())
-                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, paging = paging, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }))
+                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, paging = paging, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }, sidebar = http.path(incoming.target) == "/users/me/sidebar"))
                     }
                 }
             }

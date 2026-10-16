@@ -1,0 +1,298 @@
+// users/sidebars#show (/users/me/sidebar) as Rails renders it: the application
+// layout around the sidebar turbo frame (users/sidebars/show), with direct
+// rooms, direct placeholders and shared rooms generated from Campfire's
+// partials. Pure: the server loads the rows and signs the stream names and
+// avatar paths.
+
+record SidebarMember {
+    name: String
+    avatar-url: String
+}
+
+record SidebarDirect {
+    room-id: Int
+    unread: Bool
+    updated-at-ms: Int
+    // room.users without the member, else the member alone (Rails' presence || [user]).
+    members: List<SidebarMember>
+}
+
+record SidebarRoom {
+    room-id: Int
+    kind: String
+    name: String
+    unread: Bool
+}
+
+record SidebarPlaceholder {
+    user-id: Int
+    name: String
+    avatar-url: String
+}
+
+record SidebarView {
+    rooms-stream: String
+    user-rooms-stream: String
+    directs: List<SidebarDirect>
+    placeholders: List<SidebarPlaceholder>
+    shared: List<SidebarRoom>
+    can-create-rooms: Bool
+    user-id: Int
+    user-avatar-url: String
+}
+
+fn campfire.views.first-word(name: String) -> String {
+    effects none
+    doc "name.split(' ')[0]: the first whitespace-separated word, empty when there is none."
+    var word = ""
+    var started = false
+    var done = false
+    for index in 0..string.byte-length(name) {
+        let byte = string.byte-at-or(name, index, 0)
+        let space = byte == 32 || (byte >= 9 && byte <= 13)
+        if done || (space && started) {
+            break
+        }
+        if bool.not(space) {
+            started = true
+            word = string.concat(word, match string.slice(name, index, 1) { none => ""; some s => s })
+        }
+    }
+    word
+}
+
+test campfire.views.first-word/split {
+    expect campfire.views.first-word("  Rita Lopez") == "Rita" && campfire.views.first-word("") == "" && campfire.views.first-word("Kevin") == "Kevin"
+}
+
+fn campfire.views.initials(name: String) -> String {
+    effects none
+    doc "name.split(' ')[0, 3].map { |str| str[0].capitalize }.join: the first character of up to three words, ASCII letters upper-cased (Ruby's Unicode capitalize is not carried; other characters stay as they are)."
+    var out = ""
+    var words = 0
+    var in-word = false
+    let length = string.byte-length(name)
+    for index in 0..length {
+        let byte = string.byte-at-or(name, index, 0)
+        let space = byte == 32 || (byte >= 9 && byte <= 13)
+        if space {
+            in-word = false
+        } else if bool.not(in-word) {
+            in-word = true
+            if words < 3 {
+                var size = 1
+                if byte >= 240 { size = 4 } else if byte >= 224 { size = 3 } else if byte >= 192 { size = 2 }
+                let first = match string.slice(name, index, size) { none => ""; some s => s }
+                out = string.concat(out, if byte >= 97 && byte <= 122 { rich-html.ascii-char(byte - 32) } else { first })
+            }
+            words = words + 1
+        }
+    }
+    out
+}
+
+test campfire.views.initials/words {
+    expect campfire.views.initials("jason fried") == "JF" && campfire.views.initials("A b c d") == "ABC" && campfire.views.initials("Kevin") == "K"
+}
+
+fn campfire.views.to-sentence(words: List<String>) -> String {
+    effects none
+    doc "Array#to_sentence(two_words_connector: '+'): '', 'a', 'a+b', 'a, b, and c'."
+    let count = list.count(words)
+    var out = ""
+    for word, index in words {
+        let joiner = if index == 0 { "" } else if count == 2 { "+" } else if index == count - 1 { ", and " } else { ", " }
+        out = string.join([out, joiner, word])
+    }
+    out
+}
+
+test campfire.views.to-sentence/connectors {
+    expect campfire.views.to-sentence(["J", "K", "J"]) == "J, K, and J" && campfire.views.to-sentence(["J", "K"]) == "J+K" && campfire.views.to-sentence(["J"]) == "J"
+}
+
+fn campfire.views.unterminated(text: Html) -> Html {
+    effects none
+    doc "A template's text without its final newline (a template's closing quotes sit on their own line)."
+    let value = campfire.views.text(text)
+    html.raw(if string.ends-with(value, "\n") { match string.slice(value, 0, string.byte-length(value) - 1) { none => value; some s => s } } else { value })
+}
+
+test campfire.views.unterminated/newline {
+    expect campfire.views.text(campfire.views.unterminated(html.raw("a\n"))) == "a" && campfire.views.text(campfire.views.unterminated(html.raw("a"))) == "a"
+}
+
+fn campfire.views.sidebar-avatar(url: String) -> Html {
+    effects none
+    doc "One avatar of a direct room's group (20 px)."
+    html"""          <span class="avatar">
+            <img aria-hidden="true" src="{url}" width="20" height="20" />
+          </span>
+"""
+}
+
+test campfire.views.sidebar-avatar/size {
+    expect string.contains(campfire.views.text(campfire.views.sidebar-avatar("/a")), "width=\"20\"")
+}
+
+fn campfire.views.sidebar-direct(direct: SidebarDirect) -> Html {
+    effects none
+    doc "users/sidebars/rooms/_direct (inside its cache block): the room link with the other members' avatars (up to four, 20 px) and initials, or the one member's 48 px avatar and first name."
+    let id = int.to-string(direct.room-id)
+    let class = if direct.unread { "direct unread" } else { "direct" }
+    let number = int.to-string(direct.updated-at-ms)
+    let many = list.count(direct.members) > 1
+    var avatars = list.empty<Html>()
+    var initials = list.empty<String>()
+    for member, index in direct.members {
+        if index < 4 {
+            avatars = list.append(avatars, campfire.views.sidebar-avatar(member.avatar-url))
+        }
+        initials = list.append(initials, campfire.views.initials(member.name))
+    }
+    let first = match list.get(direct.members, 0) { none => sidebarMember.new(name = "", avatar-url = ""); some member => member }
+    let names = if many { campfire.views.to-sentence(initials) } else { campfire.views.first-word(first.name) }
+    let picture = if many {
+        html"""      <div class="avatar__group">
+{avatars}      </div>
+"""
+    } else {
+        html"""      <span class="avatar">
+        <img aria-hidden="true" src="{first.avatar-url}" width="48" height="48" />
+      </span>
+"""
+    }
+    let link = html"""  <a class="{class}" id="list_rooms_direct_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-number="{number}" href="/rooms/{id}">
+{picture}
+    <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
+      <span class="txt-nowrap overflow-ellipsis">
+        <span class="for-screen-reader">Ping with</span>
+          {names}
+      </span>
+    </span>
+</a>
+"""
+    html.raw(string.concat("\n", campfire.views.text(campfire.views.unterminated(link))))
+}
+
+test campfire.views.sidebar-direct/one-member {
+    let text = campfire.views.text(campfire.views.sidebar-direct(sidebarDirect.new(room-id = 5, unread = true, updated-at-ms = 7, members = [sidebarMember.new(name = "Kevin Lee", avatar-url = "/k")])))
+    expect string.starts-with(text, "\n  <a class=\"direct unread\" id=\"list_rooms_direct_5\"") && string.contains(text, "width=\"48\"") && string.contains(text, "          Kevin\n") && string.ends-with(text, "</a>")
+}
+
+fn campfire.views.sidebar-placeholder(user: SidebarPlaceholder) -> Html {
+    effects none
+    doc "users/sidebars/rooms/_direct_placeholder: the button_to that starts a ping (no authenticity token: forgery protection is header-only)."
+    let id = int.to-string(user.user-id)
+    let name = campfire.views.first-word(user.name)
+    let form = html"""<form class="button_to" method="post" action="/rooms/directs?user_ids%5B%5D={id}"><button class="direct borderless fill-transparent unpad" type="submit">
+  <span class="avatar">
+    <img aria-hidden="true" src="{user.avatar-url}" />
+  </span>
+
+  <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
+    <span class="txt-nowrap overflow-ellipsis">
+      <span class="for-screen-reader">Start a ping with</span>
+      {name}
+    </span>
+  </span>
+</button></form>
+"""
+    campfire.views.unterminated(form)
+}
+
+test campfire.views.sidebar-placeholder/form {
+    let text = campfire.views.text(campfire.views.sidebar-placeholder(sidebarPlaceholder.new(user-id = 3, name = "Bender Bot", avatar-url = "/b")))
+    expect string.starts-with(text, "<form class=\"button_to\"") && string.contains(text, "      Bender\n") && string.ends-with(text, "</button></form>")
+}
+
+fn campfire.views.sidebar-room(room: SidebarRoom) -> Html {
+    effects none
+    doc "users/sidebars/rooms/_shared, as the each loop indents it."
+    let id = int.to-string(room.room-id)
+    let class = if room.unread { "align-center gap room btn txt-nowrap unread" } else { "align-center gap room btn txt-nowrap" }
+    html"""          <a id="list_rooms_{room.kind}_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-name="{room.name}" style="--column-gap: 0.5em" class="{class}" href="/rooms/{id}">
+  <span class="overflow-ellipsis">{room.name}</span>
+</a>
+"""
+}
+
+test campfire.views.sidebar-room/unread {
+    let text = campfire.views.text(campfire.views.sidebar-room(sidebarRoom.new(room-id = 4, kind = "closed", name = "A & B", unread = true)))
+    expect string.contains(text, "id=\"list_rooms_closed_4\"") && string.contains(text, "txt-nowrap unread\"") && string.contains(text, ">A &amp; B</span>")
+}
+
+fn campfire.views.sidebar-frame(sidebar: SidebarView) -> Html {
+    effects none
+    doc "users/sidebars/show: the sidebar turbo frame."
+    let directs = sidebar.directs.map(campfire.views.sidebar-direct)
+    let placeholders = sidebar.placeholders.map(campfire.views.sidebar-placeholder)
+    let shared = sidebar.shared.map(campfire.views.sidebar-room)
+    let new-room = if sidebar.can-create-rooms {
+        let link = html"""        <a class="rooms__new-btn btn room align-center gap txt-reversed" aria-label="New Chat Room" href="/rooms/opens/new">
+          <img aria-hidden="true" style="view-transition-name: new-room" src="/assets/add-f232d8a6.svg" width="20" height="20" />
+</a>
+"""
+        html.raw(string.concat("\n", campfire.views.text(campfire.views.unterminated(link))))
+    } else {
+        html"\n"
+    }
+    let user-id = int.to-string(sidebar.user-id)
+    html"""      <turbo-frame data-turbo-permanent="true" data-controller="rooms-list read-rooms turbo-frame" data-rooms-list-unread-class="unread" data-action="presence:present@window->rooms-list#read read-rooms:read->rooms-list#read turbo:frame-load->rooms-list#loaded refresh-room:visible@window->turbo-frame#reload" id="user_sidebar" target="_top">
+  <turbo-cable-stream-source channel="Turbo::StreamsChannel" signed-stream-name="{sidebar.rooms-stream}"></turbo-cable-stream-source>
+  <turbo-cable-stream-source channel="Turbo::StreamsChannel" signed-stream-name="{sidebar.user-rooms-stream}"></turbo-cable-stream-source>
+
+  <div class="sidebar__container overflow-y overflow-hide-scrollbar"
+      data-controller="badge-dot"
+      data-badge-dot-unread-class="unread"
+      data-action="rooms-list:unread@window->badge-dot#update rooms-list:read@window->badge-dot#update turbo:submit-start->turbo-frame#unpermanize">
+    <turbo-frame id="direct_rooms_control" target="_top">
+      <div class="directs gap overflow-x overflow-hide-scrollbar">
+        <a class="direct direct__new" data-turbo-frame="_self" href="/rooms/directs/new">
+          <span class="avatar avatar--icon">
+            <img aria-hidden="true" class="colorize--black" src="/assets/messages-add-d229e6c2.svg" width="20" height="20" />
+          </span>
+
+          <span class="direct__author flex max-width min-width border-radius pad-inline-half">
+            <span class="for-screen-reader">New</span>
+            <span class="txt-small overflow-clip">Ping</span>
+          </span>
+</a>
+        <div id="direct_rooms" contents data-controller="sorted-list" data-action="rooms-list:unread@window->sorted-list#updateItem">
+          {directs}
+        </div>
+
+        <div contents>
+          {placeholders}
+        </div>
+      </div>
+    </turbo-frame>
+
+    <div class="rooms position-relative flex flex-column gap">
+      <div id="shared_rooms" contents data-controller="sorted-list">
+{shared}      </div>
+{new-room}    </div>
+
+    <button class="btn sidebar__toggle" data-action="toggle-class#toggle">
+      <img aria-hidden="true" src="/assets/menu-5462dfd3.svg" width="20" height="20" />
+      <span class="for-screen-reader">Open menu</span>
+    </button>
+  </div>
+
+  <div class="flex align-end sidebar__tools gap justify-end">
+    <a class="btn avatar flex-item-no-shrink sidebar__tool" href="/users/me/profile">
+      <img aria-hidden="true" style="view-transition-name: avatar-{user-id}" src="{sidebar.user-avatar-url}" width="48" height="48" />
+      <span class="for-screen-reader">My Settings</span>
+</a>
+    <a class="btn align-center gap txt-reversed sidebar__tool" href="/account/edit">
+      <img aria-hidden="true" style="view-transition-name: account-settings" src="/assets/settings-aee56972.svg" width="20" height="20" />
+      <span class="for-screen-reader">Account Settings</span>
+</a>  </div>
+</turbo-frame>
+"""
+}
+
+test campfire.views.sidebar-frame/empty-lists {
+    let text = campfire.views.text(campfire.views.sidebar-frame(sidebarView.new(rooms-stream = "R", user-rooms-stream = "U", directs = list.empty<SidebarDirect>(), placeholders = list.empty<SidebarPlaceholder>(), shared = list.empty<SidebarRoom>(), can-create-rooms = false, user-id = 1, user-avatar-url = "/a")))
+    expect string.contains(text, "signed-stream-name=\"R\"") && string.contains(text, "sorted-list\">\n      </div>\n\n    </div>")
+}
