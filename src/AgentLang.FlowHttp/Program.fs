@@ -40,10 +40,14 @@ let private emit (args: string list) =
             for key, value in fields do args[key] <- value
             let response = flowApp.Engine.Dispatch(operation, args)
             if not (response["ok"].GetValue<bool>()) then failwith $"probe {operation}: {response.ToJsonString()}"
+            response
         let source = "fn probe.add-one(n: Int) -> Int {\n    n + 1\n}\n\ntest probe.add-one/two {\n    expect probe.add-one(1) == 2\n}\n"
         FlowApp.timed "probe-define" (fun () ->
-            request "define" [ "frontend", System.Text.Json.Nodes.JsonValue.Create("flow"); "syntaxVersion", System.Text.Json.Nodes.JsonValue.Create(2); "source", System.Text.Json.Nodes.JsonValue.Create(source) ])
-        FlowApp.timed "probe-commit" (fun () -> request "commit" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.add-one") ])
+            request "define" [ "frontend", System.Text.Json.Nodes.JsonValue.Create("flow"); "syntaxVersion", System.Text.Json.Nodes.JsonValue.Create(2); "source", System.Text.Json.Nodes.JsonValue.Create(source) ] |> ignore)
+        let committed = FlowApp.timed "probe-commit" (fun () -> request "commit" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.add-one") ])
+        // Commit lists the attached tests it ran and passed; the probe's own test must be one.
+        let passed = committed["data"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
+        if not (passed.Contains "probe.add-one/two") then failwith $"probe commit did not run probe.add-one/two: {committed.ToJsonString()}"
     let ir, diagnostics = FlowApp.timed "emit-native" (fun () -> FlowApp.emitNative flowApp profile target)
     File.WriteAllText(Path.Combine(out, "module.ll"), ir, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "diagnostics.tsv"), FlowApp.diagnosticsText diagnostics, UTF8Encoding(false))
