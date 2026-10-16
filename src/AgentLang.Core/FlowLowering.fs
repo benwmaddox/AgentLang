@@ -2758,11 +2758,17 @@ module FlowLowering =
           Artifacts: LoweredWordArtifacts
           Source: FlowSourceDocument option }
 
+    /// A compiled snapshot to extend: its verified program and every private marker it allocated.
+    type private FlowExtension =
+        { Parent: VerifiedIrProgram
+          Reserved: Map<SourceSpan, SourceSpan> }
+
     let private compileBatchWordsCore
         (context: Context)
         (changes: FlowWordChange list)
         (sourceDocuments: Map<string, FlowSourceDocument>)
         (retainedSources: RetainedFlowSource list)
+        (extendFrom: FlowExtension option)
         : BatchCompilationArtifacts =
         validateContextCatalog context
         // Validate every intent against the immutable input before creating any
@@ -2867,7 +2873,12 @@ module FlowLowering =
                 fail "FLOW_SOURCE_CHANGE_COVERAGE" "Every source-backed word change must have exactly one parsed source document." None None
                     (expectedSourceNames |> Set.toList) (actualSourceNames |> Set.toList)
 
-        let mutable allocationOrigins = context.SourceOrigins
+        // An extension allocates new markers above every marker its parent snapshot used,
+        // attachments included.
+        let mutable allocationOrigins =
+            match extendFrom with
+            | Some extension -> Map.fold (fun found marker origin -> Map.add marker origin found) extension.Reserved context.SourceOrigins
+            | None -> context.SourceOrigins
         let loweredChangeArtifacts =
             prepared
             |> Seq.map (fun item ->
@@ -2968,7 +2979,13 @@ module FlowLowering =
         let finalParameterNames =
             (loweredChanges @ (loweredRetainedArtifacts |> List.map (fun item -> item.Lowered)))
             |> List.fold (fun parameters lowered -> Map.add lowered.Definition.Name lowered.ParameterNames parameters) context.ParameterNames
-        let finalMarkers = contextZeroWidthMarkers finalCompilerContext
+        let finalMarkers =
+            match extendFrom with
+            | Some _ ->
+                loweredChangeArtifacts
+                |> List.fold (fun found item -> Set.union found (zeroWidthMarkers item.Artifacts.Lowered.Definition.Body)) Set.empty
+                |> fun added -> context.SourceOrigins |> Map.fold (fun found marker _ -> Set.add marker found) added
+            | None -> contextZeroWidthMarkers finalCompilerContext
         let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
         let retainedKeys = retainedOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         let missingFinalOrigins = Set.difference finalMarkers retainedKeys
@@ -2983,6 +3000,7 @@ module FlowLowering =
             Set.union
                 (retainedSources |> List.choose (fun retained -> if retained.Document.SyntaxVersion = 2 then Some retained.Document.OwnerId else None) |> Set.ofList)
                 (sourceDocuments |> Map.toSeq |> Seq.choose (fun (_, document) -> if document.SyntaxVersion = 2 then Some document.OwnerId else None) |> Set.ofSeq)
+            |> fun owners -> if extendFrom.IsSome then Set.union context.Flow2OwnerIds owners else owners
         let finalContext =
             { CompilerContext = finalCompilerContext
               ParameterNames = finalParameterNames
@@ -2990,7 +3008,13 @@ module FlowLowering =
               SourceOrigins = retainedOrigins }
         // This is the single authoritative check of all real bodies. It sees
         // forward references, final effects, scalar validators and call cycles.
-        let program = Compiler.compileIrProgramWithSourceOrigins finalCompilerContext retainedOrigins
+        let program =
+            match extendFrom with
+            | Some extension ->
+                if not (List.isEmpty retainedSources) || prepared |> Seq.exists (fun item -> item.Previous.IsSome) then
+                    fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added words." None None [ "added words only" ] []
+                Compiler.extendIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins extension.Parent finalCompilerContext retainedOrigins
+            | None -> Compiler.compileIrProgramWithSourceOrigins finalCompilerContext retainedOrigins
         let programData = VerifiedIrProgram.inspect program
         let changedIds = prepared |> Seq.map (fun item -> item.Identity) |> Set.ofSeq
         let sites =
@@ -3018,13 +3042,14 @@ module FlowLowering =
 
     let compileBatchWords (context: Context) (changes: FlowWordChange list) : FlowBatchCompilation =
         if List.isEmpty changes then fail "FLOW_BATCH_EMPTY" "A Flow word batch must contain at least one change." None None [ "one or more word changes" ] []
-        (compileBatchWordsCore context changes Map.empty [] ).Compilation
+        (compileBatchWordsCore context changes Map.empty [] None).Compilation
 
     let private compileBatchFlowSourcesCore
         allowEmpty
         (context: Context)
         (inventory: FlowSourceInventory)
         (sourceChanges: FlowSourceChange list)
+        (extendFrom: FlowExtension option)
         : FlowBoundBatchCompilation =
         validateContextCatalog context
         if List.isEmpty sourceChanges && not allowEmpty then
@@ -3105,7 +3130,7 @@ module FlowLowering =
                 | FlowWordRevisionIntent.Rehydrate _ -> None)
             |> Set.ofList
         let retainedSources = retainedBase |> List.filter (fun retained -> not (replacedNames.Contains retained.Document.OwnerName))
-        let artifacts = compileBatchWordsCore context changes sourceDocuments retainedSources
+        let artifacts = compileBatchWordsCore context changes sourceDocuments retainedSources extendFrom
         let callBindings =
             artifacts.AuthoredOwners
             |> List.collect (fun owner ->
@@ -3137,7 +3162,7 @@ module FlowLowering =
         (inventory: FlowSourceInventory)
         (sourceChanges: FlowSourceChange list)
         : FlowBoundBatchCompilation =
-        compileBatchFlowSourcesCore false context inventory sourceChanges
+        compileBatchFlowSourcesCore false context inventory sourceChanges None
 
     let private requireAttachmentVersion kind word span version =
         if version <> 1 && version <> 2 then fail "FLOW_VERSION_UNSUPPORTED" $"Only Flow syntax versions 1 and 2 are supported for Flow {kind} attachments." (Some word) (Some span) [ "1"; "2" ] [ string version ]
@@ -3820,6 +3845,7 @@ module FlowLowering =
         (wordChanges: FlowSourceChange list)
         (attachmentInventory: FlowAttachmentInventory)
         (attachmentChanges: FlowAttachmentChange list)
+        (extendFrom: FlowExtension option)
         : FlowBoundProjectCompilation =
         validateContextCatalog context
         if not allowEmpty && List.isEmpty wordChanges && List.isEmpty attachmentChanges then
@@ -3831,7 +3857,10 @@ module FlowLowering =
             wordInventory.Sources
             |> List.choose (fun document -> if document.SyntaxVersion = 2 then Some document.OwnerId else None)
             |> Set.ofList
-        let context = { context with Flow2OwnerIds = baseFlow2OwnerIds }
+        let context =
+            match extendFrom with
+            | Some _ -> { context with Flow2OwnerIds = Set.union context.Flow2OwnerIds baseFlow2OwnerIds }
+            | None -> { context with Flow2OwnerIds = baseFlow2OwnerIds }
         let retainedAttachments = validateFlowAttachmentInventory context baseFlowOwnerIds attachmentInventory
         let baseDocuments =
             retainedAttachments
@@ -3886,7 +3915,7 @@ module FlowLowering =
         // empty word changes are permitted when the batch only edits attachments.
         let loweringWatch = Diagnostics.Stopwatch.StartNew()
         let loweringTiming = not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_TIMING"))
-        let wordCompilation = compileBatchFlowSourcesCore true context wordInventory wordChanges
+        let wordCompilation = compileBatchFlowSourcesCore true context wordInventory wordChanges extendFrom
         if loweringTiming then eprintfn "timing lowering.words %.1fs (%d changes)" loweringWatch.Elapsed.TotalSeconds wordChanges.Length
         loweringWatch.Restart()
         let changedKeySet = Set.ofList changedKeys
@@ -3923,7 +3952,10 @@ module FlowLowering =
                     { document with OwnerRevision = ownerEntry.Revision }
             activeDocuments <- Map.add key outputDocument activeDocuments
 
-        let mutable allocationOrigins = wordCompilation.Context.SourceOrigins
+        let mutable allocationOrigins =
+            match extendFrom with
+            | Some extension -> Map.fold (fun found marker origin -> Map.add marker origin found) extension.Reserved wordCompilation.Context.SourceOrigins
+            | None -> wordCompilation.Context.SourceOrigins
         let compiledAttachments = ResizeArray<FlowCompiledAttachment>()
         let attachmentBindings = ResizeArray<FlowAttachmentCallBinding>()
         for KeyValue(key, document) in activeDocuments do
@@ -3982,7 +4014,7 @@ module FlowLowering =
         (attachmentInventory: FlowAttachmentInventory)
         (attachmentChanges: FlowAttachmentChange list)
         : FlowBoundProjectCompilation =
-        compileBatchFlowProjectSourcesCore false context wordInventory wordChanges attachmentInventory attachmentChanges
+        compileBatchFlowProjectSourcesCore false context wordInventory wordChanges attachmentInventory attachmentChanges None
 
     /// Rebuilds and validates an unchanged Flow-authored project against one
     /// exact compiler program. This is the load/Stack-only-change path: it has
@@ -3992,7 +4024,34 @@ module FlowLowering =
         (wordInventory: FlowSourceInventory)
         (attachmentInventory: FlowAttachmentInventory)
         : FlowBoundProjectCompilation =
-        compileBatchFlowProjectSourcesCore true context wordInventory [] attachmentInventory []
+        compileBatchFlowProjectSourcesCore true context wordInventory [] attachmentInventory [] None
+
+    /// Adds Flow words and their attachments to a compiled project without recompiling it:
+    /// `context` and `parent` are the final word context and program of an earlier
+    /// compilation, and `reserved` holds every private marker that compilation allocated
+    /// (attachments included). Only the added words and attachments are lowered; the
+    /// result's program is `Compiler.extendIrProgramWithSourceOrigins` of the parent, and
+    /// its bindings and attachments are the added ones alone.
+    let extendFlowProjectSources
+        (context: Context)
+        (parent: VerifiedIrProgram)
+        (reserved: Map<SourceSpan, SourceSpan>)
+        (wordChanges: FlowSourceChange list)
+        (attachmentChanges: FlowAttachmentChange list)
+        : FlowBoundProjectCompilation =
+        for change in wordChanges do
+            match change.RevisionIntent with
+            | FlowWordRevisionIntent.Add _ | FlowWordRevisionIntent.Rehydrate _ -> ()
+            | FlowWordRevisionIntent.Replace _ ->
+                fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added words." (Some change.Source.OwnerName) None [ "added words only" ] []
+        for change in attachmentChanges do
+            match change with
+            | FlowAttachmentChange.Add _ -> ()
+            | FlowAttachmentChange.Replace _ | FlowAttachmentChange.Remove _ ->
+                fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added attachments." None None [ "added attachments only" ] []
+        let emptyWords: FlowSourceInventory = { ExpectedFlowOwnerIds = Set.empty; Sources = [] }
+        let emptyAttachments: FlowAttachmentInventory = { ExpectedSources = Map.empty; Sources = [] }
+        compileBatchFlowProjectSourcesCore false context emptyWords wordChanges emptyAttachments attachmentChanges (Some { Parent = parent; Reserved = reserved })
 
     let parameterCatalog (definitions: FlowWordDefinition list) =
         definitions

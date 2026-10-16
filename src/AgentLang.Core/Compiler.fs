@@ -1931,6 +1931,98 @@ module Compiler =
             facts.Fingerprint <- Some(programOrigins, value)
             value
 
+    /// The verified program for `context` when `context` is `parentContext` plus some
+    /// Flow-lowered user words and nothing else; `parentProgram` was compiled from
+    /// `parentContext` and `parentOrigins`. Only the added words are checked and lowered.
+    /// Lowering one word reads only its own definition and the signatures it calls, and no
+    /// parent word can call a word that did not exist when it was compiled, so every parent
+    /// function, type, generated target and source site is exactly what a from-scratch
+    /// compile of `context` produces. Anything other than such an add is rejected.
+    let extendIrProgramWithSourceOrigins (parentContext: IrLoweringContext) (parentOrigins: Map<SourceSpan, SourceSpan>) (parentProgram: VerifiedIrProgram) (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog parentProgram
+        let parentFacts = factsFor parentContext
+        match parentProgram.CompilerSnapshotFingerprint with
+        | Some fingerprint when fingerprint = cachedFingerprint parentFacts parentContext parentOrigins -> ()
+        | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "An extended program's parent does not match the context it was compiled from." None None [ "same compiler snapshot fingerprint" ] []
+        let notPureAdd detail =
+            irFailure "IR_EXTEND_NOT_PURE_ADD" "A program can be extended only by adding user words; every other entry must be unchanged." None None [ "parent entries unchanged" ] [ detail ]
+        let same (left: 'value) (right: 'value) = obj.ReferenceEquals(left, right) || left = right
+        if not (same parentContext.Records context.Records) then notPureAdd "records"
+        if not (same parentContext.Scalars context.Scalars) then notPureAdd "scalars"
+        if not (same parentContext.Enums context.Enums) then notPureAdd "enums"
+        if not (same parentContext.HostOperations context.HostOperations) then notPureAdd "host operations"
+        for KeyValue(name, entry) in parentContext.Words do
+            match context.Words.TryFind name, context.WordIds.TryFind name with
+            | Some kept, Some keptId when obj.ReferenceEquals(kept, entry) && keptId = parentContext.WordIds[name] -> ()
+            | _ -> notPureAdd name
+        let added = context.Words |> Map.filter (fun name _ -> not (parentContext.Words.ContainsKey name))
+        if added.IsEmpty then notPureAdd "no added words"
+        if context.WordIds.Count <> context.Words.Count then
+            irFailure "IR_WORD_ID_MAP_INCOMPLETE" "Every effective dictionary word must have exactly one supplied stable ID." None None [ string context.Words.Count ] [ string context.WordIds.Count ]
+        let parentIds = parentContext.WordIds |> Map.toSeq |> Seq.map snd |> Set.ofSeq
+        let mutable addedIds = Set.empty
+        for KeyValue(name, entry) in added do
+            if entry.Builtin.IsSome then notPureAdd (name + " is not a user word")
+            match context.WordIds.TryFind name with
+            | Some(WordId rawId) when String.IsNullOrWhiteSpace rawId -> irFailure "IR_WORD_ID_INVALID" "Stable word IDs must be nonempty." (Some name) None [ "nonempty WordId" ] [ rawId ]
+            | Some identity when not (parentIds.Contains identity) && not (addedIds.Contains identity) -> addedIds <- Set.add identity addedIds
+            | Some identity -> irFailure "IR_WORD_ID_COLLISION" "Effective dictionary words must have globally unique stable IDs." (Some name) None [ "unique WordId values" ] [ sprintf "%A" identity ]
+            | None -> irFailure "IR_WORD_ID_MAP_INCOMPLETE" "Every effective dictionary word must have exactly one supplied stable ID." (Some name) None [ name ] []
+            verifyBuiltinMetadata context.Words context.HostOperations name entry
+            if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
+        let addedMarkers = added |> Map.fold (fun found _ entry -> Set.union found (zeroWidthMarkers entry.Definition.Body)) Set.empty
+        let collisions = addedMarkers |> Set.filter parentFacts.Markers.Contains
+        if not (Set.isEmpty collisions) then
+            irFailure "IR_SOURCE_ORIGIN_MARKER_COLLISION" "Private source markers must be unique across compiler snapshots and attached bodies." None None [] [ sprintf "collision count=%d" collisions.Count ]
+        for KeyValue(marker, origin) in parentOrigins do
+            match sourceOrigins.TryFind marker with
+            | Some kept when kept = origin -> ()
+            | _ -> notPureAdd "source origins"
+        let addedOrigins = sourceOrigins |> Map.filter (fun marker _ -> not (parentOrigins.ContainsKey marker))
+        validateSourceOrigins addedOrigins
+        ensureExactOriginKeys addedMarkers addedOrigins None None
+        let derived = programFactsFor parentProgram
+        let parentIr = derived.Program
+        let knownTypes = parentFacts.Types
+        let mutable functions = parentIr.FunctionsById
+        let mutable coverage = parentIr.CoverageByWord
+        let mutable sourceMap = parentIr.SourceMap
+        for KeyValue(name, entry) in added do
+            let checkedWord, typed = checkDefinitionDetailed knownTypes context.Enums context.Words entry.Definition
+            let ownerId = context.WordIds[name]
+            let block, localNames, wordSources, inferredEffects =
+                lowerTypedBody context sourceOrigins derived.TypeKeys parentIr.NominalTypesByKey derived.GeneratedByName name (Some ownerId) entry.Definition.Inputs checkedWord.InferredEffects typed
+            wordSources |> Map.iter (fun site value -> sourceMap <- Map.add site value sourceMap)
+            let functionValue =
+                { FunctionId = ownerId
+                  FunctionRevision = entry.Revision
+                  FunctionName = name
+                  InputTypes = entry.Definition.Inputs |> List.map (closedIrType derived.TypeKeys name (Some entry.Definition.Span))
+                  OutputTypes = entry.Definition.Outputs |> List.map (closedIrType derived.TypeKeys name (Some entry.Definition.Span))
+                  FunctionDeclaredEffects = irEffectsForWord name (Some entry.Definition.Span) entry.Definition.Effects
+                  FunctionInferredEffects = inferredEffects
+                  LocalNames = localNames
+                  FunctionBody = block
+                  FunctionInline = FlowSource.declaresInline entry.Definition.SourceText }
+            functions <- Map.add ownerId functionValue functions
+            coverage <- Map.add ownerId (IrVerifier.coverageObligationsWithTypes parentIr.NominalTypesByKey wordSources block) coverage
+        let program = { parentIr with FunctionsById = functions; CoverageByWord = coverage; SourceMap = sourceMap }
+        let fingerprint = snapshotFingerprint context sourceOrigins
+        let verified = IrVerifier.extendCompilerProgram parentProgram fingerprint program addedIds
+        // The child's shared facts follow from the parent's and the added words, without
+        // walking every retained body again.
+        match contextFacts.TryGetValue context with
+        | true, _ -> ()
+        | _ ->
+            contextFacts.AddOrUpdate(
+                context,
+                { Markers = Set.union parentFacts.Markers addedMarkers
+                  Types = parentFacts.Types
+                  TestScopeWords = Map.fold (fun words name entry -> if testIntrinsics.ContainsKey name then words else Map.add name entry words) parentFacts.TestScopeWords added
+                  Fingerprint = Some(sourceOrigins, fingerprint)
+                  CheckedBase = None })
+        verified
+
     let rec private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
         let facts = factsFor context
         validateSourceOrigins sourceOrigins

@@ -74,12 +74,48 @@ no host operation. The parent snapshot is the dictionary already running.
 
 ## Order of PRs
 
-1. Pure-add guard on the commit caller scan, plus commit phase timing (done:
-   14.9 s → 7.8 s).
-2. Set-hash fingerprint (no behaviour change; differential test).
-3. `extendCompilerProgram` and `extendIrProgram`, with a direct test against
-   a from-scratch compile.
-4. Flow lowering and attachment reuse; Runtime pure-add path; differential
-   mode.
-5. Publish cost on a one-word add.
-6. Replacement through the reverse-dependency closure.
+1. Pure-add guard on the commit caller scan, plus commit phase timing (done,
+   PR #2: 14.9 s → 7.3 s).
+2. Fingerprint as a hash of per-entry digests, memoized per word entry (done,
+   PR #3).
+3. Extend path (PR #4):
+   - `IrVerifier.extendCompilerProgram`;
+   - `Compiler.extendIrProgramWithSourceOrigins`;
+   - `FlowLowering.extendFlowProjectSources`;
+   - `compileRuntimeSnapshotCore` with an extension;
+   - pure-add detection against recent and loaded snapshots;
+   - differential mode and an extension log;
+   - the Flow.Runtime group `testIncrementalDefinesMatchFullCompile`.
+
+   Campfire probe: define 6.0 s → 0.3 s, commit 7.1 s → 1.8 s (1.3 s of it is
+   publish).
+4. Publish cost on a one-word add.
+5. Replacement through the reverse-dependency closure.
+
+## What a pure add is (as built)
+
+`pureAddedWords parent state` accepts `state` only when all of these hold:
+
+- every parent word, test, example and Flow source row is the same object in
+  `state`;
+- types, type sources, replacements, deprecations and evolution groups are
+  unchanged;
+- the new words are Flow-authored and own every new row;
+- no new word's short name is a name that a retained call site requested
+  without qualification.
+
+The last rule matters because unqualified Flow calls resolve by short name
+(`candidatesFor`), so such an add could rebind or make ambiguous an existing
+call. That case takes the full compile, which re-checks every binding.
+
+Retained test bodies stay bound to the program they were verified with.
+Test-file overlays keep their `Original` program. A snapshot extended by
+adding words contains those programs unchanged, so this is the Forth model:
+earlier definitions keep the dictionary they were compiled in.
+
+Switches:
+
+- `AGENTLANG_INCREMENTAL=0` disables extension.
+- `AGENTLANG_INCREMENTAL_CHECK=1` also compiles from scratch and requires the
+  same program, attached bodies and stored bindings.
+- `AGENTLANG_INCREMENTAL_LOG=<file>` appends one line per extension.
