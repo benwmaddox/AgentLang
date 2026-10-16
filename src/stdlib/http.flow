@@ -113,3 +113,81 @@ test http.streamed/flag {
     expect response.streamed && response.body == "tail"
     expect bool.not(http.response(200, "text/plain", "x").streamed)
 }
+
+fn http.hex-value(byte: Int) -> Int {
+    doc "The value of one hexadecimal digit, or -1."
+    if byte >= 48 && byte <= 57 { byte - 48 } else if byte >= 97 && byte <= 102 { byte - 87 } else if byte >= 65 && byte <= 70 { byte - 55 } else { -1 }
+}
+
+test http.hex-value/digits {
+    expect http.hex-value(57) == 9 && http.hex-value(102) == 15 && http.hex-value(71) == -1
+}
+
+fn http.byte(value: Int) -> Bytes {
+    doc "One byte (0-255) as Bytes: decoded from its two-character Base64 chunk."
+    let table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    let first = match string.slice(table, value / 4, 1) { none => "A"; some s => s }
+    let second = match string.slice(table, (value % 4) * 16, 1) { none => "A"; some s => s }
+    match base64.decode(string.join([first, second, "=="])) { none => bytes.from-utf8(""); some data => data }
+}
+
+test http.byte/values {
+    expect bytes.to-utf8(http.byte(65)) == option.some<String>("A") && bytes.length(http.byte(233)) == 1
+}
+
+fn http.form-decode(text: String) -> Option<String> {
+    doc "application/x-www-form-urlencoded decoding of one name or value (Rack's unescape): '+' is a space, %XX a byte. None for a malformed escape or bytes that are not UTF-8 (Rails answers 400)."
+    var out = bytes.from-utf8("")
+    var at = 0
+    var valid = true
+    let length = string.byte-length(text)
+    for step in 0..length {
+        if at >= length || bool.not(valid) {
+            break
+        }
+        let byte = string.byte-at-or(text, at, 0)
+        if byte == 43 {
+            out = bytes.concat(out, bytes.from-utf8(" "))
+            at = at + 1
+        } else if byte == 37 {
+            let high = http.hex-value(string.byte-at-or(text, at + 1, 0))
+            let low = http.hex-value(string.byte-at-or(text, at + 2, 0))
+            if high < 0 || low < 0 {
+                valid = false
+            } else {
+                out = bytes.concat(out, http.byte(high * 16 + low))
+                at = at + 3
+            }
+        } else {
+            let next = match string.index-of(text, "%", at) { none => length; some index => index }
+            let plus = match string.index-of(text, "+", at) { none => length; some index => index }
+            let stop = if plus < next { plus } else { next }
+            out = bytes.concat(out, bytes.from-utf8(match string.slice(text, at, stop - at) { none => ""; some s => s }))
+            at = stop
+        }
+    }
+    if valid { bytes.to-utf8(out) } else { option.none<String>() }
+}
+
+test http.form-decode/escapes {
+    expect http.form-decode("a+b%20c") == option.some<String>("a b c")
+    expect http.form-decode("caf%C3%A9") == option.some<String>("café")
+    expect http.form-decode("%zz") == option.none<String>() && http.form-decode("%FF") == option.none<String>()
+}
+
+fn http.form-encode(text: String) -> String {
+    doc "CGI.escape (Rails' to_query): letters, digits and '*-._' stay, a space is '+', every other byte is %XX."
+    let digits = "0123456789ABCDEF"
+    var out = ""
+    for index in 0..string.byte-length(text) {
+        let byte = string.byte-at-or(text, index, 0)
+        let kept = (byte >= 48 && byte <= 57) || (byte >= 65 && byte <= 90) || (byte >= 97 && byte <= 122) || byte == 42 || byte == 45 || byte == 46 || byte == 95
+        let piece = if kept { match string.slice(text, index, 1) { none => ""; some s => s } } else if byte == 32 { "+" } else { string.join(["%", match string.slice(digits, byte / 16, 1) { none => ""; some s => s }, match string.slice(digits, byte % 16, 1) { none => ""; some s => s }]) }
+        out = string.concat(out, piece)
+    }
+    out
+}
+
+test http.form-encode/cgi {
+    expect http.form-encode("a b&c/é") == "a+b%26c%2F%C3%A9" && http.form-encode("x-y_z.*") == "x-y_z.*"
+}

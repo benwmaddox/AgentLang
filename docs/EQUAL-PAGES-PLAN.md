@@ -201,13 +201,28 @@ runners for partials), diff, and port until 0 differing blocks.
      Rails), Last-Modified, Cache-Control, 204 for an empty page and 304
      on revalidation. A non-member's room or an unknown message is 404.
      The 404 body is the host's, not Rails' `public/404.html`.
-   - search;
+   - search. **GET done (2026-10-16):** `/searches` is byte-identical to Rails
+     without CSRF for a 14-result query (161,064 bytes), an empty result, a
+     two-word AND query and no query. It uses the reference app's FTS5 index
+     (porter), the user's reachable messages (last 100), recent searches and
+     last_room_visited. Each result is the message partial in its own room's
+     context. The page template is generated from Rails' page
+     (`.agentlang/pages-285/make_search_views.py`).
+     This fixed direct rooms everywhere: messages name them
+     `room_display_name(room, for_user: nil)` (every member), the page title
+     and nav name the others, and the nav says "Ping". A direct room page is
+     now identical too (62,121 bytes).
+     Approximated: Ruby's Unicode `[:word:]` in the query cleanup (non-ASCII
+     bytes are kept). Not yet done: POST `/searches` (recording a search) and
+     clearing recent searches, which are writes;
    - users and avatars;
    - account;
    - sign-in and sign-out. Passwords: Rails' bcrypt digests are verified and created
      with the system libxcrypt `crypt_r()` as a native host op (user, 2026-10-16:
      libcrypto has no bcrypt; chosen over vendoring OpenBSD bcrypt or a new KDF).
-     Linux server only; a Windows host would need its own decision;
+     On Windows (no bcrypt in CNG) the native build vendors Openwall's crypt_blowfish,
+     the code libxcrypt's bcrypt derives from (user, 2026-10-16); both platforms are
+     tested against the snapshot's Rails digests and libxcrypt's test vectors;
    - message and boost writes, with sanitization inbound when writes land.
 
 ## Typed schema and validated migration (user, 2026-10-15)

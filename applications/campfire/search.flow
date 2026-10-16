@@ -1,0 +1,148 @@
+// searches#index (/searches?q=) as Rails renders it: the application layout with the
+// query and recent searches in the nav and sidebar, the results as message partials and
+// the search composer. The page template is generated from Rails' own page
+// (.agentlang/pages-285/make_search_views.py), so its whitespace is Rails'.
+
+fn campfire.views.search-recent(query: String, encoded: String) -> Html {
+    effects none
+    doc "One recent search link (encoded is the query as searches_path(q:) escapes it)."
+    let link = html"""      <a class="align-center gap room btn txt-nowrap" href="/searches?q={encoded}">
+        <span class="overflow-ellipsis">“{query}”</span>
+</a>
+"""
+    campfire.views.unterminated(link)
+}
+
+test campfire.views.search-recent/link {
+    expect campfire.views.text(campfire.views.search-recent("a&b", "a%26b")) == "      <a class=\"align-center gap room btn txt-nowrap\" href=\"/searches?q=a%26b\">\n        <span class=\"overflow-ellipsis\">“a&amp;b”</span>\n</a>"
+}
+
+fn campfire.views.search-recents(links: List<Html>, base-url: String) -> Html {
+    effects none
+    doc "The recent searches (newest first) and, when there are any, the button that clears them."
+    let clear = html"""      <form class="button_to" method="post" action="{base-url}/searches/clear"><input type="hidden" name="_method" value="delete" /><button class="btn searches__btn" data-turbo-confirm="Are you sure you want to clear your recent searches?" type="submit">
+        <img aria-hidden="true" src="/assets/broom-13d30a95.svg" />
+        <span class="for-screen-reader">Clear recent searches</span>
+</button></form>
+"""
+    let tail = if list.count(links) == 0 { "\n" } else { string.concat("\n", campfire.views.text(campfire.views.unterminated(clear))) }
+    var joined = ""
+    for link in links {
+        joined = string.concat(joined, campfire.views.text(link))
+    }
+    html.raw(string.concat(joined, tail))
+}
+
+test campfire.views.search-recents/empty {
+    expect campfire.views.text(campfire.views.search-recents(list.empty<Html>(), "http://x")) == "\n"
+}
+
+fn campfire.views.search-pill(query: String, count: Int) -> Html {
+    effects none
+    doc "The query and its result count (shown only for a present query)."
+    let number = int.to-string(count)
+    html"""    <div class="searches__query flex align-center gap pad-block-start-half">
+      <div class="btn btn--reversed btn--faux align-center gap txt-nowrap">
+        <span class="overflow-ellipsis">“{query}”</span>
+        <span class="flex-item-no-shrink">{number}</span>
+</div>    </div>
+"""
+}
+
+test campfire.views.search-pill/count {
+    expect string.contains(campfire.views.text(campfire.views.search-pill("lunch", 14)), "<span class=\"flex-item-no-shrink\">14</span>\n</div>    </div>\n")
+}
+
+fn campfire.views.search-input(value: Option<String>) -> Html {
+    effects none
+    doc "The search field: form.text_field :q with value: params[:q] (no value attribute when absent)."
+    match value {
+        none => html"<input class=\"searches__input input flex-item-grow\" role=\"searchbox\" aria-label=\"search\" autofocus=\"autofocus\" required=\"required\" type=\"text\" name=\"q\" id=\"q\" />"
+        some text => html"<input value=\"{text}\" class=\"searches__input input flex-item-grow\" role=\"searchbox\" aria-label=\"search\" autofocus=\"autofocus\" required=\"required\" type=\"text\" name=\"q\" id=\"q\" />"
+    }
+}
+
+test campfire.views.search-input/value {
+    expect string.starts-with(campfire.views.text(campfire.views.search-input(option.some<String>("a\"b"))), "<input value=\"a&quot;b\" class=") && string.starts-with(campfire.views.text(campfire.views.search-input(option.none<String>())), "<input class=")
+}
+
+fn campfire.views.search-page(head: Html, body-class: String, pill: Html, recents: Html, results: Html, return-room: String, input: Html) -> Html {
+    effects none
+    doc "The searches#index page. results is empty or a blank line and the message partials; input is campfire.views.search-input."
+    let lightbox = campfire.views.lightbox()
+    html"""<!DOCTYPE html>
+<html>
+  <head>
+    <title>Search</title>
+
+{head}
+    
+  </head>
+
+  <body class="{body-class}" data-controller="local-time lightbox">
+    <a href="#main-content" class="skip-navigation btn">Skip to main content</a>
+
+    <nav id="nav">
+      {pill}
+  <div class="searches__recents align-center gap pad-block-half overflow-y overflow-hide-scrollbar">
+{recents}  </div>
+
+    </nav>
+
+
+    <main id="main-content">
+      
+
+
+<div id="message-area" class="message-area">
+  <div class="message-area--empty min-width center">
+    <figure class="center pad">
+      <img aria-hidden="true" class="colorize--black translucent" src="/assets/search-5f29565f.svg" />
+    </figure>
+  </div>
+
+  <div id="search-results" class="messages searches__results" data-controller="search-results" data-search-results-target="messages" data-search-results-me-class="message--me" data-search-results-threaded-class="message--threaded" data-search-results-mentioned-class="message--mentioned" data-search-results-formatted-class="message--formatted">
+{results}</div></div>
+
+
+
+      <footer id="footer">
+          <div class="composer flex align-end gap">
+    <a class="btn flex-item-no-shrink margin-block-end" style="view-transition-name: input-switcher; --btn-border-radius: 0.5em" href="/rooms/{return-room}">
+      <img aria-hidden="true" src="/assets/arrow-left-abe40556.svg" />
+      <span class="for-screen-reader">Exit search </span>
+</a>
+    <form class="margin-block flex-item-grow contain flex align-center gap" data-controller="form" data-action="keydown.esc-&gt;form#cancel" action="/searches" accept-charset="UTF-8" method="post">
+      <div class="composer__input flex align-center flex-item-grow gap full-width input input--actor min-width">
+        <img aria-hidden="true" class="composer__input-hint colorize--black" style="view-transition-name: input-btn;" src="/assets/search-5f29565f.svg" width="20" height="20" />
+
+        {input}
+
+        <a data-form-target="cancel" role="button" class="searches__reset" href="/searches">
+          <img aria-hidden="true" class="colorize--black" src="/assets/remove-0e7a045d.svg" width="14" height="14" />
+          <span class="for-screen-reader">Clear search field</span>
+</a>
+        <button name="button" type="submit" class="btn btn--reversed flex-item-no-shrink txt-small" style="--btn-border-radius: 0.5em">
+          <img aria-hidden="true" src="/assets/arrow-up-f96b3895.svg" />
+          <span class="for-screen-reader">Search</span>
+</button>      </div>
+</form>  </div>
+
+      </footer>
+    </main>
+
+    <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
+        <div class="rooms position-relative flex flex-column gap overflow-y overflow-hide-scrollbar">
+{recents}  </div>
+
+    </aside>
+
+{lightbox}  </body>
+</html>
+"""
+}
+
+test campfire.views.search-page/holes {
+    let text = campfire.views.text(campfire.views.search-page(html"<x></x>", "sidebar searches", html"", html"\n", html"", "7", campfire.views.search-input(option.none<String>())))
+    expect string.contains(text, "<title>Search</title>") && string.contains(text, "href=\"/rooms/7\"") && string.contains(text, "<input class=\"searches__input")
+}

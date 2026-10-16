@@ -18,6 +18,10 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     doc "The Rails room page layout (layouts/application and rooms/show chrome), generated from Campfire's markup with every request, user, room and account value as a hole."
     let head = campfire.views.head-assets(chrome.user-id, chrome.user-name, chrome.account-version)
     let lightbox = campfire.views.lightbox()
+    // rooms/show/_nav says "Ping" for a direct room.
+    let direct = chrome.room-key == "rooms_direct"
+    let ping-with = if direct { html"        <span class=\"for-screen-reader\">Ping with</span>\n" } else { html.raw("") }
+    let room-word = if direct { "Ping" } else { "room" }
 
     html"""
 <!DOCTYPE html>
@@ -39,13 +43,13 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
 
   <span class="btn btn--reversed btn--faux room--current">
     <h1 class="room__contents txt-medium overflow-ellipsis">
-
+{ping-with}
       {chrome.room-name}
     </h1>
 </span>
   <a class="btn" style="view-transition-name: edit-room-{chrome.room-id}" data-room-id="{chrome.room-id}" href="/rooms/{chrome.room-path}/{chrome.room-id}/edit">
     <img aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" width="20" height="20" />
-    <span class="for-screen-reader">Settings for this room</span>
+    <span class="for-screen-reader">Settings for this {room-word}</span>
 </a>
   <span>
   <span class="button_to_change_notifying"
@@ -54,7 +58,7 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
       <button class="btn" data-action="click->notifications#attemptToSubscribe" data-notifications-target="bell">
         <img aria-hidden="true" src="/assets/notification-bell-loading-7533ce55.svg" width="20" height="20" />
         <img aria-hidden="true" hidden="hidden" src="/assets/notification-bell-alert-b467cde7.svg" width="20" height="20" />
-        <span class="for-screen-reader">Notification settings for this room</span>
+        <span class="for-screen-reader">Notification settings for this {room-word}</span>
       </button>
 </turbo-frame>
     <dialog data-notifications-target="notAllowedNotice" class="dialog pad center center-block border-radius border shadow" style="--inline-space: var(--block-space)">

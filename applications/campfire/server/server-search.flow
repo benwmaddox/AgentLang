@@ -1,0 +1,157 @@
+// searches#index for the portable server: the query as SearchesController cleans it,
+// the user's reachable messages that match it (SQLite FTS5, the reference app's
+// message_search_index), recent searches and the room to return to.
+
+fn campfire.server.search-query(raw: String) -> String {
+    doc "params[:q].gsub(/[^[:word:]]/, ' '): every byte that is not an ASCII letter, digit or '_' becomes a space; bytes of multi-byte characters stay (Ruby's Unicode [:word:] is approximated: letters and digits outside ASCII are kept, and so is non-ASCII punctuation)."
+    var out = ""
+    var run = 0
+    let length = string.byte-length(raw)
+    for index in 0..length {
+        let byte = string.byte-at-or(raw, index, 0)
+        let word = (byte >= 48 && byte <= 57) || (byte >= 65 && byte <= 90) || (byte >= 97 && byte <= 122) || byte == 95 || byte >= 128
+        if bool.not(word) {
+            // Copy the run of word bytes whole (it may hold multi-byte characters), then the space.
+            out = string.join([out, match string.slice(raw, run, index - run) { none => ""; some s => s }, " "])
+            run = index + 1
+        }
+    }
+    string.concat(out, match string.slice(raw, run, length - run) { none => ""; some s => s })
+}
+
+test campfire.server.search-query/gsub {
+    expect campfire.server.search-query("lunch, walk!") == "lunch  walk " && campfire.server.search-query("café") == "café"
+}
+
+record SearchState {
+    // The cleaned query when present (not blank), else none.
+    query: Option<String>
+    // The q parameter as given (the search field's value), decoded.
+    value: Option<String>
+    messages: List<MessageWithCreator>
+    recents: List<String>
+    return-room: Int
+}
+
+fn campfire.server.search-message-keys(user: AuthUser, query: String) -> Result<List<PageKey>, DbError> {
+    effects db.read
+    doc "Current.user.reachable_messages.search(query).last(100): matching messages in the user's rooms, the newest hundred, oldest first."
+    match db.query("SELECT messages.id FROM messages INNER JOIN rooms ON messages.room_id = rooms.id INNER JOIN memberships ON rooms.id = memberships.room_id JOIN message_search_index idx ON messages.id = idx.rowid WHERE memberships.user_id = $userId AND idx.body MATCH $query ORDER BY messages.created_at DESC LIMIT 100", [db.int-param(UserId.value(user.id)), db.text-param(query)]) {
+        error failure => result.error<List<PageKey>, DbError>(campfire.server.db-error(failure))
+        ok rows => {
+            var keys = list.empty<PageKey>()
+            for row in rows {
+                // Newest first from the query; the page shows them oldest first.
+                keys = list.concat([pageKey.new(id = campfire.server.int-or-zero(db.optional-int(row, 0)), updated-at-ms = 0)], keys)
+            }
+            result.ok<List<PageKey>, DbError>(keys)
+        }
+    }
+}
+
+test campfire.server.search-message-keys/fixture {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let found = match campfire.server.search-message-keys(user, "message") { error failure => list.empty<PageKey>(); ok keys => keys }
+    expect list.count(found) == 2 && match list.get(found, 0) { none => 0; some key => key.id } == 1
+}
+
+fn campfire.server.search-state(user: AuthUser, raw-q: Option<String>, last-room: Option<String>, context: CampfireServerContext) -> Result<SearchState, DbError> {
+    effects db.read
+    doc "SearchesController#index's assigns: the cleaned query and its messages, the user's recent searches (newest first) and last_room_visited (the cookie's room among the user's, else the user's oldest room)."
+    let cleaned = match raw-q { none => ""; some text => campfire.server.search-query(text) }
+    let present = bool.not(campfire.views.blank?(cleaned))
+    let keys = if present { campfire.server.search-message-keys(user, cleaned) } else { result.ok<List<PageKey>, DbError>(list.empty<PageKey>()) }
+    match campfire.server.messages-for-keys(keys, context.avatar-key) {
+        error failure => result.error<SearchState, DbError>(failure)
+        ok messages => {
+            let recent-rows = match db.query("SELECT query FROM searches WHERE user_id = $userId ORDER BY updated_at DESC", [db.int-param(UserId.value(user.id))]) { error failure => list.empty<DbRow>(); ok rows => rows }
+            var recents = list.empty<String>()
+            for row in recent-rows {
+                recents = list.append(recents, campfire.server.text-or-empty(db.optional-text(row, 0)))
+            }
+            let cookie-room = match last-room { none => 0; some text => campfire.server.ruby-to-i(text) }
+            let remembered = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId AND rooms.id = $roomId", [db.int-param(UserId.value(user.id)), db.int-param(cookie-room)]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
+            let oldest = match db.query("SELECT rooms.id FROM rooms INNER JOIN memberships ON rooms.id = memberships.room_id WHERE memberships.user_id = $userId ORDER BY rooms.created_at LIMIT 1", [db.int-param(UserId.value(user.id))]) { error failure => 0; ok rows => match db.first-row(rows) { none => 0; some row => db.int(row, 0) } }
+            result.ok<SearchState, DbError>(searchState.new(
+                query = if present { option.some<String>(cleaned) } else { option.none<String>() },
+                value = raw-q,
+                messages = messages,
+                recents = recents,
+                return-room = if remembered != 0 { remembered } else { oldest }))
+        }
+    }
+}
+
+test campfire.server.search-state/blank-query {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let state = match campfire.server.search-state(user, option.some<String>("!!"), option.none<String>(), campfire.server.test-context()) { error failure => option.none<SearchState>(); ok found => option.some<SearchState>(found) }
+    expect match state { none => false; some found => found.query == option.none<String>() && list.count(found.messages) == 0 && found.return-room == 1 }
+}
+
+fn campfire.server.search-page(user: AuthUser, state: SearchState, base-url: String, context: CampfireServerContext) -> String {
+    effects db.read
+    doc "searches#index rendered: each result as messages/_message in its own room's context."
+    var links = list.empty<Html>()
+    for query in state.recents {
+        links = list.append(links, campfire.views.search-recent(query, http.form-encode(query)))
+    }
+    let recents = campfire.views.search-recents(links, base-url)
+    let pill = match state.query { none => html.raw(""); some query => campfire.views.search-pill(query, list.count(state.messages)) }
+    let input = campfire.views.search-input(state.value)
+    var ids = list.empty<Int>()
+    for message in state.messages {
+        ids = list.append(ids, MessageId.value(message.id))
+    }
+    let boosts = match campfire.server.boosts-for(ids, context.avatar-key) { error failure => list.empty<BoostView>(); ok found => found }
+    let extras = campfire.server.page-extras(state.messages, context)
+    var rendered = ""
+    for message in state.messages {
+        let room-name = match campfire.rooms.find-for-user(user.id, message.room-id) {
+            error failure => ""
+            ok maybe-room => match maybe-room { none => ""; some room => campfire.server.message-room-name(campfire.views.room-chrome(room, user, base-url)) }
+        }
+        let message-context = messageContext.new(room-id = int.to-string(RoomId.value(message.room-id)), room-name = room-name, base-url = base-url)
+        rendered = string.concat(rendered, campfire.server.render-message(message-context, message, boosts, extras))
+    }
+    let results = if list.count(state.messages) == 0 { html.raw("") } else { html.raw(string.concat("    \n", rendered)) }
+    let stamps = campfire.server.chrome-stamps(user.id)
+    let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
+    let head = campfire.views.head-assets(int.to-string(UserId.value(user.id)), user.name, if account-stamp == "" { "" } else { campfire.server.number-stamp(account-stamp) })
+    let body-class = if user.role == Role.administrator() { "sidebar searches admin" } else { "sidebar searches" }
+    campfire.views.text(campfire.views.search-page(head, body-class, pill, recents, results, int.to-string(state.return-room), input))
+}
+
+test campfire.server.search-page/fixture {
+    expect campfire.server.test-fixture() == 0
+    let user = authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active())
+    let state = searchState.new(query = option.some<String>("x"), value = option.some<String>("x"), messages = list.empty<MessageWithCreator>(), recents = ["pizza"], return-room = 1)
+    let page = campfire.server.search-page(user, state, "http://h", campfire.server.test-context())
+    expect string.contains(page, "<span class=\"flex-item-no-shrink\">0</span>") && string.contains(page, "href=\"/searches?q=pizza\"") && string.contains(page, "<input value=\"x\" class=")
+}
+
+fn campfire.server.search-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read
+    doc "GET/HEAD /searches: the signed-in user's search page; a q that is not valid form encoding is 400, a query FTS5 cannot parse is 500 (as Rails)."
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => {
+            let raw = campfire.server.query-param(incoming.target, "q")
+            let decoded = match raw { none => option.some<Option<String>>(option.none<String>()); some text => match http.form-decode(text) { none => option.none<Option<String>>(); some value => option.some<Option<String>>(option.some<String>(value)) } }
+            match decoded {
+                none => campfire.server.http-response(campfire.server.response(400, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                some q => match campfire.server.search-state(signed.user, q, built.campfire.last-room, context) {
+                    error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                    ok state => campfire.server.html-page(campfire.server.http-response(campfire.server.response(200, HttpView.empty(), "", signed.refresh), built, incoming.target, context), campfire.server.search-page(signed.user, state, built.campfire.base-url, context))
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.search-read/page {
+    expect campfire.server.test-fixture() == 0
+    let sent = campfire.server.handle(campfire.server.test-get("/searches?q=first", list.empty<HttpHeader>()), campfire.server.test-context())
+    expect sent.status == 200 && string.contains(sent.body, "<title>Search</title>") && string.contains(sent.body, "message_c1")
+}

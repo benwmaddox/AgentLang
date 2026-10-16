@@ -604,7 +604,7 @@ fn campfire.server.stream-room-page(chrome: PageChrome, keys: List<PageKey>, cac
         ok loaded => match loaded-boosts {
           error failure => result.error<Int, DbError>(failure)
           ok boosts => {
-            let context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
+            let context = messageContext.new(room-id = chrome.room-id, room-name = campfire.server.message-room-name(chrome), base-url = chrome.base-url)
             let frame = campfire.server.page-frame(chrome)
             let head = response.write(frame.head)
             let page = campfire.server.write-messages(cache, context, keys, loaded, boosts, campfire.server.page-extras(loaded, server))
@@ -706,6 +706,52 @@ fn campfire.server.chrome-stamps(user-id: UserId) -> List<String> {
     }
 }
 
+fn campfire.server.sentence(words: List<String>) -> String {
+    doc "Array#to_sentence with Rails' default connectors: 'a', 'a and b', 'a, b, and c'."
+    let count = list.count(words)
+    var out = ""
+    for word, index in words {
+        let joiner = if index == 0 { "" } else if count == 2 { " and " } else if index == count - 1 { ", and " } else { ", " }
+        out = string.join([out, joiner, word])
+    }
+    out
+}
+
+test campfire.server.sentence/connectors {
+    expect campfire.server.sentence(["David", "Jason"]) == "David and Jason" && campfire.server.sentence(["A", "B", "C"]) == "A, B, and C" && campfire.server.sentence(list.empty<String>()) == ""
+}
+
+fn campfire.server.room-member-names(room-id: Int, except-user-id: Int) -> List<String> {
+    effects db.read
+    doc "room.users.without(user).pluck(:name), in the order SQLite returns the association (the same query shape as Rails'); except-user-id 0 keeps every member."
+    let found = db.query("SELECT users.name FROM users INNER JOIN memberships ON users.id = memberships.user_id WHERE memberships.room_id = $roomId AND users.id != $userId", [db.int-param(room-id), db.int-param(except-user-id)])
+    let rows = match found { error failure => list.empty<DbRow>(); ok loaded => loaded }
+    var names = list.empty<String>()
+    for row in rows {
+        names = list.append(names, campfire.server.text-or-empty(db.optional-text(row, 0)))
+    }
+    names
+}
+
+test campfire.server.room-member-names/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect campfire.server.room-member-names(1, 0) == ["Ann"] && campfire.server.room-member-names(1, 1) == list.empty<String>()
+}
+
+fn campfire.server.message-room-name(chrome: PageChrome) -> String {
+    effects db.read
+    doc "What messages/_message links as the room: room_display_name(room, for_user: nil), every member's name as a sentence for a direct room, else the room's name."
+    if chrome.room-key == "rooms_direct" {
+        campfire.server.sentence(campfire.server.room-member-names(match int.parse(chrome.room-id) { none => 0; some id => id }, 0))
+    } else {
+        chrome.room-name
+    }
+}
+
+test campfire.server.message-room-name/named-room {
+    expect campfire.server.message-room-name(campfire.views.room-chrome(roomRow.new(id = RoomId.new(1), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "", updated-at = ""), authUser.new(id = UserId.new(1), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x")) == "Lobby"
+}
+
 fn campfire.server.page-chrome(room: RoomRow, user: AuthUser, base-url: String, context: CampfireServerContext) -> PageChrome {
     effects db.read
     doc "campfire.views.room-chrome with the values the layout needs from the database and the worker keys: the account logo version, the current user's fresh avatar path, the room's signed message stream and its loaded_at (room.updated_at in epoch ms)."
@@ -715,8 +761,14 @@ fn campfire.server.page-chrome(room: RoomRow, user: AuthUser, base-url: String, 
     let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
     let avatar = if user-stamp == "" { "" } else { string.join(["/users/", campfire.server.avatar-token(context.avatar-key, UserId.value(user.id)), "/avatar?v=", campfire.server.number-stamp(user-stamp)]) }
     let loaded-at = match campfire.server.parse-timestamp(room.updated-at) { none => ""; some micros => int.to-string(micros / 1000) }
+    let title = if base.room-key == "rooms_direct" {
+        let others = campfire.server.sentence(campfire.server.room-member-names(RoomId.value(room.id), UserId.value(user.id)))
+        if others == "" { user.name } else { others }
+    } else {
+        base.room-name
+    }
     pageChrome.new(
-        room-name = base.room-name,
+        room-name = title,
         room-id = base.room-id,
         room-key = base.room-key,
         room-path = base.room-path,
@@ -738,7 +790,7 @@ fn campfire.server.whole-room-page(chrome: PageChrome, messages: List<MessageWit
         ids = list.append(ids, MessageId.value(message.id))
     }
     let boosts = match campfire.server.boosts-for(ids, context.avatar-key) { error failure => list.empty<BoostView>(); ok found => found }
-    let message-context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
+    let message-context = messageContext.new(room-id = chrome.room-id, room-name = campfire.server.message-room-name(chrome), base-url = chrome.base-url)
     let extras = campfire.server.page-extras(messages, context)
     var rendered = list.empty<Html>()
     for message in messages {
@@ -1066,7 +1118,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false)
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1102,7 +1154,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false)
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1398,7 +1450,7 @@ fn campfire.server.messages-index(request: CampfireHttpRequest, user: AuthUser, 
                                         ids = list.append(ids, MessageId.value(message.id))
                                     }
                                     let chrome = campfire.server.page-chrome(room, user, request.base-url, context)
-                                    let message-context = messageContext.new(room-id = chrome.room-id, room-name = chrome.room-name, base-url = chrome.base-url)
+                                    let message-context = messageContext.new(room-id = chrome.room-id, room-name = campfire.server.message-room-name(chrome), base-url = chrome.base-url)
                                     let boosts = match campfire.server.boosts-for(ids, context.avatar-key) { error failure => list.empty<BoostView>(); ok found => found }
                                     let extras = campfire.server.page-extras(messages, context)
                                     var body = "\n"
@@ -1445,7 +1497,7 @@ fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) 
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
+        ok built => if built.search { campfire.server.search-read(built, request, context) } else if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
     }
 }
 

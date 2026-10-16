@@ -25,7 +25,7 @@ $campfire = Join-Path $repo 'applications/campfire'
 $shared = @(
     'campfire-types.flow', 'authentication-types.flow', 'http-types.flow', 'session-policy.flow',
     'request-policy.flow', 'browser-types.flow', 'browser-policy.flow', 'user-agent.flow',
-    'views.flow', 'layout.flow', 'emoji.flow', 'sounds.flow', 'message.flow', 'presentation.flow', 'sidebar.flow', 'authentication.flow',
+    'views.flow', 'layout.flow', 'emoji.flow', 'sounds.flow', 'message.flow', 'presentation.flow', 'sidebar.flow', 'search.flow', 'authentication.flow',
     # Attached tests: every committed word needs one.
     'authentication-tests.flow', 'views-tests.flow', 'browser-tests.flow', 'user-agent-tests.flow')
 $sources = @($shared | ForEach-Object { Join-Path $campfire $_ })
