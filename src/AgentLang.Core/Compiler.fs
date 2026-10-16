@@ -1842,17 +1842,84 @@ module Compiler =
         let program, hostCatalog, fingerprint = compileProgram context sourceOrigins
         IrVerifier.verifyCompilerProgram primitiveIrCatalog hostCatalog fingerprint program
 
-    let private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
-        validateLoweringContext context |> ignore
+    /// What every test and example compiled against one lowering context shares:
+    /// the context's validation, its private source markers, its type names, the test
+    /// scope and the program snapshot fingerprint. A batch compiles hundreds of attached
+    /// cases against the same context object, so these are computed once per context
+    /// (by reference) instead of once per case.
+    type private ContextFacts =
+        { Markers: Set<SourceSpan>
+          Types: Set<string>
+          TestScopeWords: Map<string, WordEntry>
+          mutable Fingerprint: (Map<SourceSpan, SourceSpan> * string) option
+          // The program-level origin map (by reference) already checked against this context and a program fingerprint.
+          mutable CheckedBase: (Map<SourceSpan, SourceSpan> * string) option }
+
+    /// What lowering a detached body needs from one verified program, derived once per
+    /// program (by reference).
+    type private ProgramFacts =
+        { Program: IrProgram
+          TypeKeys: Map<string, ProgramTypeKey>
+          GeneratedByName: Map<string, IrGeneratedTarget> }
+
+    let private programFacts = System.Runtime.CompilerServices.ConditionalWeakTable<VerifiedIrProgram, ProgramFacts>()
+
+    let private programFactsFor (verifiedProgram: VerifiedIrProgram) =
+        match programFacts.TryGetValue verifiedProgram with
+        | true, facts -> facts
+        | _ ->
+            let program = VerifiedIrProgram.inspect verifiedProgram
+            let facts = { Program = program; TypeKeys = typeKeysFromProgram program; GeneratedByName = generatedByNameFromProgram program }
+            programFacts.AddOrUpdate(verifiedProgram, facts)
+            facts
+
+    let private contextFacts = System.Runtime.CompilerServices.ConditionalWeakTable<IrLoweringContext, ContextFacts>()
+
+    let private factsFor (context: IrLoweringContext) =
+        match contextFacts.TryGetValue context with
+        | true, facts -> facts
+        | _ ->
+            validateLoweringContext context |> ignore
+            let facts =
+                { Markers = contextZeroWidthMarkers context
+                  Types = contextTypes context
+                  TestScopeWords = Map.fold (fun words name entry -> Map.add name entry words) context.Words testIntrinsics
+                  Fingerprint = None
+                  CheckedBase = None }
+            contextFacts.AddOrUpdate(context, facts)
+            facts
+
+    let private contextOriginsWith (markers: Set<SourceSpan>) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
+        let missing = Set.difference markers (sourceOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        if not (Set.isEmpty missing) then
+            irFailure "IR_SOURCE_ORIGIN_MISSING" "The compiler snapshot contains private Flow markers without authored source origins." None None
+                [ "one origin per compiler marker" ] [ sprintf "missing marker count=%d" missing.Count ]
+        sourceOrigins |> Map.filter (fun marker _ -> markers.Contains marker)
+
+    let private cachedFingerprint (facts: ContextFacts) (context: IrLoweringContext) (programOrigins: Map<SourceSpan, SourceSpan>) =
+        match facts.Fingerprint with
+        | Some(origins, value) when origins = programOrigins -> value
+        | _ ->
+            let value = snapshotFingerprint context programOrigins
+            facts.Fingerprint <- Some(programOrigins, value)
+            value
+
+    let rec private bodyFromInference (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
+        let facts = factsFor context
         validateSourceOrigins sourceOrigins
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
-        let programOrigins = contextOriginsFromMap context sourceOrigins
+        let programOrigins = contextOriginsWith facts.Markers sourceOrigins
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context programOrigins -> ()
+        | Some fingerprint when fingerprint = cachedFingerprint facts context programOrigins -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Detached body context does not match the exact program snapshot it will call." (Some name) None [ "same compiler snapshot fingerprint" ] []
-        let program = VerifiedIrProgram.inspect verifiedProgram
-        let typeKeys = typeKeysFromProgram program
-        let generatedByName = generatedByNameFromProgram program
+        bodyFromInferenceChecked context sourceOrigins verifiedProgram name initialStack effects typed
+
+    /// bodyFromInference after its context, origin and fingerprint checks have passed.
+    and private bodyFromInferenceChecked (context: IrLoweringContext) (sourceOrigins: Map<SourceSpan, SourceSpan>) (verifiedProgram: VerifiedIrProgram) (name: string) (initialStack: LangType list) (effects: Set<string>) (typed: TypedBody) =
+        let derived = programFactsFor verifiedProgram
+        let program = derived.Program
+        let typeKeys = derived.TypeKeys
+        let generatedByName = derived.GeneratedByName
         let block, localNames, sourceMap, inferredEffects = lowerTypedBody context sourceOrigins typeKeys program.NominalTypesByKey generatedByName name None initialStack effects typed
         let inputTypes = initialStack |> List.map (closedIrType typeKeys name None)
         let outputTypes = typed.ExitStack |> List.map (closedIrType typeKeys name None)
@@ -1895,10 +1962,10 @@ module Compiler =
         compileIrBodyAgainstProgram context verifiedProgram name initialStack expressions
 
     let compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verifiedProgram (test: TestDefinition) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
-        validateLoweringContext context |> ignore
+        let facts = factsFor context
         validateSourceOrigins sourceOrigins
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
-        let contextMarkers = contextZeroWidthMarkers context
+        let contextMarkers = facts.Markers
         let actualMarkers = zeroWidthMarkers test.Body
         let expectedExpressions =
             match test.Expected with
@@ -1909,14 +1976,14 @@ module Compiler =
         ensureDisjointOriginMarkers (Some test.Word) contextMarkers expectedMarkers
         ensureDisjointOriginMarkers (Some test.Word) actualMarkers expectedMarkers
         ensureExactOriginKeys (Set.unionMany [ contextMarkers; actualMarkers; expectedMarkers ]) sourceOrigins (Some test.Word) (Some test.Span)
-        let programOrigins = contextOriginsFromMap context sourceOrigins
+        let programOrigins = contextOriginsWith contextMarkers sourceOrigins
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context programOrigins -> ()
+        | Some fingerprint when fingerprint = cachedFingerprint facts context programOrigins -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Test context does not match the exact program snapshot it will call." (Some test.Word) (Some test.Span) [ "same compiler snapshot fingerprint" ] []
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
-            let knownTypes = contextTypes context
-            let testScopeWords = Map.fold (fun words name entry -> Map.add name entry words) context.Words testIntrinsics
+            let knownTypes = facts.Types
+            let testScopeWords = facts.TestScopeWords
             let checkedTest, typed, expected = checkTestDetailed knownTypes context.Enums testScopeWords test
             let actualBody = bodyFromInference context sourceOrigins verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
             let expectedBody =
@@ -1924,6 +1991,66 @@ module Compiler =
                 |> Option.map (fun inferred ->
                     bodyFromInference context sourceOrigins verifiedProgram (test.Word + "/" + test.Name + "/expected") [] Set.empty inferred.InferredBody)
             actualBody, expectedBody)
+
+    /// The program-level part of an attached case's origins, checked once per
+    /// (context, origin map, program fingerprint): its keys are exactly the context's
+    /// private markers, every mapping is valid, and it matches the program snapshot.
+    let private checkBaseOrigins (facts: ContextFacts) (context: IrLoweringContext) (verifiedProgram: VerifiedIrProgram) (baseOrigins: Map<SourceSpan, SourceSpan>) owner span =
+        let programFingerprint = verifiedProgram.CompilerSnapshotFingerprint |> Option.defaultValue ""
+        match facts.CheckedBase with
+        | Some(checkedOrigins, checkedFingerprint) when obj.ReferenceEquals(checkedOrigins, baseOrigins) && checkedFingerprint = programFingerprint -> ()
+        | _ ->
+            validateSourceOrigins baseOrigins
+            ensureExactOriginKeys facts.Markers baseOrigins owner span
+            match verifiedProgram.CompilerSnapshotFingerprint with
+            | Some fingerprint when fingerprint = cachedFingerprint facts context baseOrigins -> ()
+            | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Test context does not match the exact program snapshot it will call." owner span [ "same compiler snapshot fingerprint" ] []
+            facts.CheckedBase <- Some(baseOrigins, programFingerprint)
+
+    /// An attached case's own origins: valid, disjoint from the program's markers, and
+    /// exactly the case's markers. Cost is the case's size (lookups into the program set).
+    let private checkCaseOrigins (facts: ContextFacts) (caseMarkers: Set<SourceSpan>) (caseOrigins: Map<SourceSpan, SourceSpan>) owner span =
+        validateSourceOrigins caseOrigins
+        let collisions = caseMarkers |> Set.filter facts.Markers.Contains
+        if not (Set.isEmpty collisions) then
+            irFailure "IR_SOURCE_ORIGIN_MARKER_COLLISION" "Private source markers must be unique across compiler snapshots and attached bodies." owner None [] [ sprintf "collision count=%d" collisions.Count ]
+        ensureExactOriginKeys caseMarkers caseOrigins owner span
+
+    /// compileIrTestWithExpectationAgainstProgramWithSourceOrigins with the program-level
+    /// origins (shared by every case against this program) and the case's own origins given
+    /// apart, so the program-level checks run once instead of once per case.
+    let compileIrTestWithExpectationAgainstProgramWithSplitOrigins context verifiedProgram (test: TestDefinition) (baseOrigins: Map<SourceSpan, SourceSpan>) (caseOrigins: Map<SourceSpan, SourceSpan>) =
+        let facts = factsFor context
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        checkBaseOrigins facts context verifiedProgram baseOrigins (Some test.Word) (Some test.Span)
+        let actualMarkers = zeroWidthMarkers test.Body
+        let expectedExpressions =
+            match test.Expected with
+            | ExpectedExpression expressions -> expressions
+            | ExpectedValue _ | ExpectedRuntimeError _ | ExpectedChecks -> []
+        let expectedMarkers = zeroWidthMarkers expectedExpressions
+        ensureDisjointOriginMarkers (Some test.Word) actualMarkers expectedMarkers
+        checkCaseOrigins facts (Set.union actualMarkers expectedMarkers) caseOrigins (Some test.Word) (Some test.Span)
+        let sourceOrigins = Map.fold (fun found marker origin -> Map.add marker origin found) baseOrigins caseOrigins
+        remapSourceOriginDiagnostic sourceOrigins (fun () ->
+            let checkedTest, typed, expected = checkTestDetailed facts.Types context.Enums facts.TestScopeWords test
+            let actualBody = bodyFromInferenceChecked context sourceOrigins verifiedProgram (test.Word + "/" + test.Name) [] checkedTest.Effects typed
+            let expectedBody =
+                expected
+                |> Option.map (fun inferred ->
+                    bodyFromInferenceChecked context sourceOrigins verifiedProgram (test.Word + "/" + test.Name + "/expected") [] Set.empty inferred.InferredBody)
+            actualBody, expectedBody)
+
+    /// The example counterpart of compileIrTestWithExpectationAgainstProgramWithSplitOrigins.
+    let compileIrExampleAgainstProgramWithSplitOrigins context verifiedProgram (example: ExampleDefinition) (baseOrigins: Map<SourceSpan, SourceSpan>) (caseOrigins: Map<SourceSpan, SourceSpan>) =
+        let facts = factsFor context
+        VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
+        checkBaseOrigins facts context verifiedProgram baseOrigins (Some example.Word) (Some example.Span)
+        checkCaseOrigins facts (zeroWidthMarkers example.Body) caseOrigins (Some example.Word) (Some example.Span)
+        let sourceOrigins = Map.fold (fun found marker origin -> Map.add marker origin found) baseOrigins caseOrigins
+        remapSourceOriginDiagnostic sourceOrigins (fun () ->
+            let checkedExample, typed = checkExampleDetailed facts.Types context.Enums context.Words example
+            bodyFromInferenceChecked context sourceOrigins verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed)
 
     let compileIrTestWithExpectationAgainstProgram context verifiedProgram test =
         compileIrTestWithExpectationAgainstProgramWithSourceOrigins context verifiedProgram test Map.empty
@@ -1939,20 +2066,20 @@ module Compiler =
         compileIrTestAgainstProgram context verifiedProgram test
 
     let compileIrExampleAgainstProgramWithSourceOrigins context verifiedProgram (example: ExampleDefinition) (sourceOrigins: Map<SourceSpan, SourceSpan>) =
-        validateLoweringContext context |> ignore
+        let facts = factsFor context
         validateSourceOrigins sourceOrigins
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog verifiedProgram
-        let contextMarkers = contextZeroWidthMarkers context
+        let contextMarkers = facts.Markers
         let bodyMarkers = zeroWidthMarkers example.Body
         ensureDisjointOriginMarkers (Some example.Word) contextMarkers bodyMarkers
         ensureExactOriginKeys (Set.union contextMarkers bodyMarkers) sourceOrigins (Some example.Word) (Some example.Span)
-        let programOrigins = contextOriginsFromMap context sourceOrigins
+        let programOrigins = contextOriginsWith contextMarkers sourceOrigins
         match verifiedProgram.CompilerSnapshotFingerprint with
-        | Some fingerprint when fingerprint = snapshotFingerprint context programOrigins -> ()
+        | Some fingerprint when fingerprint = cachedFingerprint facts context programOrigins -> ()
         | _ -> irFailure "IR_STALE_COMPILER_SNAPSHOT" "Example context does not match the exact program snapshot it will call." (Some example.Word) (Some example.Span) [ "same compiler snapshot fingerprint" ] []
 
         remapSourceOriginDiagnostic sourceOrigins (fun () ->
-            let knownTypes = contextTypes context
+            let knownTypes = facts.Types
             let checkedExample, typed = checkExampleDetailed knownTypes context.Enums context.Words example
             bodyFromInference context sourceOrigins verifiedProgram (example.Word + "/" + example.Name) [] checkedExample.Effects typed)
 

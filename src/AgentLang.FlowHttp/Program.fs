@@ -32,7 +32,19 @@ let private emit (args: string list) =
     let project = Path.Combine(out, "engine-" + Guid.NewGuid().ToString("N").Substring(0, 8))
     // The build never runs requests; its production provider is a scratch database.
     use flowApp = FlowApp.load project app (List.ofSeq sources) ":memory:"
-    let ir, diagnostics = FlowApp.emitNative flowApp profile target
+    if not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_ADD_PROBE")) then
+        // How long adding one function takes once the project is loaded: define a word
+        // with its attached test, then commit that word alone.
+        let request (operation: string) (fields: (string * System.Text.Json.Nodes.JsonNode) list) =
+            let args = System.Text.Json.Nodes.JsonObject()
+            for key, value in fields do args[key] <- value
+            let response = flowApp.Engine.Dispatch(operation, args)
+            if not (response["ok"].GetValue<bool>()) then failwith $"probe {operation}: {response.ToJsonString()}"
+        let source = "fn probe.add-one(n: Int) -> Int {\n    n + 1\n}\n\ntest probe.add-one/two {\n    expect probe.add-one(1) == 2\n}\n"
+        FlowApp.timed "probe-define" (fun () ->
+            request "define" [ "frontend", System.Text.Json.Nodes.JsonValue.Create("flow"); "syntaxVersion", System.Text.Json.Nodes.JsonValue.Create(2); "source", System.Text.Json.Nodes.JsonValue.Create(source) ])
+        FlowApp.timed "probe-commit" (fun () -> request "commit" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.add-one") ])
+    let ir, diagnostics = FlowApp.timed "emit-native" (fun () -> FlowApp.emitNative flowApp profile target)
     File.WriteAllText(Path.Combine(out, "module.ll"), ir, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "diagnostics.tsv"), FlowApp.diagnosticsText diagnostics, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "symbols.tsv"), FlowApp.nativeSymbolsText flowApp, UTF8Encoding(false))

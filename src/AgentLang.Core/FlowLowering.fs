@@ -3271,10 +3271,11 @@ module FlowLowering =
         (flowTest: FlowTestDefinition)
         : CompiledTest * FlowCallEvent list * FlowCallEvent list =
         let lowered, actualEvents, expectedEvents = lowerTestWithEvents context allocationOrigins flowTest
-        let origins = mergeOrigins context lowered.Projection
+        let collision = lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> context.SourceOrigins.ContainsKey marker)
+        if collision.IsSome then fail "FLOW_SOURCE_ORIGIN_COLLISION" "Internal Flow source markers must remain unique across one compiler snapshot." None None [] [ "marker collision" ]
         let body, expectationBody =
-            Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins
-                context.CompilerContext verifiedProgram lowered.Definition origins
+            Compiler.compileIrTestWithExpectationAgainstProgramWithSplitOrigins
+                context.CompilerContext verifiedProgram lowered.Definition context.SourceOrigins lowered.Projection.SyntheticOrigins
         let bodySources = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
         let expectationSources =
             expectationBody
@@ -3293,10 +3294,11 @@ module FlowLowering =
         (flowExample: FlowExampleDefinition)
         : CompiledExample * FlowCallEvent list =
         let lowered, events = lowerExampleWithEvents context allocationOrigins flowExample
-        let origins = mergeOrigins context lowered.Projection
+        let collision = lowered.Projection.SyntheticOrigins |> Map.toSeq |> Seq.tryFind (fun (marker, _) -> context.SourceOrigins.ContainsKey marker)
+        if collision.IsSome then fail "FLOW_SOURCE_ORIGIN_COLLISION" "Internal Flow source markers must remain unique across one compiler snapshot." None None [] [ "marker collision" ]
         let body =
-            Compiler.compileIrExampleAgainstProgramWithSourceOrigins
-                context.CompilerContext verifiedProgram lowered.Definition origins
+            Compiler.compileIrExampleAgainstProgramWithSplitOrigins
+                context.CompilerContext verifiedProgram lowered.Definition context.SourceOrigins lowered.Projection.SyntheticOrigins
         let sites = VerifiedIrBody.inspect body |> fun value -> value.BodySourceMap |> sourceSites
         { Lowered = lowered
           Program = verifiedProgram
@@ -3882,7 +3884,11 @@ module FlowLowering =
 
         // The word inventory is checked and lowered from the immutable base;
         // empty word changes are permitted when the batch only edits attachments.
+        let loweringWatch = Diagnostics.Stopwatch.StartNew()
+        let loweringTiming = not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_TIMING"))
         let wordCompilation = compileBatchFlowSourcesCore true context wordInventory wordChanges
+        if loweringTiming then eprintfn "timing lowering.words %.1fs (%d changes)" loweringWatch.Elapsed.TotalSeconds wordChanges.Length
+        loweringWatch.Restart()
         let changedKeySet = Set.ofList changedKeys
         let finalFlowOwnerIds =
             wordChanges
@@ -3964,6 +3970,7 @@ module FlowLowering =
                           Source = document.Reference
                           BodyRole = bodyRole
                           Site = site }
+        if loweringTiming then eprintfn "timing lowering.attachments %.1fs (%d)" loweringWatch.Elapsed.TotalSeconds compiledAttachments.Count
         { WordCompilation = wordCompilation
           Attachments = List.ofSeq compiledAttachments
           AttachmentBindings = List.ofSeq attachmentBindings }

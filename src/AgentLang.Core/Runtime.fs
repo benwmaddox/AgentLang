@@ -2172,7 +2172,29 @@ module Runtime =
               TestFileOverlays = testFileOverlays
               ExampleBodies = exampleBodies }
 
-        let compileRuntimeSnapshot (state: DictionaryState) = compileRuntimeSnapshotWith false state
+        // Commit compiles the same dictionary several times: the proposed state, its
+        // durable projection, the final state (proposed plus History) and the final
+        // durable projection. Compilation never reads History or FlowHistory, so a state
+        // equal to a recently compiled one apart from those two fields reuses that
+        // compilation, with the new state's history in place.
+        let compiledSnapshots = System.Collections.Generic.List<bool * DictionaryState * RuntimeSnapshot>()
+
+        let withoutHistory (state: DictionaryState) = { state with History = Map.empty; FlowHistory = Map.empty }
+
+        let compileRuntimeSnapshotReusing (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
+            let key = withoutHistory state
+            let cached =
+                compiledSnapshots
+                |> Seq.tryFind (fun (allow, compiledKey, _) -> allow = allowDeferredHostNominalTypes && compiledKey = key)
+            match cached with
+            | Some(_, _, snapshot) -> { snapshot with State = { snapshot.State with History = state.History; FlowHistory = state.FlowHistory } }
+            | None ->
+                let snapshot = compileRuntimeSnapshotWith allowDeferredHostNominalTypes state
+                if compiledSnapshots.Count >= 2 then compiledSnapshots.RemoveAt 0
+                compiledSnapshots.Add((allowDeferredHostNominalTypes, key, snapshot))
+                snapshot
+
+        let compileRuntimeSnapshot (state: DictionaryState) = compileRuntimeSnapshotReusing false state
 
         let sourceSite (snapshot: RuntimeSnapshot) (body: VerifiedIrBody option) (site: SourceSiteId) =
             let bodySource =
@@ -3777,6 +3799,11 @@ module Runtime =
             values |> List.sortWith (fun left right -> StringComparer.Ordinal.Compare(left, right))
 
         let commitCandidates target library actor includeReplacementCallers =
+            let phaseWatch = Diagnostics.Stopwatch.StartNew()
+            let phase (label: string) =
+                if not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_TIMING")) then
+                    eprintfn "timing commit.%s %.1fs" label phaseWatch.Elapsed.TotalSeconds
+                    phaseWatch.Restart()
             let candidateWords = data.Words |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateRecords = data.Records |> Map.filter (fun _ value -> value.Status = Candidate)
             let candidateScalars = data.Scalars |> Map.filter (fun _ value -> value.Status = Candidate)
@@ -3985,6 +4012,7 @@ module Runtime =
                 selectedTypes <- typeClosure (Set.union selectedTypes allReferencedTypes |> Set.toList) selectedTypes
                 changed <- previousWords <> selectedWords || previousTypes <> selectedTypes
 
+            phase "select"
             if Set.isEmpty selectedWords && Set.isEmpty selectedTypes then
                 error "COMMIT_NO_CANDIDATES" "There are no candidate words or types to commit." None None [] []
 
@@ -4022,9 +4050,12 @@ module Runtime =
                     Replacements = data.Replacements |> Map.filter (fun name _ -> not (selectedWords.Contains name))
                     TypeReplacements = data.TypeReplacements |> Map.filter (fun name _ -> not (selectedTypes.Contains name))
                     TypeEvolutionGroups = data.TypeEvolutionGroups |> Map.filter (fun name _ -> not (completedTypeEvolutionIds.Contains name)) }
+            phase "propose"
             for name in selectedWords do
                 rejectUnqualifiedLibraryDependencies (effectiveWords proposed) name
+            phase "library-check"
             compileRuntimeSnapshot proposed |> ignore
+            phase "snapshot-proposed"
             for name in selectedWords do
                 let candidate = candidateWords[name]
                 let danglingTemp = Compiler.dependencies candidate.Definition.Body |> Set.filter (fun dependency -> data.Words.TryFind dependency |> Option.exists (fun value -> value.Status = Temporary))
@@ -4034,7 +4065,9 @@ module Runtime =
             let durableBefore = durableState data
             let replacing = selectedWords |> Set.filter (fun name -> durableBefore.Words.ContainsKey name)
             let durableProposed = durableState proposed
+            phase "attached-check"
             let durableSnapshot = compileRuntimeSnapshot durableProposed
+            phase "snapshot-durable"
             let durableMetadataOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
             let selectedMetadataEntries = selectedMetadata durableMetadataOwners
             let missingDurableTests =
@@ -4053,6 +4086,7 @@ module Runtime =
                 error "COMMIT_SELECTED_EXAMPLE_NOT_DURABLE" "A selected example would not survive the durable project projection." None None [] missingDurableExamples
             let selectedTestOwners = Set.union selectedWords (selectedTypeWordNames selectedTypes)
             let selectedResults = selectedTestOwners |> Set.toList |> List.collect (fun name -> runTestsFor durableSnapshot (Some name))
+            phase "tests"
             let evolvedTypeNames =
                 touchedTypeEvolutionGroups
                 |> List.map (fun group -> group.Types)
@@ -4136,7 +4170,9 @@ module Runtime =
                         error "REPLACE_CALLER_TESTS_REQUIRED" $"Replacing a dependency requires attached passing tests on persistent caller '{caller}'." (Some caller) None [ "attached passing test" ] []
                     runTestsFor durableSnapshot (Some caller))
             let results = selectedResults @ callerResults
+            phase "callers"
             preflightStructuredTestResults durableSnapshot.Program results
+            phase "preflight"
             lastResults <- results
             recordTestResults results
             let failed = results |> List.filter (fun result -> not result.Passed)
