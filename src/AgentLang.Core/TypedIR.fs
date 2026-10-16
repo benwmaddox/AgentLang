@@ -1106,6 +1106,38 @@ module IrVerifier =
         | PrimitiveTarget _
         | HostOperationTarget _ -> None
 
+    /// The user functions a block can reach in `program`: direct calls, list callbacks and
+    /// validators, then generated targets' validators (the edges verifyAcyclicCallGraph
+    /// walks). A callee absent from `program` is included but not followed.
+    let internal reachableFunctions (program: IrProgram) (block: IrBlock) : Set<WordId> =
+        let visited = System.Collections.Generic.HashSet<IrCallGraphNode>()
+        let found = ResizeArray<WordId>()
+        let rec visitTarget target =
+            match targetNode target with
+            | Some node -> visitNode node
+            | None -> ()
+        and visitNode node =
+            if visited.Add node then
+                match node with
+                | IrFunctionNode id ->
+                    found.Add id
+                    match program.FunctionsById.TryFind id with
+                    | Some fn -> for target in callTargetsInBlock fn.FunctionBody do visitTarget target
+                    | None -> ()
+                | IrGeneratedNode id ->
+                    match program.GeneratedTargetsById.TryFind id |> Option.map (fun target -> target.Operation) with
+                    | Some(MakeRecordOperation key) ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrRecordDefinition record) -> record.ValidatorCall |> Option.iter (fun validator -> visitTarget validator.ResolvedTarget)
+                        | _ -> ()
+                    | Some(WrapScalarOperation key) ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall |> Option.iter (fun validator -> visitTarget validator.ResolvedTarget)
+                        | _ -> ()
+                    | _ -> ()
+        for target in callTargetsInBlock block do visitTarget target
+        Set.ofSeq found
+
     let private verifyAcyclicCallGraph (program: IrProgram) =
         let functionEdges =
             program.FunctionsById
@@ -1233,24 +1265,81 @@ module IrVerifier =
         verifyProgram catalog hostCatalog program
         VerifiedIrProgram(program, catalog, hostCatalog, true, Some snapshotFingerprint)
 
-    /// verifyCompilerProgram for `parent` plus the user functions `functions`, their
-    /// coverage and their source sites. The merged program is built here by adding entries
-    /// absent from the parent, so every parent entry is kept unchanged; it was verified
-    /// with the parent. Only the added entries are verified, and since no parent body can
-    /// call an added function, a call cycle must lie among the added functions alone.
-    let internal extendCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint (functions: Map<WordId, IrFunction>) (coverage: Map<WordId, IrCoverageObligations>) (sources: Map<SourceSiteId, IrSourceSite>) =
+    /// The user functions a block calls directly, counting a generated target's validator
+    /// as called (the edges verifyAcyclicCallGraph walks, one step).
+    let internal directCallees (program: IrProgram) (block: IrBlock) : Set<WordId> =
+        callTargetsInBlock block
+        |> List.collect (fun target ->
+            match targetNode target with
+            | Some(IrFunctionNode id) -> [ id ]
+            | Some(IrGeneratedNode id) ->
+                let validator =
+                    match program.GeneratedTargetsById.TryFind id |> Option.map (fun generated -> generated.Operation) with
+                    | Some(MakeRecordOperation key) ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrRecordDefinition record) -> record.ValidatorCall
+                        | _ -> None
+                    | Some(WrapScalarOperation key) ->
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrScalarDefinition scalar) -> scalar.ValidatorCall
+                        | _ -> None
+                    | _ -> None
+                match validator |> Option.bind (fun call -> targetNode call.ResolvedTarget) with
+                | Some(IrFunctionNode callee) -> [ callee ]
+                | _ -> []
+            | None -> [])
+        |> Set.ofList
+
+    /// directCallees of each function object, computed once.
+    let private calleesByFunction = System.Runtime.CompilerServices.ConditionalWeakTable<IrFunction, Set<WordId>>()
+
+    let internal functionCallees (program: IrProgram) (fn: IrFunction) =
+        match calleesByFunction.TryGetValue fn with
+        | true, callees -> callees
+        | _ ->
+            let callees = directCallees program fn.FunctionBody
+            calleesByFunction.AddOrUpdate(fn, callees)
+            callees
+
+    /// verifyCompilerProgram for `parent` with the user functions `functions` added or, for
+    /// the ids in `replaced`, substituted, together with their coverage and source sites.
+    /// The merged program is built here from the parent's maps, so every other parent entry
+    /// is kept unchanged; it was verified with the parent. A kept function or a type's
+    /// validator that calls a replaced function would change too, so it is rejected (the
+    /// caller must recompile it). Only the given functions are verified, and since no kept
+    /// function calls one of them, a call cycle must lie among them alone.
+    let internal extendCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint (replaced: Set<WordId>) (functions: Map<WordId, IrFunction>) (coverage: Map<WordId, IrCoverageObligations>) (sources: Map<SourceSiteId, IrSourceSite>) =
         if not parent.BackendExecutable then
             failure "IR_BACKEND_UNTRUSTED_PROGRAM" "Only a compiler-verified program can be extended." [ "compiler-lowered verified snapshot" ] [ "verifier-only snapshot" ]
         let original = parent.Program
         let notExtension detail =
-            failure "IR_EXTEND_NOT_PURE_ADD" "An extended program must keep every parent entry and add only user functions." [ "parent entries unchanged" ] [ detail ]
+            failure "IR_EXTEND_NOT_PURE_ADD" "An extended program must keep every other parent entry unchanged." [ "parent entries unchanged" ] [ detail ]
         let added = functions |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         if added.IsEmpty then notExtension "no added functions"
+        if not (Set.isSubset replaced added) then notExtension "a replaced function has no new body"
         if (coverage |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> added then notExtension "coverage keys differ from the added functions"
         for id in added do
-            if original.FunctionsById.ContainsKey id || original.GeneratedTargetsById.ContainsKey id then notExtension (sprintf "%A already exists" id)
+            if replaced.Contains id then
+                if not (original.FunctionsById.ContainsKey id) then notExtension (sprintf "replaced %A does not exist" id)
+            elif original.FunctionsById.ContainsKey id || original.GeneratedTargetsById.ContainsKey id then notExtension (sprintf "%A already exists" id)
+        if not replaced.IsEmpty then
+            for KeyValue(id, fn) in original.FunctionsById do
+                if not (replaced.Contains id) && not (Set.isEmpty (Set.intersect replaced (functionCallees original fn))) then
+                    notExtension (sprintf "kept %A calls a replaced function" id)
+            for KeyValue(_, definition) in original.NominalTypesByKey do
+                let validator =
+                    match definition with
+                    | IrRecordDefinition record -> record.ValidatorCall
+                    | IrScalarDefinition scalar -> scalar.ValidatorCall
+                    | IrEnumDefinition _ -> None
+                match validator |> Option.map (fun call -> call.ResolvedTarget) with
+                | Some(UserWordTarget(id, _)) when replaced.Contains id -> notExtension (sprintf "a type validator calls replaced %A" id)
+                | _ -> ()
+        let keptSources =
+            if replaced.IsEmpty then original.SourceMap
+            else original.SourceMap |> Map.filter (fun _ source -> not (source.SiteOwner |> Option.exists replaced.Contains))
         for KeyValue(site, source) in sources do
-            if original.SourceMap.ContainsKey site then notExtension (sprintf "source site %A already exists" site)
+            if keptSources.ContainsKey site then notExtension (sprintf "source site %A already exists" site)
             let (SourceSiteId(siteOwner, ordinal)) = site
             if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
             if String.IsNullOrWhiteSpace source.SourceKind then
@@ -1266,7 +1355,7 @@ module IrVerifier =
             { original with
                 FunctionsById = Map.fold (fun found id fn -> Map.add id fn found) original.FunctionsById functions
                 CoverageByWord = Map.fold (fun found id value -> Map.add id value found) original.CoverageByWord coverage
-                SourceMap = Map.fold (fun found site value -> Map.add site value found) original.SourceMap sources }
+                SourceMap = Map.fold (fun found site value -> Map.add site value found) keptSources sources }
         for id in added do verifyFunction program parent.Catalog parent.HostCatalog id program.FunctionsById[id]
         let duplicateSites =
             added

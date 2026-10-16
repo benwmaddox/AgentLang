@@ -242,6 +242,61 @@ module Program =
             Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_CHECK", previousCheck)
             Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_LOG", previousLog)
 
+    /// Replacing a word extends the running dictionary too: the word, every transitive caller
+    /// and every case that reaches them are recompiled, and commit runs all of their tests.
+    /// W <- C <- D: D's case calls only D, another owner's case calls C, and a test-file case
+    /// reaches W; a replacement that changes their results must fail on each of them.
+    let private testIncrementalReplacementRunsEveryCaller root =
+        let log = Path.Combine(root, "incremental-replacements.log")
+        let previousCheck = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_CHECK"
+        let previousLog = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_LOG"
+        Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_CHECK", "1")
+        Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_LOG", log)
+        try
+            let extensions () = if File.Exists log then File.ReadAllLines(log).Length else 0
+            let project = Path.Combine(root, "incremental-live-replacement")
+            let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            let defineAndCommit label (word: string) (source: string) =
+                defineFlowProject engine source [ "syntaxVersion", jint 2 ] |> expectOk ("define " + label) |> ignore
+                commit engine "commit" word [] |> expectOk ("commit " + label) |> ignore
+            defineAndCommit "W" "chain.base" "fn chain.base(n: Int) -> Int {\n    n + 1\n}\n\ntest chain.base/one {\n    chain::base(1)\n    => 2\n}\n"
+            defineAndCommit "C" "chain.middle" "fn chain.middle(n: Int) -> Int {\n    chain::base(n) * 10\n}\n\ntest chain.middle/one {\n    chain::middle(1)\n    => 20\n}\n"
+            defineAndCommit "D" "chain.top" "fn chain.top(n: Int) -> Int {\n    chain::middle(n) + 3\n}\n\ntest chain.top/one {\n    chain::top(1)\n    => 23\n}\n"
+            defineAndCommit "an owner whose case calls C" "chain.other"
+                ("fn chain.other(n: Int) -> Int {\n    n\n}\n\ntest chain.other/plain {\n    chain::other(4)\n    => 4\n}\n\n"
+                 + "test chain.other/through-middle {\n    chain::middle(chain::other(2))\n    => 30\n}\n")
+            defineAndCommit "an overlay case that reaches W" "chain.wide"
+                ("fn chain.wide(n: Int) -> Int {\n    chain::top(n) + 0\n}\n\ntest chain.wide/plain {\n    chain::wide(1)\n    => 23\n}\n\n"
+                 + "test-file settings {\n    override fn chain.other(n: Int) -> Int {\n        n\n    }\n    test chain.wide/overlay {\n        chain::wide(2)\n        => 33\n    }\n}\n")
+            let revision () =
+                dispatch engine "describe" [ "word", jstr "chain.base" ] |> expectOk "describe W" |> fun response -> response.["data"].["revision"].GetValue<int>()
+            let stage body =
+                defineFlowProject engine ("fn chain.base(n: Int) -> Int {\n    " + body + "\n}\n") [ "syntaxVersion", jint 2; "replace", jbool true; "expectedRevision", jint (revision ()) ]
+                |> expectOk "stage a replacement of W"
+                |> ignore
+            let beforeBreaking = extensions ()
+            stage "if n == 1 { 2 } else { n + 2 }"
+            let rejected = commit engine "replace-word" "chain.base" [] |> expectError "COMMIT_TESTS_FAILED"
+            let failed = jsonArrayStrings rejected.["error"].["actual"]
+            check (failed |> List.contains "chain.top/one" |> not) "the breaking replacement keeps n = 1 results"
+            check (failed |> List.contains "chain.other/through-middle") "a case that calls a transitive caller runs against the replacement"
+            check (failed |> List.contains "chain.wide/overlay") "a test-file case that reaches the replaced word runs against it"
+            check (extensions () > beforeBreaking) "the staged replacement extends the running dictionary"
+            dispatch engine "discard" [ "word", jstr "chain.base" ] |> expectOk "discard the breaking replacement" |> ignore
+            let beforeCompatible = extensions ()
+            stage "1 + n"
+            let accepted = commit engine "replace-word" "chain.base" [] |> expectOk "commit a compatible replacement"
+            let ran = jsonArrayStrings accepted.["data"]
+            for case in [ "chain.base/one"; "chain.middle/one"; "chain.top/one"; "chain.wide/plain" ] do
+                check (ran |> List.contains case) $"the replacement commit runs caller case {case}"
+            check (extensions () > beforeCompatible) "the compatible replacement extends the running dictionary"
+            let reloaded = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "chain.top" ] |> expectOk "reload after the replacement")
+            assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "chain.wide" ] |> expectOk "reload the overlay owner")
+        finally
+            Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_CHECK", previousCheck)
+            Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_LOG", previousLog)
+
     let private testAuthoringHelpAndCanonicalLibrarySource root =
         let project = Path.Combine(root, "authoring-help-canonical")
         let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
@@ -8374,7 +8429,8 @@ test-file self {
             testEffectCountAssertions root
             testFlowTestFileOverrides root
             testIncrementalDefinesMatchFullCompile root
-            printfn $"Flow Runtime tests passed: 48 groups, {assertions} assertions."
+            testIncrementalReplacementRunsEveryCaller root
+            printfn $"Flow Runtime tests passed: 49 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)

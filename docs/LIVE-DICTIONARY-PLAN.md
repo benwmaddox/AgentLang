@@ -89,8 +89,39 @@ no host operation. The parent snapshot is the dictionary already running.
 
    Campfire probe: define 6.0 s → 0.3 s, commit 7.1 s → 1.8 s (1.3 s of it is
    publish).
-4. Publish cost on a one-word add.
-5. Replacement through the reverse-dependency closure.
+4. Publish cost on a one-word add (done, PR #5).
+5. Two-part build (done, PR #6).
+6. Replacement through the caller closure (PR #7, below).
+
+## Replacing a word (as built)
+
+`dictionaryDelta` also accepts words that changed. The extension then recompiles:
+
+- the changed words and their transitive callers, computed over the parent's IR call graph (validator calls through generated record and scalar constructors count as calls);
+- every case owned by those words or by added words;
+- every other case whose compiled body calls one of them directly. Callers are closed under calling, so a direct call suffices;
+- every test file whose cases can reach one of them through their overlay program.
+
+Everything else, kept functions included, is the parent's. `IrVerifier.extendCompilerProgram` rejects a kept function, or a type validator, that calls a replaced function.
+
+The extension falls back to a full compile when:
+
+- a record or scalar validator would be recompiled;
+- a Stack-authored word or case would be;
+- the words to compile are more than a third of the Flow words (and more than 16).
+
+Check mode (`AGENTLANG_INCREMENTAL_CHECK=1`) also requires every body bound to an earlier program to reach only functions that are unchanged in the new one. IR equality alone cannot see a stale binding.
+
+The commit gate is wider too. A replacement or type change already ran the tests of every word whose body calls the changed words. It now also runs the tests of every other owner that has a case whose compiled body calls a changed word or one of its callers. Such a case covers that code even though its owner does not call it.
+
+Campfire probe, replacing a word that has one caller:
+
+| Step | Before | After |
+| --- | ---: | ---: |
+| define | 5.7 s | 0.3 s |
+| `replace-word` | 6.1 s | 0.7 s |
+
+Each snapshot is also remembered under its compiled state, so the commit's durable projection of it is a cache hit.
 
 ## What a pure add is (as built)
 

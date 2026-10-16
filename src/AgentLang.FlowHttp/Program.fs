@@ -52,6 +52,17 @@ let private emit (args: string list) =
         // Commit lists the attached tests it ran and passed; the probe's own test must be one.
         let passed = committed["data"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
         if not (passed.Contains "probe.add-one/two") then failwith $"probe commit did not run probe.add-one/two: {committed.ToJsonString()}"
+        // Replacing a word with a caller: the caller's tests must run too.
+        let flow2 (source: string) = [ "frontend", System.Text.Json.Nodes.JsonValue.Create("flow") :> System.Text.Json.Nodes.JsonNode; "syntaxVersion", System.Text.Json.Nodes.JsonValue.Create(2); "source", System.Text.Json.Nodes.JsonValue.Create(source) ]
+        request "define" (flow2 "fn probe.twice(n: Int) -> Int {\n    probe::add-one(probe::add-one(n))\n}\n\ntest probe.twice/two {\n    probe::twice(2)\n    => 4\n}\n") |> ignore
+        request "commit" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.twice") ] |> ignore
+        let described = request "describe" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.add-one") ]
+        let revision = (described["data"]["revision"]).GetValue<int>()
+        FlowApp.timed "probe-replace-define" (fun () ->
+            request "define" (flow2 "fn probe.add-one(n: Int) -> Int {\n    1 + n\n}\n" @ [ "replace", System.Text.Json.Nodes.JsonValue.Create(true); "expectedRevision", System.Text.Json.Nodes.JsonValue.Create(revision) ]) |> ignore)
+        let replaced = FlowApp.timed "probe-replace-commit" (fun () -> request "replace-word" [ "word", System.Text.Json.Nodes.JsonValue.Create("probe.add-one") ])
+        let replacedTests = replaced["data"].AsArray() |> Seq.map (fun item -> item.GetValue<string>()) |> Set.ofSeq
+        if not (replacedTests.Contains "probe.twice/two") then failwith $"probe replacement did not run the caller's test: {replaced.ToJsonString()}"
     let ir, diagnostics = FlowApp.timed "emit-native" (fun () -> FlowApp.emitNative flowApp profile target)
     File.WriteAllText(Path.Combine(out, "module.ll"), ir, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "diagnostics.tsv"), FlowApp.diagnosticsText diagnostics, UTF8Encoding(false))
