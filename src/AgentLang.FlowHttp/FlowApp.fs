@@ -74,6 +74,15 @@ module FlowApp =
 
     /// Defines and commits the stdlib and app sources. `databasePath` backs
     /// the production db provider; attached tests get a fresh in-memory one.
+    /// Phase timings on stderr when AGENTLANG_BUILD_TIMING is set (build-time profiling).
+    let timed (label: string) (work: unit -> 'T) : 'T =
+        if isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_TIMING") then work ()
+        else
+            let watch = Diagnostics.Stopwatch.StartNew()
+            let result = work ()
+            eprintfn "timing %s %.1fs" label watch.Elapsed.TotalSeconds
+            result
+
     let loadWithStore (projectDirectory: string) (app: string) (sourcePaths: string list) (databasePath: string) (storeBytes: int) =
         let stdlib = stdlibDirectory ()
         let stdlibSources = stdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
@@ -86,8 +95,8 @@ module FlowApp =
         Directory.CreateDirectory projectDirectory |> ignore
         // Host operation types must exist before an engine binds the manifest.
         let bootstrap = Runtime.Engine(projectDirectory, capabilities, "2026-01-01T00:00:00Z", fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities)
-        define bootstrap (String.concat "\n\n" stdlibSources)
-        dispatch bootstrap "commit" [] |> ignore
+        timed "bootstrap-define" (fun () -> define bootstrap (String.concat "\n\n" stdlibSources))
+        timed "bootstrap-commit" (fun () -> dispatch bootstrap "commit" [] |> ignore)
         // db: one connection (this interpreter "worker"); cache: the process-wide
         // store. Attached tests get an in-memory database and a fresh cache.
         // store: this worker's region (storeBytes, 0 = no store); tests get a fresh one each.
@@ -108,8 +117,8 @@ module FlowApp =
                            fileSystemMode = FileSystemMode.Virtual, testCapabilities = capabilities, hostOperations = environment)
         let hostStdlibSources = hostStdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
         let named = (List.zip (hostStdlibFiles |> List.map (fun name -> "stdlib/" + name)) hostStdlibSources) @ (List.zip (sourcePaths |> List.map Path.GetFileName) appSources)
-        defineFiles engine named |> ignore
-        dispatch engine "commit" [] |> ignore
+        timed "define" (fun () -> defineFiles engine named |> ignore)
+        timed "commit" (fun () -> dispatch engine "commit" [] |> ignore)
         { Engine = engine; App = app; ContextType = contextType; Provider = provider; Worker = worker }
 
     /// load with no worker store (store.capacity is 0).

@@ -300,7 +300,18 @@ module IrInterpreter =
     let validateProgram (verified: VerifiedIrProgram) =
         requireBackendRegistry verified
 
-    let private ensureProgramContainsOriginalSnapshot (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) =
+    /// Expanded test programs already shown to contain their original snapshot (by reference).
+    let private containingPrograms = System.Runtime.CompilerServices.ConditionalWeakTable<VerifiedIrProgram, VerifiedIrProgram>()
+
+    let rec private ensureProgramContainsOriginalSnapshot (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) =
+        match containingPrograms.TryGetValue expandedProgram with
+        | true, checkedOriginal when obj.ReferenceEquals(checkedOriginal, originalProgram) -> ()
+        | _ when obj.ReferenceEquals(originalProgram, expandedProgram) -> ()
+        | _ ->
+            ensureProgramContainsOriginalSnapshotFully originalProgram expandedProgram
+            containingPrograms.AddOrUpdate(expandedProgram, originalProgram)
+
+    and private ensureProgramContainsOriginalSnapshotFully (originalProgram: VerifiedIrProgram) (expandedProgram: VerifiedIrProgram) =
         let original = VerifiedIrProgram.inspect originalProgram
         let expanded = VerifiedIrProgram.inspect expandedProgram
         let requireSubset label (source: Map<'key, 'value>) (target: Map<'key, 'value>) =
