@@ -2681,7 +2681,42 @@ module FlowLowering =
         | Some(name, _) -> fail "FLOW_BATCH_PARAMETER_DUPLICATE" $"Parameter catalog for '{word}' repeats '{name}'." (Some word) (Some span) [ "unique parameter names" ] [ name ]
         | None -> ()
 
-    let private validateContextCatalog (context: Context) =
+    /// The catalog check of one word entry (part of validateContextCatalog).
+    let private validateCatalogWord (context: Context) (known: Set<string>) name (entry: WordEntry) =
+        if entry.Definition.Name <> name then fail "FLOW_BATCH_WORD_CATALOG_KEY" "Word map keys must match their declared names." (Some name) (Some entry.Definition.Span) [ name ] [ entry.Definition.Name ]
+        if entry.Revision < 0 || entry.Definition.Revision <> entry.Revision then
+            fail "FLOW_BATCH_BASE_REVISION" "Base word and definition revisions must be equal and nonnegative." (Some name) (Some entry.Definition.Span)
+                [ string entry.Revision ] [ string entry.Definition.Revision ]
+        for effect in entry.Definition.Effects do
+            if IrEffects.ofName effect |> Option.isNone then
+                fail "FLOW_BATCH_UNKNOWN_EFFECT" $"Base word '{name}' declares an effect outside the closed effect vocabulary." (Some name) (Some entry.Definition.Span) (IrEffects.names Set.empty) [ effect ]
+        let isPrimitive = match entry.Builtin with | Some(BuiltinOp _ | HostOperation _) -> true | _ -> false
+        for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
+            validateBatchType known name entry.Definition.Span isPrimitive typeValue
+        match entryParameterNames context name entry with
+        | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
+        | None -> ()
+        match context.ParameterNames.TryFind name with
+        | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
+        | None -> ()
+
+    /// Catalogs already validated, by compiler context, with the parameter-name and origin
+    /// maps (by reference) they were validated with.
+    type private ValidatedCatalog = { ParameterNames: obj; SourceOrigins: obj }
+
+    let private validatedCatalogs = System.Runtime.CompilerServices.ConditionalWeakTable<Compiler.IrLoweringContext, ValidatedCatalog>()
+
+    let private markCatalogValidated (context: Context) =
+        validatedCatalogs.AddOrUpdate(context.CompilerContext, { ParameterNames = box context.ParameterNames; SourceOrigins = box context.SourceOrigins })
+
+    let rec private validateContextCatalog (context: Context) =
+        match validatedCatalogs.TryGetValue context.CompilerContext with
+        | true, known when obj.ReferenceEquals(known.ParameterNames, context.ParameterNames) && obj.ReferenceEquals(known.SourceOrigins, context.SourceOrigins) -> ()
+        | _ ->
+            validateContextCatalogFully context
+            markCatalogValidated context
+
+    and private validateContextCatalogFully (context: Context) =
         let compilerContext = context.CompilerContext
         let wordNames = compilerContext.Words |> Map.toSeq |> Seq.map fst |> Set.ofSeq
         let idNames = compilerContext.WordIds |> Map.toSeq |> Seq.map fst |> Set.ofSeq
@@ -2711,23 +2746,7 @@ module FlowLowering =
         for KeyValue(name, scalar) in compilerContext.Scalars do
             if scalar.Name <> name then fail "FLOW_BATCH_TYPE_CATALOG_KEY" "Scalar map keys must match their declared names." (Some name) (Some scalar.Span) [ name ] [ scalar.Name ]
             validateBatchType known name scalar.Span false scalar.BaseType
-        for KeyValue(name, entry) in compilerContext.Words do
-            if entry.Definition.Name <> name then fail "FLOW_BATCH_WORD_CATALOG_KEY" "Word map keys must match their declared names." (Some name) (Some entry.Definition.Span) [ name ] [ entry.Definition.Name ]
-            if entry.Revision < 0 || entry.Definition.Revision <> entry.Revision then
-                fail "FLOW_BATCH_BASE_REVISION" "Base word and definition revisions must be equal and nonnegative." (Some name) (Some entry.Definition.Span)
-                    [ string entry.Revision ] [ string entry.Definition.Revision ]
-            for effect in entry.Definition.Effects do
-                if IrEffects.ofName effect |> Option.isNone then
-                    fail "FLOW_BATCH_UNKNOWN_EFFECT" $"Base word '{name}' declares an effect outside the closed effect vocabulary." (Some name) (Some entry.Definition.Span) (IrEffects.names Set.empty) [ effect ]
-            let isPrimitive = match entry.Builtin with | Some(BuiltinOp _ | HostOperation _) -> true | _ -> false
-            for typeValue in entry.Definition.Inputs @ entry.Definition.Outputs do
-                validateBatchType known name entry.Definition.Span isPrimitive typeValue
-            match entryParameterNames context name entry with
-            | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
-            | None -> ()
-            match context.ParameterNames.TryFind name with
-            | Some names -> validateParameterNames name entry.Definition.Span entry.Definition.Inputs.Length names
-            | None -> ()
+        for KeyValue(name, entry) in compilerContext.Words do validateCatalogWord context known name entry
         requireExactBatchOrigins context
 
     let private validateProposedSignature (context: Context) (flowWord: FlowWordDefinition) =
@@ -2979,19 +2998,36 @@ module FlowLowering =
         let finalParameterNames =
             (loweredChanges @ (loweredRetainedArtifacts |> List.map (fun item -> item.Lowered)))
             |> List.fold (fun parameters lowered -> Map.add lowered.Definition.Name lowered.ParameterNames parameters) context.ParameterNames
-        let finalMarkers =
+        // This is the single authoritative check of all real bodies. It sees
+        // forward references, final effects, scalar validators and call cycles.
+        // An extension checks the added bodies against its verified parent.
+        let program, retainedOrigins =
             match extendFrom with
-            | Some _ ->
-                loweredChangeArtifacts
-                |> List.fold (fun found item -> Set.union found (zeroWidthMarkers item.Artifacts.Lowered.Definition.Body)) Set.empty
-                |> fun added -> context.SourceOrigins |> Map.fold (fun found marker _ -> Set.add marker found) added
-            | None -> contextZeroWidthMarkers finalCompilerContext
-        let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
-        let retainedKeys = retainedOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
-        let missingFinalOrigins = Set.difference finalMarkers retainedKeys
-        if not (Set.isEmpty missingFinalOrigins) then
-            fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
-                [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missingFinalOrigins.Count ]
+            | Some extension ->
+                if not (List.isEmpty retainedSources) || prepared |> Seq.exists (fun item -> item.Previous.IsSome) then
+                    fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added words." None None [ "added words only" ] []
+                let addedMarkers =
+                    loweredChangeArtifacts
+                    |> List.fold (fun found item -> Set.union found (zeroWidthMarkers item.Artifacts.Lowered.Definition.Body)) Set.empty
+                let addedOrigins =
+                    loweredChangeArtifacts
+                    |> List.fold (fun found item ->
+                        item.Artifacts.Lowered.Projection.SyntheticOrigins
+                        |> Map.fold (fun current marker origin -> if addedMarkers.Contains marker then Map.add marker origin current else current) found) Map.empty
+                let missing = addedMarkers |> Set.filter (fun marker -> not (addedOrigins.ContainsKey marker))
+                if not (Set.isEmpty missing) then
+                    fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
+                        [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missing.Count ]
+                Compiler.extendIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins extension.Parent finalCompilerContext addedOrigins
+            | None ->
+                let finalMarkers = contextZeroWidthMarkers finalCompilerContext
+                let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
+                let retainedKeys = retainedOrigins |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+                let missingFinalOrigins = Set.difference finalMarkers retainedKeys
+                if not (Set.isEmpty missingFinalOrigins) then
+                    fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
+                        [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missingFinalOrigins.Count ]
+                Compiler.compileIrProgramWithSourceOrigins finalCompilerContext retainedOrigins, retainedOrigins
         let finalFlowOwnerIds =
             Set.union
                 (retainedSources |> List.map (fun retained -> retained.Document.OwnerId) |> Set.ofList)
@@ -3006,15 +3042,14 @@ module FlowLowering =
               ParameterNames = finalParameterNames
               Flow2OwnerIds = finalFlow2OwnerIds
               SourceOrigins = retainedOrigins }
-        // This is the single authoritative check of all real bodies. It sees
-        // forward references, final effects, scalar validators and call cycles.
-        let program =
-            match extendFrom with
-            | Some extension ->
-                if not (List.isEmpty retainedSources) || prepared |> Seq.exists (fun item -> item.Previous.IsSome) then
-                    fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added words." None None [ "added words only" ] []
-                Compiler.extendIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins extension.Parent finalCompilerContext retainedOrigins
-            | None -> Compiler.compileIrProgramWithSourceOrigins finalCompilerContext retainedOrigins
+        // An extension's catalog is its validated parent's plus the added words: their ids
+        // were checked unique above and their origins exact, so only their entries remain.
+        if extendFrom.IsSome then
+            let known = knownTypes finalContext
+            for item in loweredChangeArtifacts do
+                let name = item.Artifacts.Lowered.Definition.Name
+                validateCatalogWord finalContext known name finalCompilerContext.Words[name]
+            markCatalogValidated finalContext
         let programData = VerifiedIrProgram.inspect program
         let changedIds = prepared |> Seq.map (fun item -> item.Identity) |> Set.ofSeq
         let sites =

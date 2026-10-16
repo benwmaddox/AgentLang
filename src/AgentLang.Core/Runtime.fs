@@ -1640,8 +1640,13 @@ module Runtime =
             match store with
             | None -> lastExportWarning <- None
             | Some projectStore ->
+                let publishWatch = Diagnostics.Stopwatch.StartNew()
                 let manifest, sources, exportText = currentManifestFor state baseline actor
-                match Storage.commit projectStore storageGeneration manifest sources exportText with
+                let manifestSeconds = publishWatch.Elapsed.TotalSeconds
+                let storageResult = Storage.commit projectStore storageGeneration manifest sources exportText
+                if not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_TIMING")) then
+                    eprintfn "timing publish.manifest %.2fs storage %.2fs (%d sources)" manifestSeconds (publishWatch.Elapsed.TotalSeconds - manifestSeconds) sources.Length
+                match storageResult with
                 | Error storageError -> raiseStorageError storageError
                 | Ok committed ->
                     storageGeneration <- committed.Generation

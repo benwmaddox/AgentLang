@@ -1233,45 +1233,40 @@ module IrVerifier =
         verifyProgram catalog hostCatalog program
         VerifiedIrProgram(program, catalog, hostCatalog, true, Some snapshotFingerprint)
 
-    /// verifyCompilerProgram for a program that is `parent` plus the user functions `added`
-    /// and their source-map and coverage entries, and nothing else. Only the added entries
-    /// are verified: every parent entry is unchanged and was verified with the parent, and
-    /// no parent body can call an added function, so a call cycle must lie among the added
-    /// functions alone.
-    let internal extendCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint (program: IrProgram) (added: Set<WordId>) =
+    /// verifyCompilerProgram for `parent` plus the user functions `functions`, their
+    /// coverage and their source sites. The merged program is built here by adding entries
+    /// absent from the parent, so every parent entry is kept unchanged; it was verified
+    /// with the parent. Only the added entries are verified, and since no parent body can
+    /// call an added function, a call cycle must lie among the added functions alone.
+    let internal extendCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint (functions: Map<WordId, IrFunction>) (coverage: Map<WordId, IrCoverageObligations>) (sources: Map<SourceSiteId, IrSourceSite>) =
         if not parent.BackendExecutable then
             failure "IR_BACKEND_UNTRUSTED_PROGRAM" "Only a compiler-verified program can be extended." [ "compiler-lowered verified snapshot" ] [ "verifier-only snapshot" ]
         let original = parent.Program
         let notExtension detail =
             failure "IR_EXTEND_NOT_PURE_ADD" "An extended program must keep every parent entry and add only user functions." [ "parent entries unchanged" ] [ detail ]
-        if not (obj.ReferenceEquals(original.NominalTypesByKey, program.NominalTypesByKey) || original.NominalTypesByKey = program.NominalTypesByKey) then notExtension "nominal types"
-        if not (obj.ReferenceEquals(original.GeneratedTargetsById, program.GeneratedTargetsById) || original.GeneratedTargetsById = program.GeneratedTargetsById) then notExtension "generated targets"
+        let added = functions |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+        if added.IsEmpty then notExtension "no added functions"
+        if (coverage |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> added then notExtension "coverage keys differ from the added functions"
         for id in added do
             if original.FunctionsById.ContainsKey id || original.GeneratedTargetsById.ContainsKey id then notExtension (sprintf "%A already exists" id)
-            if not (program.FunctionsById.ContainsKey id && program.CoverageByWord.ContainsKey id) then notExtension (sprintf "%A has no function or coverage entry" id)
-        if program.FunctionsById.Count <> original.FunctionsById.Count + added.Count || program.CoverageByWord.Count <> program.FunctionsById.Count then
-            notExtension "function or coverage count"
-        let keepsParent label (source: Map<'key, 'value>) (target: Map<'key, 'value>) =
-            for KeyValue(key, value) in source do
-                match target.TryFind key with
-                | Some kept when obj.ReferenceEquals(kept, value) || kept = value -> ()
-                | _ -> notExtension (sprintf "%s %A" label key)
-        keepsParent "function" original.FunctionsById program.FunctionsById
-        keepsParent "coverage" original.CoverageByWord program.CoverageByWord
-        keepsParent "source site" original.SourceMap program.SourceMap
-        for KeyValue(site, source) in program.SourceMap do
-            if not (original.SourceMap.ContainsKey site) then
-                let (SourceSiteId(siteOwner, ordinal)) = site
-                if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
-                if String.IsNullOrWhiteSpace source.SourceKind then
-                    failure "IR_SOURCE_KIND_MISSING" "Source-map entries must identify their source construct." [ "nonempty source kind" ] [ source.SourceKind ]
-                if String.IsNullOrWhiteSpace source.SiteSpan.File || source.SiteSpan.Line < 1 || source.SiteSpan.Column < 1 || source.SiteSpan.Length < 0 then
-                    failure "IR_SOURCE_SPAN_INVALID" "Source-map spans must have a file, positive line/column, and nonnegative length." [ "valid SourceSpan" ] [ sprintf "%A" source.SiteSpan ]
-                if siteOwner <> source.SiteOwner then
-                    failure "IR_SOURCE_SITE_OWNER_MISMATCH" "Source-site ID owner does not match its source-map entry." [ sprintf "%A" siteOwner ] [ sprintf "%A" source.SiteOwner ]
-                match source.SiteOwner with
-                | Some owner when added.Contains owner -> ()
-                | owner -> failure "IR_SOURCE_OWNER_UNKNOWN" "A source site added by an extension must belong to an added function." [ "added function owner" ] [ sprintf "%A" owner ]
+        for KeyValue(site, source) in sources do
+            if original.SourceMap.ContainsKey site then notExtension (sprintf "source site %A already exists" site)
+            let (SourceSiteId(siteOwner, ordinal)) = site
+            if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
+            if String.IsNullOrWhiteSpace source.SourceKind then
+                failure "IR_SOURCE_KIND_MISSING" "Source-map entries must identify their source construct." [ "nonempty source kind" ] [ source.SourceKind ]
+            if String.IsNullOrWhiteSpace source.SiteSpan.File || source.SiteSpan.Line < 1 || source.SiteSpan.Column < 1 || source.SiteSpan.Length < 0 then
+                failure "IR_SOURCE_SPAN_INVALID" "Source-map spans must have a file, positive line/column, and nonnegative length." [ "valid SourceSpan" ] [ sprintf "%A" source.SiteSpan ]
+            if siteOwner <> source.SiteOwner then
+                failure "IR_SOURCE_SITE_OWNER_MISMATCH" "Source-site ID owner does not match its source-map entry." [ sprintf "%A" siteOwner ] [ sprintf "%A" source.SiteOwner ]
+            match source.SiteOwner with
+            | Some owner when added.Contains owner -> ()
+            | owner -> failure "IR_SOURCE_OWNER_UNKNOWN" "A source site added by an extension must belong to an added function." [ "added function owner" ] [ sprintf "%A" owner ]
+        let program =
+            { original with
+                FunctionsById = Map.fold (fun found id fn -> Map.add id fn found) original.FunctionsById functions
+                CoverageByWord = Map.fold (fun found id value -> Map.add id value found) original.CoverageByWord coverage
+                SourceMap = Map.fold (fun found site value -> Map.add site value found) original.SourceMap sources }
         for id in added do verifyFunction program parent.Catalog parent.HostCatalog id program.FunctionsById[id]
         let duplicateSites =
             added
