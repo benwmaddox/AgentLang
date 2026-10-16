@@ -1233,6 +1233,75 @@ module IrVerifier =
         verifyProgram catalog hostCatalog program
         VerifiedIrProgram(program, catalog, hostCatalog, true, Some snapshotFingerprint)
 
+    /// verifyCompilerProgram for a program that is `parent` plus the user functions `added`
+    /// and their source-map and coverage entries, and nothing else. Only the added entries
+    /// are verified: every parent entry is unchanged and was verified with the parent, and
+    /// no parent body can call an added function, so a call cycle must lie among the added
+    /// functions alone.
+    let internal extendCompilerProgram (parent: VerifiedIrProgram) snapshotFingerprint (program: IrProgram) (added: Set<WordId>) =
+        if not parent.BackendExecutable then
+            failure "IR_BACKEND_UNTRUSTED_PROGRAM" "Only a compiler-verified program can be extended." [ "compiler-lowered verified snapshot" ] [ "verifier-only snapshot" ]
+        let original = parent.Program
+        let notExtension detail =
+            failure "IR_EXTEND_NOT_PURE_ADD" "An extended program must keep every parent entry and add only user functions." [ "parent entries unchanged" ] [ detail ]
+        if not (obj.ReferenceEquals(original.NominalTypesByKey, program.NominalTypesByKey) || original.NominalTypesByKey = program.NominalTypesByKey) then notExtension "nominal types"
+        if not (obj.ReferenceEquals(original.GeneratedTargetsById, program.GeneratedTargetsById) || original.GeneratedTargetsById = program.GeneratedTargetsById) then notExtension "generated targets"
+        for id in added do
+            if original.FunctionsById.ContainsKey id || original.GeneratedTargetsById.ContainsKey id then notExtension (sprintf "%A already exists" id)
+            if not (program.FunctionsById.ContainsKey id && program.CoverageByWord.ContainsKey id) then notExtension (sprintf "%A has no function or coverage entry" id)
+        if program.FunctionsById.Count <> original.FunctionsById.Count + added.Count || program.CoverageByWord.Count <> program.FunctionsById.Count then
+            notExtension "function or coverage count"
+        let keepsParent label (source: Map<'key, 'value>) (target: Map<'key, 'value>) =
+            for KeyValue(key, value) in source do
+                match target.TryFind key with
+                | Some kept when obj.ReferenceEquals(kept, value) || kept = value -> ()
+                | _ -> notExtension (sprintf "%s %A" label key)
+        keepsParent "function" original.FunctionsById program.FunctionsById
+        keepsParent "coverage" original.CoverageByWord program.CoverageByWord
+        keepsParent "source site" original.SourceMap program.SourceMap
+        for KeyValue(site, source) in program.SourceMap do
+            if not (original.SourceMap.ContainsKey site) then
+                let (SourceSiteId(siteOwner, ordinal)) = site
+                if ordinal < 0 then failure "IR_SOURCE_SITE_INVALID" "Source-site ordinals must be nonnegative." [ "nonnegative ordinal" ] [ string ordinal ]
+                if String.IsNullOrWhiteSpace source.SourceKind then
+                    failure "IR_SOURCE_KIND_MISSING" "Source-map entries must identify their source construct." [ "nonempty source kind" ] [ source.SourceKind ]
+                if String.IsNullOrWhiteSpace source.SiteSpan.File || source.SiteSpan.Line < 1 || source.SiteSpan.Column < 1 || source.SiteSpan.Length < 0 then
+                    failure "IR_SOURCE_SPAN_INVALID" "Source-map spans must have a file, positive line/column, and nonnegative length." [ "valid SourceSpan" ] [ sprintf "%A" source.SiteSpan ]
+                if siteOwner <> source.SiteOwner then
+                    failure "IR_SOURCE_SITE_OWNER_MISMATCH" "Source-site ID owner does not match its source-map entry." [ sprintf "%A" siteOwner ] [ sprintf "%A" source.SiteOwner ]
+                match source.SiteOwner with
+                | Some owner when added.Contains owner -> ()
+                | owner -> failure "IR_SOURCE_OWNER_UNKNOWN" "A source site added by an extension must belong to an added function." [ "added function owner" ] [ sprintf "%A" owner ]
+        for id in added do verifyFunction program parent.Catalog parent.HostCatalog id program.FunctionsById[id]
+        let duplicateSites =
+            added
+            |> Seq.collect (fun id -> instructionsInBlock program.FunctionsById[id].FunctionBody |> Seq.map (fun instruction -> instruction.Site))
+            |> Seq.countBy id
+            |> Seq.choose (fun (site, count) -> if count > 1 then Some(site, count) else None)
+            |> Seq.toList
+        if not (List.isEmpty duplicateSites) then
+            failure "IR_DUPLICATE_SOURCE_SITE" "Each source expression must have one executable instruction identity across all nested blocks." [ "unique source-site ID per executable instruction" ] (duplicateSites |> List.map (fun (site, count) -> sprintf "%A (%d instructions)" site count))
+        let colors = System.Collections.Generic.Dictionary<WordId, int>()
+        let path = ResizeArray<WordId>()
+        let rec visit id =
+            match colors.TryGetValue id with
+            | true, 2 -> ()
+            | true, 1 ->
+                let currentPath = path |> Seq.map (fun (WordId value) -> "word:" + value) |> String.concat " -> "
+                let (WordId value) = id
+                failure "IR_RECURSIVE_CALL_GRAPH" "Executable user and generated-word references must be acyclic." [ "acyclic call graph" ] [ currentPath + " -> word:" + value ]
+            | _ ->
+                colors[id] <- 1
+                path.Add id
+                for target in callTargetsInBlock program.FunctionsById[id].FunctionBody |> List.choose targetNode do
+                    match target with
+                    | IrFunctionNode callee when added.Contains callee -> visit callee
+                    | _ -> ()
+                path.RemoveAt(path.Count - 1)
+                colors[id] <- 2
+        for id in added do visit id
+        VerifiedIrProgram(program, parent.Catalog, parent.HostCatalog, true, Some snapshotFingerprint)
+
     let coverageObligations (block: IrBlock) =
         let coveredSites, branchOutcomes = expectedCoverage Map.empty Map.empty block
         { CoveredSites = coveredSites; BranchOutcomes = branchOutcomes }

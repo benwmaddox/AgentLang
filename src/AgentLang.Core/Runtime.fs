@@ -83,6 +83,9 @@ module Runtime =
 
     type private TestFileOverlay =
         { Program: VerifiedIrProgram
+          // The production program the overlay was built from. Its cases run against it; a
+          // later snapshot that only added words contains it unchanged.
+          Original: VerifiedIrProgram
           Dispatch: Map<IrCallTarget, IrCallTarget>
           ActiveOverrides: string list }
 
@@ -94,7 +97,9 @@ module Runtime =
           BindingSpans: Map<StoredCallBinding, SourceSpan> }
 
     /// One executable view of one immutable dictionary projection. Detached
-    /// bodies in the snapshot are verified against this exact program handle.
+    /// bodies in the snapshot are verified against this exact program handle, or,
+    /// in a snapshot extended by adding words, against the earlier program it
+    /// contains unchanged (as Forth words keep the dictionary they were compiled in).
     type private RuntimeSnapshot =
         { State: DictionaryState
           Words: Map<string, WordEntry>
@@ -105,7 +110,10 @@ module Runtime =
           TestBodies: Map<string, VerifiedIrBody>
           TestExpectationBodies: Map<string, VerifiedIrBody>
           TestFileOverlays: Map<string, TestFileOverlay>
-          ExampleBodies: Map<string, VerifiedIrBody> }
+          ExampleBodies: Map<string, VerifiedIrBody>
+          // Every private Flow marker this snapshot's compilation allocated (words and
+          // attachments); an extension allocates above all of them.
+          Allocated: Map<SourceSpan, SourceSpan> }
 
     /// Successful output from invoking one fixed, checked Flow word.
     type FlowEntryPointResult =
@@ -222,7 +230,11 @@ module Runtime =
     /// (TYPE_VALIDATOR_EFFECT). Only verified word bodies are scanned; test,
     /// example and eval bodies keep run-time semantics so they can still assert
     /// REFINEMENT_FAILED.
-    let private checkRefinedLiterals (program: VerifiedIrProgram) =
+    /// Retained call sites' requested short names per dictionary state (by reference).
+    let private requestedShortNamesByState =
+        System.Runtime.CompilerServices.ConditionalWeakTable<obj, System.Collections.Generic.HashSet<string> option>()
+
+    let private checkRefinedLiteralsFor (program: VerifiedIrProgram) (checkFunction: string -> bool) =
         let inspected = VerifiedIrProgram.inspect program
         let findings = ResizeArray<string * Literal * IrType * IrOperation * SourceSiteId>()
         let rec visit owner (block: IrBlock) =
@@ -242,7 +254,7 @@ module Runtime =
                 | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (snd >> visit owner)
                 | _ -> ()
         for KeyValue(_, fn) in inspected.FunctionsById do
-            visit fn.FunctionName fn.FunctionBody
+            if checkFunction fn.FunctionName then visit fn.FunctionName fn.FunctionBody
         for owner, literal, literalType, wrap, site in findings |> Seq.distinctBy (fun (_, literal, _, wrap, _) -> literal, wrap) do
             let span = inspected.SourceMap.TryFind site |> Option.map (fun source -> source.SiteSpan)
             let constructor = match wrap with IrOperation.WrapScalar(call, _, _) -> call.ResolvedName | _ -> "<constructor>"
@@ -1715,7 +1727,40 @@ module Runtime =
 
         let validateGraph (state: DictionaryState) = validateGraphWith effectiveWords state
 
-        let compileRuntimeSnapshotWith (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
+        /// validateGraph for a dictionary that is an already validated one plus the Flow
+        /// words `added`: only the added words and their tests and examples are checked, and
+        /// since no earlier word can depend on an added one, a cycle lies among the added.
+        let validateAddedGraph (state: DictionaryState) (added: Set<string>) =
+            let words = effectiveWords state
+            for name in added do
+                Compiler.checkDefinitionWithEnums (knownTypes state) (enumDefinitions state) words state.Words[name].Definition |> ignore
+            for KeyValue(_, test) in state.Tests do
+                if added.Contains test.Word then Compiler.checkTestWithEnums (knownTypes state) (enumDefinitions state) words test |> ignore
+            for KeyValue(_, example) in state.Examples do
+                if added.Contains example.Word then Compiler.checkExampleWithEnums (knownTypes state) (enumDefinitions state) words example |> ignore
+            let colors = System.Collections.Generic.Dictionary<string, int>(StringComparer.Ordinal)
+            let rec visit path name =
+                match colors.TryGetValue name with
+                | true, 1 ->
+                    let cycle = String.concat " -> " (path @ [ name ])
+                    error "WORD_DEPENDENCY_CYCLE" $"Word dependency cycle: {cycle}." (Some name) None [] (path @ [ name ])
+                | true, 2 -> ()
+                | _ ->
+                    colors[name] <- 1
+                    for dependency in Compiler.dependencies state.Words[name].Definition.Body do
+                        if added.Contains dependency then visit (path @ [ name ]) dependency
+                    colors[name] <- 2
+            for name in added do visit [] name
+
+        /// Compiles `state` to a runtime snapshot. With an extension (parent, added), `state`
+        /// must be the parent's state plus the Flow words `added` and their attachments
+        /// (see pureAddedWords): only those are lowered, compiled and checked, and every
+        /// retained word, body and overlay is the parent's.
+        let compileRuntimeSnapshotCore (extension: (RuntimeSnapshot * Set<string>) option) (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
+            let isAdded (owner: string) =
+                match extension with
+                | Some(_, added) -> added.Contains owner
+                | None -> true
             let resolveWords = effectiveWordsWith allowDeferredHostNominalTypes
             if Map.isEmpty state.FlowWords && (not (Map.isEmpty state.FlowTests) || not (Map.isEmpty state.FlowTestFiles) || not (Map.isEmpty state.FlowExamples)) then
                 error "FLOW_RUNTIME_ORPHAN_ATTACHMENT" "Flow source attachments cannot exist without a Flow-authored owner definition." None None [ "Flow owner" ] []
@@ -1849,6 +1894,7 @@ module Runtime =
                     let wordChanges: FlowLowering.FlowSourceChange list =
                         state.FlowWords
                         |> Map.toList
+                        |> List.filter (fun (_, authored) -> isAdded authored.Source.OwnerName)
                         |> List.map (fun (_, authored) ->
                             let name = authored.Source.OwnerName
                             let entry =
@@ -1864,17 +1910,27 @@ module Runtime =
                             state.FlowTests
                             |> Map.toList
                             |> List.filter (fun (_, attachment) ->
-                                not (state.FlowTestFiles.ContainsKey(flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference)))
+                                isAdded attachment.Source.OwnerName
+                                && not (state.FlowTestFiles.ContainsKey(flowTestFileKey attachment.Source.OwnerId attachment.Source.Reference)))
                             |> List.map (fun (_, attachment) -> FlowLowering.FlowAttachmentChange.Add attachment.Source)
                           yield!
                             state.FlowExamples
                             |> Map.toList
+                            |> List.filter (fun (_, attachment) -> isAdded attachment.Source.OwnerName)
                             |> List.map (fun (_, attachment) -> FlowLowering.FlowAttachmentChange.Add attachment.Source) ]
                     let project =
-                        FlowLowering.compileBatchFlowProjectSources flowContext wordInventory wordChanges attachmentInventory attachmentChanges
+                        match extension with
+                        | Some(parent, _) ->
+                            let parentContext =
+                                parent.FlowContext
+                                |> Option.defaultWith (fun () -> error "FLOW_RUNTIME_EXTEND_PARENT" "Only a Flow snapshot can be extended." None None [] [])
+                            FlowLowering.extendFlowProjectSources parentContext parent.Program parent.Allocated wordChanges attachmentChanges
+                        | None ->
+                            FlowLowering.compileBatchFlowProjectSources flowContext wordInventory wordChanges attachmentInventory attachmentChanges
                     let compiledTestFiles =
                         state.FlowTestFiles
                         |> Map.toList
+                        |> List.filter (fun (_, file) -> isAdded file.OwnerName)
                         |> List.map (fun (fileKey, file) ->
                             let settings =
                                 match FlowParser.parseTestFileSettingsWithVersion file.SyntaxVersion file.SourceFile file.Settings.SourceText with
@@ -1999,17 +2055,17 @@ module Runtime =
                                     (Some name) span
                                     (changedExpected |> Option.map describeBinding |> Option.toList)
                                     (changedActual |> Option.map describeBinding |> Option.toList)
-                    for KeyValue(identity, authored) in state.FlowWords do
+                    for KeyValue(identity, authored) in state.FlowWords |> Map.filter (fun _ authored -> isAdded authored.Source.OwnerName) do
                         let mappedIdentity = state.WordIds.TryFind authored.Source.OwnerName |> Option.map WordId
                         if identity <> wordIdText authored.Source.OwnerId || mappedIdentity <> Some authored.Source.OwnerId then
                             error "FLOW_RUNTIME_OWNER_ID_MISMATCH" "Flow source owner identity must match both its stable-ID map key and dictionary ID catalog."
                                 (Some authored.Source.OwnerName) None [ wordIdText authored.Source.OwnerId ] [ identity; mappedIdentity |> Option.map wordIdText |> Option.defaultValue "missing" ]
                         checkRetainedBinding authored.Source.OwnerName (Some authored.Definition.Span) authored.StoredBindings (wordBindingsFor authored.Source.Reference)
-                    for KeyValue(_, attachment) in state.FlowTests do
+                    for KeyValue(_, attachment) in state.FlowTests |> Map.filter (fun _ attachment -> isAdded attachment.Source.OwnerName) do
                         let ownerSpan = state.FlowWords.TryFind(wordIdText attachment.Source.OwnerId) |> Option.map (fun authored -> authored.Definition.Span)
                         checkRetainedBinding (attachment.Source.OwnerName + "/" + attachment.Source.CaseName) ownerSpan attachment.StoredBindings
                             (attachmentBindingsFor attachment.Source.Reference attachment.Source.CaseName)
-                    for KeyValue(_, attachment) in state.FlowExamples do
+                    for KeyValue(_, attachment) in state.FlowExamples |> Map.filter (fun _ attachment -> isAdded attachment.Source.OwnerName) do
                         let ownerSpan = state.FlowWords.TryFind(wordIdText attachment.Source.OwnerId) |> Option.map (fun authored -> authored.Definition.Span)
                         checkRetainedBinding (attachment.Source.OwnerName + "/" + attachment.Source.CaseName) ownerSpan attachment.StoredBindings
                             (attachmentBindingsFor attachment.Source.Reference attachment.Source.CaseName)
@@ -2023,7 +2079,9 @@ module Runtime =
                             { file with Source = { file.Source with StoredBindings = Some storedBindings } })
                     let flowWordBindings =
                         state.FlowWords
-                        |> Map.map (fun _ authored -> { authored with StoredBindings = Some(wordBindingsFor authored.Source.Reference) })
+                        |> Map.map (fun _ authored ->
+                            if isAdded authored.Source.OwnerName then { authored with StoredBindings = Some(wordBindingsFor authored.Source.Reference) }
+                            else authored)
                     let updateAttachments kind =
                         project.Attachments
                         |> List.choose (function
@@ -2055,7 +2113,9 @@ module Runtime =
                         let compiledWords = project.WordCompilation.Context.CompilerContext.Words
                         let words =
                             state.FlowWords
-                            |> Map.fold (fun found _ authored -> Map.add authored.Source.OwnerName compiledWords[authored.Source.OwnerName] found) state.Words
+                            |> Map.fold (fun found _ authored ->
+                                if isAdded authored.Source.OwnerName then Map.add authored.Source.OwnerName compiledWords[authored.Source.OwnerName] found
+                                else found) state.Words
                         let compiledTests =
                             project.Attachments
                             |> List.choose (function
@@ -2072,14 +2132,19 @@ module Runtime =
                                 | FlowLowering.FlowCompiledAttachment.Example(source, compiled) -> Some(source.OwnerName + "/" + source.CaseName, compiled.Lowered.Definition)
                                 | _ -> None)
                             |> Map.ofList
+                        // A full compile derives every attachment row; an extension adds its rows to the parent's.
+                        let merged (retained: Map<string, 'value>) (compiled: Map<string, 'value>) =
+                            match extension with
+                            | Some _ -> Map.fold (fun found key value -> Map.add key value found) retained compiled
+                            | None -> compiled
                         { state with
                             Words = words
                             Tests = Map.fold (fun found key value -> Map.add key value found) state.Tests compiledTests
                             Examples = Map.fold (fun found key value -> Map.add key value found) state.Examples compiledExamples
                             FlowWords = flowWordBindings
-                            FlowTests = Map.fold (fun found key value -> Map.add key value found) (updateAttachments FlowLowering.FlowAttachmentKind.Test) wrapperTestAttachments
-                            FlowTestFiles = compiledTestFiles |> List.map (fun file -> flowTestFileKey file.Source.OwnerId file.Source.Reference, file.Source) |> Map.ofList
-                            FlowExamples = updateAttachments FlowLowering.FlowAttachmentKind.Example }
+                            FlowTests = merged state.FlowTests (Map.fold (fun found key value -> Map.add key value found) (updateAttachments FlowLowering.FlowAttachmentKind.Test) wrapperTestAttachments)
+                            FlowTestFiles = merged state.FlowTestFiles (compiledTestFiles |> List.map (fun file -> flowTestFileKey file.Source.OwnerId file.Source.Reference, file.Source) |> Map.ofList)
+                            FlowExamples = merged state.FlowExamples (updateAttachments FlowLowering.FlowAttachmentKind.Example) }
                     let testFileBodies =
                         compiledTestFiles
                         |> List.collect (fun file -> file.Tests |> Map.toList |> List.map (fun (key, compiled) -> key, compiled.Compiled.Body))
@@ -2099,6 +2164,7 @@ module Runtime =
                             |> List.map (fun (key, _) ->
                                 key,
                                 { Program = file.Compilation.Program
+                                  Original = project.WordCompilation.Program
                                   Dispatch = file.Compilation.Dispatch
                                   ActiveOverrides = file.Source.Settings.Overrides |> List.map (fun item -> item.Definition.Name) }))
                         |> Map.ofList
@@ -2117,9 +2183,11 @@ module Runtime =
                           WordIds = words |> Map.map (fun name item -> WordId(wordIdentity state item))
                           HostOperations = activeHostManifest }
                     state, Some flowContext, None, words, context, Compiler.compileIrProgram context, Map.empty, Map.empty, Map.empty
-            if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
+            match extension with
+            | Some(_, added) -> validateAddedGraph finalState added
+            | None -> if not (Map.isEmpty finalState.FlowWords) then validateGraph finalState
             IrInterpreter.validateProgram program
-            checkRefinedLiterals program
+            checkRefinedLiteralsFor program isAdded
             let flowTestBodies, flowExpectationBodies, flowExampleBodies =
                 match flowProject with
                 | None -> Map.empty, Map.empty, Map.empty
@@ -2142,6 +2210,8 @@ module Runtime =
             let flowTestKeys = finalState.FlowTests |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
             let snapshotSourceOrigins = flowContext |> Option.map (fun value -> value.SourceOrigins) |> Option.defaultValue Map.empty
             let stackTests = finalState.Tests |> Map.filter (fun key _ -> not (flowTestKeys.Contains key))
+            // An extension adds only Flow words, so its stack tests and examples are the parent's.
+            let stackTests = if extension.IsSome then Map.empty else stackTests
             let compiledTests =
                 stackTests
                 |> Map.map (fun _ test -> Compiler.compileIrTestWithExpectationAgainstProgramWithSourceOrigins context program test snapshotSourceOrigins)
@@ -2156,21 +2226,158 @@ module Runtime =
                 |> Map.fold (fun found key body -> Map.add key body found) flowExpectationBodies
                 |> fun found -> Map.fold (fun current key body -> Map.add key body current) found compiledFileExpectationBodies
             let flowExampleKeys = finalState.FlowExamples |> Map.toSeq |> Seq.map (fun (_, item) -> item.Source.OwnerName + "/" + item.Source.CaseName) |> Set.ofSeq
-            let stackExamples = finalState.Examples |> Map.filter (fun key _ -> not (flowExampleKeys.Contains key))
+            let stackExamples = if extension.IsSome then Map.empty else finalState.Examples |> Map.filter (fun key _ -> not (flowExampleKeys.Contains key))
             let exampleBodies =
                 stackExamples
                 |> Map.map (fun _ example -> Compiler.compileIrExampleAgainstProgramWithSourceOrigins context program example snapshotSourceOrigins)
                 |> Map.fold (fun found key body -> Map.add key body found) flowExampleBodies
+            let allocated =
+                let attachmentOrigins =
+                    flowProject
+                    |> Option.map (fun project ->
+                        project.Attachments
+                        |> List.collect (function
+                            | FlowLowering.FlowCompiledAttachment.Test(_, compiled) -> Map.toList compiled.Lowered.Projection.SyntheticOrigins
+                            | FlowLowering.FlowCompiledAttachment.Example(_, compiled) -> Map.toList compiled.Lowered.Projection.SyntheticOrigins))
+                    |> Option.defaultValue []
+                let retained =
+                    match extension with
+                    | Some(parent, _) -> parent.Allocated
+                    | None -> Map.empty
+                let retained = Map.fold (fun found marker origin -> Map.add marker origin found) retained snapshotSourceOrigins
+                attachmentOrigins |> List.fold (fun found (marker, origin) -> Map.add marker origin found) retained
+            let withParent (select: RuntimeSnapshot -> Map<string, 'value>) (compiled: Map<string, 'value>) =
+                match extension with
+                | Some(parent, _) -> Map.fold (fun found key value -> Map.add key value found) (select parent) compiled
+                | None -> compiled
             { State = finalState
               Words = words
               Context = context
               Program = program
               FlowContext = flowContext
               FlowProject = flowProject
-              TestBodies = testBodies
-              TestExpectationBodies = testExpectationBodies
-              TestFileOverlays = testFileOverlays
-              ExampleBodies = exampleBodies }
+              TestBodies = withParent (fun parent -> parent.TestBodies) testBodies
+              TestExpectationBodies = withParent (fun parent -> parent.TestExpectationBodies) testExpectationBodies
+              TestFileOverlays = withParent (fun parent -> parent.TestFileOverlays) testFileOverlays
+              ExampleBodies = withParent (fun parent -> parent.ExampleBodies) exampleBodies
+              Allocated = allocated }
+
+        let compileRuntimeSnapshotWith (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
+            compileRuntimeSnapshotCore None allowDeferredHostNominalTypes state
+
+        /// The names retained Flow call sites requested without qualification (and so may
+        /// resolve by short name), or None when some owner has no stored bindings yet.
+        let requestedShortNames (state: DictionaryState) =
+            match requestedShortNamesByState.TryGetValue state with
+            | true, names -> names
+            | _ ->
+                // A dotted request resolves exactly; any other may resolve by short name.
+                let shortName (name: string) =
+                    if name.Contains('.') then None
+                    else
+                        let index = name.LastIndexOf(':')
+                        Some(if index < 0 then name else name.Substring(index + 1))
+                let bindingLists =
+                    [ yield! state.FlowWords |> Map.toSeq |> Seq.map (fun (_, authored) -> authored.StoredBindings)
+                      yield! state.FlowTests |> Map.toSeq |> Seq.map (fun (_, attachment) -> attachment.StoredBindings)
+                      yield! state.FlowExamples |> Map.toSeq |> Seq.map (fun (_, attachment) -> attachment.StoredBindings)
+                      yield! state.FlowTestFiles |> Map.toSeq |> Seq.map (fun (_, file) -> file.StoredBindings) ]
+                let names =
+                    if bindingLists |> List.exists Option.isNone then None
+                    else
+                        let found = System.Collections.Generic.HashSet<string>(StringComparer.Ordinal)
+                        for bindings in bindingLists do
+                            for binding in bindings.Value do
+                                match shortName binding.RequestedName with
+                                | Some name -> found.Add name |> ignore
+                                | None -> ()
+                        Some found
+                requestedShortNamesByState.AddOrUpdate(state, names)
+                names
+
+        /// The words `state` adds to `parent` when it is `parent` plus Flow-authored words and
+        /// attachments owned by them, with every other entry the same object (history aside);
+        /// None for any other difference. An unqualified Flow call resolves by short name, so
+        /// an added word whose short name some retained call site requested could change that
+        /// call's binding; such an add is not pure (a full compile re-checks every binding).
+        let pureAddedWords (parent: DictionaryState) (state: DictionaryState) =
+            let same (left: 'value) (right: 'value) = obj.ReferenceEquals(left, right) || left = right
+            let keepsAll (before: Map<string, 'value>) (after: Map<string, 'value>) =
+                obj.ReferenceEquals(before, after)
+                || (after.Count >= before.Count
+                    && before |> Map.forall (fun key value ->
+                        match after.TryFind key with
+                        | Some kept -> obj.ReferenceEquals(kept, value)
+                        | None -> false))
+            if not (same parent.Deprecated state.Deprecated
+                    && same parent.Records state.Records
+                    && same parent.Scalars state.Scalars
+                    && same parent.Enums state.Enums
+                    && same parent.TypeSources state.TypeSources
+                    && same parent.Replacements state.Replacements
+                    && same parent.TypeReplacements state.TypeReplacements
+                    && same parent.TypeEvolutionGroups state.TypeEvolutionGroups) then None
+            elif not (keepsAll parent.Words state.Words
+                      && keepsAll parent.Tests state.Tests
+                      && keepsAll parent.Examples state.Examples
+                      && keepsAll parent.FlowWords state.FlowWords
+                      && keepsAll parent.FlowTests state.FlowTests
+                      && keepsAll parent.FlowTestFiles state.FlowTestFiles
+                      && keepsAll parent.FlowExamples state.FlowExamples) then None
+            elif not (parent.WordIds |> Map.forall (fun name identity -> state.WordIds.TryFind name = Some identity)) then None
+            else
+                let added = state.Words |> Map.toSeq |> Seq.map fst |> Seq.filter (fun name -> not (parent.Words.ContainsKey name)) |> Set.ofSeq
+                let addedFlow =
+                    state.FlowWords
+                    |> Map.toSeq
+                    |> Seq.filter (fun (key, _) -> not (parent.FlowWords.ContainsKey key))
+                    |> Seq.map (fun (_, authored) -> authored.Source.OwnerName)
+                    |> Set.ofSeq
+                let ownedByAdded (before: Map<string, 'value>) (after: Map<string, 'value>) (owner: 'value -> string) =
+                    after |> Map.forall (fun key value -> before.ContainsKey key || added.Contains(owner value))
+                if added.IsEmpty || addedFlow <> added || state.WordIds.Count <> parent.WordIds.Count + added.Count then None
+                elif not (ownedByAdded parent.Tests state.Tests (fun test -> test.Word)
+                          && ownedByAdded parent.Examples state.Examples (fun example -> example.Word)
+                          && ownedByAdded parent.FlowTests state.FlowTests (fun item -> item.Source.OwnerName)
+                          && ownedByAdded parent.FlowExamples state.FlowExamples (fun item -> item.Source.OwnerName)
+                          && ownedByAdded parent.FlowTestFiles state.FlowTestFiles (fun file -> file.OwnerName)) then None
+                else
+                    match requestedShortNames parent with
+                    | None -> None
+                    | Some requested ->
+                        let shadows (name: string) =
+                            let index = name.LastIndexOf('.')
+                            requested.Contains(if index < 0 then name else name.Substring(index + 1))
+                        if added |> Set.exists shadows then None else Some added
+
+        /// AGENTLANG_INCREMENTAL_CHECK=1: an extended snapshot must match a from-scratch compile
+        /// of the same state in its program, attached bodies and stored call bindings.
+        let requireSameAsFullCompile (incremental: RuntimeSnapshot) (full: RuntimeSnapshot) =
+            let differ (label: string) =
+                error "IR_INCREMENTAL_MISMATCH" $"An incrementally extended snapshot differs from a from-scratch compile ({label})." None None [ "identical snapshot" ] [ label ]
+            let left = VerifiedIrProgram.inspect incremental.Program
+            let right = VerifiedIrProgram.inspect full.Program
+            if left.FunctionsById <> right.FunctionsById then differ "functions"
+            if left.GeneratedTargetsById <> right.GeneratedTargetsById then differ "generated targets"
+            if left.NominalTypesByKey <> right.NominalTypesByKey then differ "nominal types"
+            if left.SourceMap <> right.SourceMap then differ "source map"
+            if left.CoverageByWord <> right.CoverageByWord then differ "coverage"
+            let sameBodies (label: string) (leftBodies: Map<string, VerifiedIrBody>) (rightBodies: Map<string, VerifiedIrBody>) =
+                if (leftBodies |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> (rightBodies |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then differ (label + " keys")
+                for KeyValue(key, body) in leftBodies do
+                    if VerifiedIrBody.inspect body <> VerifiedIrBody.inspect rightBodies[key] then differ (label + " " + key)
+            sameBodies "test" incremental.TestBodies full.TestBodies
+            sameBodies "expectation" incremental.TestExpectationBodies full.TestExpectationBodies
+            sameBodies "example" incremental.ExampleBodies full.ExampleBodies
+            if (incremental.TestFileOverlays |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> (full.TestFileOverlays |> Map.toSeq |> Seq.map fst |> Set.ofSeq) then differ "test-file overlays"
+            let bindings (state: DictionaryState) =
+                state.FlowWords |> Map.map (fun _ authored -> authored.StoredBindings),
+                state.FlowTests |> Map.map (fun _ attachment -> attachment.StoredBindings),
+                state.FlowExamples |> Map.map (fun _ attachment -> attachment.StoredBindings)
+            if bindings incremental.State <> bindings full.State then differ "stored call bindings"
+            let keys (map: Map<string, 'value>) = map |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            if keys incremental.State.Words <> keys full.State.Words || keys incremental.State.Tests <> keys full.State.Tests || keys incremental.State.FlowTestFiles <> keys full.State.FlowTestFiles then
+                differ "dictionary entries"
 
         // Commit compiles the same dictionary several times: the proposed state, its
         // durable projection, the final state (proposed plus History) and the final
@@ -2181,6 +2388,11 @@ module Runtime =
 
         let withoutHistory (state: DictionaryState) = { state with History = Map.empty; FlowHistory = Map.empty }
 
+        // A state that only adds Flow words to one of these extends it instead of compiling
+        // from scratch (AGENTLANG_INCREMENTAL=0 turns that off).
+        let incrementalEnabled = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL" <> "0"
+        let incrementalCheck = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_CHECK" = "1"
+
         let compileRuntimeSnapshotReusing (allowDeferredHostNominalTypes: bool) (state: DictionaryState) =
             let key = withoutHistory state
             let cached =
@@ -2189,8 +2401,26 @@ module Runtime =
             match cached with
             | Some(_, _, snapshot) -> { snapshot with State = { snapshot.State with History = state.History; FlowHistory = state.FlowHistory } }
             | None ->
-                let snapshot = compileRuntimeSnapshotWith allowDeferredHostNominalTypes state
-                if compiledSnapshots.Count >= 2 then compiledSnapshots.RemoveAt 0
+                let extension =
+                    if not incrementalEnabled then None
+                    else
+                        compiledSnapshots
+                        |> Seq.rev
+                        |> Seq.tryPick (fun (allow, _, parent) ->
+                            let compatible = allow = allowDeferredHostNominalTypes || Set.isEmpty (missingHostOperationTypes parent.State)
+                            if not compatible || parent.FlowContext.IsNone || Map.isEmpty parent.State.FlowWords then None
+                            else pureAddedWords parent.State state |> Option.map (fun added -> parent, added))
+                let snapshot =
+                    match extension with
+                    | Some((_, added) as extension) ->
+                        let snapshot = compileRuntimeSnapshotCore (Some extension) allowDeferredHostNominalTypes state
+                        if incrementalCheck then requireSameAsFullCompile snapshot (compileRuntimeSnapshotWith allowDeferredHostNominalTypes state)
+                        match Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_LOG" with
+                        | null | "" -> ()
+                        | path -> File.AppendAllText(path, $"extended added={added.Count} checked={incrementalCheck}\n")
+                        snapshot
+                    | None -> compileRuntimeSnapshotWith allowDeferredHostNominalTypes state
+                if compiledSnapshots.Count >= 4 then compiledSnapshots.RemoveAt 0
                 compiledSnapshots.Add((allowDeferredHostNominalTypes, key, snapshot))
                 snapshot
 
@@ -2429,6 +2659,10 @@ module Runtime =
             stack, trace
 
         let activateRuntimeSnapshot (snapshot: RuntimeSnapshot) =
+            if not (compiledSnapshots |> Seq.exists (fun (_, _, known) -> obj.ReferenceEquals(known.Program, snapshot.Program)))
+               && Set.isEmpty (missingHostOperationTypes snapshot.State) then
+                if compiledSnapshots.Count >= 4 then compiledSnapshots.RemoveAt 0
+                compiledSnapshots.Add((false, withoutHistory snapshot.State, snapshot))
             data <- snapshot.State
             activeSnapshot <- Some snapshot
             hostNominalBootstrapPending <- not (Set.isEmpty (missingHostOperationTypes snapshot.State))
@@ -2986,7 +3220,7 @@ module Runtime =
                 match testFileOverlay with
                 | Some overlay ->
                     let host = interpreterHost executionSnapshot bodyTrace (Some verifiedBody) (Some testProviderScope)
-                    use result = IrInterpreter.executeBodyWithTestDispatch host executionName snapshot.Program overlay.Dispatch verifiedBody None []
+                    use result = IrInterpreter.executeBodyWithTestDispatch host executionName overlay.Original overlay.Dispatch verifiedBody None []
                     result.Decode()
                 | None -> executeIRBody snapshot executionName bodyTrace verifiedBody (Some testProviderScope)
             let body =

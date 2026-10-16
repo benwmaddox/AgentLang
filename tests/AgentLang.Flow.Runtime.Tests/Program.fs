@@ -193,6 +193,55 @@ module Program =
             let name = stringValue (item.["name"])
             check (boolValue (item.["passed"])) $"test {name} passed"
 
+    /// Adding words to a running dictionary extends it in place: each define and commit of a
+    /// new word compiles only that word. With AGENTLANG_INCREMENTAL_CHECK every extension is
+    /// also compiled from scratch and must match; an add that could rebind an existing
+    /// unqualified call is compiled from scratch instead.
+    let private testIncrementalDefinesMatchFullCompile root =
+        let log = Path.Combine(root, "incremental-extensions.log")
+        let previousCheck = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_CHECK"
+        let previousLog = Environment.GetEnvironmentVariable "AGENTLANG_INCREMENTAL_LOG"
+        Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_CHECK", "1")
+        Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_LOG", log)
+        try
+            let extensions () = if File.Exists log then File.ReadAllLines(log).Length else 0
+            let project = Path.Combine(root, "incremental-live-dictionary")
+            let engine = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            let defineAndCommit label (word: string) (source: string) =
+                defineFlowProject engine source [ "syntaxVersion", jint 2 ] |> expectOk ("define " + label) |> ignore
+                commit engine "commit" word [] |> expectOk ("commit " + label) |> ignore
+            defineAndCommit "the base word" "live.double" "fn live.double(n: Int) -> Int {\n    n * 2\n}\n\ntest live.double/two {\n    live::double(2)\n    => 4\n}\n"
+            defineAndCommit "an unqualified caller" "live.inc" "fn live.inc(n: Int) -> Int {\n    add(n, 1)\n}\n\ntest live.inc/one {\n    live::inc(1)\n    => 2\n}\n"
+            let beforeSteps = extensions ()
+            for step in 1 .. 4 do
+                defineAndCommit $"step {step}" $"live.step-{step}"
+                    $"fn live.step-{step}(n: Int) -> Int {{\n    live::double(n) + {step}\n}}\n\ntest live.step-{step}/one {{\n    live::step-{step}(1)\n    => {2 + step}\n}}\n"
+            check (extensions () - beforeSteps >= 8) "each define and commit of an added word extends the running dictionary"
+            let beforeTestFile = extensions ()
+            defineAndCommit "a word with a test-file override" "live.quad"
+                ("fn live.quad(n: Int) -> Int {\n    live::double(live::double(n))\n}\n\n"
+                 + "test live.quad/plain {\n    live::quad(1)\n    => 4\n}\n\n"
+                 + "test-file settings {\n    override fn live.double(n: Int) -> Int {\n        n\n    }\n    test live.quad/overridden {\n        live::quad(3)\n        => 3\n    }\n}\n")
+            check (extensions () - beforeTestFile >= 2) "a word with a test-file overlay extends the running dictionary"
+            let beforeShadow = extensions ()
+            defineFlowProject engine "fn other.add(a: Int, b: Int) -> Int {\n    a\n}\n\ntest other.add/left {\n    other::add(1, 2)\n    => 1\n}\n" [ "syntaxVersion", jint 2 ]
+            |> ignore
+            equal beforeShadow (extensions ()) "an add sharing an unqualified call's name is compiled from scratch"
+            assertAllPassed 1 (dispatch engine "test" [ "word", jstr "live.step-4" ] |> expectOk "run the last step's test")
+            assertAllPassed 2 (dispatch engine "test" [ "word", jstr "live.quad" ] |> expectOk "run the overlay word's tests")
+            let reloaded = Runtime.Engine(project, Set.empty, fileSystemMode = FileSystemMode.Virtual)
+            assertAllPassed 1 (dispatch reloaded "test" [ "word", jstr "live.step-4" ] |> expectOk "reload the incrementally built dictionary")
+            assertAllPassed 2 (dispatch reloaded "test" [ "word", jstr "live.quad" ] |> expectOk "reload the overlay word")
+            let beforeReloadedAdd = extensions ()
+            defineFlowProject reloaded "fn live.triple(n: Int) -> Int {\n    live::double(n) + n\n}\n\ntest live.triple/two {\n    live::triple(2)\n    => 6\n}\n" [ "syntaxVersion", jint 2 ]
+            |> expectOk "define a word right after reopening the project"
+            |> ignore
+            commit reloaded "commit" "live.triple" [] |> expectOk "commit the word added after reopening" |> ignore
+            check (extensions () - beforeReloadedAdd >= 2) "a reopened project extends its loaded dictionary"
+        finally
+            Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_CHECK", previousCheck)
+            Environment.SetEnvironmentVariable("AGENTLANG_INCREMENTAL_LOG", previousLog)
+
     let private testAuthoringHelpAndCanonicalLibrarySource root =
         let project = Path.Combine(root, "authoring-help-canonical")
         let engine = Runtime.Engine(project, Set.empty, "2041-02-03T04:05:06Z", fileSystemMode = FileSystemMode.Virtual)
@@ -8324,7 +8373,8 @@ test-file self {
             testRecordValidatorRuntimeAndPersistence root
             testEffectCountAssertions root
             testFlowTestFileOverrides root
-            printfn $"Flow Runtime tests passed: 47 groups, {assertions} assertions."
+            testIncrementalDefinesMatchFullCompile root
+            printfn $"Flow Runtime tests passed: 48 groups, {assertions} assertions."
             0
         finally
             if Directory.Exists root then Directory.Delete(root, true)
