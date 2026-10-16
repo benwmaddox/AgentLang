@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — agent research</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html" aria-current="page">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>Agent research: the hypothesis and what tested it</h1>
+
+<p class="lede">The project existed to test one idea: whether an accumulated,
+discoverable, strongly typed vocabulary helps fresh AI coding agents make
+reliable changes. Twenty-odd agent studies ran between day 2 and day 8. They
+showed the mechanism works. They did not show it beats an ordinary language.</p>
+
+<h2>The hypothesis as stated</h2>
+<blockquote>
+<p>"The primary hypothesis is that accumulated, discoverable, strongly typed
+vocabulary helps fresh AI coding agents make reliable changes, find established
+behavior, catch violations before committing, and recover from errors. […]
+Lower token, turn and interaction costs are secondary benefits to measure.
+Conventional F# is a strong correctness baseline. […] Implementing a language
+is an enabling step, not evidence for the hypothesis."</p>
+<p class="meta">— <a href="../../docs/PRD.md">docs/PRD.md</a>, "Purpose and hypothesis"</p>
+</blockquote>
+
+<p>The design followed from that. Code lives as <em>words</em> (named functions)
+in a persistent dictionary. Agents work through a JSON-lines command protocol
+(<code>help</code>, <code>search</code>, <code>describe</code>, <code>source</code>,
+<code>define</code>, <code>test</code>, <code>commit</code>). They never edit files
+directly. Every committed word needs an attached passing test, and library words
+also need full instruction and branch coverage. Types are nominal and refined,
+matches are exhaustive, and effects are declared. The intent was that a later
+agent could find what an earlier one built, trust it, and change it safely.</p>
+
+<h2>How the studies were run</h2>
+<p>The method itself is one of the project's better outputs. It is worth
+reusing even though the hypothesis failed.</p>
+<ul>
+  <li><strong>External agents only.</strong> The runtime contains no AI. Fresh
+  agent sessions acted as participants through a broker. The broker logged every
+  exchange and enforced budgets and launch allowlists.</li>
+  <li><strong>Matched arms.</strong> There were three arms:
+    <ul>
+      <li><em>Retained</em>: an AgentLang project with prior vocabulary.</li>
+      <li><em>Reset</em>: a rich AgentLang domain without the agent-built
+      vocabulary.</li>
+      <li><em>Conventional F#</em>: hash-guarded patching and local self-tests.</li>
+    </ul>
+  Early studies also had a sparse <em>Flat</em> arm.</li>
+  <li><strong>Frozen protocols.</strong> Tasks, oracles, controls and runtime
+  pins were frozen and hashed before dispatch. Changes after a run were labelled
+  as supplements, never merged into the original score.</li>
+  <li><strong>Independent oracles.</strong> An independent model scored the
+  behaviour, separately from the participant's own tests.
+  <strong>Calibrated wrong controls</strong> (deliberately incorrect
+  implementations) proved the oracle could fail a wrong answer.</li>
+  <li><strong>Separate endpoints.</strong> Each of these was scored on its own
+  and never collapsed into one success number:
+    <ul>
+      <li>behaviour;</li>
+      <li>preservation of inherited tests and examples;</li>
+      <li>library qualification;</li>
+      <li>normal session completion;</li>
+      <li>actual reuse in the production call graph.</li>
+    </ul></li>
+  <li><strong>Evidence archives.</strong> Traces, receipts and sources were
+  sealed into hashed archives and scanned for secrets before publication.</li>
+</ul>
+<p>The method's weakness was sample size. Most comparisons had one or two
+participants per arm, a fixed launch order and unequal seeds. Every report says
+so. None of the results can estimate a population success rate or attribute
+cause.</p>
+
+<h2>The efficacy checkpoints</h2>
+<p>The project made a formal "continue or not" decision after each study. Every
+checkpoint reached the same split conclusion.</p>
+<table>
+<thead><tr><th>Checkpoint</th><th>Date</th><th>New evidence</th><th>Conclusion</th></tr></thead>
+<tbody>
+<tr><td><a href="../064-repeat-agent-purpose-review.md">064</a></td><td>6 Oct</td><td>Five small tasks in three arms; all 15 trials accepted (695 independent checks).</td><td>Fresh agents discovered and composed vocabulary. Exchanges were similar (Conventional 67, Growing 70, Flat 75). No reliability lead.</td></tr>
+<tr><td><a href="../101-approach-efficacy-review.md">101</a></td><td>7 Oct</td><td>Four-condition quick comparison (099): all four arms 54/54.</td><td>"The practical mechanism works; comparative reliability remains unproven."</td></tr>
+<tr><td><a href="../124-efficacy-assessment.md">124</a></td><td>8 Oct</td><td>Matched repair (125): six fresh agents, 12/12 each; one language agent omitted finalization.</td><td>Reuse demonstrated; behavioural correctness and workflow completion are separate.</td></tr>
+<tr><td><a href="../151-efficacy-checkpoint.md">151</a> / <a href="../177-reliability-and-vocabulary-checkpoint.md">177</a></td><td>9–10 Oct</td><td>Shared-summary study (135): 13/13 public scenarios in all six, but only three met the full rubric. Maintenance studies lost inherited assertions despite passing gates.</td><td>Preservation became its own endpoint.</td></tr>
+<tr><td><a href="../182-efficacy-decision-checkpoint.md">182</a></td><td>10 Oct</td><td>Repair and migration (179): every arm 37/37, all evidence preserved.</td><td>Continue. Not more reliable than F#; F# used fewer exchanges (50 vs 83–90).</td></tr>
+<tr><td><a href="../199-efficacy-decision-after-reference-maintenance.md">199</a></td><td>10 Oct</td><td>Typed-reference cohort (196): 5 of 6 passed 18/18; a retained agent rewrote all three inherited examples.</td><td>Keep strong types and coverage, but they "cannot establish that assertions express the intended behavior". F# 35 vs 137–176 exchanges.</td></tr>
+<tr><td><a href="../203-efficacy-decision-after-organic-creation.md">203</a> / <a href="../212-efficacy-after-public-vocabulary-reuse.md">212</a></td><td>11 Oct</td><td>Organic creation (200, 210): correct, but no reusable helper either time. Public reuse (211): a fresh agent found and used an earlier agent's functions.</td><td>Handoff mechanism demonstrated once. Agents did not factor abstractions on their own.</td></tr>
+<tr><td><a href="../215-efficacy-after-paired-vocabulary-pilot.md">215</a> / <a href="../219-efficacy-after-typed-batch-maintenance.md">219</a></td><td>11 Oct</td><td>Paired availability (213): both correct, retained 31 vs reset 39 exchanges. Typed batch maintenance (217): both 9/9; the reset agent failed normal finalization.</td><td>A narrower, useful mechanism. Superiority still unproven.</td></tr>
+<tr><td><a href="../222-typed-batch-fresh-results.md">222</a>, <a href="../228-scheduled-renewal-interactive-comparison.md">228</a>, <a href="../231-grouped-renewal-timing-comparison.md">231</a></td><td>11 Oct</td><td>Three fresh matched AgentLang/F# pairs.</td><td>All correct. F# cheaper in all three. AgentLang failed preservation in 222 and 231.</td></tr>
+</tbody>
+</table>
+
+<h2>The matched AgentLang-versus-F# pairs</h2>
+<p>These later pairs are the most direct evidence. Each used one fresh agent
+per arm on the same task, with an independent oracle and source review.</p>
+<table>
+<thead><tr><th>Study</th><th>Behaviour (independent)</th><th>Preservation</th><th class="num">Exchanges<br>AgentLang / F#</th><th class="num">Session seconds<br>AgentLang / F#</th><th class="num">Rejected responses<br>AgentLang / F#</th></tr></thead>
+<tbody>
+<tr><td><a href="../222-typed-batch-fresh-results.md">222</a>: change a batch result to a typed failure record</td><td>9/9 · 9/9</td><td><span class="tag bad">AgentLang failed</span>: changed one inherited fixture ID</td><td class="num">58 / 28</td><td class="num">387 / 429</td><td class="num">—</td></tr>
+<tr><td><a href="../228-scheduled-renewal-interactive-comparison.md">228</a>: add scheduled renewal</td><td>7/7 · 7/7</td><td>Both preserved</td><td class="num">72 / 18</td><td class="num">858 / 228</td><td class="num">9 / 2</td></tr>
+<tr><td><a href="../231-grouped-renewal-timing-comparison.md">231</a>: replace two timestamps with a record and migrate callers</td><td>9/9 · 9/9</td><td><span class="tag bad">AgentLang failed</span>: changed an unrelated inherited test input</td><td class="num">71 / 21</td><td class="num">673 / 205</td><td class="num">9 / 2</td></tr>
+</tbody>
+</table>
+<p class="note">Exchanges and wire bytes are protocol measures, not model
+tokens. Session time excludes thinking outside the broker. In 222, the
+AgentLang session was shorter (6 min 27 s vs 7 min 9 s), but F# needed half
+the exchanges.</p>
+
+<h3>Why AgentLang cost more interactions</h3>
+<p>The traces show friction in discovery and test authoring, not in the domain logic:</p>
+<ul>
+  <li><strong>Name and selector errors.</strong> In 231, the agent tried
+  <code>RenewalTiming.new</code>; the generated constructor is the lower-camel
+  <code>renewalTiming.new</code>. Of the nine structured errors in 228, four
+  were name or selector errors.</li>
+  <li><strong>Many small queries.</strong> The 231 agent made 22 test-source
+  queries, 18 <code>describe</code> calls and 12 <code>source</code> calls.
+  A file-based F# agent reads one file once.</li>
+  <li><strong>Mandatory library qualification.</strong> Writing tests that meet
+  full coverage and finite-case rules is extra work that F# self-tests do not
+  require.</li>
+  <li><strong>Familiarity.</strong> Agents already know F# and do not know Flow.
+  No amount of in-runtime help fully closes that gap in one session.</li>
+</ul>
+
+<h3>Why preservation failed only in AgentLang</h3>
+<p>In both failures (222, 231), the agent changed an unrelated inherited test
+input, the ID <code>30000000-…-0001</code> to <code>33000000-…-0001</code>.
+The test still passed, because that case short-circuits on an earlier failure.
+Stable IDs and revision history made the change visible to reviewers, but
+nothing prevented it. The definition-level edit model meant agents
+re-submitted whole test sets, so collateral edits rode along. F# agents patched
+narrow hunks of a file.</p>
+
+<h2>What the gates did and did not prove</h2>
+<div class="grid2">
+  <div class="card good">
+    <h4>Useful</h4>
+    <ul>
+      <li>Strong nominal and refined types, exhaustive matching and declared
+      effects consistently caught mistakes before commit. Errors came back as
+      named, structured codes, and agents recovered from them.</li>
+      <li>Atomic multi-word replacement with caller re-testing made typed API
+      migrations (179, 231) safe to publish.</li>
+      <li>Stable IDs and revision history made every change inspectable after
+      the fact.</li>
+    </ul>
+  </div>
+  <div class="card bad">
+    <h4>Not sufficient</h4>
+    <ul>
+      <li>In <a href="../084-retention-study-flat-discount-result.md">084</a>,
+      an agent's discount rule passed 8/8 own tests and 20/20 instruction
+      coverage, yet scored 42/54 on the independent oracle.</li>
+      <li>In <a href="../182-efficacy-decision-checkpoint.md">182</a>,
+      deliberately wrong migration controls passed their tests and library
+      qualification, then failed 10 of 37 independent cases.</li>
+      <li>Coverage checks that code was <em>exercised</em>, not that the
+      <em>expected values</em> are right. Agents sometimes derived expected
+      values from the implementation under test.</li>
+      <li>Gates did not stop collateral edits to inherited tests.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>What was demonstrated, and what was not</h2>
+<table>
+<thead><tr><th>Claim</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>A fresh agent can discover, read and compose a typed vocabulary through runtime commands alone.</td><td><span class="tag good">Demonstrated</span> on bounded tasks, many times.</td></tr>
+<tr><td>A later agent can find and reuse functions an earlier agent created.</td><td><span class="tag good">Demonstrated</span> in 211, 213 and 217. The names were prescribed by the task.</td></tr>
+<tr><td>Typed contract changes can be migrated and published atomically.</td><td><span class="tag good">Demonstrated</span> in 179, 217 and 231.</td></tr>
+<tr><td>Agents make more reliable edits than in F#.</td><td><span class="tag bad">Not shown</span>. Equal correctness everywhere; worse preservation twice.</td></tr>
+<tr><td>Agents need fewer interactions or less context.</td><td><span class="tag bad">Contradicted</span> in the later, larger tasks. Early tiny tasks were roughly even (064).</td></tr>
+<tr><td>Agents create reusable abstractions for future agents without prompting.</td><td><span class="tag bad">Not observed</span> (0 of 2).</td></tr>
+<tr><td>Mandatory tests and coverage establish intended behaviour.</td><td><span class="tag bad">Refuted</span> by calibrated wrong controls.</td></tr>
+</tbody>
+</table>
+
+<h2>Assessment</h2>
+<p>The research was conducted carefully and reported honestly. The checkpoints
+never overstated the result, which is to the project's credit. But by
+11 October the evidence was consistent. The vocabulary mechanism works, and it
+does not make agents more reliable or cheaper than in a mainstream typed
+language they already know. On 11–12 October the project's priority moved to
+porting Campfire natively. The PRD calls this "use application implementation
+and subsequent maintenance to investigate reliability". The later-agent
+maintenance study on Campfire was never run, so the primary hypothesis was not
+tested again after day 8.</p>
+<p>A fair reading: <strong>the hypothesis was not refuted at scale, but the
+small, careful samples gave no reason to expect a large effect.</strong> The
+costs were also clear: an unfamiliar language and a chatty protocol. Any
+effect would have to overcome them.</p>
+
+<div class="pager"><a href="index.html">← Summary</a><a href="language.html">Language &amp; runtime →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>

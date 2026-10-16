@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — summary and verdict</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html" aria-current="page">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<p class="meta">Project dates: 4–16 October 2026 · Status: <strong>archived</strong> · Report written 16 October 2026</p>
+<h1>AgentLang: what a two-week language experiment showed</h1>
+
+<p class="lede">AgentLang was an experiment in building a small, strictly typed,
+introspectable programming language for AI coding agents. Its working name
+for the data-flow syntax was Flow. The goal was to test whether such a
+language helps agents make more reliable changes. It was then used to
+port a real Rails application, Campfire. This report closes the experiment:
+it says plainly what worked, what did not, and what a future experiment
+should do differently.</p>
+
+<div class="verdict">
+<p><strong>Verdict: archive.</strong> The experiment produced a working
+language, compiler, interpreter, native backend and a partial but
+byte-exact port of a real web application. That port runs close to
+hand-written Rust speed in very little memory.</p>
+<p>The central hypothesis was not supported. That hypothesis was that an
+agent-oriented language with an accumulated, discoverable, typed vocabulary
+helps fresh AI agents make <em>more reliable</em> changes than a mainstream
+language. In every matched comparison, conventional F# was equally correct.
+F# needed 2–4× fewer interactions and shorter sessions. Two of the language's
+edits failed a preservation requirement that F# met.</p>
+<p>The remaining value lies in the techniques the work produced, not in the
+language itself:</p>
+<ul>
+<li>oracle-checked porting;</li>
+<li>independent grading with calibrated wrong controls;</li>
+<li>a verified intermediate representation shared by every backend;</li>
+<li>incremental "live dictionary" compilation with differential checking.</li>
+</ul>
+<p>Those techniques transfer to mainstream languages at a fraction of the
+cost.</p>
+</div>
+
+<h2>The project in numbers</h2>
+<div class="grid3">
+  <div class="stat"><div class="big">13 days</div><div class="label">4–16 Oct 2026; one developer directing AI coding agents</div></div>
+  <div class="stat"><div class="big">507 commits</div><div class="label">and 280 numbered reports, plus 77 design documents</div></div>
+  <div class="stat"><div class="big">~31,000</div><div class="label">lines of F# in the core: parser, checker, IR, interpreter, storage, runtime</div></div>
+  <div class="stat"><div class="big">~41,000</div><div class="label">lines in the LLVM backend: ~14,000 F# plus ~27,000 C for the native runtime and hosts</div></div>
+  <div class="stat"><div class="big">~22,000</div><div class="label">lines of Flow in the Campfire port (49 files), plus ~2,000 of stdlib</div></div>
+  <div class="stat"><div class="big">~51,000</div><div class="label">lines of F# test code; over 7,000 assertions in the nine main suites</div></div>
+</div>
+
+<h2>Scorecard</h2>
+<table>
+<thead><tr><th>Question</th><th>Answer</th><th>Evidence</th></tr></thead>
+<tbody>
+<tr><td>Can AI agents discover, compose and reuse a typed vocabulary through the runtime?</td><td><span class="tag good">Yes</span></td><td>Repeated across bounded tasks. A later fresh agent found and reused functions an earlier agent built (reports 211, 213, 217).</td></tr>
+<tr><td>Does that make agents' edits more reliable than in F#?</td><td><span class="tag bad">No evidence</span></td><td>Every matched pair was equally correct. F# preserved inherited tests where AgentLang twice did not (222, 231).</td></tr>
+<tr><td>Is it cheaper for agents to work in?</td><td><span class="tag bad">No</span></td><td>F# used 2–4× fewer broker exchanges and shorter sessions in every matched pair (182, 199, 222, 228, 231).</td></tr>
+<tr><td>Do agents spontaneously build reusable abstractions for later agents?</td><td><span class="tag bad">Not observed</span></td><td>0 of 2 organic opportunities produced the shared helper (200, 210).</td></tr>
+<tr><td>Do mandatory tests and coverage gates certify correct behaviour?</td><td><span class="tag bad">No</span></td><td>Calibrated wrong solutions passed their own tests and full coverage (84, 182). Independent oracles stayed necessary.</td></tr>
+<tr><td>Can the language express a real application exactly?</td><td><span class="tag good">Yes, for what was ported</span></td><td>Campfire pages are byte-identical to Rails, CSRF aside. The Rails oracle matched all 169 message presentations (285).</td></tr>
+<tr><td>Is the native output fast and lean?</td><td><span class="tag good">Yes</span></td><td>Uncached it is 0.8× Rust's throughput, with 15 MB of memory versus Rust's 88 MB. Cached it is 0.6× Rust's (285).</td></tr>
+<tr><td>Was the developer loop (build, edit, test) good?</td><td><span class="tag mixed">Only at the end</span></td><td>A server build took over 10 minutes, and defining one word took 99 s, until the final day. After that, adding a word took ~0.2 s and commit ~0.5 s.</td></tr>
+<tr><td>Is it close to production use?</td><td><span class="tag bad">No</span></td><td>There is no ecosystem, no real-time support, partial writes and several missing language basics.</td></tr>
+</tbody>
+</table>
+
+<h2>Good and bad, in brief</h2>
+<div class="grid2">
+  <div class="card good">
+    <h3>What went well</h3>
+    <ul>
+      <li><strong>Exact porting by oracle.</strong> Comparing every page and partial against the running Rails app made "done" objective. The Flow server returns Rails' bytes.</li>
+      <li><strong>Performance and memory.</strong> The native server reaches 0.6–0.8× of a hand-written Rust port's throughput, in a fraction of the memory, and far above Rails on the same box.</li>
+      <li><strong>Safety by construction.</strong>
+        <ul>
+          <li>Declared, enforced effects.</li>
+          <li>Compile-checked HTML templates that can't put a hole in an unsafe position.</li>
+          <li>Database, file and crypto access only through narrow host operations.</li>
+          <li>Crypto primitives only from the operating system.</li>
+        </ul></li>
+      <li><strong>One verified IR for every backend.</strong> The interpreter and the native code agree by construction. Tests run in the interpreter; serving is native.</li>
+      <li><strong>Honest research method.</strong>
+        <ul>
+          <li>Frozen protocols and independent oracles.</li>
+          <li>Calibrated wrong controls.</li>
+          <li>Negative results kept on the record rather than explained away.</li>
+        </ul></li>
+      <li><strong>The final interactivity work.</strong> A Forth-style live dictionary, an exact differential check against full compiles, and a two-part build (unverified exe in about 17 s, verified in about 38 s more).</li>
+    </ul>
+  </div>
+  <div class="card bad">
+    <h3>What went badly</h3>
+    <ul>
+      <li><strong>The main hypothesis failed to show.</strong> There was no reliability or cost advantage over F#, and agents worked harder in AgentLang.</li>
+      <li><strong>Gates ≠ correctness.</strong> Mandatory tests and coverage admitted wrong behaviour and altered inherited fixtures.</li>
+      <li><strong>Missing basics.</strong>
+        <ul>
+          <li>No lambdas, no string ordering and no bitwise operators.</li>
+          <li><code>match</code> can't be a statement.</li>
+          <li>Some builtins pass in the interpreter but fail the native build.</li>
+        </ul></li>
+      <li><strong>No ecosystem.</strong> CRC-32, Base64 helpers, form encoding, an HTML tokenizer, an auto-linker and date arithmetic were all hand-written for one app.</li>
+      <li><strong>Slow feedback for most of the project.</strong> Builds took 5–10+ minutes until the final day. This shaped how work was done.</li>
+      <li><strong>Growing complexity.</strong>
+        <ul>
+          <li><code>Runtime.fs</code> alone is 8,600 lines.</li>
+          <li>The fast incremental path is a second compile path that must be kept equal to the first.</li>
+        </ul></li>
+      <li><strong>Scope drift.</strong> The project moved from agent research to an app port, then performance, then build tooling. Each step was reasonable, but the original question stopped being tested after day 8.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>How to read this report</h2>
+<ol class="toc">
+  <li><a href="hypothesis.html">Agent research</a>: the hypothesis, every efficacy checkpoint, and what the matched comparisons actually showed.</li>
+  <li><a href="language.html">Language &amp; runtime</a>: what Flow is, its design choices, strengths and gaps, and a comparison with mainstream web stacks.</li>
+  <li><a href="campfire.html">Campfire port</a>: what was ported, how parity was proven, the benchmark, and what is missing.</li>
+  <li><a href="toolchain.html">Build &amp; interactivity</a>: the build-time problem, the live dictionary, the two-part build, and their risks.</li>
+  <li><a href="lessons.html">Lessons</a>: transferable techniques, things to avoid, and recommended next experiments.</li>
+  <li><a href="appendix.html">Appendix</a>: timeline, code inventory, report index, reproduction notes and caveats.</li>
+</ol>
+
+<p class="note">Every number in this report comes from a numbered report in
+<code>reports/</code> or from measurements taken while closing the project.
+The source is cited next to each number. Numbers from different protocols are
+never pooled. Benchmarks are the project's own and are labelled with their
+conditions.</p>
+
+<div class="pager"><span></span><a href="hypothesis.html">Agent research →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026 · see <a href="../../README.md">README</a></div></footer>
+</body>
+</html>

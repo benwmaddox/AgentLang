@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentLang final report — lessons and next experiments</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="title"><a href="index.html">AgentLang — final report</a></div>
+    <nav>
+      <a href="index.html">Summary</a>
+      <a href="hypothesis.html">Agent research</a>
+      <a href="language.html">Language &amp; runtime</a>
+      <a href="campfire.html">Campfire port</a>
+      <a href="toolchain.html">Build &amp; interactivity</a>
+      <a href="lessons.html" aria-current="page">Lessons</a>
+      <a href="appendix.html">Appendix</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap">
+
+<h1>Lessons and next experiments</h1>
+
+<p class="lede">The useful output of this experiment is mostly method. A few
+techniques worked well enough to reuse anywhere. Several choices cost more
+than they returned. The core question can be tested again, more cheaply, by
+separating "the workflow" from "a new language".</p>
+
+<h2>Techniques worth reusing</h2>
+<div class="grid2">
+  <div class="card good">
+    <h4>1. Oracle-driven porting</h4>
+    <p>Run the original app as a reference. Diff every route's bytes, and run
+    the original's own code (<code>rails runner</code>) as an oracle for
+    computed values. "Done" becomes a diff of zero. It worked for subtle
+    behaviour (ETags, Ruby float printing, signed IDs) and needs no new
+    language. It should transfer directly to agent-driven ports into Go, Rust
+    or TypeScript.</p>
+  </div>
+  <div class="card good">
+    <h4>2. Independent grading with calibrated wrong controls</h4>
+    <p>Score agents' work against an oracle they can't see. Prove the oracle
+    fails deliberately wrong implementations. Keep these endpoints separate:</p>
+    <ul>
+      <li>behaviour;</li>
+      <li>preservation of existing tests and fixtures;</li>
+      <li>gate passing;</li>
+      <li>session completion.</li>
+    </ul>
+    <p>This exposed that tests plus coverage can certify wrong behaviour, a
+    result that matters for any agent-coding workflow.</p>
+  </div>
+  <div class="card good">
+    <h4>3. One verified IR, many backends</h4>
+    <p>An interpreter and a native compiler over one verified IR gave fast
+    tests, fast serving and no semantic drift. If a future project needs a
+    compiled DSL, design it this way from the start.</p>
+  </div>
+  <div class="card good">
+    <h4>4. Differential checking of every fast path</h4>
+    <p>The incremental compiler is checked against a from-scratch compile:
+    program, bodies, bindings, and "is any old code still bound?". This made
+    an aggressive optimization safe to ship and caught a real gap in the
+    commit gate. Use the same pattern for caches, incremental builds and
+    optimizers. Make the check mandatory in tests, not opt-in.</p>
+  </div>
+  <div class="card good">
+    <h4>5. Two-part builds</h4>
+    <p>Produce a runnable, clearly marked unverified artifact quickly, then run
+    the full verification. Developers and agents get something to try in
+    seconds without weakening the release gate.</p>
+  </div>
+  <div class="card good">
+    <h4>6. Capabilities and checked templates</h4>
+    <p>The combination worked:</p>
+    <ul>
+      <li>effects in signatures;</li>
+      <li>host-granted capabilities;</li>
+      <li>literal-only SQL;</li>
+      <li>HTML templates with no unsafe holes;</li>
+      <li>OS-only crypto.</li>
+    </ul>
+    <p>Most of it can be approximated in a mainstream language with types,
+    lint rules and template libraries. Test those first.</p>
+  </div>
+</div>
+
+<h2>Things to avoid next time</h2>
+<div class="grid2">
+  <div class="card bad">
+    <h4>Building a language to test a workflow hypothesis</h4>
+    <p>The hypothesis was about <em>accumulated, discoverable vocabulary</em>.
+    Testing it with a new language mixed that mechanism with language
+    unfamiliarity and a chatty protocol. Both effects worked against the
+    hypothesis. The language had to win despite them, and it didn't. Test the
+    mechanism in a language agents already know.</p>
+  </div>
+  <div class="card bad">
+    <h4>Command-only editing</h4>
+    <p>Editing through <code>define</code>, <code>describe</code> and
+    <code>source</code> calls cost 2–4× the interactions of file patches. It
+    also let collateral test edits slip in, because whole test sets were
+    re-submitted. Keep files as the editing surface and add structured query
+    tools beside them.</p>
+  </div>
+  <div class="card bad">
+    <h4>Slow feedback loops</h4>
+    <p>A server build took 5–10+ minutes, and defining one word took 99 s,
+    until the final day. The fixes were not exotic:</p>
+    <ul>
+      <li>caching per-batch facts;</li>
+      <li>removing quadratic scans;</li>
+      <li>extending snapshots instead of rebuilding them.</li>
+    </ul>
+    <p>Measure the edit–run loop from day one and treat regressions as bugs.</p>
+  </div>
+  <div class="card bad">
+    <h4>Treating gates as correctness</h4>
+    <p>Mandatory tests, full coverage and finite-case qualification are useful
+    structure. They are not evidence of intended behaviour. Always keep an
+    independent oracle and a preservation check.</p>
+  </div>
+  <div class="card bad">
+    <h4>Small samples without a path to a decision</h4>
+    <p>Most comparisons had one or two agents per arm. Each was carefully run,
+    but none could move the conclusion. Decide up front the sample size that
+    would change a decision, and budget for it. Alternatively, choose
+    questions where one run is decisive.</p>
+  </div>
+  <div class="card bad">
+    <h4>Scope drift without a stop rule</h4>
+    <p>The project moved from research to an application port, to native
+    performance, to build tooling. Each step was justified locally. The
+    original question was not tested again after day 8. Tie each phase to the
+    question it serves, and stop or restate the question explicitly when that
+    link breaks.</p>
+  </div>
+</div>
+
+<h2>Smaller technical lessons</h2>
+<ul>
+  <li><strong>Rails' work was the cost.</strong> Flow's uncached throughput
+  fell 2.9× (3,488 → 1,221 req/s) once it did everything Rails does to a
+  message body. Benchmarks against a simplified page (report 259) flattered
+  the language.</li>
+  <li><strong>Immutable string concatenation in arenas is expensive at
+  page scale</strong> (~650 KB of scratch per ~10 KB message). Plan a builder
+  or rope type early.</li>
+  <li><strong>Interpreter–native parity must cover the builtin set.</strong>
+  Builtins that existed only in the interpreter made "tests pass, native build
+  fails" a recurring detour.</li>
+  <li><strong>Per-worker state beats shared state</strong> for a dense server.
+  It needs no locks, makes in-place reads simple, and its memory cost was
+  negligible at benchmark scale.</li>
+  <li><strong>Commit gates should follow tests, not just callers.</strong> A
+  test attached to an unrelated word can cover changed code. The gate now runs
+  every case whose compiled body reaches the change (PR #7).</li>
+  <li><strong>Discovery details matter to agents.</strong> Constructor naming
+  (<code>renewalTiming.new</code> versus <code>RenewalTiming.new</code>) cost
+  real interactions. Generated names should appear wherever the type is
+  described.</li>
+</ul>
+
+<h2>Recommended next experiments</h2>
+<p>These are ranked by expected information per unit of effort.</p>
+<table>
+<thead><tr><th>#</th><th>Experiment</th><th>Why</th><th>Rough size</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>The vocabulary hypothesis in a mainstream language.</strong> Use F# or TypeScript. One arm gets mandatory per-function tests, an effect lint and a searchable "vocabulary index" tool (search/describe/source over the repo). The other arm gets the plain repo. Use enough agents per arm (10+) with randomized order.</td><td>It isolates the mechanism from language unfamiliarity. This is the question AgentLang could not answer cleanly.</td><td>Days, not weeks</td></tr>
+<tr><td>2</td><td><strong>A preservation guard.</strong> A tool that diffs inherited tests and fixtures semantically and blocks unrelated changes unless they are declared.</td><td>Both AgentLang reliability failures were collateral fixture edits. That problem is independent of language.</td><td>Small</td></tr>
+<tr><td>3</td><td><strong>Oracle-driven agent porting to a mainstream target</strong> (Campfire to Go or TypeScript), using the byte-diff harness.</td><td>It measures the porting <em>method</em>'s speed and exactness without the language as a variable. The harness already exists.</td><td>Medium</td></tr>
+<tr><td>4</td><td><strong>Capability-safe, agent-generated services.</strong> Only if 1–3 justify it: sandboxed plugins or user-defined endpoints, where enforced effects and template safety are the product.</td><td>This is where Flow's specific properties would matter most.</td><td>Large</td></tr>
+</tbody>
+</table>
+
+<div class="verdict">
+<p><strong>If only one thing carries forward:</strong> the evidence says agents
+already do fine in languages they know. What they lacked was protection
+against quietly wrong or quietly collateral edits. Build those protections
+(independent oracles, preservation guards, differential checks) around
+mainstream languages before considering a new language again.</p>
+</div>
+
+<div class="pager"><a href="toolchain.html">← Build &amp; interactivity</a><a href="appendix.html">Appendix →</a></div>
+</div>
+</main>
+<footer class="site"><div class="wrap">AgentLang final report · archived 16 October 2026</div></footer>
+</body>
+</html>

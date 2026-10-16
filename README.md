@@ -1,5 +1,22 @@
 # AgentLang
 
+> **Archived on 16 October 2026.** This experiment is closed. Start with the
+> **[final report](reports/final-report/index.html)**. It is a set of HTML
+> pages; open `reports/final-report/index.html` in a browser from a local
+> clone. The report covers what the two-week experiment showed, good and bad,
+> and what future experiments should take from it.
+>
+> In short:
+> - The language, compiler, verified IR, interpreter and LLVM backend work.
+> - The Campfire read pages are byte-identical to Rails, CSRF aside, and run at
+>   0.6–0.8× a Rust port's throughput in a fraction of its memory.
+> - The central hypothesis was not supported. That hypothesis was that an
+>   agent-oriented typed vocabulary makes AI agents' edits more reliable than in
+>   a mainstream language. F# was equally correct, needed 2–4× fewer
+>   interactions, and preserved inherited tests where AgentLang twice did not.
+>
+> The rest of this README describes the project as it stood during development.
+
 AgentLang is a small F# prototype for building a persistent, typed vocabulary through inspectable words. A host agent can discover available operations, stage definitions, evaluate and test them, then commit tested vocabulary for the next session.
 
 AI agents are external coding tools that use the language. The language runtime contains no AI agents or model calls and works without an API key. Humans and ordinary scripts use the same commands. Model integration is an optional, separate experiment harness under `experiments/`; task sessions are dictionary transactions and logs.
