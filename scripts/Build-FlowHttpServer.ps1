@@ -21,7 +21,11 @@ param(
     [Parameter(Mandatory)] [string] $OutDir,
     [string] $LinuxName = '',
     # Linux only: frame pointers and debug info for perf (see build-flow-http-linux.sh).
-    [switch] $Profile
+    [switch] $Profile,
+    # Skip the commit, so no attached test runs (the code is still type-checked and
+    # IR-verified). The output directory gets an UNVERIFIED marker; a build without this
+    # switch is the verification step.
+    [switch] $Unverified
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -35,6 +39,7 @@ if ($LASTEXITCODE -ne 0) { throw "AgentLang.FlowHttp build failed: $($buildOutpu
 $tool = Join-Path $repo 'src/AgentLang.FlowHttp/bin/Release/net9.0/AgentLang.FlowHttp.dll'
 $emitArgs = @($tool, 'emit', '--app', $App, '--target', $Target, '--profile', $RuntimeProfile, '--out', $out)
 foreach ($file in $Source) { $emitArgs += @('--source', [System.IO.Path]::GetFullPath($file)) }
+if ($Unverified) { $emitArgs += '--unverified' }
 & dotnet @emitArgs
 if ($LASTEXITCODE -ne 0) { throw 'Flow module emission failed.' }
 

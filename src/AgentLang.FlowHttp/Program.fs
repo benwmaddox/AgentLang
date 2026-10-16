@@ -6,16 +6,19 @@ open System.Text
 open AgentLang.Llvm
 
 let private usage =
-    "usage: AgentLang.FlowHttp emit --app <name> --source <file.flow> [--source ...] --target windows-x64|linux-x64 [--profile trusted|diagnostic] --out <dir>"
+    "usage: AgentLang.FlowHttp emit --app <name> --source <file.flow> [--source ...] --target windows-x64|linux-x64 [--profile trusted|diagnostic] [--unverified] --out <dir>"
 
 /// emit: compiles the stdlib and app sources and writes <out>/module.ll (the
 /// two-entry owning module for the target), <out>/diagnostics.tsv and <out>/symbols.tsv
-/// (agentlang_word_NNNN -> Flow word, for profilers).
+/// (agentlang_word_NNNN -> Flow word, for profilers). --unverified skips the commit, so
+/// no attached test runs (the code is still type-checked and IR-verified), and writes
+/// <out>/UNVERIFIED.txt; a later emit without it is the verification step.
 let private emit (args: string list) =
     let mutable app = ""
     let mutable target = OwningTarget.WindowsX64
     let mutable profile = OwningRuntimeProfile.TrustedGenerated
     let mutable out = ""
+    let mutable verify = true
     let sources = ResizeArray<string>()
     let rec parse = function
         | "--app" :: value :: rest -> app <- value; parse rest
@@ -24,6 +27,7 @@ let private emit (args: string list) =
         | "--profile" :: "trusted" :: rest -> profile <- OwningRuntimeProfile.TrustedGenerated; parse rest
         | "--profile" :: "diagnostic" :: rest -> profile <- OwningRuntimeProfile.Diagnostic; parse rest
         | "--out" :: value :: rest -> out <- Path.GetFullPath value; parse rest
+        | "--unverified" :: rest -> verify <- false; parse rest
         | [] -> ()
         | other :: _ -> failwith $"Unknown argument {other}. {usage}"
     parse args
@@ -31,8 +35,8 @@ let private emit (args: string list) =
     Directory.CreateDirectory out |> ignore
     let project = Path.Combine(out, "engine-" + Guid.NewGuid().ToString("N").Substring(0, 8))
     // The build never runs requests; its production provider is a scratch database.
-    use flowApp = FlowApp.load project app (List.ofSeq sources) ":memory:"
-    if not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_ADD_PROBE")) then
+    use flowApp = FlowApp.loadWith verify project app (List.ofSeq sources) ":memory:" 0
+    if verify && not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_ADD_PROBE")) then
         // How long adding one function takes once the project is loaded: define a word
         // with its attached test, then commit that word alone.
         let request (operation: string) (fields: (string * System.Text.Json.Nodes.JsonNode) list) =
@@ -52,8 +56,11 @@ let private emit (args: string list) =
     File.WriteAllText(Path.Combine(out, "module.ll"), ir, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "diagnostics.tsv"), FlowApp.diagnosticsText diagnostics, UTF8Encoding(false))
     File.WriteAllText(Path.Combine(out, "symbols.tsv"), FlowApp.nativeSymbolsText flowApp, UTF8Encoding(false))
+    let marker = Path.Combine(out, "UNVERIFIED.txt")
+    if verify then File.Delete marker
+    else File.WriteAllText(marker, "Built without running attached tests (emit --unverified). Rebuild without -Unverified to verify.\n", UTF8Encoding(false))
     try Directory.Delete(project, true) with _ -> ()
-    printfn "emitted %s (%s, %s, context %s)" (Path.Combine(out, "module.ll")) target.Triple (if profile = OwningRuntimeProfile.TrustedGenerated then "trusted" else "diagnostic") flowApp.ContextType
+    printfn "emitted %s (%s, %s, context %s%s)" (Path.Combine(out, "module.ll")) target.Triple (if profile = OwningRuntimeProfile.TrustedGenerated then "trusted" else "diagnostic") flowApp.ContextType (if verify then "" else ", UNVERIFIED: attached tests not run")
 
 [<EntryPoint>]
 let main argv =

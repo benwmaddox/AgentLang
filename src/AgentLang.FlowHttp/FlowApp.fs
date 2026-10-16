@@ -17,7 +17,9 @@ type FlowApp =
       ContextType: string
       Provider: HostOperationProvider
       /// The interpreter "worker": its store and response stream.
-      Worker: Store.WorkerState }
+      Worker: Store.WorkerState
+      /// False when the app was defined but not committed: its attached tests have not run.
+      Verified: bool }
 
     interface IDisposable with
         member this.Dispose() = this.Provider.Dispose()
@@ -83,7 +85,10 @@ module FlowApp =
             eprintfn "timing %s %.1fs" label watch.Elapsed.TotalSeconds
             result
 
-    let loadWithStore (projectDirectory: string) (app: string) (sourcePaths: string list) (databasePath: string) (storeBytes: int) =
+    /// Loads an app. With `verify` false the app's words are defined (parsed, type-checked
+    /// and IR-verified) but not committed, so their attached tests do not run: the fast,
+    /// unverified build. Commit runs every attached test.
+    let loadWith (verify: bool) (projectDirectory: string) (app: string) (sourcePaths: string list) (databasePath: string) (storeBytes: int) =
         let stdlib = stdlibDirectory ()
         let stdlibSources = stdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
         let appSources = sourcePaths |> List.map File.ReadAllText
@@ -118,8 +123,10 @@ module FlowApp =
         let hostStdlibSources = hostStdlibFiles |> List.map (fun name -> File.ReadAllText(Path.Combine(stdlib, name)))
         let named = (List.zip (hostStdlibFiles |> List.map (fun name -> "stdlib/" + name)) hostStdlibSources) @ (List.zip (sourcePaths |> List.map Path.GetFileName) appSources)
         timed "define" (fun () -> defineFiles engine named |> ignore)
-        timed "commit" (fun () -> dispatch engine "commit" [] |> ignore)
-        { Engine = engine; App = app; ContextType = contextType; Provider = provider; Worker = worker }
+        if verify then timed "commit" (fun () -> dispatch engine "commit" [] |> ignore)
+        { Engine = engine; App = app; ContextType = contextType; Provider = provider; Worker = worker; Verified = verify }
+
+    let loadWithStore projectDirectory app sourcePaths databasePath storeBytes = loadWith true projectDirectory app sourcePaths databasePath storeBytes
 
     /// load with no worker store (store.capacity is 0).
     let load projectDirectory app sourcePaths databasePath = loadWithStore projectDirectory app sourcePaths databasePath 0
@@ -175,13 +182,17 @@ module FlowApp =
             |> List.map (fun (tag, name, inputs, outputs, effects) ->
                 { Name = name; Tag = tag; InputTypes = inputs; OutputTypes = outputs; Effects = effects }) }
 
+    let private exportEntryPoint (app: FlowApp) word inputs outputs =
+        if app.Verified then app.Engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
+        else app.Engine.ExportUnverifiedFlowEntryPoint(word, inputs, outputs)
+
     /// Emits the two-entry native module (flow_http_worker_init, flow_http_handle)
     /// for a target. Returns the LLVM IR and the diagnostic table.
     let emitNative (app: FlowApp) (runtimeProfile: OwningRuntimeProfile) (target: OwningTarget) =
         let initInputs, initOutputs = workerInitSignature app
         let handleInputs, handleOutputs = handleSignature app
-        let initBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.worker-init", initInputs, initOutputs)
-        let handleBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.handle", handleInputs, handleOutputs)
+        let initBody = exportEntryPoint app $"{app.App}.worker-init" initInputs initOutputs
+        let handleBody = exportEntryPoint app $"{app.App}.handle" handleInputs handleOutputs
         // The handle shim leads: the host profile checks the head entry
         // against the manifest's entry word and boundary types.
         OwningStackAot.emitHostModule runtimeProfile target (OwningNativeHostProfile.AppHost(hostManifest app))
@@ -192,8 +203,8 @@ module FlowApp =
     let nativeSymbolsText (app: FlowApp) =
         let initInputs, initOutputs = workerInitSignature app
         let handleInputs, handleOutputs = handleSignature app
-        let initBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.worker-init", initInputs, initOutputs)
-        let handleBody = app.Engine.ExportVerifiedFlowEntryPoint($"{app.App}.handle", handleInputs, handleOutputs)
+        let initBody = exportEntryPoint app $"{app.App}.worker-init" initInputs initOutputs
+        let handleBody = exportEntryPoint app $"{app.App}.handle" handleInputs handleOutputs
         let builder = StringBuilder()
         OwningStackAot.hostModuleSymbols (OwningNativeHostProfile.AppHost(hostManifest app))
             [ { ExportName = "flow_http_handle"; EntryWord = $"{app.App}.handle"; Body = handleBody; BorrowsLastInput = true }
