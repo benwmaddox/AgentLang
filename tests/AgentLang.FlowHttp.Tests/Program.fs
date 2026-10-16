@@ -304,6 +304,21 @@ let private run () =
             protocol $"windows/{profile}"
         finally stopServer server
         printfn "windows/%s: parity and protocol checks passed" profile
+        check $"windows/{profile}: a verified build has no UNVERIFIED marker" (not (File.Exists(Path.Combine(winDir, "UNVERIFIED.txt"))))
+        // The fast build (no attached tests run, O0) serves the same responses.
+        if profile = profiles.Head then
+            let fastDir = Path.Combine(root, "win-" + profile + "-unverified")
+            let fastExe =
+                powershell $"-File scripts/Build-FlowHttpServer.ps1 -App counter -Source \"{appSource}\" -Target windows-x64 -RuntimeProfile {profile} -Optimization O0 -Unverified -OutDir \"{fastDir}\""
+            check "unverified build is marked UNVERIFIED" (File.Exists(Path.Combine(fastDir, "UNVERIFIED.txt")))
+            let fastDatabase = Path.Combine(root, $"win-{profile}-unverified.db")
+            createDatabase fastDatabase
+            let fast = startServer $"windows/{profile}/unverified" fastExe $"--port {port} --db \"{fastDatabase}\" --config \"{configPath}\" --workers 3 --allow-control --arena-mb 8 --cache-mb 8 --store-mb 3"
+            try
+                parity $"windows/{profile}/unverified" expected
+                protocol $"windows/{profile}/unverified"
+            finally stopServer fast
+            printfn "windows/%s/unverified: parity and protocol checks passed" profile
         // --cache-mb 0 disables the cache: puts are dropped, gets miss.
         if profile = profiles.Head then
             let disabledDatabase = Path.Combine(root, $"win-{profile}-nocache.db")

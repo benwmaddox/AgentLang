@@ -119,3 +119,27 @@ Switches:
 - `AGENTLANG_INCREMENTAL_CHECK=1` also compiles from scratch and requires the
   same program, attached bodies and stored bindings.
 - `AGENTLANG_INCREMENTAL_LOG=<file>` appends one line per extension.
+
+## Two-part build (Windows exe first, verification second)
+
+`scripts/Build-CampfireFlowServer.ps1 -TwoPart -OutDir <dir>` builds twice.
+
+**Part 1** goes to `<dir>/unverified` with `-Unverified`:
+- `emit --unverified` defines the words but does not commit them, so no attached test runs;
+- the code is still parsed, type-checked and IR-verified;
+- the entry points come from `ExportUnverifiedFlowEntryPoint`;
+- it is compiled at O0;
+- it writes `UNVERIFIED.txt` next to the exe.
+
+**Part 2** is the normal build into `<dir>`: it commits, which runs every attached test, then compiles at O2. A failing test fails this part.
+
+You can run part 1's exe while part 2 builds. `-Unverified` alone builds only part 1.
+
+Campfire on 2026-10-16:
+
+| Part | Ready at |
+| --- | ---: |
+| 1, unverified exe | 18.7 s |
+| 2, verified exe | 81 s |
+
+The FlowHttp tests build the counter app unverified at O0 and run the same parity and protocol checks against it.

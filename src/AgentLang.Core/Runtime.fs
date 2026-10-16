@@ -6725,7 +6725,9 @@ module Runtime =
             match target with Some word when snapshot.Words.ContainsKey word -> dataNode["coverage"] <- coverageJson snapshot word results | _ -> ()
             success kind text (Some dataNode)
 
-        let prepareFlowEntryPoint (wordName: string) (expectedInputs: LangType list) (expectedOutputs: LangType list) : RuntimeSnapshot * VerifiedIrBody * string =
+        /// `requireCommitted` false admits a defined word whose attached tests have not run yet
+        /// (the fast, unverified build); its program is still type-checked and IR-verified.
+        let prepareFlowEntryPointWith (requireCommitted: bool) (wordName: string) (expectedInputs: LangType list) (expectedOutputs: LangType list) : RuntimeSnapshot * VerifiedIrBody * string =
             if String.IsNullOrWhiteSpace wordName then
                 error "FLOW_ENTRYPOINT_NAME_INVALID" "A Flow entrypoint requires a nonempty committed word name." None None [ "committed Flow word name" ] [ "empty" ]
             if isNull (box expectedInputs) || isNull (box expectedOutputs) then
@@ -6750,9 +6752,12 @@ module Runtime =
             if entry.Builtin.IsSome then
                 error "FLOW_ENTRYPOINT_NOT_FLOW_AUTHORED" $"'{wordName}' is a builtin or generated operation, not a Flow-authored entrypoint." (Some wordName) (Some entry.Definition.Span)
                     [ "Flow-authored user word" ] [ "builtin or generated word" ]
-            if entry.Status <> Persistent then
+            if requireCommitted && entry.Status <> Persistent then
                 error "FLOW_ENTRYPOINT_NOT_COMMITTED" $"Flow entrypoint '{wordName}' must be committed before it can be bound." (Some wordName) (Some entry.Definition.Span)
                     [ "persistent committed word" ] [ string entry.Status ]
+            if not requireCommitted && entry.Status <> Persistent && entry.Status <> Candidate then
+                error "FLOW_ENTRYPOINT_NOT_DEFINED" $"Flow entrypoint '{wordName}' must be a defined candidate or committed word." (Some wordName) (Some entry.Definition.Span)
+                    [ "candidate or persistent word" ] [ string entry.Status ]
 
             let ownerIdText =
                 snapshot.State.WordIds.TryFind wordName
@@ -6832,6 +6837,8 @@ module Runtime =
 
             snapshot, body, executionName
 
+        let prepareFlowEntryPoint wordName expectedInputs expectedOutputs = prepareFlowEntryPointWith true wordName expectedInputs expectedOutputs
+
         member _.ProjectDirectory = projectRoot
         member _.Capabilities = capabilities
         member _.TestCapabilities = engineTestCapabilities
@@ -6841,6 +6848,13 @@ module Runtime =
         /// Exporting captures the active snapshot but does not execute the body.
         member _.ExportVerifiedFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) : VerifiedIrBody =
             let _, body, _ = prepareFlowEntryPoint wordName expectedInputs expectedOutputs
+            body
+
+        /// ExportVerifiedFlowEntryPoint for a word that is defined but not yet committed: its
+        /// program is type-checked and IR-verified, but its attached tests have not run. Only
+        /// for builds marked unverified, whose verification step commits (runs every test).
+        member _.ExportUnverifiedFlowEntryPoint(wordName: string, expectedInputs: LangType list, expectedOutputs: LangType list) : VerifiedIrBody =
+            let _, body, _ = prepareFlowEntryPointWith false wordName expectedInputs expectedOutputs
             body
 
         /// Bind one exact committed Flow definition for typed, value-only host
