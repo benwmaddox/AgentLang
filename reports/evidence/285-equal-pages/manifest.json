@@ -1,0 +1,3050 @@
+{
+  "archiveFile": "285-equal-pages-evidence.zip",
+  "archiveSha256": "f73ba3f1395e3c7352eaa4479f0ca16431a403fe775947eed742d0a86153ed4f",
+  "archiveSizeBytes": 447621,
+  "entryCount": 508,
+  "entries": [
+    {
+      "archivePath": "gates/acceptance.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/acceptance.log",
+      "sha256": "7a67b4949dc0263341916304b1dd6fd0d62dc561fe6b9b0bb53e667af24c4b8b",
+      "sizeBytes": 1398
+    },
+    {
+      "archivePath": "gates/arena-lifetime.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/arena-lifetime.log",
+      "sha256": "81081f1023fa5a5537e2801654f972f5123ad74dc148bbf6b82abe2a6833a93a",
+      "sizeBytes": 59
+    },
+    {
+      "archivePath": "gates/campfire-browser.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/campfire-browser.log",
+      "sha256": "c247a02cae9409dee9de0fa51917b0a7445254e3bb0c7f5c7b198c7c53689b50",
+      "sizeBytes": 221
+    },
+    {
+      "archivePath": "gates/campfire-views.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/campfire-views.log",
+      "sha256": "201a4e0d61776df8ffe61e38f7ddb4275220aefcc3569983c33ce6f198dddbc2",
+      "sizeBytes": 268
+    },
+    {
+      "archivePath": "gates/campfire.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/campfire.log",
+      "sha256": "408394d2880c21cab27df02567d7e17e7b8dc5502d04993f35eb21da8c4d32b5",
+      "sizeBytes": 10542
+    },
+    {
+      "archivePath": "gates/flow-runtime-tests.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/flow-runtime-tests.log",
+      "sha256": "78453bcbd03beef7c19b2dc1ad429eb852a5273c05a2e6281a387c8da6132c86",
+      "sizeBytes": 56
+    },
+    {
+      "archivePath": "gates/flow-tests.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/flow-tests.log",
+      "sha256": "3a0a819f15fa89e132a6c84f1f044c98bab0ea05e4ea83129aad1de5ff7bd0d2",
+      "sizeBytes": 921
+    },
+    {
+      "archivePath": "gates/flowhttp.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/flowhttp.log",
+      "sha256": "d3e1515dc757b30e023a678dd6884454bac4a9f10de1cc9c58c2ffa8d39ec4be",
+      "sizeBytes": 364
+    },
+    {
+      "archivePath": "gates/ir-interpreter.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/ir-interpreter.log",
+      "sha256": "7e39bf8a8dfd4c33c0fa8ccbe70827ea3dc7a60c6d1edf0517993734d3f2b36e",
+      "sizeBytes": 47
+    },
+    {
+      "archivePath": "gates/ir-parity.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/ir-parity.log",
+      "sha256": "49a25d33d011f831c784cd3e964e4dd9f89fbc7ee81eb9bc2448a868b9a21247",
+      "sizeBytes": 103
+    },
+    {
+      "archivePath": "gates/llvm-full-suite.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/llvm-full-suite.log",
+      "sha256": "f2b8e48452e89b2cb869795e0563bb5019f8862307b254da398fd91815c7d717",
+      "sizeBytes": 3620
+    },
+    {
+      "archivePath": "gates/native-conformance.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/native-conformance.log",
+      "sha256": "3723c65e6cae47f2593649a85d3242682513427367c64a6cddff093e0fb7a92a",
+      "sizeBytes": 3636
+    },
+    {
+      "archivePath": "gates/native-value-stack.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/native-value-stack.log",
+      "sha256": "375ef277c2e28b78be42b7d0488d1a99fe949e1a7eb623813db73043c6783d2e",
+      "sizeBytes": 177
+    },
+    {
+      "archivePath": "gates/owning-compact.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-compact.log",
+      "sha256": "b10438ce7bbab6512af1ced8db07b7635dd2223b5457375f9956e166f5e30936",
+      "sizeBytes": 148
+    },
+    {
+      "archivePath": "gates/owning-html.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-html.log",
+      "sha256": "364bd440eed7029fdc0d2f46a04708b490ad7ca32607c2981efafcf12177fd7c",
+      "sizeBytes": 145
+    },
+    {
+      "archivePath": "gates/owning-list-ops.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-list-ops.log",
+      "sha256": "1cddd0080778015a585f997557b2535de327e8d84c008afd8e503355b21f6b84",
+      "sizeBytes": 158
+    },
+    {
+      "archivePath": "gates/owning-listbuild.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-listbuild.log",
+      "sha256": "6889f5fd769ce569a63a66e2b1ad8d1f1e0efbeb650852f6ce1a878b91280e84",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-lists.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-lists.log",
+      "sha256": "c694861402f5ea11857e760eea305b958b5c6fa6ea73402900b756ec15d64226",
+      "sizeBytes": 199
+    },
+    {
+      "archivePath": "gates/owning-mailbox.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-mailbox.log",
+      "sha256": "88e961a621d43971571673f4986e676b04281f47ffd45233acda68afea72623a",
+      "sizeBytes": 1134
+    },
+    {
+      "archivePath": "gates/owning-templates.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-templates.log",
+      "sha256": "a170e435ac56e2a971ced354c74b7d48b33b7695e87fb017fc613538480dba95",
+      "sizeBytes": 154
+    },
+    {
+      "archivePath": "gates/owning-utf8.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/owning-utf8.log",
+      "sha256": "5712caacd5c3ae6d4c35272306f28cbfba8dbd2145d66d4117bcf499a138a2da",
+      "sizeBytes": 143
+    },
+    {
+      "archivePath": "gates/room-read-diagnostic-off.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/room-read-diagnostic-off.log",
+      "sha256": "a51a54734cfc91859e4ad63b29bd3133ac460b3d40bcbb215597adf75a451ead",
+      "sizeBytes": 12057
+    },
+    {
+      "archivePath": "gates/room-read-trusted-off.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/room-read-trusted-off.log",
+      "sha256": "56a32eba1d5d1de14e5235a1cd4ef4e0e8bd3787dd776d7981fdad8171d06b80",
+      "sizeBytes": 12063
+    },
+    {
+      "archivePath": "gates/source.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/source.log",
+      "sha256": "bd2a949d47eac60cb8fed5c499eeb96d230c66865cdb32a5d188f17611a043c4",
+      "sizeBytes": 43
+    },
+    {
+      "archivePath": "gates/stdlib.log",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/stdlib.log",
+      "sha256": "292b0bea7b810651589a17f7747a30e0053464273b2650f3181d29e4bfad2323",
+      "sizeBytes": 165
+    },
+    {
+      "archivePath": "gates/summary.json",
+      "sourcePath": ".agentlang/lang-285/gates-20261016T020303Z/summary.json",
+      "sha256": "0678bd1632ca383c8d091cea69f707ac9a29f8c07ae59cd79e93be4c9cbe425f",
+      "sizeBytes": 7746
+    },
+    {
+      "archivePath": "pages-285/around.txt",
+      "sourcePath": ".agentlang/pages-285/around.txt",
+      "sha256": "5c24083856ba960b91fd1e6565413a2a22e62488d699e8dc13d060e67ee203a2",
+      "sizeBytes": 3179
+    },
+    {
+      "archivePath": "pages-285/as-config.rb",
+      "sourcePath": ".agentlang/pages-285/as-config.rb",
+      "sha256": "bacc8a1604dbafce441ed9bbe54f4ea29e8f4e470e1f81a751a667d470c383b4",
+      "sizeBytes": 913
+    },
+    {
+      "archivePath": "pages-285/as-etag.rb",
+      "sourcePath": ".agentlang/pages-285/as-etag.rb",
+      "sha256": "4742ef06e591e0aaf939e50a47dd7d82d49a5f10115d65876e7c18142931e71b",
+      "sizeBytes": 766
+    },
+    {
+      "archivePath": "pages-285/as-etag2.rb",
+      "sourcePath": ".agentlang/pages-285/as-etag2.rb",
+      "sha256": "6e99b0dffbddb88caef29f580ed2dd22db6174b079e5d21c62ab6bc2599da3b2",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "pages-285/as-etag3.rb",
+      "sourcePath": ".agentlang/pages-285/as-etag3.rb",
+      "sha256": "0c8aded59c86039f358ca2ca66d76fd65210c3d508faa9387f49a1f6df76681e",
+      "sizeBytes": 1117
+    },
+    {
+      "archivePath": "pages-285/as-format.rb",
+      "sourcePath": ".agentlang/pages-285/as-format.rb",
+      "sha256": "53b4bb412a822eee8967127e876e0717d8ccf6bbddcca752e5ca7c7c9fd1e5f8",
+      "sizeBytes": 626
+    },
+    {
+      "archivePath": "pages-285/attachments.txt",
+      "sourcePath": ".agentlang/pages-285/attachments.txt",
+      "sha256": "e54d3127491b9d01c8a7d8bbb41f19779149cecf0d692cadbec1cdfccc538163",
+      "sizeBytes": 14359
+    },
+    {
+      "archivePath": "pages-285/autolink_flow.txt",
+      "sourcePath": ".agentlang/pages-285/autolink_flow.txt",
+      "sha256": "0ec63cffa637415754f3e1edea46dcd17960b0b7a007cb6c8e7e6341f78ab202",
+      "sizeBytes": 8064
+    },
+    {
+      "archivePath": "pages-285/cg-clean.sh",
+      "sourcePath": ".agentlang/pages-285/cg-clean.sh",
+      "sha256": "e3f710c0bb1af813b8f2daa36c9fc4fbcba42da8e3a6437a3738617d09f82aac",
+      "sizeBytes": 179
+    },
+    {
+      "archivePath": "pages-285/cg-procs.sh",
+      "sourcePath": ".agentlang/pages-285/cg-procs.sh",
+      "sha256": "dfe170b22c4de833b080373a8b7b9697eca452037740abe60b3a69aa75ad7497",
+      "sizeBytes": 109
+    },
+    {
+      "archivePath": "pages-285/check.sh",
+      "sourcePath": ".agentlang/pages-285/check.sh",
+      "sha256": "1b9f8f1c2df1815ea8b38f4318cec18a5f4dfe7570a9ceec3bdcd91682f3360a",
+      "sizeBytes": 644
+    },
+    {
+      "archivePath": "pages-285/cli_batch.py",
+      "sourcePath": ".agentlang/pages-285/cli_batch.py",
+      "sha256": "662777df0f96c9136b863ff950b6dcade09698b73d6d1811ad8c0ce85e683da4",
+      "sizeBytes": 4511
+    },
+    {
+      "archivePath": "pages-285/cmpdb.sh",
+      "sourcePath": ".agentlang/pages-285/cmpdb.sh",
+      "sha256": "87dd5956dd77203d91a023dfa817eb0de2a61789b480f92b2f272c7d7c141dab",
+      "sizeBytes": 477
+    },
+    {
+      "archivePath": "pages-285/edit_b1.py",
+      "sourcePath": ".agentlang/pages-285/edit_b1.py",
+      "sha256": "540d9a8c35b7cf7965ace2fb260144928a1a26652540cbda3753fe1fe5b8eaf5",
+      "sizeBytes": 5329
+    },
+    {
+      "archivePath": "pages-285/edit_boosts_server.py",
+      "sourcePath": ".agentlang/pages-285/edit_boosts_server.py",
+      "sha256": "db9a08ae222bb54edba5469f2b52b0630092ef40724bc73826431946612e526c",
+      "sizeBytes": 11495
+    },
+    {
+      "archivePath": "pages-285/edit_chrome.py",
+      "sourcePath": ".agentlang/pages-285/edit_chrome.py",
+      "sha256": "46f643d5845dccfe506842ab5545a12f514d02dd2d39583e9592b2a7a85e4f44",
+      "sizeBytes": 5857
+    },
+    {
+      "archivePath": "pages-285/edit_figure.py",
+      "sourcePath": ".agentlang/pages-285/edit_figure.py",
+      "sha256": "c891d7808010d743d457d0f66ef19e7cdf8ca8bb7b4dd7497d46207524a5cb7d",
+      "sizeBytes": 2574
+    },
+    {
+      "archivePath": "pages-285/edit_parity_rails.py",
+      "sourcePath": ".agentlang/pages-285/edit_parity_rails.py",
+      "sha256": "e16809f7161798a5a672406c0254bd840decd4461f09a14c2a28aee252818050",
+      "sizeBytes": 2319
+    },
+    {
+      "archivePath": "pages-285/edit_plan.py",
+      "sourcePath": ".agentlang/pages-285/edit_plan.py",
+      "sha256": "27ab6a3e2bd7a45864b0068b86ca9dfd7486b73486d6f55944edf6d8723409fd",
+      "sizeBytes": 2358
+    },
+    {
+      "archivePath": "pages-285/edit_presentation.py",
+      "sourcePath": ".agentlang/pages-285/edit_presentation.py",
+      "sha256": "87041c179d2ec4afb11c61cf702aaecdf67d65d4c6958980997dc8253666d931",
+      "sizeBytes": 2275
+    },
+    {
+      "archivePath": "pages-285/edit_shown.py",
+      "sourcePath": ".agentlang/pages-285/edit_shown.py",
+      "sha256": "71ce0b84ded6dbabe31dfcf87d53a0c63b161079cdaa3548d6eaca67dd3e0e40",
+      "sizeBytes": 2913
+    },
+    {
+      "archivePath": "pages-285/edit_ws.py",
+      "sourcePath": ".agentlang/pages-285/edit_ws.py",
+      "sha256": "3808a172cbec3e544661cbe236a163497f9c30805d13a0821eae1867687425aa",
+      "sizeBytes": 3243
+    },
+    {
+      "archivePath": "pages-285/email_rule.py",
+      "sourcePath": ".agentlang/pages-285/email_rule.py",
+      "sha256": "d09d280fd864355e662517c991170725baf63aae0d9b8dc09b9a0f9114de6454",
+      "sizeBytes": 2434
+    },
+    {
+      "archivePath": "pages-285/emoji-ranges.txt",
+      "sourcePath": ".agentlang/pages-285/emoji-ranges.txt",
+      "sha256": "4c174ae688e232683e20277a2ccaf5986174288ec54481361aba4c3e100aa7c0",
+      "sizeBytes": 939
+    },
+    {
+      "archivePath": "pages-285/emoji.rb",
+      "sourcePath": ".agentlang/pages-285/emoji.rb",
+      "sha256": "cd107dffffff107ac2ccaa8b6a3fe6442fd9e2d2e9f4b467799597107f4b2f24",
+      "sizeBytes": 703
+    },
+    {
+      "archivePath": "pages-285/fetch.sh",
+      "sourcePath": ".agentlang/pages-285/fetch.sh",
+      "sha256": "480cabf74da6d129cfd98c309a11b71600993bced69d7e2d276f76c5ff653f08",
+      "sizeBytes": 237
+    },
+    {
+      "archivePath": "pages-285/fix_match2.py",
+      "sourcePath": ".agentlang/pages-285/fix_match2.py",
+      "sha256": "dcdb8e8fb6dbd8afae695add18e6b8e0570569c1b2c4ec1b8a4db2290031cf07",
+      "sizeBytes": 1859
+    },
+    {
+      "archivePath": "pages-285/fix_sidebar.py",
+      "sourcePath": ".agentlang/pages-285/fix_sidebar.py",
+      "sha256": "be3fb22780952a0c453970acef29ef0da19fad547675798fa51cbf2667de2a9b",
+      "sizeBytes": 2318
+    },
+    {
+      "archivePath": "pages-285/fix_tokenizer.py",
+      "sourcePath": ".agentlang/pages-285/fix_tokenizer.py",
+      "sha256": "5dd1557724ba0d03ed1022266106716af8374b624afac0b940d7c8db803040f7",
+      "sizeBytes": 2840
+    },
+    {
+      "archivePath": "pages-285/make_attachment_oracle.py",
+      "sourcePath": ".agentlang/pages-285/make_attachment_oracle.py",
+      "sha256": "b2c586c52d45c183a6f20e019346e978a011a9e976eec67ed4047864860b80ca",
+      "sizeBytes": 2627
+    },
+    {
+      "archivePath": "pages-285/make_boosts.py",
+      "sourcePath": ".agentlang/pages-285/make_boosts.py",
+      "sha256": "8f4e0368f584dc549bf94d0eb73fac207602522da445c236a3c6acfb26f8fcae",
+      "sizeBytes": 5920
+    },
+    {
+      "archivePath": "pages-285/mentions.py",
+      "sourcePath": ".agentlang/pages-285/mentions.py",
+      "sha256": "0932179142225ad6d79ceda6ded6e422cddaaf42052150ae88c8dab62644a526",
+      "sizeBytes": 11102
+    },
+    {
+      "archivePath": "pages-285/move_layout.py",
+      "sourcePath": ".agentlang/pages-285/move_layout.py",
+      "sha256": "56c629d817fd9ae4a4490429cb595d77c04ec101344e2ff8c9c048cafab2b4ba",
+      "sizeBytes": 1922
+    },
+    {
+      "archivePath": "pages-285/opengraph.txt",
+      "sourcePath": ".agentlang/pages-285/opengraph.txt",
+      "sha256": "8dd065543b5b3c8bcf83f2b7e7a4ad4c1f8ab33348187c89445d57439e4687ad",
+      "sizeBytes": 30021
+    },
+    {
+      "archivePath": "pages-285/oracle-files.txt",
+      "sourcePath": ".agentlang/pages-285/oracle-files.txt",
+      "sha256": "fd6527248b51a0b4b5ed8584f94a7b26b5d251eba7035a875437b50afbb9e2fb",
+      "sizeBytes": 488
+    },
+    {
+      "archivePath": "pages-285/oracle.rb",
+      "sourcePath": ".agentlang/pages-285/oracle.rb",
+      "sha256": "7656d062cef6748e395cc535c97745e61bd30729239ac03f139dcc2bb0273acb",
+      "sizeBytes": 1055
+    },
+    {
+      "archivePath": "pages-285/oracle.sh",
+      "sourcePath": ".agentlang/pages-285/oracle.sh",
+      "sha256": "dd31334e55c019cfdfe31145f2c82b883878e284603a0818fb3b7605fd1033f3",
+      "sizeBytes": 1558
+    },
+    {
+      "archivePath": "pages-285/p285b-linux-store0.txt",
+      "sourcePath": ".agentlang/pages-285/p285b-linux-store0.txt",
+      "sha256": "a21ac41585e326268d85417997f7d058ecdd04177f55b9b672f2715d7f0c1cc2",
+      "sizeBytes": 1912
+    },
+    {
+      "archivePath": "pages-285/p285b-linux-store32.txt",
+      "sourcePath": ".agentlang/pages-285/p285b-linux-store32.txt",
+      "sha256": "24e3b75300aa1d93eb3b4906127e9da977479cd531e80542e5df0baf6ee14cae",
+      "sizeBytes": 1942
+    },
+    {
+      "archivePath": "pages-285/p285b-win-store0.txt",
+      "sourcePath": ".agentlang/pages-285/p285b-win-store0.txt",
+      "sha256": "b01634265ac1896602193c47ae0ec3a13081a02883ea6ad1c0e09ea74ba15616",
+      "sizeBytes": 1896
+    },
+    {
+      "archivePath": "pages-285/p285b-win-store32.txt",
+      "sourcePath": ".agentlang/pages-285/p285b-win-store32.txt",
+      "sha256": "ff8ceb82e7b7953e988a2768c3c4886928120bfddc5d41ccb16ba88654b66231",
+      "sizeBytes": 1926
+    },
+    {
+      "archivePath": "pages-285/p285c-linux-store0.txt",
+      "sourcePath": ".agentlang/pages-285/p285c-linux-store0.txt",
+      "sha256": "1c023e317ed04862fd77072ea669872e9ba1c45a4f22185eb164ffe758d81ffc",
+      "sizeBytes": 1921
+    },
+    {
+      "archivePath": "pages-285/p285c-linux-store32.txt",
+      "sourcePath": ".agentlang/pages-285/p285c-linux-store32.txt",
+      "sha256": "b2f42ff965852d68eed48128422fafdfdc8ce3c28dce2eb09f8e9ddf1a3b8eba",
+      "sizeBytes": 1951
+    },
+    {
+      "archivePath": "pages-285/p285c-win-store0.txt",
+      "sourcePath": ".agentlang/pages-285/p285c-win-store0.txt",
+      "sha256": "e3a7ff7e5b5f810925ff87dba37c34e4acd24cb6cde5465e242ea65116e3be91",
+      "sizeBytes": 1905
+    },
+    {
+      "archivePath": "pages-285/p285c-win-store32.txt",
+      "sourcePath": ".agentlang/pages-285/p285c-win-store32.txt",
+      "sha256": "fdd5e9e8101db9235fbcfce2efe55f2947b03013f19b1ec89f89584d5375b348",
+      "sizeBytes": 1935
+    },
+    {
+      "archivePath": "pages-285/page-lifetime.sh",
+      "sourcePath": ".agentlang/pages-285/page-lifetime.sh",
+      "sha256": "7042e49cb7941c17fd2a61e7c1a9919d6a8d0d5cd2745e79f503db349cee5d16",
+      "sizeBytes": 10531
+    },
+    {
+      "archivePath": "pages-285/pagediff.py",
+      "sourcePath": ".agentlang/pages-285/pagediff.py",
+      "sha256": "a48a217d94bdc57b17b9aa302ec5c5fa2aeeaf1778c7d088a309a1067d2a4e38",
+      "sizeBytes": 1480
+    },
+    {
+      "archivePath": "pages-285/paging-handler.txt",
+      "sourcePath": ".agentlang/pages-285/paging-handler.txt",
+      "sha256": "bc1745f5c612510e9eaa8627ecfea4d214c6f1aecb61bf4f58e8543340b4837c",
+      "sizeBytes": 17490
+    },
+    {
+      "archivePath": "pages-285/paging-tests.txt",
+      "sourcePath": ".agentlang/pages-285/paging-tests.txt",
+      "sha256": "2d882ed17ed98c21c4e1d7c34e773383d7ea81732f08cc12d03236d8715986df",
+      "sizeBytes": 2929
+    },
+    {
+      "archivePath": "pages-285/paging.txt",
+      "sourcePath": ".agentlang/pages-285/paging.txt",
+      "sha256": "c41f718af0347b69f16e72b3f6a104cf7a8fe5ea42f073523d570a51060cb2de",
+      "sizeBytes": 4784
+    },
+    {
+      "archivePath": "pages-285/parity-linux-store0.txt",
+      "sourcePath": ".agentlang/pages-285/parity-linux-store0.txt",
+      "sha256": "02bc14ce624d93ffb16a27b972b474cc7b941d5f0bd4f2b4e64e9b289e218b47",
+      "sizeBytes": 405
+    },
+    {
+      "archivePath": "pages-285/parity-linux-store32.txt",
+      "sourcePath": ".agentlang/pages-285/parity-linux-store32.txt",
+      "sha256": "f9a4cca0326475793d7012b3852013d1ff1f33d2a3da6ffaa361a7f6d93f73d6",
+      "sizeBytes": 406
+    },
+    {
+      "archivePath": "pages-285/parity-win-store0.txt",
+      "sourcePath": ".agentlang/pages-285/parity-win-store0.txt",
+      "sha256": "788384f0f49f4657f2f14766dbed8433fa18559958f0761bb447e701d96b16be",
+      "sizeBytes": 1902
+    },
+    {
+      "archivePath": "pages-285/parity-win-store32.txt",
+      "sourcePath": ".agentlang/pages-285/parity-win-store32.txt",
+      "sha256": "d1a1d7c1069b3d615c123da479281e2dc60849ba4da3854be3b5a159964a7459",
+      "sizeBytes": 1932
+    },
+    {
+      "archivePath": "pages-285/q.sh",
+      "sourcePath": ".agentlang/pages-285/q.sh",
+      "sha256": "9d99c147d86c3dff3f8e07a7b79fc16788a6826c6231e64a7220ba39c538c54b",
+      "sizeBytes": 516
+    },
+    {
+      "archivePath": "pages-285/rich-html-query.txt",
+      "sourcePath": ".agentlang/pages-285/rich-html-query.txt",
+      "sha256": "9e36515f16b749b9eb4dea98dc57c74a68eb5d0fabef436702a08634b1cc84a3",
+      "sizeBytes": 7827
+    },
+    {
+      "archivePath": "pages-285/run-a3.sh",
+      "sourcePath": ".agentlang/pages-285/run-a3.sh",
+      "sha256": "f2a99295f5e47cdc3770da5daae7a46ebf2b780a1028422f39d55936b536e856",
+      "sizeBytes": 355
+    },
+    {
+      "archivePath": "pages-285/run-around.sh",
+      "sourcePath": ".agentlang/pages-285/run-around.sh",
+      "sha256": "0aceb1ce5b4535b593c5d89bba5dd74001274ace33476ea7858b59ec7c5466b2",
+      "sizeBytes": 559
+    },
+    {
+      "archivePath": "pages-285/run-flow-page.sh",
+      "sourcePath": ".agentlang/pages-285/run-flow-page.sh",
+      "sha256": "4f7297eff1a4d5dafb180ede9919f2ee7450596146224a0a03099add22a3e0e1",
+      "sizeBytes": 264
+    },
+    {
+      "archivePath": "pages-285/run-oracle.sh",
+      "sourcePath": ".agentlang/pages-285/run-oracle.sh",
+      "sha256": "af25687660d6a1b31025b7b3a4d4f64c6ebb0eee83f8cb5851acb8757636ee49",
+      "sizeBytes": 394
+    },
+    {
+      "archivePath": "pages-285/run-pages.sh",
+      "sourcePath": ".agentlang/pages-285/run-pages.sh",
+      "sha256": "e4a35800c9c3edc6c0afe3faa269fb0fe8dc7f804ec4ee1b7db7a2d4be54ec8a",
+      "sizeBytes": 483
+    },
+    {
+      "archivePath": "pages-285/run-paging-flow.sh",
+      "sourcePath": ".agentlang/pages-285/run-paging-flow.sh",
+      "sha256": "697a5ada640b9ea9168adb11bb8a56914c0f05161de210fd50759776e0202754",
+      "sizeBytes": 498
+    },
+    {
+      "archivePath": "pages-285/run-paging.sh",
+      "sourcePath": ".agentlang/pages-285/run-paging.sh",
+      "sha256": "521e6d7756ef288c5055b096d9b6ae0f4759e8ab2d77e4a5b00c12ee4be40148",
+      "sizeBytes": 454
+    },
+    {
+      "archivePath": "pages-285/run-pre.sh",
+      "sourcePath": ".agentlang/pages-285/run-pre.sh",
+      "sha256": "330d6ed25a24f71c2c7aa639d795d635d8aa3638adf219cb292b65a0ea581dd2",
+      "sizeBytes": 263
+    },
+    {
+      "archivePath": "pages-285/run-pre2.sh",
+      "sourcePath": ".agentlang/pages-285/run-pre2.sh",
+      "sha256": "c361eb9bd376c9d14283ecad2d168b00040f03ab23d1144024d4da58f0b6e985",
+      "sizeBytes": 224
+    },
+    {
+      "archivePath": "pages-285/run-rails-page.sh",
+      "sourcePath": ".agentlang/pages-285/run-rails-page.sh",
+      "sha256": "47e872b603e91a647fd2b365dd5b21eb2dca92c5f7f318941bc300cac10b75ec",
+      "sizeBytes": 208
+    },
+    {
+      "archivePath": "pages-285/run-sb-flow.sh",
+      "sourcePath": ".agentlang/pages-285/run-sb-flow.sh",
+      "sha256": "145ffb84ab606ac6a3b1b097f58e8511678ca9112d661cbf367c1468e96741ef",
+      "sizeBytes": 337
+    },
+    {
+      "archivePath": "pages-285/run-sb.sh",
+      "sourcePath": ".agentlang/pages-285/run-sb.sh",
+      "sha256": "5dd1fc2cfc8d79597de610658b385783cc090f7f90e384fc7d5365818dc307b1",
+      "sizeBytes": 313
+    },
+    {
+      "archivePath": "pages-285/runner.sh",
+      "sourcePath": ".agentlang/pages-285/runner.sh",
+      "sha256": "3def5bff057e3a125a989827b20e01b12dbf43c3ed51ea19393984e7d89a9722",
+      "sizeBytes": 1606
+    },
+    {
+      "archivePath": "pages-285/sounds.rb",
+      "sourcePath": ".agentlang/pages-285/sounds.rb",
+      "sha256": "2e247368b6e9db307862af6199380c98e87df53a32bb7cdd9e574c2d0c56b05c",
+      "sizeBytes": 897
+    },
+    {
+      "archivePath": "pages-285/split_layout.py",
+      "sourcePath": ".agentlang/pages-285/split_layout.py",
+      "sha256": "58258ace541bca95f178b286906850bf3945c4d444caa36afc7a016a653d7178",
+      "sizeBytes": 3361
+    },
+    {
+      "archivePath": "pages-285/split_presentation.py",
+      "sourcePath": ".agentlang/pages-285/split_presentation.py",
+      "sha256": "13ba88626f1a912ee7f9a9f81fc373161e01de405c548ba0967671a6526ebd1a",
+      "sizeBytes": 1358
+    },
+    {
+      "archivePath": "pages-285/stack_string.py",
+      "sourcePath": ".agentlang/pages-285/stack_string.py",
+      "sha256": "4d61d4a21039bb56aee32948e976fe7b7eb1409d5244f0984ae16824a1717c53",
+      "sizeBytes": 5247
+    },
+    {
+      "archivePath": "pages-285/tag_tokenizer.txt",
+      "sourcePath": ".agentlang/pages-285/tag_tokenizer.txt",
+      "sha256": "693303289dc23188d14b564b3e89b1ba8d46f8400eeea086577fa3a9b4b55c02",
+      "sizeBytes": 10932
+    },
+    {
+      "archivePath": "pages-285/tags.sh",
+      "sourcePath": ".agentlang/pages-285/tags.sh",
+      "sha256": "c26891b8cc4d2baf23a67638636256be26c076ffcf42e150ffcd2cc140c5955b",
+      "sizeBytes": 563
+    },
+    {
+      "archivePath": "pages-285/wire_around.py",
+      "sourcePath": ".agentlang/pages-285/wire_around.py",
+      "sha256": "ed17ee0d96259e97eef7c40dc4d4c0960fd9c57dc69c3c1a5e0a6582319868ea",
+      "sizeBytes": 14586
+    },
+    {
+      "archivePath": "pages-285/wire_attachments_server.py",
+      "sourcePath": ".agentlang/pages-285/wire_attachments_server.py",
+      "sha256": "a47ad99cde9c9350c874d14c8c34f3c8ce4d3f3089d1adb4b905f83e19841cb2",
+      "sizeBytes": 9218
+    },
+    {
+      "archivePath": "pages-285/wire_autolink.py",
+      "sourcePath": ".agentlang/pages-285/wire_autolink.py",
+      "sha256": "8d082edf3ec5b75f11c6fb63e4d47058fc01f78cadc059f29d7839197f5546b2",
+      "sizeBytes": 7026
+    },
+    {
+      "archivePath": "pages-285/wire_mentions_server.py",
+      "sourcePath": ".agentlang/pages-285/wire_mentions_server.py",
+      "sha256": "42efdf4eb969f2c944690648d71a84275c3b7e6ee03bbe9c8d64aecd43b50049",
+      "sizeBytes": 7110
+    },
+    {
+      "archivePath": "pages-285/wire_paging.py",
+      "sourcePath": ".agentlang/pages-285/wire_paging.py",
+      "sha256": "2932c1bd8bf0265dab80d29ac216c1d296b67e4592c25c24893808de7b9a8ea0",
+      "sizeBytes": 5216
+    },
+    {
+      "archivePath": "pages-285/wire_rich.py",
+      "sourcePath": ".agentlang/pages-285/wire_rich.py",
+      "sha256": "86a4a5ebe767e6af1b837112f8c4945f6b485e0b552c1e48238813d80823b48c",
+      "sizeBytes": 5482
+    },
+    {
+      "archivePath": "pages-285/wire_sidebar.py",
+      "sourcePath": ".agentlang/pages-285/wire_sidebar.py",
+      "sha256": "5ac4b08c3f24330c5024b60ed4ae7b190b25331bfde3e14d632081fe42270028",
+      "sizeBytes": 3321
+    },
+    {
+      "archivePath": "sweep/PLAN.md",
+      "sourcePath": ".agentlang/linux-sweep-285/PLAN.md",
+      "sha256": "aef2b3d9c3dfdb6afdda4fbf3e4373f7811c45c98c7ef4280785ab6f6b830bda",
+      "sizeBytes": 5044
+    },
+    {
+      "archivePath": "sweep/sweep-lifetime.sh",
+      "sourcePath": ".agentlang/linux-sweep-285/sweep-lifetime.sh",
+      "sha256": "d517c14616fed3432295ff2dd022005b90fcc2f86ce867758414d91237ecbea8",
+      "sizeBytes": 14259
+    },
+    {
+      "archivePath": "sweep/run-sweep.sh",
+      "sourcePath": ".agentlang/linux-sweep-285/run-sweep.sh",
+      "sha256": "ef668ad32d073ef69463797ecfd100b0affcc9fe369e8e769d5c195c1ed8a397",
+      "sizeBytes": 1611
+    },
+    {
+      "archivePath": "sweep/cleanup-native.sh",
+      "sourcePath": ".agentlang/linux-sweep-285/cleanup-native.sh",
+      "sha256": "e9b1be69ee843e5cc8bcea954e29d2318fe9161da70018a622b49247195d412c",
+      "sizeBytes": 482
+    },
+    {
+      "archivePath": "sweep/aggregate.py",
+      "sourcePath": ".agentlang/linux-sweep-285/aggregate.py",
+      "sha256": "358481dc12f6677cc024f47a51fe93bf3051195cc6cf2f9c17ee9638db84b70b",
+      "sizeBytes": 2970
+    },
+    {
+      "archivePath": "sweep/aggregate-s285b.md",
+      "sourcePath": ".agentlang/linux-sweep-285/aggregate-s285b.md",
+      "sha256": "2046ba40148c1b21a005c713da20a18c176347e142eac95714308bb35625ab87",
+      "sizeBytes": 3955
+    },
+    {
+      "archivePath": "sweep/aggregate-s285b.json",
+      "sourcePath": ".agentlang/linux-sweep-285/aggregate-s285b.json",
+      "sha256": "4bb0291ccaba4a983e379ee717998d2db4b2fc3cae890bae862961ee5378cba9",
+      "sizeBytes": 8307
+    },
+    {
+      "archivePath": "sweep/sweep-s285b.log",
+      "sourcePath": ".agentlang/linux-sweep-285/sweep-s285b.log",
+      "sha256": "253ff6b18750271d6dd85976b531753541f364df5a0e6d6346bcaec559d3c239",
+      "sizeBytes": 4058
+    },
+    {
+      "archivePath": "sweep/wait-s285b.log",
+      "sourcePath": ".agentlang/linux-sweep-285/wait-s285b.log",
+      "sha256": "eefd7b80e64d25402c6e51d66b7086b791d22a1bde131d39fb0044790fee18dd",
+      "sizeBytes": 166
+    },
+    {
+      "archivePath": "sweep/contamination-screen.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/contamination-screen.txt",
+      "sha256": "d449e88c7767108c924674a66d8f8399cba61b04f3f9ad8ff7cb84cb6a575d49",
+      "sizeBytes": 257
+    },
+    {
+      "archivePath": "sweep/flowbin.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/flowbin.txt",
+      "sha256": "9f6feacf853e1879511d931e444a5a699b7400ded27314d19b441485af48089b",
+      "sizeBytes": 167
+    },
+    {
+      "archivePath": "sweep/wait-quiet-then-sweep.sh",
+      "sourcePath": ".agentlang/linux-sweep-285/wait-quiet-then-sweep.sh",
+      "sha256": "cbd364aa9a337956510690e97024e78a6db415d735a2ea01bde57020c0d460e7",
+      "sizeBytes": 574
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/affinity.txt",
+      "sha256": "91ffc5f34fb0331357981b2dbcbf14975dc4c38d4e31db6c323cf59784f0e3f8",
+      "sizeBytes": 9
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/cache-env.txt",
+      "sha256": "786de59cd5774d90702b88f5f211e0c1cd3c21ec2a8ad896c8668bc145a4a07e",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/cells.jsonl",
+      "sha256": "2a76d4d8c2cd85b008a0051021c5f43a01a761b6cd5483e6e3e885182d2322a3",
+      "sizeBytes": 1370
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/client-time-c128.txt",
+      "sha256": "9d2c2b41243734c4520cfa396a9a6a171c20a30cc7b3f4c2967a7d888e2c3d03",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/client-time-c16.txt",
+      "sha256": "4e9464f44ed9624e0ec548ad85e9f9626ac77d32d6045dd34a02152d331454e5",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/client-time-c32.txt",
+      "sha256": "1233de0f84241cf44432be42e54197f5a913ba288577829fd04ceb2c74f09577",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/client-time-c64.txt",
+      "sha256": "859c8b050b342d1cfcb081ac8df207dcdd690f880091fdab6a1524f9bfae75b5",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/driver.log",
+      "sha256": "a56e09e87c3a20d7fa7a8652fd09570e75e8106470fee4e52139ded6a3e2abbe",
+      "sizeBytes": 3121
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/measure-c128.json",
+      "sha256": "6b3a19dd7c40e74b000fe9a4cf61ed3a5089082cf8308e024066dd7c2f391dd6",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/measure-c16.json",
+      "sha256": "b10a3b83cfb303befbf3679138c444014a20b9c25acb0611f439c65b9c9855df",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/measure-c32.json",
+      "sha256": "24587bdf6a02409c706f5027ee3343ae071fdac735acca03dfad15c23de9df10",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/measure-c64.json",
+      "sha256": "b3d6ba3a1c66f5cf840fb3780e4cf004cdcb4e5009e83b106d2644cb0f9c3c4d",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/procs-ready.txt",
+      "sha256": "8b0940bf236498ba4fa1d76f217a95ce7478bc1b1e2bd654759f3d2e2501608e",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/pss.txt",
+      "sha256": "e6fec871450c46514ebaa3e54e62644af0d69ee75ca26710e7d9abe5e528d3a8",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/server.log",
+      "sha256": "4432dd1caf18f0a93d6bd8708a6cd752324b31fadb9a140daebd9a2f892572ca",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/warmup-c128.json",
+      "sha256": "8b9bedcfa81e2932b9bc486baea64f1eb7b2bfb45d02be5b0b9d4a5da229fa7d",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/warmup-c16.json",
+      "sha256": "61fdd587932f728e312b753fd020acd10e8f1d2a68cc3ba5fa31d8779f385e98",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/warmup-c32.json",
+      "sha256": "ef57f01c0b7b5829c359f86218a3e0c31807bd486a0c8e0f6d4771ee7630c029",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r1/warmup-c64.json",
+      "sha256": "623f2ecbf5063d821b5e3fcaad1cb93ea2a33e325a473d9ca960f895baf61275",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/affinity.txt",
+      "sha256": "3665e7eb70c18240b5e1a06181c13ca940c876112cf822704e287946a34a3283",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/cache-env.txt",
+      "sha256": "786de59cd5774d90702b88f5f211e0c1cd3c21ec2a8ad896c8668bc145a4a07e",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/cells.jsonl",
+      "sha256": "676d29cf1b756629c4c6b1a86dbca002511356e14d41b0b4dfe2fe62bfce25cd",
+      "sizeBytes": 1366
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/client-time-c128.txt",
+      "sha256": "0308fe20ca36ef220b48d7bfa1b16e21969c8731d00b9abdd4d3dab7dccc3419",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/client-time-c16.txt",
+      "sha256": "b0252ba80173529f67b98343803b87fbbfd9b08f93f4837614967a12a3f4f91d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/client-time-c32.txt",
+      "sha256": "9fa4535d3abaebfb13c818ea888b71f1db57e9a0f95ddac7f398430334b892a5",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/client-time-c64.txt",
+      "sha256": "c595a44676a34807433e6c1189d99f6d641b6e8b17a292f579c50c6bf231001f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/driver.log",
+      "sha256": "f9ff93ce606197f952db2249735015b327c8e90a2aa31fe98fb0b0180ead6905",
+      "sizeBytes": 3118
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/measure-c128.json",
+      "sha256": "3a6ac85b7d60ab6c0a5029e67ff4811828cda846540d572ab1ccba1ead53900e",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/measure-c16.json",
+      "sha256": "0c935b0a08ae53c78e94b7256428cdd5bd8a968130357b90207553db8363ca8f",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/measure-c32.json",
+      "sha256": "3482b7f3f012ec8aa9887504657d5511447f99ca6f7bd5dcbd33dd95f9c3fdde",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/measure-c64.json",
+      "sha256": "96bba052c5aeb25c79d589d4aba8c006f57ac4029bda3105b89a30d93bc60937",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/procs-ready.txt",
+      "sha256": "92d185ab8c87bd9979e4814505027d52cccce18c5accf80f1dc575fe24729aa4",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/pss.txt",
+      "sha256": "0d296e568729666620ef73e19dae46678d8b3c9d04722c9c90ba0f29692bde50",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/server.log",
+      "sha256": "3a396712a34557c0f73f5b80449e3a847bd05b564189a7ee11c1d7f8bc0245b7",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/warmup-c128.json",
+      "sha256": "888340ca575b92ec6160a8762f55d4b9c4dff4dd014b53301e7fdd7f96dbc0c9",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/warmup-c16.json",
+      "sha256": "25f52b8b3900324f65f6bf5e193d6c41c9b86f4fed2755d5507236e87a7a5259",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/warmup-c32.json",
+      "sha256": "d83edb87435e8201fa35d3097577b90d725e405f37c37b2247e48f89153067a2",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r2/warmup-c64.json",
+      "sha256": "f6dec6e9339c7e4ff050a59c9e8ef40a4b54d6bfee76392de787d3528f3437a5",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/affinity.txt",
+      "sha256": "35ee4fedefd3e835d248850cd6a2f3e13605c031033ecefbf5f23f62ac31800d",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/cache-env.txt",
+      "sha256": "786de59cd5774d90702b88f5f211e0c1cd3c21ec2a8ad896c8668bc145a4a07e",
+      "sizeBytes": 129
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/cells.jsonl",
+      "sha256": "972a630b7fe16bb0bd8936ab873f01a75d2d6016971375c5cde3c51382a01ca0",
+      "sizeBytes": 1368
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/client-time-c128.txt",
+      "sha256": "2057d71ae0afbd07da08a5ab960bdc1ea21cba7ff90775afe692d63bfe55a40a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/client-time-c16.txt",
+      "sha256": "66e842046259ad38bb536e8f1b1e8cbbb40d90c7a3a3c8ce35f98b158eb6847e",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/client-time-c32.txt",
+      "sha256": "80a576b8486d0d8d51d5f16a8980d7b1d6a150a985090eefe61f6581dea04c4a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/client-time-c64.txt",
+      "sha256": "30724858efdbdad5280d352fad81b3ba52a6b8afab9e3dd76cbafc318086a2b3",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/driver.log",
+      "sha256": "2b024c4c40f201d81c832de5bcc4cdc5529cceb3e1acd369c9bd81914a9c003c",
+      "sizeBytes": 3120
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/measure-c128.json",
+      "sha256": "37f0ac163607c7134951666bd95e69d9ea02d51bc998c27b75b645b7fbb905cc",
+      "sizeBytes": 327
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/measure-c16.json",
+      "sha256": "dfc185ebc2f4a6f97fd174007a95ca2e1f0668de45799c22bd765d520f8d7500",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/measure-c32.json",
+      "sha256": "50a273c5f17cec9716712ae57a1773ea1cea88996150786cb88f831dfcf7d7e9",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/measure-c64.json",
+      "sha256": "c128c285512855b4e37a16105a961fa16409a2a1ab2c2c6cf131e2f577e55a06",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/procs-ready.txt",
+      "sha256": "0758b7b63dd0ee634824995b7fb4ffb06e4bea07cfb6288bdc3b0030d1aed291",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/pss.txt",
+      "sha256": "32b3feed58be0ef8cfc755895ffaab6e9aab057e8e7d9d3a9462207c1177afcd",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/server.log",
+      "sha256": "e17ef845a0934daf93a9465fd2f0bfbd1fafb5c2eebef08d4fefe2568c231d9e",
+      "sizeBytes": 759
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/warmup-c128.json",
+      "sha256": "3683988c17c93a5ab8d793f485425f56eefe4d6464fd567cd7fa291a28012fbb",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/warmup-c16.json",
+      "sha256": "6ba3f44e22cf0f3f71b7031bb1f01b1bdc1ac0cf753e6b3655cb4555382fe680",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/warmup-c32.json",
+      "sha256": "031ef8b9369111cd3b0efee77728b310e535906c8e2e9162cd3c4863e69ad59f",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-off-r3/warmup-c64.json",
+      "sha256": "94c94e239aab4775154b6a5b52ca0d34bad46e2d1510f6c45294e209e49610c1",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/affinity.txt",
+      "sha256": "3b00344fc4db8bad80734d52585babcbf0df250c62b40571cf878b7f529e91dc",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/cache-env.txt",
+      "sha256": "934940c280a340b03b3ea46b962e6afcb7fde93470c61be4e4506047a94251e0",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/cells.jsonl",
+      "sha256": "ee82a2c93673a31452350eb2b4e113a8c88ad3569d85f05a0e8f403811f1da5b",
+      "sizeBytes": 1355
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/client-time-c128.txt",
+      "sha256": "f0aaae18c1d792fdf21be0ee80559d0729d5de3f0ddf0b83067e0918b3c7860a",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/client-time-c16.txt",
+      "sha256": "68ca77ffc2640c6206a125848244418fe9d4c44531512e28719a01d5fbb7f790",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/client-time-c32.txt",
+      "sha256": "4c04e8d841ef7c156e09fc2950c3c80dd543e6f4435e2c4a9333e3427a7fe0db",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/client-time-c64.txt",
+      "sha256": "4c4023e7518e7560aff7586be8b1af21421d3a6bee56f3001e5e0c431cb8aad5",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/driver.log",
+      "sha256": "c8a232363bd3e545126dbc7e2417641b7684a245635e88171110180aa175e064",
+      "sizeBytes": 3106
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/measure-c128.json",
+      "sha256": "6bb762184fcb0b2cd841a85b79ad6248a038907dc63683e4c494061138da12a0",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/measure-c16.json",
+      "sha256": "17111bbb354f1fbf0dec83b3035eb09f8b8a92c86063b997762055674dc857eb",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/measure-c32.json",
+      "sha256": "e207d9e30e3e96359a7d0f9afc037d808596708c67f369560a7a89da6f53d067",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/measure-c64.json",
+      "sha256": "f1d7c429f762f01f58d8c7f9b094edb53616d95b5568e856eb49c6eadf7ad3e4",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/procs-ready.txt",
+      "sha256": "297483b6ee2b9a76d969b3b914329ecebf69588fe8ea1177837d6e3f4e30e127",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/pss.txt",
+      "sha256": "ae331ab5df05334bb2be6b30af5af1372c3407389c09dbc02baf8538169edab0",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/server.log",
+      "sha256": "c0245a588c35548ae8edcef5ccbe705f2b9b3bf17dd1cdd336535346a8c6c4b4",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/warmup-c128.json",
+      "sha256": "b00553ae2925b3b17b561948621d0c29aa087230a34620d46d80735782dff877",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/warmup-c16.json",
+      "sha256": "ae03bcd5404ea549a668ca5278695d8f0fc01ef62ab90ccae09a13ceebd08148",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/warmup-c32.json",
+      "sha256": "8f32e149c75facb9c8629897777fd8a72a8bd9635920fa24db1f3ca41ed9a166",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r1/warmup-c64.json",
+      "sha256": "82a2ba609a5ad7c2de04d9e02d2b9f4919131396621d334c88ae3ee88f4f01b7",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/affinity.txt",
+      "sha256": "90207c59e974744b58b28a3195e9662078ac6b318199591b4f6ea96ea8e1a810",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/cache-env.txt",
+      "sha256": "934940c280a340b03b3ea46b962e6afcb7fde93470c61be4e4506047a94251e0",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/cells.jsonl",
+      "sha256": "f3d788a5f14e25805a63246151cfca8f702ed54bd66a2c26a88cb9792d5ba899",
+      "sizeBytes": 1356
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/client-time-c128.txt",
+      "sha256": "d19d4398b299df189cb5b511fb70b7cf42d4ff4cacc4126e9369268fb93fe133",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/client-time-c16.txt",
+      "sha256": "414ae21d7385a997f91d5c32c6a485c2f2411a4652a19b70162941f8e7fec128",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/client-time-c32.txt",
+      "sha256": "4d6ee4ba566a2b39f31801938f496b610c038a1cfd035f73b6588bee9f7d2acf",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/client-time-c64.txt",
+      "sha256": "45357fa733a3b37427620292e52bb84b2ef95f099dfaf0a4e2a70bb92644fc9f",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/driver.log",
+      "sha256": "fbbf9b8fdb8cc24e938103880ce6f7067eae01c0c584e4d7aed44bbb00367fc2",
+      "sizeBytes": 3107
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/measure-c128.json",
+      "sha256": "d2e0e7e932ce23a63073705f4d10d66550439440ec4b3357959b30e22e9ee3b8",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/measure-c16.json",
+      "sha256": "943cca09fe2b268d46a8a79e10bed889ebf2d892a48465a5b8528429a4df8d58",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/measure-c32.json",
+      "sha256": "a94859c882181c93553f1796e72f7dd4372c94c3611ef908998f4769f2add68b",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/measure-c64.json",
+      "sha256": "038b4c05e76ce62cb1834253f77417823ab86d2a6717fbd6019ca9878edd1342",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/procs-ready.txt",
+      "sha256": "ee8e20400b8884c1d7d5b9d230f03dc74d5a64c97300cbeee281ff719e4c7cd8",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/pss.txt",
+      "sha256": "1bc23935a059049caf4a4da73837f513a02a4dfc2d76d7f4a8f6349ec71d29eb",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/server.log",
+      "sha256": "e201941459383c854271541bbc7f68b31fdcf4a639172ca171c4c6de1350fd15",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/warmup-c128.json",
+      "sha256": "c390df1555de555337dcf1d9c49e8ce7cd9bc4b600b1c38f1b6c2f638d389c86",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/warmup-c16.json",
+      "sha256": "00db159a958d8ea8f1ddad8f48992553a1549ef898822e718e3b22552e3a57dd",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/warmup-c32.json",
+      "sha256": "673a39e2c6b443994f32421052c2210f0745d6175c9083cea3a490cd1aad6c41",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r2/warmup-c64.json",
+      "sha256": "75acb9209cd20d87b377879b1bfb6aeb63a3514cede86b35956202d0e8f54221",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/affinity.txt",
+      "sha256": "2c00472bb94b4259a4a28172d4507001c2d62b37e60c035bea17a7863c969208",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/cache-env.txt",
+      "sha256": "934940c280a340b03b3ea46b962e6afcb7fde93470c61be4e4506047a94251e0",
+      "sizeBytes": 130
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/cells.jsonl",
+      "sha256": "7607cfb93a01aad0cb5c8ea9b26ac985c6bb41fbd5966a754917d78bf6fb0a5c",
+      "sizeBytes": 1352
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/client-time-c128.txt",
+      "sha256": "7d7a099ecf879aa51d00e8f01126b4a3c1af2a2c6b0ec1d415a0299e4aa039ae",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/client-time-c16.txt",
+      "sha256": "01f278117434c021278ffb804af27273ff87600736a9c53d40521c82da515511",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/client-time-c32.txt",
+      "sha256": "1c652f4196a552f297c67b9b06025c5dbc196dca59fbaac8734807c4b9e75eab",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/client-time-c64.txt",
+      "sha256": "4e920702cdfb27cf37b051b91ed82456f4b2dbf8ede5fb12784930eb7159d07d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/driver.log",
+      "sha256": "74899aa1c08b320b00d5801af45f3f17e8b42e44fe539fadbffea709ef690b7d",
+      "sizeBytes": 3103
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/measure-c128.json",
+      "sha256": "8400f7a138eb19a3c9ce75d458101a46c14d71fe20807d9ea8de9c57486b2d97",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/measure-c16.json",
+      "sha256": "3264243757008fb2e96b2c26c4f7d8828418a89c5736fe1f879f3eaccb67cdc1",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/measure-c32.json",
+      "sha256": "010075fb40acbe1c8a257ae8783ec285be327cff7c44f90bcb6229def6a53370",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/measure-c64.json",
+      "sha256": "9da74e8981ace1392bcab190fb5d2650b964f6fea49d54c3e4682f6ed2a2d6dc",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/procs-ready.txt",
+      "sha256": "28ecfe73c65fec856fe6f03ef49ef9695638dd6f1b53e5ca0b079d23ad6f3467",
+      "sizeBytes": 147
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/pss.txt",
+      "sha256": "2e0085cf32bac76526a58d562453583c6f5df9316ef9acf15c746e619d6a3710",
+      "sizeBytes": 201
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/server.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/server.log",
+      "sha256": "a571c57715a6c2e94abb9418bf1281748f039d453a7ccd41f57d08dc30dd4a8c",
+      "sizeBytes": 776
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/warmup-c128.json",
+      "sha256": "9606047d545e5b5af6e8d83a8227256f54a3003961cd7ec5dc299d9d35ab4798",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/warmup-c16.json",
+      "sha256": "cf90f62519d9b2d3c8587a73106e59c981b00805936ddad84e9e06d374b7bae9",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/warmup-c32.json",
+      "sha256": "6789fc4d43bd970f7b4e00a9c1f9f23626865385a76ba29f6ec7fb1daef83655",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-flow-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-flow-on-r3/warmup-c64.json",
+      "sha256": "3340fc7894e7e216ba27f6b1f0d362294e9411668d362667d3fecd561f883d8a",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/affinity.txt",
+      "sha256": "54c6af5b4819cc35ff8821d20bbd65a0b663a3865183476be9af977f840db28b",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/cells.jsonl",
+      "sha256": "5a81c8e807bbc785a4bf62af5f3f1850588f754d65bc5c6bec971a4dff1b9fd9",
+      "sizeBytes": 1383
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/client-time-c128.txt",
+      "sha256": "cf2f5f9617f7e027e828164d94993bc27dd5bd17804684efba6581708a2e59f8",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/client-time-c16.txt",
+      "sha256": "85735690a75279f66db92ba8e0da01838960959abc8d2627f17981650913c1f4",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/client-time-c32.txt",
+      "sha256": "3dd9ed481b6a47b9e0e48857a3fe691b6c2f05bdeed41d804bb9dbbca07cb7a0",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/client-time-c64.txt",
+      "sha256": "09e6332879ed7f3a5fdc866a6497f432c113fe932fb1ca5c87fef92ebaeaa187",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/driver.log",
+      "sha256": "e5de770f6d5d99c7b2675a124cf024a785629ce3412b1fdba908302821b62c47",
+      "sizeBytes": 3180
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/measure-c128.json",
+      "sha256": "75f49acc92104f7fd9cb8f642621acc8cd9e9bcbb1f648d3d70071f06dc11a34",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/measure-c16.json",
+      "sha256": "601e66a77d559eb4dae804c4d093fa6d64b13e91cc772ec24024c73c2db19a58",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/measure-c32.json",
+      "sha256": "91ab1dd404d72e7ecb2035647dd9c1e7dea8f1fb3b226c2c0fd0e5532c2cc49b",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/measure-c64.json",
+      "sha256": "0c2e018f8f41da756eb3cdd6a61743ea4532aee10c5ffa03aa0d57fb06862dd6",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/procs-ready.txt",
+      "sha256": "17c8bd800cf4a12754887f31e2ee68bd6ac1fb145c67cf1ad19a88045d85b028",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/pss.txt",
+      "sha256": "be18893bfb18f73948d584d0a87fcdd7bd6e6227a6f951aca6838e019515acc5",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/warmup-c128.json",
+      "sha256": "cf95d02a3c57950607dae1933b31d2d48a6b9a6bee2ed2fda2d4ceedb94b36bd",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/warmup-c16.json",
+      "sha256": "6bed33a7fc2c12b188addb0d3b225b5e48818cab9f8b0d08fe7906dd7703e88b",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/warmup-c32.json",
+      "sha256": "dd7f6454364a3ce0961108eaa4ca762fc013a1551c08d7294daab0348cc6a3cf",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r1/warmup-c64.json",
+      "sha256": "60aab4d9e4e69329cc2910314b9368298ce9822d810d0167b3692d7b6071c2b1",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/affinity.txt",
+      "sha256": "11b3e4f3ed72ea6b3f22e30f9b3f3f6ed5a4560c471c993ac53462bdec0d56e5",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/cells.jsonl",
+      "sha256": "84264d190af3a46c25ba9fab1573a87e0f58d1147eb8d11beb87043402853451",
+      "sizeBytes": 1384
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/client-time-c128.txt",
+      "sha256": "9bc9b03a3db4c90a56d4aad25e8dee1698f68c03d2605ed9bb2c13a1af627fa9",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/client-time-c16.txt",
+      "sha256": "80f9c24223bcfb156b638d0feb7d74ad68d50d36766fe1600e1b67b4c838f919",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/client-time-c32.txt",
+      "sha256": "dbc5cdfa510ac1b1df41acd1f16f2070667d61052a412896772f2c2ba791d3f7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/client-time-c64.txt",
+      "sha256": "bae42f9b99037c59a825cfbc384a33c463cd31b91e77a498463da286117fec41",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/driver.log",
+      "sha256": "c482ac68c845c14899ebbfbff505b3bca8739a8be44970745ac6170fb82ceda8",
+      "sizeBytes": 3181
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/measure-c128.json",
+      "sha256": "53025dcd3de647778a5c39b0aa37035972fc17ef80b4328c6a3e63481d6f05d9",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/measure-c16.json",
+      "sha256": "4aa47240ffaf5951e9c22808a1679a7557d4d8cf28e2129768f2068ee899c1a4",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/measure-c32.json",
+      "sha256": "ac7bbd01c5c22f412ca6dfea0ace23be7981a2141cc1d18c1fdfafe9856b709e",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/measure-c64.json",
+      "sha256": "6e04fa08ee2580db36e59340976c17947db7dac24031e8629b997a482aef9edd",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/procs-ready.txt",
+      "sha256": "c57a0e2c0a49245ae89bb2eefc700fdc1d01a4eb0145f58fcbceb1efe58ce89b",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/pss.txt",
+      "sha256": "e255f601e01d3555911fc2b84ba3d88411518c7675aa9f5370d0840beac87c54",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/warmup-c128.json",
+      "sha256": "8bbaa74d063aa12a0456fa91afcff3f3a11c46ad57433957af06584a40c862ce",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/warmup-c16.json",
+      "sha256": "622338d5713501ee0fef205cfba9f4eecc63c383caf297ecc6583924e0a28c1f",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/warmup-c32.json",
+      "sha256": "cee844eabd990e830cb1b3802e420ab2d74240c42961bf7abc41b5dd5052da1b",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r2/warmup-c64.json",
+      "sha256": "2c20b57a13b2cfde0607946f31113f286a1090f70ba786c38d9728eb46e2a7ff",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/affinity.txt",
+      "sha256": "519aa3bb639683c32f847d84d7dd577e000e7255667e71390d5122a6e110276e",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/cells.jsonl",
+      "sha256": "109714f499317b50b6b764eba78d809e916fde5a8e8a58bbf2ff91d9271d3414",
+      "sizeBytes": 1384
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/client-time-c128.txt",
+      "sha256": "aaa848bc4464b58f09902240e0334a073b20307d3a51e0141aea44d6c23943fe",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/client-time-c16.txt",
+      "sha256": "18f5a02913e42d0e3495ab2450ccf1628728f6170b463b828cb8163d21670eb1",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/client-time-c32.txt",
+      "sha256": "d49f186874a056b18cd44b8b0db9a1510b56dce679122f1875a96c98dbf175ae",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/client-time-c64.txt",
+      "sha256": "5e16cff8d337430de095225de04214385e73d9f581d405d80b29d8b425a1a88d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/driver.log",
+      "sha256": "23802a3e1abd033eec59a64fdfa0042e28f9f25278991f42203a6ea9f5a5e113",
+      "sizeBytes": 3181
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/measure-c128.json",
+      "sha256": "ff2ffafe1a463bdea38743c6aa4ff93412edbff8ae996bda04ba47ef37c2e1ad",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/measure-c16.json",
+      "sha256": "9967f6ed53c40028d83e4f46e342ddc90e78f6fc0be0f2ee06b84a080d6a507f",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/measure-c32.json",
+      "sha256": "bf882030bdf4f75e9cdbf5b21f46446dee1dd22f48bf2db4b16b2d786a985ce4",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/measure-c64.json",
+      "sha256": "68423b9529b89436b9f503c2a007dde1adbe293e5738cf8668fb1f2796a9555b",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/procs-ready.txt",
+      "sha256": "a7befdef575be69b9f44326610c7732865d1709826af2c87147894b3a9469ef0",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/pss.txt",
+      "sha256": "e505884ce1ec5451958815889daa429db3068cf031ad50e433ba9dd9746da1f8",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/warmup-c128.json",
+      "sha256": "f8d0430c3c2a5c7b97cf13c5b950d4b61aa2e0516c137e858b63cceaee7e70f6",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/warmup-c16.json",
+      "sha256": "2df79ec54ca4f9081bb59306218c891e988cf2023e9502e3379617ec384e30a8",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/warmup-c32.json",
+      "sha256": "62627bf6de0c5de2bf8168d37773111b575559734c0b54e49d22b04440b2fde8",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-off-r3/warmup-c64.json",
+      "sha256": "791f26075e57a258fbf674af200a7790d278aa7f227619bf1af14e9c15cf6368",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/affinity.txt",
+      "sha256": "b854fc3e598a510ea32611c0cc584b1f6917cb6d78aca4cbc93938a2debb5261",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/cells.jsonl",
+      "sha256": "13fa6a0452e448a0f5656c88ff6b0fba9bd60a82502b21f2b29b12815ccbcfa1",
+      "sizeBytes": 1372
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/client-time-c128.txt",
+      "sha256": "df54a8ca9a5531b087ebdc44e0a70f32234392702360b39d878a096067a4ec17",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/client-time-c16.txt",
+      "sha256": "45d99a88b616716d51eff3ee437e2462fcba30c6e67677cff0fbe997487ec912",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/client-time-c32.txt",
+      "sha256": "a6519ceb88e078e210351ef5ccc6f28a0efa4c2ef5f8adc6910885a13af517f7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/client-time-c64.txt",
+      "sha256": "7b45884ed341a3342b28163b59d3d694dca34d6aff47c55921a99412a566b315",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/driver.log",
+      "sha256": "5f1de977c0e36ec46ac64bab3e85707be2f5d4382a067a8aab855e9afc397d65",
+      "sizeBytes": 3171
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/measure-c128.json",
+      "sha256": "72f481bb54fe5e43b22eee6d216ec765627af4521fce8e511d240c7870834fcf",
+      "sizeBytes": 323
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/measure-c16.json",
+      "sha256": "27b709c2a15e988ca56d9b1f8d087b837e3314b61513c8b261e86dc01ef49396",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/measure-c32.json",
+      "sha256": "7fba87105f56b46c889259940750bc16f4bfcfea2b1bffb9572d1127ce47ff42",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/measure-c64.json",
+      "sha256": "53a25c9a19f67f033a033de4f01f6cd8cfd89ac9b14e7b5fa75ab3c0b3d5cd17",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/procs-ready.txt",
+      "sha256": "bb08d3eb4f5f47c45327768d9d87fbdb1a3e8cf10035e2bcd520a0e70e715040",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/pss.txt",
+      "sha256": "4b0db2b3be0304861c201d57a85f184060ae42058d8355426c40bd592bf5802a",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/warmup-c128.json",
+      "sha256": "ebef2491eb42d23103ed834555e1c5158f77bdf107fd436929967b9e8a6a46b7",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/warmup-c16.json",
+      "sha256": "eb27cb977ce6df0a62c908e096ef1ee05cd88d9f03ab1e870232b3b85b708e89",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/warmup-c32.json",
+      "sha256": "1648b71f3b3eec2acb2e034bac76ee6504f54cc07c5044709a8d566528c0321c",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r1/warmup-c64.json",
+      "sha256": "4949e4292b828d4a02475a0c235b74a8cb611901fd5649b342fed28a7715d229",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/affinity.txt",
+      "sha256": "0e6562e465338c73975f1189f22861dd7509622b51f50b16e3f2eada151bb7b0",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/cells.jsonl",
+      "sha256": "b52e259884d103b383095a2ff2ffda93cbbb3fa4b317aa4dc67cf98dd715a551",
+      "sizeBytes": 1375
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/client-time-c128.txt",
+      "sha256": "7ad4c2540ea47258e735c8b12fe8b214094b0aebb07889f19e6cc9d5d9a7bbef",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/client-time-c16.txt",
+      "sha256": "93c5cf4fcde5e219f830e25bdd50150da19364f9c5a3df9c8614ddde47772b38",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/client-time-c32.txt",
+      "sha256": "aebc2e24f296b2eb00dce01d4f024b9c1966aeb236af12bb58595bad279ab795",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/client-time-c64.txt",
+      "sha256": "a48cc3cf169503dd8e4336ada3a4c049bfe211ed44c7facec33e2483935b8bb2",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/driver.log",
+      "sha256": "d5db527d340695ba1687573e145bc6f85f21c8d64f4388932c54f369154f6140",
+      "sizeBytes": 3174
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/measure-c128.json",
+      "sha256": "d8246c7defb4cb76c9102e9d7d80eb42986471099cf6163b9fc7c5ec93d64b2c",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/measure-c16.json",
+      "sha256": "e3816e4bdeb1b58c2ceb10885b9318fb5d832a71706dc27d751064e833f9f62b",
+      "sizeBytes": 319
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/measure-c32.json",
+      "sha256": "95ff825b2eb4ad42cada06ab19ef7c3dd0ec43da43ce5416c346adc291d062a3",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/measure-c64.json",
+      "sha256": "29f53fc1f88e951948678ac4fa586801909bbe563559c791dc56492c65f8a7ba",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/procs-ready.txt",
+      "sha256": "90eec05fcb75314ef4fe74dec1b810f371ac2556ee7febc4281e17c1930f4b6a",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/pss.txt",
+      "sha256": "671208e0fedf99682614ae6960dd55d1263e30d1f035060d4802307bc0864e86",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/warmup-c128.json",
+      "sha256": "f7c3d3e94f93b69f891508b9197a3758f99801b97031aa0a3cd1be1a5b145e2f",
+      "sizeBytes": 324
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/warmup-c16.json",
+      "sha256": "b513f80f5f3dc3169df04b86916ca392145bc55ac76c51238d92e52a9e29c8de",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/warmup-c32.json",
+      "sha256": "98db714612a2cc86806ce5208b1f4375066182be7613f88966536f253aace7d7",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r2/warmup-c64.json",
+      "sha256": "2254aed311e5037f70fbf25568b283ecd05abe68964797d10375f4b6c2e22a94",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/affinity.txt",
+      "sha256": "93c3a5acd386246bc0177ea780c2246fd4ba332ddb17aed897baf3c127987448",
+      "sizeBytes": 210
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/cache-env.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/cells.jsonl",
+      "sha256": "c631034df211732b95dce5c53349ad393cbe5f59913399ed5c02719b903ec63c",
+      "sizeBytes": 1372
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/client-time-c128.txt",
+      "sha256": "0352ad0e4d070646f2342c5d07676e50179a0d4b1663689afd17ecfcfa8d31f0",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/client-time-c16.txt",
+      "sha256": "d9aa3f421748989f2ba97e21402e50cf251821113d06e338abf9c2c075c49479",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/client-time-c32.txt",
+      "sha256": "477575709aee3450dd8cf86be2957c80a72cbeaf244d553075c0c7c8c4b54bce",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/client-time-c64.txt",
+      "sha256": "90d218c506e537ab900e87d59b405ba67501b6894fd06e48b7974d52af409ccd",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/contracts.err.log",
+      "sha256": "e15dbdaebc9b3553debef39a8eb37c3c62e278216228c88fb619e138dbfd97d3",
+      "sizeBytes": 625
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/driver.log",
+      "sha256": "0c4b62f7e9d39a09ffe37a652df6172446ca8978095b36c0cd158fb008a48fbc",
+      "sizeBytes": 3171
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/measure-c128.json",
+      "sha256": "9307b0bbb016be0f27926ee83715725c8b49593c71bc501213f56795589590c5",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/measure-c16.json",
+      "sha256": "b59919bf9efcf59f0ff3e5fd4099a63f8290128cb7e08166a31062467e337c6d",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/measure-c32.json",
+      "sha256": "709e45c1194939b8023c0023c953b17bd5fb9a17570fe3fd8ca30cec8285f731",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/measure-c64.json",
+      "sha256": "ea2153fa57f16ee97c9c597af22791c14daa12f48d3e94e64e5f236d76ad21d6",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/procs-ready.txt",
+      "sha256": "a6497ceb508126fa07364b1ee1c19f217274b64db698b0c63f05de15ec3a2c70",
+      "sizeBytes": 837
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/pss.txt",
+      "sha256": "783b128786c681e2f1b6ec262c6781e3daa02c4d41a013391be508f44d1da179",
+      "sizeBytes": 537
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/warmup-c128.json",
+      "sha256": "2738bcda83d487d1cfb02f12a9ff8087c327de871f791be9e8b5ec69743f4532",
+      "sizeBytes": 326
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/warmup-c16.json",
+      "sha256": "389e46ff8c21fab793609b4b51ba4134a1fdd21d6bc3e74aec7315219e1b35e2",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/warmup-c32.json",
+      "sha256": "d4c5d162bc1cdc9a03905d3d76d2437f40505ee16a727bbf79431feeb0456574",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rails-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rails-on-r3/warmup-c64.json",
+      "sha256": "7ede6aecbb0009a8b8ec25b38011ca200ef336cca557a8cee9530f74bffbdb3b",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/affinity.txt",
+      "sha256": "7f58a41ab62fa16242659e21af8a828e8da4dfc240d6d26a2f6e106fcd188a01",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/cache-env.txt",
+      "sha256": "d05a6b64aa6cd6cc45c6a7aa7264fbca687e2c77475aaa42ee790ab65dc1e00c",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/cells.jsonl",
+      "sha256": "e7339cdd9b4feb2e5544fae79a9b9a3bec183191c1692cee28adbac303ba9b58",
+      "sizeBytes": 1367
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/client-time-c128.txt",
+      "sha256": "fdf09bda99d76871d0e5e1070f23d7889b36b13c81b06383f3fdb5d3b81a540d",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/client-time-c16.txt",
+      "sha256": "ed123b837b9a75852280bde43fdc54dc05efd047357283091d692486c464e0cf",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/client-time-c32.txt",
+      "sha256": "303c78a9da91f80154cf32a79b06b5cdf7c4dfdd015886392ff93f95d1458c97",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/client-time-c64.txt",
+      "sha256": "562ca00acca9b9d97023b0fa0a42db1890934bad583763fd08dc8f36c4722669",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/driver.log",
+      "sha256": "4db72d4470cd42cb29afcc5824d5febfd199b09d8b9261b3072093a9d80885bc",
+      "sizeBytes": 3064
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/measure-c128.json",
+      "sha256": "f445cd288c795a52bf5773c540db560fff26f2ee2b65870b293dfd9a04eebb35",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/measure-c16.json",
+      "sha256": "57b84dbdcd2ee8baf885753f9ab318f2b567565e0c46e4987af9c42ce0c5d248",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/measure-c32.json",
+      "sha256": "38451f1f62124ecfaba3f17111c00b609d3fc58de18a63c7ecc445658038aabf",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/measure-c64.json",
+      "sha256": "4f9b60deaef728e9a2d07e4504e7a144609fd0b35b548cceaf5cb0c463bb6159",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/procs-ready.txt",
+      "sha256": "e19dfccc6039158da7e428259446b56551180cfb316630faebdb28a2b7625f21",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/pss.txt",
+      "sha256": "c7ce6b4214ec972cce4115023c347fbd51a4b03961e56030e05e7a72c8b79077",
+      "sizeBytes": 175
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/warmup-c128.json",
+      "sha256": "46571e16837d6872303c1cf6e57c7e5e41036a98cdc1cce6699f3fc4addbb02d",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/warmup-c16.json",
+      "sha256": "c065d72d32b41adab826d01c66c4e5ad129166ee7279c6bc8db8db97e4ae9940",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/warmup-c32.json",
+      "sha256": "8f1539a37308dd49d39976fd2be203880ad8cb8c885e09b35d2ed8c54ba8ba41",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r1/warmup-c64.json",
+      "sha256": "61e4fb1a08824bc623308a9e4682c3c6ad3dcdea9827fe6c46512735511184c7",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/affinity.txt",
+      "sha256": "771132ddb6232eb53a2ca44747b2c75ff621d1175c99ae0c56a9bc29b71b47b6",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/cache-env.txt",
+      "sha256": "a4b164ca1111b4792d7f3e2724b3732f1177f68f2d5855ab4e740c3efd9c1f6f",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/cells.jsonl",
+      "sha256": "fc92587172f2c250426580dcf31041b4829167e27ff32c2732d0f8252e6d87dc",
+      "sizeBytes": 1369
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/client-time-c128.txt",
+      "sha256": "b04ac79327a519723d4682b7108fab22477826fff3abcda5d4940fde18651e22",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/client-time-c16.txt",
+      "sha256": "ab52cd742166f1480c64b1d975502fdfa866d27b2ff44c666bf5dd8f88a62aa7",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/client-time-c32.txt",
+      "sha256": "00db1b931cb310e19c5c2a1e6b0aac47c9f27a9b23e48bf84a7b596518ebb12b",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/client-time-c64.txt",
+      "sha256": "b962ba3eaebbe874313ae1f459927fe905728e4458a93d41caf02c486d5e32e1",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/driver.log",
+      "sha256": "d0b22868509a7c75a66c229e13a907e964cc73f680984332124f889bec8252c5",
+      "sizeBytes": 3066
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/measure-c128.json",
+      "sha256": "b1a0646a79dd9af7abb5c290006f519883aea26a4d7aaf4c59300875e2aec2c8",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/measure-c16.json",
+      "sha256": "04b2df5bbe4fd9c83d04679ed56cd0cc335d284f0882ade3be8f583248cc6316",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/measure-c32.json",
+      "sha256": "e59ac77a5a5a11222ad71bc0194e66cd25e860ceed035f98c89a2cbfe40e1955",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/measure-c64.json",
+      "sha256": "9b8835049aab0d60c96633b40b0146ee4539c647c8bcf73af89681517cee7d2a",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/procs-ready.txt",
+      "sha256": "b679f3bf5ae0369d1e371ee20b473517aedd580c1508991e3e3b382c90818330",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/pss.txt",
+      "sha256": "b8f8260303a9eff1891d82c4de10a42e5c2ec5d0be1534ebae5a319095e1c50b",
+      "sizeBytes": 175
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/warmup-c128.json",
+      "sha256": "d15fed933848d39c898ac92753193d23241ab20e4cbf502d3a3cb200f8cea239",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/warmup-c16.json",
+      "sha256": "26dd4fe127dd30c00fcaa8304b6c41edefe3ea51a50f3e3105b00bfa1e5fe47f",
+      "sizeBytes": 316
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/warmup-c32.json",
+      "sha256": "4ee418c361be9fa4e478f0f0f4a2157af6b928ddd6a5280a976f78f7fee9bec7",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r2/warmup-c64.json",
+      "sha256": "44c84bd791599532beea5323dc9e5ae08021133b4f3dc5c1c42333ac406b5c9a",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/affinity.txt",
+      "sha256": "9152a16e6fcf545484483acfc70a4a6f0c77c97a5bd93f4b3ab9d8d19beb558e",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/cache-env.txt",
+      "sha256": "85c7d2bdb983c903f45eb6b7884a34630d13be9e284ae32c53676b19ebd164f3",
+      "sizeBytes": 76
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/cells.jsonl",
+      "sha256": "1ff0564a1741b1d4158b390af4ce67370f7a83bf2f7c253aec2ddf27d4e18aa7",
+      "sizeBytes": 1369
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/client-time-c128.txt",
+      "sha256": "898bad15c663e6eed88ea55e09f150bbb9a541ddf243675b04fcb24b433aca25",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/client-time-c16.txt",
+      "sha256": "37bdadceb2e33fa094a7a123ac2ac27ad58a1712b78321083ab6063ad6f0bf42",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/client-time-c32.txt",
+      "sha256": "ea2341aa3f76da3288af46b39bcc94a8e12466c89b80e6e529758a1fab4e4189",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/client-time-c64.txt",
+      "sha256": "9ca4c7764b257361901a0791def2ffc317976a3ca9dca108f5d81aa561e52057",
+      "sizeBytes": 16
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/driver.log",
+      "sha256": "a420b617cbd4e9f759829f09e4558a5df12eddbb1048bfe9b5c0a2b750ceff09",
+      "sizeBytes": 3066
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/measure-c128.json",
+      "sha256": "70953ba44f280b95310bc5a67215e9cb2e51c708e0d385a26ae39908111b1f29",
+      "sizeBytes": 325
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/measure-c16.json",
+      "sha256": "3d5799785b45c5ebbf1a334fa7834ca652083c3f33b7345591fa1e14ab12186f",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/measure-c32.json",
+      "sha256": "38ddacab3f0f9ad2dde84607cc3edf02fb50c37d31ba8c482475c3f517475b06",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/measure-c64.json",
+      "sha256": "39c28df0a77806ac11962ed9e7cb95169f23d0df010cbf0abd27b86831886bd9",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/procs-ready.txt",
+      "sha256": "0a37d3a4c3518bc4d3bbb34814c1caec403fbc5940fcd973497be5e34ce36ba4",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/pss.txt",
+      "sha256": "41ec59c34b398d03b543e473ad4973995988d742ede4c8740400e38483d9e739",
+      "sizeBytes": 175
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/warmup-c128.json",
+      "sha256": "d2894c77a49523ca43b3f95e41dfaf36d0c41646d40df8495e6ceb1a2a51c5eb",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/warmup-c16.json",
+      "sha256": "482d8503617a0bc696e2b40cdd4efdaed282367de905ca3e1f819db0623e8196",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/warmup-c32.json",
+      "sha256": "a634d5bd5b16d11cdb0032693f64085bc77d2085d686616da6f22eb74d62bd44",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-off-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-off-r3/warmup-c64.json",
+      "sha256": "1ed550bc9524162b1c4c810cbbd7c9fa5b1b60eb55fb61a7800413ca63790f84",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/affinity.txt",
+      "sha256": "4a3e72ada58b38d6082a757ee74f62d69fab4f72d56e8134c362d2b3e55d4e83",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/cache-env.txt",
+      "sha256": "cc9d6cf0c7410edfbf11422a6a2620c5e3109a5d23f8e53459e8b16311e62424",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/cells.jsonl",
+      "sha256": "901d1cd9b51d4faf29c04b028c068cded2413750f74280a2c26940f38d042667",
+      "sizeBytes": 1360
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/client-time-c128.txt",
+      "sha256": "8e6f789a61816045cd74840be6e6e1adfb09dbb2f21a8694ee69b5bd3e51bedf",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/client-time-c16.txt",
+      "sha256": "f8f6646673d64f9e7a1d22ff388ef0a38b3ab030730de6028ba308ffc8ed7f4d",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/client-time-c32.txt",
+      "sha256": "ca7d509415d7413c24380e95b480a143a07940f3b0f69bc12d78e61de0077dfa",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/client-time-c64.txt",
+      "sha256": "20fc60108daa7bf1d6b7fb294573ddb7184b87ef273d0571e986a758e7bd6ded",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/driver.log",
+      "sha256": "21e2cc4e54a1d8e958efc92aaacfc52f343cda961fe5af624739054d4b65df83",
+      "sizeBytes": 3056
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/measure-c128.json",
+      "sha256": "f0a850175639d372685eb547027165e8110d72761cd35ccdbab6654e7001102c",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/measure-c16.json",
+      "sha256": "115270aef2a927d2368b89ea3bcb39085a48d00900cd76be6724239afd1d5b05",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/measure-c32.json",
+      "sha256": "6cbb7fab382a1308a0d9091e345385fcad2a76090c0db6ce6c9710a3cfd53822",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/measure-c64.json",
+      "sha256": "8636c1e06519784a6451f91a18aa5e6f9a28d3edd07ae432918f3b531900417a",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/procs-ready.txt",
+      "sha256": "8cb67e45a63bd2d5dd91c79081702b8dd942495923eba1ec88961aba9e7d5929",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/pss.txt",
+      "sha256": "feb4e77e7f0cebc12538fb68f9f41373a593008d3cb90eb3a0d11baca95cfde7",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/warmup-c128.json",
+      "sha256": "0c5a0b2a07824cfd41823bf5fbcab9734a1252310add37cc8c859baa5ef25392",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/warmup-c16.json",
+      "sha256": "f686ba7e122fba00cac758f4d342d7502b3e516d73e1794f4cfbecb72a8b7803",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/warmup-c32.json",
+      "sha256": "e967d9a3f3e0dfb9d15bc8be90dee62714b53dedddf050ac323ff96692e1e382",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r1/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r1/warmup-c64.json",
+      "sha256": "2e3ba0197b428ad11d1dd17a57492301378b679fdd1cbc2f0671402032114f3f",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/affinity.txt",
+      "sha256": "0bc6aecd7dba8740d837a7e7f0f1b8f5c12474dc6723aa1b0610133b1ade6da0",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/cache-env.txt",
+      "sha256": "a2862b985e8331c73c77a8f7df5fd542a80a2512cb316d3b13d5a53830fc9eb1",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/cells.jsonl",
+      "sha256": "4905cf9d1a5c49be9e1e1451fbe27434b39f266d21d06695a24b28059776216c",
+      "sizeBytes": 1358
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/client-time-c128.txt",
+      "sha256": "7b22708dae97e796dbb6d3b554bee6dfb6a8f4be3698119f0c85d0b5a09d0fda",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/client-time-c16.txt",
+      "sha256": "ccb1f6929b21ab3c88e696900d6aadf43c5d2676df3c6c1793a83101b70f6024",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/client-time-c32.txt",
+      "sha256": "ff3b755a24e3d5c68777deac679ea3a2788f6864d6e54383518a79c72228930b",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/client-time-c64.txt",
+      "sha256": "7def4419d0788b467e8ac237b0112032179535d8071e4ac5ad594c0309fa0981",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/driver.log",
+      "sha256": "c196242589930d276bf2a195fe0bd2e49100d8cc72298248b16b82386b388c83",
+      "sizeBytes": 3054
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/measure-c128.json",
+      "sha256": "6cbfd916f5412999234e63994ce4de77911fd17e8ed3de577ea135e1dc0a2284",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/measure-c16.json",
+      "sha256": "045c61b1768fc0c3d036a1f61a90b8be061af3654bedc0907b67b8152bf4c4f5",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/measure-c32.json",
+      "sha256": "9b9d40ffac26cb797272045357249381aefaf8fad382a9aff92e8ed42b535a1d",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/measure-c64.json",
+      "sha256": "b3ae4b51f00267ea6929dc573bd0c2b752a251fe3fd23bde37635031e594c724",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/procs-ready.txt",
+      "sha256": "acefbb5916bea46be60bc44a0e2b11b2e5fc1b911d8607d1e3c9b279c3d2e1fc",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/pss.txt",
+      "sha256": "41713a3e36f52a22f51f3475e76b5ee8d2b7b41d8f9a8179963afd6a853048f5",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/warmup-c128.json",
+      "sha256": "a06eb90a1cf1bd113a84a7879fd9d182aca1f773103adc108dcf5120df31a939",
+      "sizeBytes": 320
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/warmup-c16.json",
+      "sha256": "33371df2f0ae513a042b2bf2dea6273e04444fcf0efa238e608f9d2eefdc8384",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/warmup-c32.json",
+      "sha256": "ee8d7013c47e046585dbfe58379662ad29def4bb716ee24e130fe57732c79237",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r2/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r2/warmup-c64.json",
+      "sha256": "2c57f7c64d52f44b1b2725dd04a4c005946290cb9cc22fddadf25e3842e37d08",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/affinity.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/affinity.txt",
+      "sha256": "23054bf348d4cceb13c485fe24c237265c3b5b30f090e96794c7ea70ee720d96",
+      "sizeBytes": 10
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/cache-env.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/cache-env.txt",
+      "sha256": "afae7ed1155ac2cea338d3d783fb4e5c46689574cde77b63e10b2fa7162568b9",
+      "sizeBytes": 77
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/cells.jsonl",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/cells.jsonl",
+      "sha256": "3453a34807216b6e5b1781f5760a5e3e097f0d7d543acf9f0eff0be902fa70a1",
+      "sizeBytes": 1360
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/client-time-c128.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/client-time-c128.txt",
+      "sha256": "161664813fa51c8c33a7079190fe14d9d5594f9111e73212bf337aa44b53a0de",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/client-time-c16.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/client-time-c16.txt",
+      "sha256": "dbb448f01cf2164f394e7055747cadff0cde705bfef868c79f7fe09ef9bb9ffc",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/client-time-c32.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/client-time-c32.txt",
+      "sha256": "357d6c5f12497db7c3183bd2d8c1fd042aadc2d34ad0282e0eac33ece0a83a31",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/client-time-c64.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/client-time-c64.txt",
+      "sha256": "8cc935b13f609b6a93b78b0136fd10ddc801b31d8dd4183bfe53815b2ea6d21d",
+      "sizeBytes": 18
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/contracts.err.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/contracts.err.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sizeBytes": 0
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/driver.log",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/driver.log",
+      "sha256": "6b956301237b155bc8fa42d5d152364dd641d84aff469759c0e14595ecaecaab",
+      "sizeBytes": 3056
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/measure-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/measure-c128.json",
+      "sha256": "f01ee2ada423c1ce155ce26db430d6a308f5017cd418a47dc0303b686acbd700",
+      "sizeBytes": 322
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/measure-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/measure-c16.json",
+      "sha256": "9169ddceb2dc3fee2c1d761368623f9eacf7907a26927f567a6ccf0e94307542",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/measure-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/measure-c32.json",
+      "sha256": "80608c7b3554b7357a0ba00fbaf1ae30d8e5bbb65c6ced491a63bc11c4d72a6a",
+      "sizeBytes": 315
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/measure-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/measure-c64.json",
+      "sha256": "00fa916143b92011f18594d115d925966c9bad033dd06d394e55b822f44fe597",
+      "sizeBytes": 318
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/procs-ready.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/procs-ready.txt",
+      "sha256": "3a7d5123d8be01ef0007df74e95ad0ade89c73a0a8676f5e2a515fb0dc8c87d5",
+      "sizeBytes": 110
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/pss.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/pss.txt",
+      "sha256": "d5111b42c569738c208a3423d008f27866c82e5e930a579446d5ee8c3e9b93e7",
+      "sizeBytes": 173
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/server-log-secret-scan.txt",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/server-log-secret-scan.txt",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "sizeBytes": 2
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/warmup-c128.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/warmup-c128.json",
+      "sha256": "56df908c28e6e008510b900506d64999f2a01f678219d78037d9beeb36f9a497",
+      "sizeBytes": 321
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/warmup-c16.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/warmup-c16.json",
+      "sha256": "c0de164c4f07d09062b349de7a08a098c26357670ed6355673c32f826aebc024",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/warmup-c32.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/warmup-c32.json",
+      "sha256": "5d093414ce0e2b7253489c600e2a0bf719a964a4b385c6d4161293b663ec30b9",
+      "sizeBytes": 314
+    },
+    {
+      "archivePath": "sweep/runs/s285b-rust-on-r3/warmup-c64.json",
+      "sourcePath": ".agentlang/linux-sweep-285/runs/s285b-rust-on-r3/warmup-c64.json",
+      "sha256": "d23d9f7ffa255d34ccdb7ecc79dc99b0c7cd654772556254eb59e347bae7acc4",
+      "sizeBytes": 317
+    },
+    {
+      "archivePath": "tools/Run-Gates.ps1",
+      "sourcePath": ".agentlang/lang-285/Run-Gates.ps1",
+      "sha256": "3f667a28d0b36f4aacb3d371138c786e5eed75d120c80657540c05846aad67fe",
+      "sizeBytes": 4351
+    },
+    {
+      "archivePath": "tools/seal_285.py",
+      "sourcePath": ".agentlang/lang-285/seal_285.py",
+      "sha256": "2748d27aa2deb5c33205370d06dd7d654599b8eca1203ab21e7d5b87b293de5a",
+      "sizeBytes": 4094
+    },
+    {
+      "archivePath": "tools/secret_scan.py",
+      "sourcePath": ".agentlang/lang-281/secret_scan.py",
+      "sha256": "ea7574d42b6885f56346dcf934a4f465c76ffd6cbb2940dee18a5d5b17023587",
+      "sizeBytes": 1597
+    },
+    {
+      "archivePath": "sources/applications/campfire/Http/Application.fs",
+      "sourcePath": "applications/campfire/Http/Application.fs",
+      "sha256": "493735a74e60fef2cf5a159b6bbb0cd122f5c7c9b344a253b970ea44410a2b5b",
+      "sizeBytes": 5741
+    },
+    {
+      "archivePath": "sources/applications/campfire/emoji.flow",
+      "sourcePath": "applications/campfire/emoji.flow",
+      "sha256": "6f7b14d372c626a0e022323fcae91d3816559d4d3375796df748f74e04fc2ff9",
+      "sizeBytes": 3791
+    },
+    {
+      "archivePath": "sources/applications/campfire/layout.flow",
+      "sourcePath": "applications/campfire/layout.flow",
+      "sha256": "5733f73ebb785af3094e073894e0f5c10673fadf8717d2ac23bedc31e2835dcc",
+      "sizeBytes": 35702
+    },
+    {
+      "archivePath": "sources/applications/campfire/message.flow",
+      "sourcePath": "applications/campfire/message.flow",
+      "sha256": "685b10a037526b2c4b38bcca3db2d9fee54746684e5f2e0af127b543e5987df9",
+      "sizeBytes": 17341
+    },
+    {
+      "archivePath": "sources/applications/campfire/presentation.flow",
+      "sourcePath": "applications/campfire/presentation.flow",
+      "sha256": "5c6ad51b2900a40c995a2a52cf9c710ef742d931a6c61229e8820be27349c2e6",
+      "sizeBytes": 62005
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-accounts.flow",
+      "sourcePath": "applications/campfire/server/server-accounts.flow",
+      "sha256": "4b4e50b184a1049bf177679bfead15ab430bb22e3527c98866b5ad194e6be934",
+      "sizeBytes": 9606
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-db-tests.flow",
+      "sourcePath": "applications/campfire/server/server-db-tests.flow",
+      "sha256": "5d82a18525b7ad5e88e1e0593aa33498cd6fa3b252affc548273b8cc7b52b5f4",
+      "sizeBytes": 15529
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-db.flow",
+      "sourcePath": "applications/campfire/server/server-db.flow",
+      "sha256": "8646460f00e3344fa1f3003cbbbc127975144994ae9a8251d700133924964d6d",
+      "sizeBytes": 49347
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-request.flow",
+      "sourcePath": "applications/campfire/server/server-request.flow",
+      "sha256": "f50f1730490dbcd949708f73b45c7281052f9b323f64d326d9289a733dfda5b7",
+      "sizeBytes": 25676
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server-sidebar.flow",
+      "sourcePath": "applications/campfire/server/server-sidebar.flow",
+      "sha256": "dc3550a5916d59be6cf135a4172e479536e34fd6e6139f42932b7a6b4814a491",
+      "sizeBytes": 13887
+    },
+    {
+      "archivePath": "sources/applications/campfire/server/server.flow",
+      "sourcePath": "applications/campfire/server/server.flow",
+      "sha256": "c734b2969034abb4b3a20b7a68f99f93502ab9faa43056e94f4d099eed613959",
+      "sizeBytes": 95232
+    },
+    {
+      "archivePath": "sources/applications/campfire/sidebar.flow",
+      "sourcePath": "applications/campfire/sidebar.flow",
+      "sha256": "1b033313441835954503e1ff6fd4864f482484c6340dea55c174e32e82bd3b36",
+      "sizeBytes": 13727
+    },
+    {
+      "archivePath": "sources/applications/campfire/sounds.flow",
+      "sourcePath": "applications/campfire/sounds.flow",
+      "sha256": "3faa398cca16ddd38d521f46d7343f922660bcb7007513c88aabeb6111f18270",
+      "sizeBytes": 11720
+    },
+    {
+      "archivePath": "sources/applications/campfire/views-tests.flow",
+      "sourcePath": "applications/campfire/views-tests.flow",
+      "sha256": "ce8a9dd85240675a4b0d0581619f947dc54799ac4873cabb99796b25188cedb4",
+      "sizeBytes": 14797
+    },
+    {
+      "archivePath": "sources/docs/EQUAL-PAGES-PLAN.md",
+      "sourcePath": "docs/EQUAL-PAGES-PLAN.md",
+      "sha256": "792a31bd06dafbdc54368b655c13aa5376ea7b75840270522472a264f9768945",
+      "sizeBytes": 13453
+    },
+    {
+      "archivePath": "sources/docs/LINUX-SERVER-PLAN.md",
+      "sourcePath": "docs/LINUX-SERVER-PLAN.md",
+      "sha256": "964a9eb2085b6b1c069a04b759ff24dd8f4e04f85bf34a6e421356538169aa94",
+      "sizeBytes": 15365
+    },
+    {
+      "archivePath": "sources/docs/PENDING-REVIEW.md",
+      "sourcePath": "docs/PENDING-REVIEW.md",
+      "sha256": "c832f7e7ef5a7e9fcd4417a71499fa1beff6f366982aaf210a884974d664857b",
+      "sizeBytes": 31119
+    },
+    {
+      "archivePath": "sources/scripts/Build-CampfireFlowServer.ps1",
+      "sourcePath": "scripts/Build-CampfireFlowServer.ps1",
+      "sha256": "e52c31d707be7ebd0b58e76c2c3c5cf77081a6ef627bb54e6180683f4ffe9629",
+      "sizeBytes": 1963
+    },
+    {
+      "archivePath": "sources/scripts/Test-CampfireFlowServerParity.ps1",
+      "sourcePath": "scripts/Test-CampfireFlowServerParity.ps1",
+      "sha256": "a0a6e01169496f4830eb4c92ae4babcdd0e06a651f85676420474d21c688973a",
+      "sizeBytes": 18794
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Cli/Program.fs",
+      "sourcePath": "src/AgentLang.Cli/Program.fs",
+      "sha256": "587268b5ab7f4562c715eb528e0f85442f8fd54638e0c587a87d705b6a33be0c",
+      "sizeBytes": 45525
+    },
+    {
+      "archivePath": "sources/src/AgentLang.FlowHttp/FlowApp.fs",
+      "sourcePath": "src/AgentLang.FlowHttp/FlowApp.fs",
+      "sha256": "de090c98cf86011b8cc46561d3a07ff88089f80e7902188d345dea94e34fc7fe",
+      "sizeBytes": 12167
+    },
+    {
+      "archivePath": "sources/src/AgentLang.Llvm/native/http_host/flow_http_host.c",
+      "sourcePath": "src/AgentLang.Llvm/native/http_host/flow_http_host.c",
+      "sha256": "c8b6d6fefb66e983d088341b8746cfb8ab5f81f1ee9715b34a56b4ee53052a98",
+      "sizeBytes": 41642
+    },
+    {
+      "archivePath": "sources/src/stdlib/rich-html.flow",
+      "sourcePath": "src/stdlib/rich-html.flow",
+      "sha256": "1b049e60921d5e7991ebbd37849367da6a36042ac676a120014eb4a36d6cadb4",
+      "sizeBytes": 52876
+    },
+    {
+      "archivePath": "sources/tests/AgentLang.CampfireViews.Tests/Program.fs",
+      "sourcePath": "tests/AgentLang.CampfireViews.Tests/Program.fs",
+      "sha256": "985e8c0104b5d804dd15b8a2dcb48bc0ffda038d9caef6b6cd7431ebf9ce5e4d",
+      "sizeBytes": 17551
+    }
+  ]
+}
