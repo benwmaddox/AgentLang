@@ -25,6 +25,7 @@ module Store =
     let responseWriteStoreId = HostOperationId "response.write-store"
     let responseWrittenId = HostOperationId "response.written"
     let responseDiscardId = HostOperationId "response.discard"
+    let responseWriteFileId = HostOperationId "response.write-file"
 
     /// tag, name, inputs, outputs, effects: the native manifest and the
     /// interpreter definitions come from this one table.
@@ -41,7 +42,8 @@ module Store =
           14u, responseWriteId, [ TString ], [ TBool ], [ "response.write" ], "Appends the text to this request's response stream; false when it is full."
           15u, responseWriteStoreId, [ TInt; TInt ], [ TBool ], [ "response.write"; "store.read" ], "Appends length store bytes at offset to the response stream (one copy); false when out of bounds or full."
           16u, responseWrittenId, [ TInt ], [ TString ], [ "response.write" ], "The response stream so far, as text (for tests). The input is ignored."
-          17u, responseDiscardId, [ TInt ], [ TInt ], [ "response.write" ], "Empties the response stream; returns the bytes dropped. The input is ignored." ]
+          17u, responseDiscardId, [ TInt ], [ TInt ], [ "response.write" ], "Empties the response stream; returns the bytes dropped. The input is ignored."
+          18u, responseWriteFileId, [ TString ], [ TBool ], [ "fs.read"; "response.write" ], "Appends the file at this relative path under the host's files directory (--files) to the response stream; false when there is no such directory or file, the path is not plain relative segments of [A-Za-z0-9._-], or it does not fit." ]
 
     let operationIds = operations |> List.map (fun (_, id, _, _, _, _) -> id) |> Set.ofList
 
@@ -57,12 +59,14 @@ module Store =
             tag, name, inputs |> List.map Types.format, outputs |> List.map Types.format, effects)
 
     /// One worker's store and response stream (the interpreter's "worker").
-    type WorkerState(capacity: int, streamCapacity: int) =
+    type WorkerState(capacity: int, streamCapacity: int, filesRoot: string option) =
         let region = Array.zeroCreate<byte> capacity
         let stream = Collections.Generic.List<byte>()
+        new(capacity: int, streamCapacity: int) = WorkerState(capacity, streamCapacity, None)
         member _.Region = region
         member _.Stream = stream
         member _.StreamCapacity = streamCapacity
+        member _.FilesRoot = filesRoot
         /// The host starts each request with an empty stream.
         member _.ResetStream() = stream.Clear()
 
@@ -78,6 +82,15 @@ module Store =
         int64 hash
 
     let private strictUtf8 = UTF8Encoding(false, true)
+
+    /// Plain relative segments of [A-Za-z0-9._-]: no root, no empty, "." or ".." segment.
+    let safeRelativePath (path: string) =
+        path.Length > 0
+        && path.Length <= 512
+        && path.Split('/')
+           |> Array.forall (fun segment ->
+               segment <> "" && segment <> "." && segment <> ".."
+               && segment |> Seq.forall (fun c -> Char.IsAsciiLetterOrDigit c || c = '.' || c = '_' || c = '-'))
 
     let createProvider (state: WorkerState) : HostOperationProvider =
         let region = state.Region
@@ -131,6 +144,18 @@ module Store =
             | [ IntValue _ ] when id = responseWrittenId ->
                 // The stream holds whole Strings and validated store ranges; decode leniently.
                 Ok [ StringValue(Encoding.UTF8.GetString(state.Stream.ToArray())) ]
+            | [ StringValue path ] when id = responseWriteFileId ->
+                match state.FilesRoot with
+                | Some root when safeRelativePath path ->
+                    let full = IO.Path.Combine(root, path.Replace('/', IO.Path.DirectorySeparatorChar))
+                    if IO.File.Exists full then
+                        let data = IO.File.ReadAllBytes full
+                        if state.Stream.Count + data.Length <= state.StreamCapacity then
+                            state.Stream.AddRange data
+                            Ok [ BoolValue true ]
+                        else Ok [ BoolValue false ]
+                    else Ok [ BoolValue false ]
+                | _ -> Ok [ BoolValue false ]
             | [ IntValue _ ] when id = responseDiscardId ->
                 let dropped = state.Stream.Count
                 state.Stream.Clear()

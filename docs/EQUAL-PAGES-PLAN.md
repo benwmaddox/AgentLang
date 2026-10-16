@@ -224,9 +224,17 @@ runners for partials), diff, and port until 0 differing blocks.
      CSRF tokens do. Its signature verifies with the same signed_id key as
      Rails', and the payload has the same shape, so either server accepts the
      other's links. The admin-only parts (email, transfer link, ban button)
-     follow `can_administer?`. **Avatars not done:** avatar images are binary
-     (WebP variants from Active Storage) and need byte bodies from the host. The
-     initials SVG and the default bot SVG come next with them;
+     follow `can_administer?`. **Avatars done (2026-10-16):**
+     `/users/<token>/avatar` is byte-identical to Rails in body,
+     Content-Type, ETag, Cache-Control and Content-Disposition for all three
+     kinds: the initials SVG (AVATAR_COLORS by CRC-32 of the id), the static
+     default bot SVG, and the square WebP variant. The WebP is streamed by a
+     new host operation, `response.write-file(path)` (tag 18, effects
+     `fs.read` and `response.write`). It reads a plain relative path under the
+     host's `--files` directory (the Active Storage root), so the bytes never
+     pass through a Flow String. The token is a signed_id checked in constant
+     time; a bad one is 404 with an empty body, a missing user Rails' 404 page,
+     and a matching If-None-Match gives 304;
    - account;
    - sign-in and sign-out. Passwords: Rails' bcrypt digests are verified and created
      with the system libxcrypt `crypt_r()` as a native host op (user, 2026-10-16:

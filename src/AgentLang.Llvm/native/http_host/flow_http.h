@@ -108,6 +108,7 @@ typedef struct fh_provider {
   uint8_t *stream;
   uint32_t stream_capacity;
   uint32_t stream_used;
+  const char *files_root; /* --files: the directory response.write-file reads under, or NULL */
 } fh_provider;
 
 /* The host adapter the generated module calls for db.query / db.execute /

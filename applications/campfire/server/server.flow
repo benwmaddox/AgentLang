@@ -1118,7 +1118,7 @@ fn campfire.server.response-cookies(response: CampfireHttpResponse, built: Serve
 }
 
 test campfire.server.response-cookies/redirect-session {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false)
     let cookies = campfire.server.response-cookies(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect match cookies { none => false; some headers => campfire.server.header-count(headers, "Set-Cookie") == 1 }
 }
@@ -1154,7 +1154,7 @@ fn campfire.server.http-response(response: CampfireHttpResponse, built: ServerRe
 }
 
 test campfire.server.http-response/redirect {
-    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false)
+    let built = serverRequest.new(campfire = campfire.server.test-request(option.none<String>()), session-cookie = option.none<String>(), around = option.none<Int>(), paging = false, before = option.none<String>(), after = option.none<String>(), sidebar = false, search = false, user-page = false, avatar = false)
     let sent = campfire.server.http-response(campfire.server.unauthenticated(), built, "/rooms/1", campfire.server.test-context())
     expect sent.status == 302
     expect http.header(sent.headers, "Location") == option.some<String>("/session/new")
@@ -1492,12 +1492,12 @@ fn campfire.server.messages-read(built: ServerRequest, incoming: HttpRequest, co
 }
 
 fn campfire.server.handle(request: HttpRequest, context: CampfireServerContext) -> HttpResponse {
-    effects db.read, db.write, store.read, store.write, response.write, random.read
+    effects db.read, db.write, store.read, store.write, response.write, random.read, fs.read
     doc "GET/HEAD /rooms/<id>: transport checks, the room-read chain, then the rendered response with its cookies."
 
     match campfire.server.request(request, context) {
         error response => response
-        ok built => if built.user-page { campfire.server.users-read(built, request, context) } else if built.search { campfire.server.search-read(built, request, context) } else if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
+        ok built => if built.avatar { campfire.server.avatars-read(built, request, context) } else if built.user-page { campfire.server.users-read(built, request, context) } else if built.search { campfire.server.search-read(built, request, context) } else if built.sidebar { campfire.server.sidebar-read(built, request, context) } else if built.paging { campfire.server.messages-read(built, request, context) } else { campfire.server.http-response(campfire.server.room-read(built.campfire, context, built.around), built, request.target, context) }
     }
 }
 

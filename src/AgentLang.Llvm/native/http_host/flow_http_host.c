@@ -84,6 +84,7 @@ typedef struct fh_options {
   uint32_t cache_mb;
   const char *db_path;
   const char *config_path;
+  const char *files_path; /* --files: response.write-file's directory, or NULL */
   uint8_t *config_value; /* encoded List<HttpHeader>, shared read-only after startup */
   uint32_t config_extent;
 } fh_options;
@@ -772,6 +773,7 @@ static void *fh_worker_main(void *argument)
   worker->provider.stream = worker->stream;
   worker->provider.stream_capacity = options->retained_bytes;
   worker->provider.stream_used = 0u;
+  worker->provider.files_root = options->files_path;
   if (worker->stack == 0 || worker->input == 0 || worker->retained == 0) { worker->state = -1; goto done; }
   worker->db = fh_db_open(options->db_path, reason, sizeof(reason));
   if (worker->db == 0) {
@@ -859,9 +861,10 @@ static int fh_load_config(fh_options *options) {
 
 static void fh_usage(void) {
   fh_log("usage: flow_http_host --port <p> --db <sqlite path> [--config <file>] [--workers N] [--pin]\n"
-         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--store-mb N] [--allow-control]\n"
+         "       [--arena-mb N] [--retained-mb N] [--max-body-kb N] [--cache-mb N] [--store-mb N] [--files DIR] [--allow-control]\n"
          "  --cache-mb N  byte budget of the process-wide cache.get/cache.put cache (default 0 = disabled)\n"
-         "  --store-mb N  total worker-store size, split evenly between workers (default 0 = no store)\n");
+         "  --store-mb N  total worker-store size, split evenly between workers (default 0 = no store)\n"
+         "  --files DIR   the directory response.write-file reads under (default: none, the op returns false)\n");
 }
 
 int main(int argc, char **argv) {
@@ -895,6 +898,7 @@ int main(int argc, char **argv) {
     else if (strcmp(a, "--max-body-kb") == 0 && v) { options.max_body_bytes = (uint32_t)atoi(v) << 10; ++i; }
     else if (strcmp(a, "--cache-mb") == 0 && v) { options.cache_mb = (uint32_t)atoi(v); ++i; }
     else if (strcmp(a, "--store-mb") == 0 && v) { options.store_mb = (uint32_t)atoi(v); ++i; }
+    else if (strcmp(a, "--files") == 0 && v) { options.files_path = v; ++i; }
     else if (strcmp(a, "--pin") == 0) options.pin = 1;
     else if (strcmp(a, "--allow-control") == 0) options.allow_control = 1;
     else { fh_usage(); return 2; }

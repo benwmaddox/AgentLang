@@ -21,6 +21,8 @@ record ServerRequest {
     search: Bool
     // GET/HEAD /users/<id> (users#show).
     user-page: Bool
+    // GET/HEAD /users/<avatar token>/avatar (users/avatars#show).
+    avatar: Bool
 }
 
 fn campfire.server.status(status: Int) -> HttpResponse {
@@ -418,7 +420,8 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
     let host-ok = match host { none => false; some value => campfire.server.equal-ignoring-case?(value, context.authority) }
     let length-status = campfire.server.content-length-status(incoming.headers)
     let user-page = string.starts-with(path, "/users/") && string.byte-length(path) > 7 && bool.not(string.contains(campfire.server.cut(path, 7, string.byte-length(path) - 7), "/"))
-    let routed = if path == "/users/me/sidebar" || path == "/searches" || user-page { option.some<RoomPath>(roomPath.new(room = "0", around = option.none<String>(), paging = false)) } else { campfire.server.room-path(path) }
+    let avatar = string.starts-with(path, "/users/") && string.ends-with(path, "/avatar") && string.byte-length(path) > 14 && bool.not(string.contains(campfire.server.cut(path, 7, string.byte-length(path) - 14), "/"))
+    let routed = if path == "/users/me/sidebar" || path == "/searches" || user-page || avatar { option.some<RoomPath>(roomPath.new(room = "0", around = option.none<String>(), paging = false)) } else { campfire.server.room-path(path) }
     match routed {
         none => result.error<ServerRequest, HttpResponse>(campfire.server.status(404))
         some room-path => {
@@ -497,7 +500,7 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                             accepts-html = true,
                             last-room = last-room-value,
                             csrf-token = option.none<String>())
-                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, paging = paging, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }, sidebar = http.path(incoming.target) == "/users/me/sidebar", search = http.path(incoming.target) == "/searches", user-page = string.starts-with(http.path(incoming.target), "/users/") && bool.not(string.contains(campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 7), "/"))))
+                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, paging = paging, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }, sidebar = http.path(incoming.target) == "/users/me/sidebar", search = http.path(incoming.target) == "/searches", user-page = string.starts-with(http.path(incoming.target), "/users/") && bool.not(string.contains(campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 7), "/")), avatar = string.starts-with(http.path(incoming.target), "/users/") && string.ends-with(http.path(incoming.target), "/avatar") && string.byte-length(http.path(incoming.target)) > 14 && bool.not(string.contains(campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 14), "/"))))
                     }
                 }
             }

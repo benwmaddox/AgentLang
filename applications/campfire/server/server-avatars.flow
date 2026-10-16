@@ -1,0 +1,167 @@
+// users/avatars#show for the portable server: /users/<avatar token>/avatar. The token
+// is User#avatar_token (signed_id, purpose user/avatar); the body is the user's square
+// WebP variant (streamed from the Active Storage files directory), the default bot
+// avatar, or the initials SVG; the ETag is stale?(etag: @user)'s.
+
+fn campfire.server.square-variant-digest() -> String {
+    doc "The variation_digest of User::Avatar's :square variant (resize_to_limit 512x512, webp) in the reference app, read from its variant records (as the template digests are)."
+    "6gwfjNKv9eUy9jNUtEZvQFLU0hQ="
+}
+
+test campfire.server.square-variant-digest/length {
+    expect string.byte-length(campfire.server.square-variant-digest()) == 28
+}
+
+fn campfire.server.avatar-token-user(avatar-key: Bytes, token: String) -> Option<Int> {
+    doc "User.from_avatar_token: the id in a signed_id for purpose user/avatar when its HMAC-SHA256 (signed_id key) verifies, compared in constant time; none otherwise."
+    match string.index-of(token, "--", 0) {
+        none => option.none<Int>()
+        some at => {
+            let encoded = campfire.server.cut(token, 0, at)
+            let given = campfire.server.cut(token, at + 2, string.byte-length(token) - at - 2)
+            let expected = hex.encode(crypto.hmac-sha256(avatar-key, bytes.from-utf8(encoded)))
+            if string.byte-length(given) != string.byte-length(expected) || bool.not(bytes.equal-constant-time?(bytes.from-utf8(given), bytes.from-utf8(expected))) {
+                option.none<Int>()
+            } else {
+                let rails = match base64.url-decode(encoded) { none => option.none<Json>(); some data => match bytes.to-utf8(data) { none => option.none<Json>(); some text => match json.parse(text) { none => option.none<Json>(); some value => json.field(value, "_rails") } } }
+                match rails {
+                    none => option.none<Int>()
+                    some fields => {
+                        let purpose = match json.field(fields, "pur") { none => ""; some value => match json.text(value) { none => ""; some text => text } }
+                        let id = match json.field(fields, "data") { none => option.none<Int>(); some value => json.int(value) }
+                        if purpose == "user/avatar" { id } else { option.none<Int>() }
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.avatar-token-user/round-trip {
+    let key = bytes.from-utf8("k")
+    expect campfire.server.avatar-token-user(key, campfire.server.avatar-token(key, 7)) == option.some<Int>(7)
+    expect campfire.server.avatar-token-user(key, string.concat(campfire.server.avatar-token(key, 7), "0")) == option.none<Int>()
+    expect campfire.server.avatar-token-user(bytes.from-utf8("other"), campfire.server.avatar-token(key, 7)) == option.none<Int>()
+}
+
+fn campfire.server.disk-path(key: String) -> String {
+    doc "ActiveStorage::Service::DiskService#path_for, relative to its root: ab/cd/<key>."
+    string.join([campfire.server.cut(key, 0, 2), "/", campfire.server.cut(key, 2, 2), "/", key])
+}
+
+test campfire.server.disk-path/layout {
+    expect campfire.server.disk-path("5nlq52kv") == "5n/lq/5nlq52kv"
+}
+
+fn campfire.server.avatar-row(user-id: Int) -> Result<Option<List<String>>, DbError> {
+    effects db.read
+    doc "[name, role, updated_at, square variant blob key or empty] of the user; none when there is no such user."
+    match db.query("SELECT users.name, users.role, users.updated_at, COALESCE((SELECT vb.key FROM active_storage_attachments AS a INNER JOIN active_storage_variant_records AS vr ON vr.blob_id = a.blob_id AND vr.variation_digest = $digest INNER JOIN active_storage_attachments AS va ON va.record_type = 'ActiveStorage::VariantRecord' AND va.record_id = vr.id AND va.name = 'image' INNER JOIN active_storage_blobs AS vb ON vb.id = va.blob_id WHERE a.record_type = 'User' AND a.record_id = users.id AND a.name = 'avatar' LIMIT 1), '') FROM users WHERE users.id = $userId", [db.text-param(campfire.server.square-variant-digest()), db.int-param(user-id)]) {
+        error failure => result.error<Option<List<String>>, DbError>(campfire.server.db-error(failure))
+        ok rows => match db.first-row(rows) {
+            none => result.ok<Option<List<String>>, DbError>(option.none<List<String>>())
+            some row => result.ok<Option<List<String>>, DbError>(option.some<List<String>>([
+                campfire.server.text-or-empty(db.optional-text(row, 0)),
+                int.to-string(campfire.server.int-or-zero(db.optional-int(row, 1))),
+                campfire.server.text-or-empty(db.optional-text(row, 2)),
+                campfire.server.text-or-empty(db.optional-text(row, 3))]))
+        }
+    }
+}
+
+test campfire.server.avatar-row/fixture {
+    expect campfire.server.test-fixture() == 0
+    expect match campfire.server.avatar-row(1) { error failure => false; ok found => match found { none => false; some row => list.get(row, 3) == option.some<String>("") } }
+}
+
+fn campfire.server.avatar-etag(user-id: Int, updated-at: String) -> String {
+    doc "stale?(etag: @user): the weak ETag of the user's cache key (users/<id>-<updated_at usec>); the action has no HTML template, so no template digest joins it."
+    let key = string.join(["users/", int.to-string(user-id), "-", campfire.server.cache-version(updated-at)])
+    let digest = hex.encode(crypto.sha256(bytes.from-utf8(key)))
+    string.join(["W/\"", campfire.server.cut(digest, 0, 32), "\""])
+}
+
+test campfire.server.avatar-etag/shape {
+    expect string.byte-length(campfire.server.avatar-etag(1, "2026-01-01 00:00:00")) == 36
+}
+
+fn campfire.server.with-headers(sent: HttpResponse, status: Int, body: String, streamed: Bool, replace: List<HttpHeader>) -> HttpResponse {
+    doc "The response with these headers in place of the same-named ones (Content-Type, Cache-Control) and added otherwise."
+    var headers = list.empty<HttpHeader>()
+    for header in sent.headers {
+        var replaced = false
+        for other in replace {
+            if string.to-lower-ascii(other.name) == string.to-lower-ascii(header.name) {
+                replaced = true
+            }
+        }
+        if bool.not(replaced) {
+            headers = list.append(headers, header)
+        }
+    }
+    httpResponse.new(status = status, headers = list.concat(headers, replace), body = body, streamed = streamed)
+}
+
+test campfire.server.with-headers/replace {
+    let sent = httpResponse.new(status = 200, headers = [httpHeader.new(name = "Cache-Control", value = "no-store")], body = "", streamed = false)
+    expect http.header(campfire.server.with-headers(sent, 200, "x", false, [httpHeader.new(name = "Cache-Control", value = "public")]).headers, "Cache-Control") == option.some<String>("public")
+}
+
+fn campfire.server.avatars-read(built: ServerRequest, incoming: HttpRequest, context: CampfireServerContext) -> HttpResponse {
+    effects db.read, db.write, random.read, fs.read, response.write
+    doc "GET/HEAD /users/<token>/avatar: 404 with an empty body for a token that does not verify (InvalidSignature), Rails' 404 page for a missing user, 304 when If-None-Match holds the ETag, else the avatar with a 30-minute public cache."
+    match campfire.server.signed-in(built, incoming, context) {
+        error response => response
+        ok signed => {
+            let path = http.path(incoming.target)
+            let token = campfire.server.cut(path, 7, string.byte-length(path) - 7 - 7)
+            let empty = campfire.server.http-response(campfire.server.response(200, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+            match campfire.server.avatar-token-user(context.avatar-key, token) {
+                none => campfire.server.with-headers(empty, 404, "", false, list.empty<HttpHeader>())
+                some user-id => match campfire.server.avatar-row(user-id) {
+                    error failure => campfire.server.http-response(campfire.server.response(500, HttpView.empty(), "", signed.refresh), built, incoming.target, context)
+                    ok found => match found {
+                        none => campfire.server.with-headers(campfire.server.html-page(empty, campfire.views.not-found-page()), 404, campfire.views.not-found-page(), false, list.empty<HttpHeader>())
+                        some row => {
+                            let name = match list.get(row, 0) { none => ""; some v => v }
+                            let bot = list.get(row, 1) == option.some<String>("2")
+                            let updated-at = match list.get(row, 2) { none => ""; some v => v }
+                            let variant = match list.get(row, 3) { none => ""; some v => v }
+                            let etag = campfire.server.avatar-etag(user-id, updated-at)
+                            let fresh = match campfire.server.header-last(incoming.headers, "if-none-match") { none => false; some listed => string.contains(string.replace(listed, "W/", ""), string.replace(etag, "W/", "")) || string.contains(listed, "*") }
+                            if fresh {
+                                campfire.server.with-headers(empty, 304, "", false, [httpHeader.new(name = "Cache-Control", value = "max-age=0, private, must-revalidate"), httpHeader.new(name = "ETag", value = etag)])
+                            } else {
+                                let cache = httpHeader.new(name = "Cache-Control", value = "max-age=1800, public, stale-while-revalidate=604800")
+                                if variant != "" {
+                                    let disposition = httpHeader.new(name = "Content-Disposition", value = string.join(["inline; filename=\"", variant, "\"; filename*=UTF-8''", variant]))
+                                    if response.write-file(campfire.server.disk-path(variant)) {
+                                        campfire.server.with-headers(empty, 200, "", true, [cache, httpHeader.new(name = "Content-Type", value = "image/webp"), disposition, httpHeader.new(name = "ETag", value = etag)])
+                                    } else {
+                                        campfire.server.with-headers(empty, 500, "", false, list.empty<HttpHeader>())
+                                    }
+                                } else if bot {
+                                    let disposition = httpHeader.new(name = "Content-Disposition", value = "inline; filename=\"default-bot-avatar.svg\"; filename*=UTF-8''default-bot-avatar.svg")
+                                    campfire.server.with-headers(empty, 200, campfire.views.default-bot-avatar(), false, [cache, httpHeader.new(name = "Content-Type", value = "image/svg+xml"), disposition, httpHeader.new(name = "ETag", value = etag)])
+                                } else {
+                                    campfire.server.with-headers(empty, 200, campfire.views.initials-avatar(user-id, name), false, [cache, httpHeader.new(name = "Content-Type", value = "image/svg+xml; charset=utf-8"), httpHeader.new(name = "ETag", value = etag)])
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+test campfire.server.avatars-read/initials {
+    expect campfire.server.test-fixture() == 0
+    let context = campfire.server.test-context()
+    let path = string.join(["/users/", campfire.server.avatar-token(context.avatar-key, 2), "/avatar?v=1"])
+    let sent = campfire.server.handle(campfire.server.test-get(path, list.empty<HttpHeader>()), context)
+    expect sent.status == 200 && string.starts-with(sent.body, "<svg") && http.header(sent.headers, "Content-Type") == option.some<String>("image/svg+xml; charset=utf-8")
+    let etag = match http.header(sent.headers, "ETag") { none => ""; some value => value }
+    expect campfire.server.handle(campfire.server.test-get(path, [httpHeader.new(name = "if-none-match", value = etag)]), context).status == 304
+    expect campfire.server.handle(campfire.server.test-get("/users/bad--00/avatar", list.empty<HttpHeader>()), context).status == 404
+}

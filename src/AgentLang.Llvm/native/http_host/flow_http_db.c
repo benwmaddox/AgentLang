@@ -280,6 +280,7 @@ static int32_t fh_cache_host(uint32_t worker, uint32_t operation, const fh_host_
 #define FH_RESPONSE_WRITE_STORE 15u
 #define FH_RESPONSE_WRITTEN 16u
 #define FH_RESPONSE_DISCARD 17u
+#define FH_RESPONSE_WRITE_FILE 18u
 
 static int fh_input_i64(const fh_host_input *input, int64_t *value) {
   if (input->extent_bytes < 8u) return 0;
@@ -309,6 +310,51 @@ static int fh_stream_append(fh_provider *p, const uint8_t *data, uint32_t length
   if (length > 0u) memcpy(p->stream + p->stream_used, data, length);
   p->stream_used += length;
   return 1;
+}
+
+/* Plain relative segments of [A-Za-z0-9._-]: no root, no empty, "." or ".." segment. */
+static int fh_safe_relative(const uint8_t *path, uint32_t length) {
+  uint32_t i, start = 0u;
+  if (length == 0u || length > 512u) return 0;
+  for (i = 0u; i <= length; ++i) {
+    if (i == length || path[i] == '/') {
+      uint32_t n = i - start;
+      if (n == 0u || (n == 1u && path[start] == '.') || (n == 2u && path[start] == '.' && path[start + 1u] == '.')) return 0;
+      start = i + 1u;
+    } else {
+      uint8_t c = path[i];
+      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) return 0;
+    }
+  }
+  return 1;
+}
+
+/* response.write-file: the file at files_root/path appended to the stream, whole or not at all. */
+static int fh_stream_file(fh_provider *p, const uint8_t *path, uint32_t length) {
+  char full[1200];
+  size_t root_length, got;
+  FILE *f;
+  uint32_t before = p->stream_used;
+  int ok = 1;
+  if (p->files_root == 0 || !fh_safe_relative(path, length)) return 0;
+  root_length = strlen(p->files_root);
+  if (root_length + 1u + length + 1u > sizeof(full)) return 0;
+  memcpy(full, p->files_root, root_length);
+  full[root_length] = '/';
+  memcpy(full + root_length + 1u, path, length);
+  full[root_length + 1u + length] = 0;
+  f = fopen(full, "rb");
+  if (f == 0) return 0;
+  for (;;) {
+    uint32_t room = p->stream_capacity - p->stream_used;
+    if (room == 0u) { int extra = fgetc(f); if (extra != EOF) ok = 0; break; }
+    got = fread(p->stream + p->stream_used, 1u, room, f);
+    p->stream_used += (uint32_t)got;
+    if (got < room) { if (ferror(f)) ok = 0; break; }
+  }
+  fclose(f);
+  if (!ok) p->stream_used = before;
+  return ok;
 }
 
 static int32_t fh_store_host(fh_provider *p, uint32_t operation, const fh_host_input *inputs,
@@ -383,6 +429,10 @@ static int32_t fh_store_host(fh_provider *p, uint32_t operation, const fh_host_i
       fh_put_i64(w, (int64_t)p->stream_used);
       p->stream_used = 0u;
       return 0;
+    case FH_RESPONSE_WRITE_FILE:
+      if ((text = fh_input_bytes(&inputs[0], &text_length)) == 0) return 1;
+      fh_put_i64(w, fh_stream_file(p, text, text_length) ? 1 : 0);
+      return 0;
     default:
       return 1;
   }
@@ -403,7 +453,7 @@ int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
   int32_t status;
   (void)layout;
   (void)output_type_index;
-  if (provider != 0 && output != 0 && operation >= FH_STORE_CAPACITY && operation <= FH_RESPONSE_DISCARD) {
+  if (provider != 0 && output != 0 && operation >= FH_STORE_CAPACITY && operation <= FH_RESPONSE_WRITE_FILE) {
     w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
     status = fh_store_host(provider, operation, inputs, input_count, &w);
     if (status != 0 || w.failed) return 1;
