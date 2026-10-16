@@ -2777,10 +2777,14 @@ module FlowLowering =
           Artifacts: LoweredWordArtifacts
           Source: FlowSourceDocument option }
 
-    /// A compiled snapshot to extend: its verified program and every private marker it allocated.
+    /// A compiled snapshot to extend: its verified program, every private marker it
+    /// allocated, the parent words this batch re-lowers (Rehydrate changes over existing
+    /// names) and every parent Flow owner (attachments may belong to any of them).
     type private FlowExtension =
         { Parent: VerifiedIrProgram
-          Reserved: Map<SourceSpan, SourceSpan> }
+          Reserved: Map<SourceSpan, SourceSpan>
+          Recompiled: Set<string>
+          FlowOwners: Set<WordId> }
 
     let private compileBatchWordsCore
         (context: Context)
@@ -2818,8 +2822,22 @@ module FlowLowering =
                       Maturity = ProjectWord
                       Previous = None }
             | FlowWordRevisionIntent.Rehydrate(identity, revision, status, maturity) ->
-                if context.CompilerContext.Words.ContainsKey flowWord.Name || context.CompilerContext.WordIds.ContainsKey flowWord.Name then
-                    fail "FLOW_BATCH_ADD_EXISTS" $"Cannot hydrate '{flowWord.Name}' because that word already exists." (Some flowWord.Name) (Some flowWord.Span) [ "unused dictionary name" ] [ flowWord.Name ]
+                // An extension re-lowers some parent words in place: same name and identity.
+                let recompiling = extendFrom |> Option.exists (fun extension -> extension.Recompiled.Contains flowWord.Name)
+                let previous =
+                    if recompiling then
+                        let entry =
+                            context.CompilerContext.Words.TryFind flowWord.Name
+                            |> Option.defaultWith (fun () -> fail "FLOW_BATCH_REPLACE_MISSING" $"Cannot recompile missing word '{flowWord.Name}'." (Some flowWord.Name) (Some flowWord.Span) [ "existing user word" ] [])
+                        if context.CompilerContext.WordIds.TryFind flowWord.Name <> Some identity then
+                            fail "FLOW_BATCH_REPLACE_ID_MISMATCH" "Recompiling a word must preserve its stable identity." (Some flowWord.Name) (Some flowWord.Span) [] [ sprintf "%A" identity ]
+                        if entry.Builtin.IsSome || entry.Status = Primitive then
+                            fail "FLOW_BATCH_REPLACE_PROTECTED" $"Built-in or generated word '{flowWord.Name}' cannot be replaced by Flow." (Some flowWord.Name) (Some flowWord.Span) [ "user-defined word" ] [ flowWord.Name ]
+                        Some entry
+                    else
+                        if context.CompilerContext.Words.ContainsKey flowWord.Name || context.CompilerContext.WordIds.ContainsKey flowWord.Name then
+                            fail "FLOW_BATCH_ADD_EXISTS" $"Cannot hydrate '{flowWord.Name}' because that word already exists." (Some flowWord.Name) (Some flowWord.Span) [ "unused dictionary name" ] [ flowWord.Name ]
+                        None
                 let rawIdentity = match identity with | WordId value -> value
                 if String.IsNullOrWhiteSpace rawIdentity then fail "FLOW_BATCH_ID_INVALID" "Hydrated words require a nonempty stable ID." (Some flowWord.Name) (Some flowWord.Span) [ "nonempty WordId" ] [ rawIdentity ]
                 if revision < 0 then fail "FLOW_BATCH_REVISION_INVALID" "Hydrated word revisions must be nonnegative." (Some flowWord.Name) (Some flowWord.Span) [ "nonnegative revision" ] [ string revision ]
@@ -2829,7 +2847,7 @@ module FlowLowering =
                 if maturity <> ProjectWord && maturity <> LibraryWord then
                     fail "FLOW_BATCH_REHYDRATE_METADATA_INVALID" "A hydrated Flow revision must retain Project or Library maturity." (Some flowWord.Name) (Some flowWord.Span)
                         [ "ProjectWord"; "LibraryWord" ] [ string maturity ]
-                if baseIds.Contains identity || not (addedIds.Add identity) then
+                if (not recompiling && baseIds.Contains identity) || not (addedIds.Add identity) then
                     fail "FLOW_BATCH_ID_COLLISION" "A hydrated word must use a stable ID not assigned to any base or other added word." (Some flowWord.Name) (Some flowWord.Span) [ "unused WordId" ] [ rawIdentity ]
                 prepared.Add
                     { Definition = flowWord
@@ -2837,7 +2855,7 @@ module FlowLowering =
                       Revision = revision
                       Status = status
                       Maturity = maturity
-                      Previous = None }
+                      Previous = previous }
             | FlowWordRevisionIntent.Replace(identity, expectedRevision, revision) ->
                 let previous =
                     context.CompilerContext.Words.TryFind flowWord.Name
@@ -3004,8 +3022,9 @@ module FlowLowering =
         let program, retainedOrigins =
             match extendFrom with
             | Some extension ->
-                if not (List.isEmpty retainedSources) || prepared |> Seq.exists (fun item -> item.Previous.IsSome) then
-                    fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added words." None None [ "added words only" ] []
+                if not (List.isEmpty retainedSources)
+                   || prepared |> Seq.exists (fun item -> item.Previous.IsSome && not (extension.Recompiled.Contains item.Definition.Name)) then
+                    fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added and recompiled words." None None [ "added or recompiled words" ] []
                 let addedMarkers =
                     loweredChangeArtifacts
                     |> List.fold (fun found item -> Set.union found (zeroWidthMarkers item.Artifacts.Lowered.Definition.Body)) Set.empty
@@ -3018,7 +3037,7 @@ module FlowLowering =
                 if not (Set.isEmpty missing) then
                     fail "IR_SOURCE_ORIGIN_MISSING" "Final batch words contain a private Flow marker without an authored source origin." None None
                         [ "one source origin per final marker" ] [ sprintf "missing marker count=%d" missing.Count ]
-                Compiler.extendIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins extension.Parent finalCompilerContext addedOrigins
+                Compiler.extendIrProgramWithSourceOrigins context.CompilerContext context.SourceOrigins extension.Parent extension.Recompiled finalCompilerContext addedOrigins
             | None ->
                 let finalMarkers = contextZeroWidthMarkers finalCompilerContext
                 let retainedOrigins = allocationOrigins |> Map.filter (fun marker _ -> finalMarkers.Contains marker)
@@ -3887,7 +3906,10 @@ module FlowLowering =
             fail "FLOW_BATCH_EMPTY" "A Flow project-source batch must contain at least one word or attachment change." None None
                 [ "one or more word or attachment changes" ] []
 
-        let baseFlowOwnerIds = wordInventory.ExpectedFlowOwnerIds
+        let baseFlowOwnerIds =
+            match extendFrom with
+            | Some extension -> extension.FlowOwners
+            | None -> wordInventory.ExpectedFlowOwnerIds
         let baseFlow2OwnerIds =
             wordInventory.Sources
             |> List.choose (fun document -> if document.SyntaxVersion = 2 then Some document.OwnerId else None)
@@ -4061,16 +4083,20 @@ module FlowLowering =
         : FlowBoundProjectCompilation =
         compileBatchFlowProjectSourcesCore true context wordInventory [] attachmentInventory [] None
 
-    /// Adds Flow words and their attachments to a compiled project without recompiling it:
-    /// `context` and `parent` are the final word context and program of an earlier
-    /// compilation, and `reserved` holds every private marker that compilation allocated
-    /// (attachments included). Only the added words and attachments are lowered; the
-    /// result's program is `Compiler.extendIrProgramWithSourceOrigins` of the parent, and
-    /// its bindings and attachments are the added ones alone.
+    /// Adds Flow words and attachments to a compiled project, and re-lowers the parent words
+    /// in `recompiled` (Rehydrate changes over their existing names), without recompiling
+    /// the rest: `context` and `parent` are the final word context and program of an earlier
+    /// compilation, `reserved` holds every private marker that compilation allocated
+    /// (attachments included) and `flowOwners` every Flow owner it has. Only the given words
+    /// and attachments are lowered; the result's program is
+    /// `Compiler.extendIrProgramWithSourceOrigins` of the parent, and its bindings and
+    /// attachments are the given ones alone.
     let extendFlowProjectSources
         (context: Context)
         (parent: VerifiedIrProgram)
         (reserved: Map<SourceSpan, SourceSpan>)
+        (recompiled: Set<string>)
+        (flowOwners: Set<WordId>)
         (wordChanges: FlowSourceChange list)
         (attachmentChanges: FlowAttachmentChange list)
         : FlowBoundProjectCompilation =
@@ -4086,7 +4112,8 @@ module FlowLowering =
                 fail "FLOW_EXTEND_NOT_PURE_ADD" "Extending a compiled snapshot accepts only added attachments." None None [ "added attachments only" ] []
         let emptyWords: FlowSourceInventory = { ExpectedFlowOwnerIds = Set.empty; Sources = [] }
         let emptyAttachments: FlowAttachmentInventory = { ExpectedSources = Map.empty; Sources = [] }
-        compileBatchFlowProjectSourcesCore false context emptyWords wordChanges emptyAttachments attachmentChanges (Some { Parent = parent; Reserved = reserved })
+        compileBatchFlowProjectSourcesCore false context emptyWords wordChanges emptyAttachments attachmentChanges
+            (Some { Parent = parent; Reserved = reserved; Recompiled = recompiled; FlowOwners = flowOwners })
 
     let parameterCatalog (definitions: FlowWordDefinition list) =
         definitions

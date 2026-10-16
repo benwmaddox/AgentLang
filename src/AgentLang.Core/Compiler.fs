@@ -1931,16 +1931,18 @@ module Compiler =
             facts.Fingerprint <- Some(programOrigins, value)
             value
 
-    /// The verified program for `context` when `context` is `parentContext` plus some
-    /// Flow-lowered user words and nothing else; `parentProgram` was compiled from
-    /// `parentContext` and `parentOrigins`. Only the added words are checked and lowered.
-    /// Lowering one word reads only its own definition and the signatures it calls, and no
-    /// parent word can call a word that did not exist when it was compiled, so every parent
-    /// function, type, generated target and source site is exactly what a from-scratch
-    /// compile of `context` produces. Anything other than such an add is rejected.
-    /// `addedOrigins` maps exactly the added words' private markers; the result's origin map
-    /// is the parent's plus those (returned beside the program).
-    let extendIrProgramWithSourceOrigins (parentContext: IrLoweringContext) (parentOrigins: Map<SourceSpan, SourceSpan>) (parentProgram: VerifiedIrProgram) (context: IrLoweringContext) (addedOrigins: Map<SourceSpan, SourceSpan>) =
+    /// The verified program for `context` when `context` is `parentContext` with some
+    /// Flow-lowered user words added and the parent words in `recompiled` given new entries
+    /// (same ids), and nothing else; `parentProgram` was compiled from `parentContext` and
+    /// `parentOrigins`. Only the added and recompiled words are checked and lowered.
+    /// Lowering one word reads only its own definition and the signatures it calls; no kept
+    /// word can call an added one, and the verifier rejects a kept function that calls a
+    /// recompiled one (the caller must recompile every caller). So every kept function,
+    /// type, generated target and source site is what a from-scratch compile of `context`
+    /// produces. `addedOrigins` maps exactly the compiled words' private markers; the
+    /// result's origin map is the parent's without the recompiled words' old markers, plus
+    /// those (returned beside the program).
+    let extendIrProgramWithSourceOrigins (parentContext: IrLoweringContext) (parentOrigins: Map<SourceSpan, SourceSpan>) (parentProgram: VerifiedIrProgram) (recompiled: Set<string>) (context: IrLoweringContext) (addedOrigins: Map<SourceSpan, SourceSpan>) =
         VerifiedIrProgram.requireBackendRegistry primitiveIrCatalog parentProgram
         let parentFacts = factsFor parentContext
         match parentProgram.CompilerSnapshotFingerprint with
@@ -1956,9 +1958,13 @@ module Compiler =
         for KeyValue(name, entry) in parentContext.Words do
             match context.Words.TryFind name, context.WordIds.TryFind name with
             | Some kept, Some keptId when obj.ReferenceEquals(kept, entry) && keptId = parentContext.WordIds[name] -> ()
+            | Some kept, Some keptId when recompiled.Contains name && keptId = parentContext.WordIds[name] && entry.Builtin.IsNone && kept.Builtin.IsNone -> ()
             | _ -> notPureAdd name
+        for name in recompiled do
+            if not (parentContext.Words.ContainsKey name) then notPureAdd (name + " is not a parent word")
         let added = context.Words |> Map.filter (fun name _ -> not (parentContext.Words.ContainsKey name))
-        if added.IsEmpty then notPureAdd "no added words"
+        let compiled = recompiled |> Seq.fold (fun found name -> Map.add name context.Words[name] found) added
+        if compiled.IsEmpty then notPureAdd "no added or recompiled words"
         if context.WordIds.Count <> context.Words.Count then
             irFailure "IR_WORD_ID_MAP_INCOMPLETE" "Every effective dictionary word must have exactly one supplied stable ID." None None [ string context.Words.Count ] [ string context.WordIds.Count ]
         let parentIds = parentContext.WordIds |> Map.toSeq |> Seq.map snd |> Set.ofSeq
@@ -1972,20 +1978,27 @@ module Compiler =
             | None -> irFailure "IR_WORD_ID_MAP_INCOMPLETE" "Every effective dictionary word must have exactly one supplied stable ID." (Some name) None [ name ] []
             verifyBuiltinMetadata context.Words context.HostOperations name entry
             if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
-        let addedMarkers = added |> Map.fold (fun found _ entry -> Set.union found (zeroWidthMarkers entry.Definition.Body)) Set.empty
-        let collisions = addedMarkers |> Set.filter parentFacts.Markers.Contains
+        for name in recompiled do
+            let entry = context.Words[name]
+            verifyBuiltinMetadata context.Words context.HostOperations name entry
+            if entry.Revision < 0 then irFailure "IR_INVALID_REVISION" "Dictionary word revisions cannot be negative." (Some name) (Some entry.Definition.Span) [ "nonnegative revision" ] [ string entry.Revision ]
+        let removedMarkers = recompiled |> Seq.fold (fun found name -> Set.union found (zeroWidthMarkers parentContext.Words[name].Definition.Body)) Set.empty
+        let keptMarkers = Set.difference parentFacts.Markers removedMarkers
+        let addedMarkers = compiled |> Map.fold (fun found _ entry -> Set.union found (zeroWidthMarkers entry.Definition.Body)) Set.empty
+        let collisions = addedMarkers |> Set.filter keptMarkers.Contains
         if not (Set.isEmpty collisions) then
             irFailure "IR_SOURCE_ORIGIN_MARKER_COLLISION" "Private source markers must be unique across compiler snapshots and attached bodies." None None [] [ sprintf "collision count=%d" collisions.Count ]
         validateSourceOrigins addedOrigins
         ensureExactOriginKeys addedMarkers addedOrigins None None
-        let sourceOrigins = Map.fold (fun found marker origin -> Map.add marker origin found) parentOrigins addedOrigins
+        let keptOrigins = removedMarkers |> Set.fold (fun found marker -> Map.remove marker found) parentOrigins
+        let sourceOrigins = Map.fold (fun found marker origin -> Map.add marker origin found) keptOrigins addedOrigins
         let derived = programFactsFor parentProgram
         let parentIr = derived.Program
         let knownTypes = parentFacts.Types
         let mutable functions = Map.empty
         let mutable coverage = Map.empty
         let mutable sourceMap = Map.empty
-        for KeyValue(name, entry) in added do
+        for KeyValue(name, entry) in compiled do
             let checkedWord, typed = checkDefinitionDetailed knownTypes context.Enums context.Words entry.Definition
             let ownerId = context.WordIds[name]
             let block, localNames, wordSources, inferredEffects =
@@ -2004,9 +2017,10 @@ module Compiler =
                   FunctionInline = FlowSource.declaresInline entry.Definition.SourceText }
             functions <- Map.add ownerId functionValue functions
             coverage <- Map.add ownerId (IrVerifier.coverageObligationsWithTypes parentIr.NominalTypesByKey wordSources block) coverage
-        if (functions |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> addedIds then notPureAdd "added functions"
+        let replacedIds = recompiled |> Set.map (fun name -> context.WordIds[name])
+        if (functions |> Map.toSeq |> Seq.map fst |> Set.ofSeq) <> Set.union addedIds replacedIds then notPureAdd "compiled functions"
         let fingerprint = snapshotFingerprint context sourceOrigins
-        let verified = IrVerifier.extendCompilerProgram parentProgram fingerprint functions coverage sourceMap
+        let verified = IrVerifier.extendCompilerProgram parentProgram fingerprint replacedIds functions coverage sourceMap
         // The child's shared facts follow from the parent's and the added words, without
         // walking every retained body again.
         match contextFacts.TryGetValue context with
@@ -2014,9 +2028,9 @@ module Compiler =
         | _ ->
             contextFacts.AddOrUpdate(
                 context,
-                { Markers = Set.union parentFacts.Markers addedMarkers
+                { Markers = Set.union keptMarkers addedMarkers
                   Types = parentFacts.Types
-                  TestScopeWords = Map.fold (fun words name entry -> if testIntrinsics.ContainsKey name then words else Map.add name entry words) parentFacts.TestScopeWords added
+                  TestScopeWords = Map.fold (fun words name entry -> if testIntrinsics.ContainsKey name then words else Map.add name entry words) parentFacts.TestScopeWords compiled
                   Fingerprint = Some(sourceOrigins, fingerprint)
                   CheckedBase = None })
         verified, sourceOrigins
