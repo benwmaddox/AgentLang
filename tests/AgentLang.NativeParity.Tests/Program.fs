@@ -60,7 +60,7 @@ let private valueChecks (runRoot: string) =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim" ] do
+    for name in [ "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim" ] do
         let response = engine.Dispatch("commit", wordArgs name)
         check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
     let interpret word inputs outputs values =
@@ -107,6 +107,13 @@ let private valueChecks (runRoot: string) =
         pair "native.parity.empty?" [ TList TString ] [ TBool ] [ for items in lists -> [ ListValue(TString, items |> List.map StringValue) ] ] (function
             | [ ListValue(_, items) ] -> Ok [ BoolValue items.IsEmpty ]
             | other -> failwith $"bad case {other}")
+        // Equality (report 304): lengths on and off the 8-byte word, equal prefixes, Unicode.
+        let words = [ ""; "a"; "b"; "abcdefg"; "abcdefgh"; "abcdefgi"; "abcdefghi"; "abcdefghj"; "abcdefghijklmnop"; "abcdefghijklmnoq"; "é"; "e\u0301"; "🚀🚀"; String('x', 100); String('x', 99) + "y" ]
+        let wordPairs = [ for a in words do for b in words -> [ StringValue a; StringValue b ] ]
+        for word in [ "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?" ] do
+            pair word [ TString; TString ] [ TBool ] wordPairs (function
+                | [ StringValue a; StringValue b ] -> Ok [ BoolValue(String.Equals(a, b, StringComparison.Ordinal)) ]
+                | other -> failwith $"bad case {other}")
         pair "native.parity.trim" [ TString ] [ TString ] [ for t in texts -> [ StringValue t ] ] (function
             | [ StringValue t ] -> Ok [ StringValue(t.Trim()) ]
             | other -> failwith $"bad case {other}")

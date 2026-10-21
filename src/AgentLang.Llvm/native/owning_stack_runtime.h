@@ -332,6 +332,10 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
                                 uint32_t o0, uint32_t e0, uint32_t o1,
                                 uint32_t e1, uint32_t error_id,
                                 int64_t *out_value);
+/* Equality of two String or Bytes values the generated code built (trusted
+ * profile, report 304): byte counts, then bytes; no rescan or validation. */
+int32_t al_owning_string_equal(al_owning_stack_context *ctx,
+                               uint32_t left_offset, uint32_t right_offset);
 int32_t al_owning_string_find(al_owning_stack_context *ctx,
                               uint32_t haystack_offset,
                               uint32_t haystack_extent_bytes,

@@ -4313,6 +4313,7 @@ module OwningStackAot =
         writer.Line("declare void @al_owning_record_layout(ptr, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_swap(ptr, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_equal_typed(ptr, ptr, i32, i32, i32, i32, i32, i32)")
+        writer.Line("declare i32 @al_owning_string_equal(ptr, i32, i32)")
         writer.Line("declare void @al_owning_publish(ptr, ptr, i32, i32, i32, i32)")
         writer.Line("declare void @al_owning_set_failure(ptr, i32, i32, i32, i32)")
         if mailboxMode then
@@ -5153,6 +5154,16 @@ module OwningStackAot =
                 | None ->
                     w.Inst($"{target} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {entry.Offset})")
                     emitRuntimeStatus w "%ctx" failBody
+            /// String, Bytes and refined String values share the text layout: a u32 byte
+            /// count, 4 reserved bytes, then the bytes (report 304).
+            let textLike (ty: IrType) =
+                match ty with
+                | IrString | IrBytes -> true
+                | IrNominal _ ->
+                    match scalarDefinition program ty with
+                    | Some scalar -> scalar.BaseType = IrString || scalar.BaseType = IrBytes
+                    | None -> false
+                | _ -> false
             /// Primitives whose operands are read only as i64 values (report 273).
             let primitiveRegisterAware (operation: string) (inputTypes: IrType list) =
                 match operation with
@@ -7388,6 +7399,15 @@ module OwningStackAot =
                                 w.Inst($"{equal} = icmp eq i64 {a}, {b}")
                                 let asInt = w.Fresh "equals.i64"
                                 w.Inst($"{asInt} = zext i1 {equal} to i64")
+                                emitScalarResult IrBool asInt
+                            | "equals", [ left; right ] when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && textLike left.Type ->
+                                // String, Bytes or a refined String: byte counts, then bytes (report 304).
+                                let equal = w.Fresh "equals.text"
+                                w.Inst($"{equal} = call i32 @al_owning_string_equal(ptr %%ctx, i32 {left.Offset}, i32 {right.Offset})")
+                                let asBool = w.Fresh "equals.text.bool"
+                                w.Inst($"{asBool} = icmp ne i32 {equal}, 0")
+                                let asInt = w.Fresh "equals.text.i64"
+                                w.Inst($"{asInt} = zext i1 {asBool} to i64")
                                 emitScalarResult IrBool asInt
                             | "equals", [ left; right ] ->
                                 let rightOffset = right.Offset

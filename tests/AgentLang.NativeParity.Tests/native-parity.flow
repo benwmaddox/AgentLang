@@ -1,3 +1,30 @@
+type Label : String {
+}
+
+fn native.parity.same?(a: String, b: String) -> Bool {
+    a == b
+}
+
+fn native.parity.same-bytes?(a: String, b: String) -> Bool {
+    bytes.from-utf8(a) == bytes.from-utf8(b)
+}
+
+fn native.parity.same-label?(a: String, b: String) -> Bool {
+    Label.new(a) == Label.new(b)
+}
+
+test native.parity.same?/yes {
+    native.parity.same?("abc", "abc")
+}
+
+test native.parity.same-bytes?/no {
+    expect bool.not(native.parity.same-bytes?("abc", "abd"))
+}
+
+test native.parity.same-label?/yes {
+    native.parity.same-label?("x", "x")
+}
+
 fn native.parity.abs(n: Int) -> Int {
     int.abs(n)
 }

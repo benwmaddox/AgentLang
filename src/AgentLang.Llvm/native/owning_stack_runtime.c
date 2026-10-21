@@ -4018,6 +4018,33 @@ int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
   return 0;
 }
 
+int32_t al_owning_string_equal(al_owning_stack_context *ctx,
+                               uint32_t left_offset, uint32_t right_offset) {
+  const uint8_t *left;
+  const uint8_t *right;
+  uint32_t length;
+  uint32_t words;
+  uint32_t k;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
+    return 0;
+  length = al_owning_read_u32_le(ctx->stack_data, left_offset);
+  if (length != al_owning_read_u32_le(ctx->stack_data, right_offset))
+    return 0;
+  if (left_offset == right_offset)
+    return 1;
+  /* Both payloads start 8 bytes in, so they are 8-byte aligned. */
+  left = ctx->stack_data + left_offset + 8u;
+  right = ctx->stack_data + right_offset + 8u;
+  words = length / 8u;
+  for (k = 0u; k < words; ++k)
+    if (al_owning_read_u64_le(left, k * 8u) != al_owning_read_u64_le(right, k * 8u))
+      return 0;
+  for (k = words * 8u; k < length; ++k)
+    if (left[k] != right[k])
+      return 0;
+  return 1;
+}
+
 /* Ordinal search over UTF-8 bytes: mode 0 = contains, 1 = starts-with,
  * 2 = ends-with. UTF-8 is self-synchronizing, so on well-formed strings a byte
  * match is a whole-character match. An empty needle always matches. */
