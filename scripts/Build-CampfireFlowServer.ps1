@@ -41,24 +41,26 @@ $shared = @(
 $sources = @($shared | ForEach-Object { Join-Path $campfire $_ })
 $sources += @(Get-ChildItem -LiteralPath (Join-Path $campfire 'server') -Filter '*.flow' | Sort-Object Name | ForEach-Object FullName)
 $build = Join-Path $PSScriptRoot 'Build-FlowHttpServer.ps1'
+# Every SQL literal is checked against Campfire's schema (report 301).
+$schema = Join-Path $campfire 'schema.sql'
 $optimizationGiven = $PSBoundParameters.ContainsKey('Optimization')
 if ($TwoPart) {
     $fastDir = Join-Path $OutDir 'unverified'
     $fast = & $build -App 'campfire.server' -Source $sources -Target $Target -RuntimeProfile $RuntimeProfile `
-        -Optimization $(if ($optimizationGiven) { $Optimization } else { 'O0' }) -OutDir $fastDir -LinuxName "$LinuxName-unverified" -Profile:$Profile -Unverified |
+        -Optimization $(if ($optimizationGiven) { $Optimization } else { 'O0' }) -OutDir $fastDir -LinuxName "$LinuxName-unverified" -Profile:$Profile -Unverified -Schema $schema |
         Select-Object -Last 1
     Write-Host "part 1 ready (UNVERIFIED, attached tests not run): $fast"
     $verified = & $build -App 'campfire.server' -Source $sources -Target $Target -RuntimeProfile $RuntimeProfile `
-        -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile |
+        -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile -Schema $schema |
         Select-Object -Last 1
     Write-Host "part 2 verified (every attached test passed): $verified"
     $verified
 }
 elseif ($Unverified) {
     & $build -App 'campfire.server' -Source $sources -Target $Target -RuntimeProfile $RuntimeProfile `
-        -Optimization $(if ($optimizationGiven) { $Optimization } else { 'O0' }) -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile -Unverified
+        -Optimization $(if ($optimizationGiven) { $Optimization } else { 'O0' }) -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile -Unverified -Schema $schema
 }
 else {
     & $build -App 'campfire.server' -Source $sources -Target $Target -RuntimeProfile $RuntimeProfile `
-        -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile
+        -Optimization $Optimization -OutDir $OutDir -LinuxName $LinuxName -Profile:$Profile -Schema $schema
 }

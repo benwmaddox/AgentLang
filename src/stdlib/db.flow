@@ -2,7 +2,9 @@
 // piece C). The host operations are
 //   db.query(sql: String, parameters: List<DbValue>) -> Result<List<DbRow>, SqlError>   effects db.read
 //   db.execute(sql: String, parameters: List<DbValue>) -> Result<Int, SqlError>       effects db.write
-// `sql` must be a string literal; each worker prepares it once and reuses it.
+// `sql` must be a string literal; each worker prepares it once and reuses it. Built with
+// --schema (AgentLang.FlowHttp emit; report 301), every literal is checked against the
+// app's schema.sql, and the server refuses a database with another schema.
 // Parameters bind in order (?1, ?2, ...). Columns are read by zero-based index.
 // SQLite REAL columns arrive as text (sqlite3_column_text).
 

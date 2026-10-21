@@ -1,16 +1,18 @@
 # 300 — Reopened: bitwise operators, shifts and String ordering
 
 AgentLang was reopened on 21 October 2026 to apply lessons from crudspec, a
-later experiment. This is the first of the agreed changes, in the user's order:
+later experiment. The items keep the numbers the user gave them, and run in
+the user's order:
 
-1. bitwise operators and String ordering (this report);
-2. SQL checked against the schema at build time, with typed rows;
-3. typed routes, so links and forms are checked;
-4. template holes escaped by their context;
-5. interpreter-versus-native builtin parity, as a test;
-6. C library bindings with declared effects;
-7. templates and strings written straight to the response;
-8. paired layout templates.
+- **5** bitwise operators and String ordering (this report);
+- **1** SQL checked against the schema at build time, with typed rows;
+- **2** typed routes, so links and forms are checked;
+- **3** template holes escaped by their context;
+- **4** interpreter-versus-native builtin parity, as a test;
+- **7** C library bindings with declared effects;
+- **6** templates and strings written straight to the response, with better
+  string concatenation;
+- **8** paired layout templates.
 
 Every item is checked for speed and for build time. The aim is a verified
 build under one minute.
@@ -130,4 +132,4 @@ because it runs the unverified and verified builds one after the other.
   on a hot path, so it was left alone.
 - The new primitive names had to be added to six hand-kept lists (compiler,
   interpreter, owning support set, owning signatures, register-aware set,
-  lifetime analysis). Item 5 adds a test that keeps those lists in step.
+  lifetime analysis). Item 4 adds a test that keeps those lists in step.

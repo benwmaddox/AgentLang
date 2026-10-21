@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Db.fs" />
+    <Compile Include="SqlCheck.fs" />
     <Compile Include="Cache.fs" />
     <Compile Include="Store.fs" />
     <Compile Include="FlowApp.fs" />

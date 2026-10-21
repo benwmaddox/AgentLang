@@ -25,7 +25,10 @@ param(
     # Skip the commit, so no attached test runs (the code is still type-checked and
     # IR-verified). The output directory gets an UNVERIFIED marker; a build without this
     # switch is the verification step.
-    [switch] $Unverified
+    [switch] $Unverified,
+    # The app's schema.sql: every SQL literal is checked against it at build time, and
+    # the server refuses a database with another schema (AgentLang.FlowHttp emit --schema).
+    [string] $Schema = ''
 )
 $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -40,6 +43,7 @@ $tool = Join-Path $repo 'src/AgentLang.FlowHttp/bin/Release/net9.0/AgentLang.Flo
 $emitArgs = @($tool, 'emit', '--app', $App, '--target', $Target, '--profile', $RuntimeProfile, '--out', $out)
 foreach ($file in $Source) { $emitArgs += @('--source', [System.IO.Path]::GetFullPath($file)) }
 if ($Unverified) { $emitArgs += '--unverified' }
+if ($Schema -ne '') { $emitArgs += @('--schema', [System.IO.Path]::GetFullPath($Schema)) }
 & dotnet @emitArgs
 if ($LASTEXITCODE -ne 0) { throw 'Flow module emission failed.' }
 
@@ -51,6 +55,7 @@ foreach ($name in @('owning_stack_runtime.c', 'owning_stack_runtime.h', 'owning_
     Copy-Item -LiteralPath (Join-Path $native $name) -Destination $src -Force
 }
 Get-ChildItem -LiteralPath (Join-Path $native 'http_host') -File | Copy-Item -Destination $src -Force
+Copy-Item -LiteralPath (Join-Path $out 'flow_app_schema.c') -Destination $src -Force
 $trusted = if ($RuntimeProfile -eq 'trusted') { '1' } else { '0' }
 
 if ($Target -eq 'windows-x64') {
@@ -71,9 +76,10 @@ if ($Target -eq 'windows-x64') {
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_db.c', '-o', 'db.obj')
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_cache.c', '-o', 'cache.obj')
         Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-Wall', '-Wno-unused-parameter', $defs, '-Isrc', '-c', 'src/flow_http_host.c', '-o', 'host.obj')
+        Invoke-Clang @('--target=x86_64-pc-windows-msvc', $opt, '-std=c11', '-c', 'src/flow_app_schema.c', '-o', 'schema.obj')
         $dllOutput = & $dlltool -m i386:x86-64 -d 'src/flow_http_sqlite.def' -l 'e_sqlite3.lib' 2>&1
         if ($LASTEXITCODE -ne 0) { throw "llvm-dlltool failed: $dllOutput" }
-        Invoke-Clang @('--target=x86_64-pc-windows-msvc', '-fuse-ld=lld', 'host.obj', 'db.obj', 'cache.obj', 'module.obj', 'runtime.obj', 'e_sqlite3.lib', '-lws2_32', '-lbcrypt', '-o', 'flow_http_server.exe')
+        Invoke-Clang @('--target=x86_64-pc-windows-msvc', '-fuse-ld=lld', 'host.obj', 'db.obj', 'cache.obj', 'schema.obj', 'module.obj', 'runtime.obj', 'e_sqlite3.lib', '-lws2_32', '-lbcrypt', '-o', 'flow_http_server.exe')
         $sqliteDll = Join-Path $repo 'src/AgentLang.FlowHttp/bin/Release/net9.0/runtimes/win-x64/native/e_sqlite3.dll'
         Copy-Item -LiteralPath $sqliteDll -Destination $out -Force
     }

@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define FH_DB_STATEMENTS 256u
 #define FH_DB_QUERY 1u
@@ -69,13 +70,82 @@ fh_db *fh_db_open(const char *path, char *reason, uint32_t reason_capacity) {
   return db;
 }
 
+/* The canonical schema the app's SQL was checked against at build time
+ * (flow_app_schema.c, written by AgentLang.FlowHttp emit --schema; empty means no
+ * check). The query is SqlCheck.canonicalQuery: fields end with 0x1F, rows with 0x1E. */
+extern const char flow_app_schema[];
+#define FH_SCHEMA_QUERY "SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE sql IS NOT NULL AND name NOT IN (SELECT name FROM pragma_table_list WHERE type = 'shadow') ORDER BY type, name"
+
+/* The type and name of the expected row that starts at `at`, for the message. */
+static void fh_schema_expected_object(const char *expected, size_t at, char *out, size_t capacity) {
+  size_t k = 0u;
+  int fields = 0;
+  while (expected[at] != 0 && expected[at] != '\x1e' && k + 1u < capacity) {
+    char c = expected[at++];
+    if (c == '\x1f') {
+      if (++fields == 2) break;
+      c = ' ';
+    }
+    out[k++] = c;
+  }
+  out[k] = 0;
+}
+
+/* 1 when the open database has exactly the build's schema (or the build has none). */
+static int fh_schema_matches(sqlite3 *connection, char *reason, uint32_t reason_capacity) {
+  const char *expected = flow_app_schema;
+  const size_t total = strlen(expected);
+  size_t at = 0u;
+  sqlite3_stmt *statement = 0;
+  int rc, same = 1;
+  char object[160];
+  if (total == 0u) return 1;
+  if (sqlite3_prepare_v2(connection, FH_SCHEMA_QUERY, -1, &statement, 0) != SQLITE_OK) {
+    snprintf(reason, reason_capacity, "schema check failed: %s", sqlite3_errmsg(connection));
+    return 0;
+  }
+  while (same && (rc = sqlite3_step(statement)) == SQLITE_ROW) {
+    const size_t row = at;
+    int column;
+    for (column = 0; column < 4 && same; ++column) {
+      const char *text = (const char *)sqlite3_column_text(statement, column);
+      size_t length = (size_t)sqlite3_column_bytes(statement, column);
+      char end = column == 3 ? '\x1e' : '\x1f';
+      if (at + length + 1u > total || (length > 0u && memcmp(expected + at, text, length) != 0) || expected[at + length] != end)
+        same = 0;
+      else
+        at += length + 1u;
+    }
+    if (!same) {
+      char found[160];
+      snprintf(found, sizeof found, "%s %s", (const char *)sqlite3_column_text(statement, 0), (const char *)sqlite3_column_text(statement, 1));
+      fh_schema_expected_object(expected, row, object, sizeof object);
+      if (strcmp(found, object) == 0)
+        snprintf(reason, reason_capacity, "the database schema differs from the build's: %s is defined differently (rebuild against this schema, or migrate the database)", found);
+      else
+        snprintf(reason, reason_capacity, "the database schema differs from the build's: the database has %s where the build expects %s (rebuild against this schema, or migrate the database)",
+                 found, object[0] != 0 ? object : "nothing more");
+    }
+  }
+  sqlite3_finalize(statement);
+  if (same && at != total) {
+    fh_schema_expected_object(expected, at, object, sizeof object);
+    snprintf(reason, reason_capacity, "the database schema lacks %s, which the build expects (rebuild against this schema, or migrate the database)", object);
+    same = 0;
+  }
+  return same;
+}
+
 /* Run once by the main thread before workers start: switching the journal to
- * WAL needs an exclusive lock, which concurrent worker opens would contend. */
+ * WAL needs an exclusive lock, which concurrent worker opens would contend. It
+ * also refuses a database whose schema is not the one the build checked. */
 int fh_db_provision(const char *path, char *reason, uint32_t reason_capacity) {
   fh_db *db = fh_db_open(path, reason, reason_capacity);
+  int same;
   if (db == 0) return 0;
+  same = fh_schema_matches(db->connection, reason, reason_capacity);
   fh_db_close(db);
-  return 1;
+  return same;
 }
 
 void fh_db_close(fh_db *db) {

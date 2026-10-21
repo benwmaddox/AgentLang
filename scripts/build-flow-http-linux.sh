@@ -22,8 +22,10 @@ clang --target=x86_64-pc-linux-gnu $OPT -std=c11 -ffreestanding -fno-builtin -Wa
 clang --target=x86_64-pc-linux-gnu $OPT -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_db.c -o db.o
 clang --target=x86_64-pc-linux-gnu $OPT -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_cache.c -o cache.o
 clang --target=x86_64-pc-linux-gnu $OPT -std=gnu11 -Wall -Wextra -Wno-unused-parameter $DEFS -Isrc -c src/flow_http_host.c -o host.o
+# The schema the app's SQL was checked against (emit --schema); the host refuses another.
+clang --target=x86_64-pc-linux-gnu $OPT -std=c11 -c src/flow_app_schema.c -o schema.o
 SQLITE=$(ls /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 2>/dev/null || ls /lib/x86_64-linux-gnu/libsqlite3.so.0)
 # The OS crypto table resolves libcrypto symbols weakly: keep the library even when
 # --as-needed would drop it (Ubuntu default), or every crypto primitive reports failure.
-clang -fuse-ld=lld $OPT host.o db.o cache.o module.o runtime.o "$SQLITE" -lpthread -Wl,--no-as-needed -lcrypto -Wl,--as-needed -o flow_http_server
+clang -fuse-ld=lld $OPT host.o db.o cache.o schema.o module.o runtime.o "$SQLITE" -lpthread -Wl,--no-as-needed -lcrypto -Wl,--as-needed -o flow_http_server
 echo "built $OUT/flow_http_server"
