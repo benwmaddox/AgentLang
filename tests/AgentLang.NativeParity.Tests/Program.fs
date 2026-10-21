@@ -60,7 +60,7 @@ let private valueChecks (runRoot: string) =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim" ] do
+    for name in [ "native.parity.member?"; "native.parity.literal-sum"; "native.parity.literal-grow"; "native.parity.literal-join"; "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim" ] do
         let response = engine.Dispatch("commit", wordArgs name)
         check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
     let interpret word inputs outputs values =
@@ -106,6 +106,21 @@ let private valueChecks (runRoot: string) =
         let lists = [ []; [ "a" ]; [ ""; "b" ]; [ for k in 1..20 -> string k ] ]
         pair "native.parity.empty?" [ TList TString ] [ TBool ] [ for items in lists -> [ ListValue(TString, items |> List.map StringValue) ] ] (function
             | [ ListValue(_, items) ] -> Ok [ BoolValue items.IsEmpty ]
+            | other -> failwith $"bad case {other}")
+        // Literal lists built once at compile time (report 304), called repeatedly.
+        let memberCases = [ for name in [ "a"; "em"; "🚀"; "é"; "x"; ""; "span"; "spa"; "strong" ] -> [ StringValue name ] ]
+        let members = set [ "a"; "abbr"; "b"; "blockquote"; "br"; "code"; "div"; "em"; "h1"; "p"; "pre"; "span"; "strong"; "é"; "🚀" ]
+        pair "native.parity.member?" [ TString ] [ TBool ] (memberCases @ memberCases) (function
+            | [ StringValue name ] -> Ok [ BoolValue(members.Contains name) ]
+            | other -> failwith $"bad case {other}")
+        pair "native.parity.literal-sum" [ TInt ] [ TInt ] [ for k in [ 0L; 1L; -303L; 5L; 0L ] -> [ IntValue k ] ] (function
+            | [ IntValue k ] -> Ok [ IntValue(303L + k) ]
+            | other -> failwith $"bad case {other}")
+        pair "native.parity.literal-grow" [ TString ] [ TString ] [ for text in [ "z"; ""; "long text"; "🚀"; "z" ] -> [ StringValue text ] ] (function
+            | [ StringValue text ] -> Ok [ StringValue("xyy" + text + text) ]
+            | other -> failwith $"bad case {other}")
+        pair "native.parity.literal-join" [ TString ] [ TString ] [ for text in [ "!"; ""; "é" ] -> [ StringValue text ] ] (function
+            | [ StringValue text ] -> Ok [ StringValue("<b>" + text) ]
             | other -> failwith $"bad case {other}")
         // Equality (report 304): lengths on and off the 8-byte word, equal prefixes, Unicode.
         let words = [ ""; "a"; "b"; "abcdefg"; "abcdefgh"; "abcdefgi"; "abcdefghi"; "abcdefghj"; "abcdefghijklmnop"; "abcdefghijklmnoq"; "é"; "e\u0301"; "🚀🚀"; String('x', 100); String('x', 99) + "y" ]

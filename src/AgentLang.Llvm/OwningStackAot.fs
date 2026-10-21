@@ -4190,6 +4190,56 @@ module OwningStackAot =
             Array.blit encoded 0 bytes 8 encoded.Length
             bytes, payload, extent
         let llvmByteString (bytes: byte array) = bytes |> Array.map (fun value -> $"\\{value:X2}") |> String.concat ""
+        // Literal lists (report 304): `ListOf(T, n)` straight after n String or Int
+        // constants is encoded once here, in the runtime layout (u32 count, 4 zero
+        // bytes, each element at its 8-byte-aligned extent), and trusted builds copy
+        // it in one piece where it is used, instead of n element copies and a list
+        // build. A list fused into a following string.join keeps that fusion.
+        let constantListImages = ResizeArray<byte array>()
+        let constantListIndexes = Dictionary<string, int>(StringComparer.Ordinal)
+        let constantLists = Dictionary<IrInstruction, int * int * int>(HashIdentity.Reference)
+        let constantListElements = HashSet<IrInstruction>(HashIdentity.Reference)
+        let rec collectConstantLists (block: IrBlock) =
+            let code = Array.ofList block.Code
+            for index in 0 .. code.Length - 1 do
+                match code[index].Operation with
+                | IrOperation.ListOf(itemType, count) when (itemType = IrString || itemType = IrInt) && count >= 2 && index >= count
+                                                             && not (index + 1 < code.Length
+                                                                     && (match code[index + 1].Operation with
+                                                                         | IrOperation.Call call -> call.ResolvedName = "string.join"
+                                                                         | _ -> false)) ->
+                    let elements = code[index - count .. index - 1]
+                    let literal (instruction: IrInstruction) =
+                        match instruction.Operation, itemType with
+                        | IrOperation.Constant(LString value, IrString), IrString ->
+                            let bytes, payload, _ = encodeLiteral value
+                            Some(bytes, payload)
+                        | IrOperation.Constant(LInt value, IrInt), IrInt -> Some(BitConverter.GetBytes value, 8)
+                        | _ -> None
+                    let encoded = elements |> Array.map literal
+                    if encoded |> Array.forall Option.isSome && elements |> Array.forall (fun element -> not (constantListElements.Contains element)) then
+                        let parts = encoded |> Array.map Option.get
+                        let header = Array.zeroCreate<byte> 8
+                        for k in 0 .. 3 do header[k] <- byte (uint32 count >>> (k * 8))
+                        let image = Array.concat (header :: (parts |> Array.map fst |> List.ofArray))
+                        let payload = 8 + (parts |> Array.sumBy snd)
+                        let key = Convert.ToHexString image
+                        let globalIndex =
+                            match constantListIndexes.TryGetValue key with
+                            | true, existing -> existing
+                            | _ ->
+                                constantListImages.Add image
+                                constantListIndexes[key] <- constantListImages.Count - 1
+                                constantListImages.Count - 1
+                        constantLists[code[index]] <- (globalIndex, image.Length, payload)
+                        for element in elements do constantListElements.Add element |> ignore
+                | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> collectConstantLists inner
+                | IrOperation.If(thenBlock, elseBlock) -> collectConstantLists thenBlock; collectConstantLists elseBlock
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectConstantLists)
+                | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectConstantLists someBlock; collectConstantLists noneBlock
+                | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectConstantLists okBlock; collectConstantLists errorBlock
+                | _ -> ()
+        for _, block in allBlocks do collectConstantLists block
 
         let firstFields = Dictionary<IrType, int>()
         let descriptorFields = ResizeArray<uint32 * uint32 * uint32 * uint32>()
@@ -4247,6 +4297,8 @@ module OwningStackAot =
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
+        constantListImages |> Seq.iteri (fun index image ->
+            writer.Line($"@al_owning_list_literal_{index} = private unnamed_addr constant [{image.Length} x i8] c\"{llvmByteString image}\", align 8"))
         for value in templateTexts do
             let bytes = utf8Bytes value
             writer.Line($"{templateTextGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 1")
@@ -5367,6 +5419,21 @@ module OwningStackAot =
                     if not (registerAware instruction.Operation) then
                         stack <- materializeAll currentOwner instructionSpan stack
                     match instruction.Operation with
+                    | _ when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantListElements.Contains instruction -> ()
+                    | IrOperation.ListOf(itemType, _) when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantLists.ContainsKey instruction ->
+                        let globalIndex, extent, payload = constantLists[instruction]
+                        let listType = IrList itemType
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let next = emitOffset w cursor (string extent)
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a literal List." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        let source = $"getelementptr inbounds ([{extent} x i8], ptr @al_owning_list_literal_{globalIndex}, i64 0, i64 0)"
+                        let status = w.Fresh "list.literal.status"
+                        let copyError = addDiagnostic "OWNING_STACK_INTERNAL" "Invalid verified literal List bytes." currentOwner instructionSpan [] []
+                        w.Inst($"{status} = call i32 @al_owning_copy_constant(ptr %%ctx, i32 {cursor}, ptr {source}, i32 {extent}, i32 {payload}, i32 {extent}, i32 {typeId listType}, i32 {copyError})")
+                        emitStatusResult w status failBody
+                        stack <- push stack listType cursor (string extent) (string payload) next
+                        unaliasedLists <- Set.add cursor unaliasedLists
                     | IrOperation.Constant(literal, ty) when ty = IrInt || ty = IrBool || ty = IrUnit || ty = IrFloat ->
                         let bits =
                             match literal, ty with

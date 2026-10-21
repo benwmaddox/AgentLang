@@ -1,6 +1,54 @@
 type Label : String {
 }
 
+fn native.parity.member?(name: String) -> Bool {
+    let tags = ["a", "abbr", "b", "blockquote", "br", "code", "div", "em", "h1", "p", "pre", "span", "strong", "é", "🚀"]
+    var found = false
+    for tag in tags {
+        if tag == name {
+            found = true
+            break
+        }
+    }
+    found
+}
+
+fn native.parity.literal-sum(extra: Int) -> Int {
+    var total = 0
+    for value in [1, -2, 300, 9223372036854775000, -9223372036854775000, 4] {
+        total = total + value
+    }
+    total + extra
+}
+
+fn native.parity.literal-grow(extra: String) -> String {
+    doc "Appends to a fresh literal list, so an in-place append must never reach the shared image."
+    var items = ["x", "yy"]
+    items = list.append(items, extra)
+    items = list.append(items, extra)
+    string.join(items)
+}
+
+fn native.parity.literal-join(extra: String) -> String {
+    string.concat(string.join(["<", "b", ">"]), extra)
+}
+
+test native.parity.member?/yes {
+    native.parity.member?("em")
+}
+
+test native.parity.literal-sum/zero {
+    expect native.parity.literal-sum(0) == 303
+}
+
+test native.parity.literal-grow/twice {
+    expect native.parity.literal-grow("z") == "xyyzz"
+}
+
+test native.parity.literal-join/text {
+    expect native.parity.literal-join("!") == "<b>!"
+}
+
 fn native.parity.same?(a: String, b: String) -> Bool {
     a == b
 }

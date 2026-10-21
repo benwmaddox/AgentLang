@@ -163,7 +163,7 @@ language imposes on character-at-a-time building, but doesn't remove it.
   attachments, emoji; 356,704 bytes, Rails' bytes in report 285), for 33
   responses. All 33 match the base build, so Campfire's own messages had
   neither multi-byte attribute values nor tags long enough to hit the budget.
-- Suites: below.
+- All 17 suites pass.
 
 **Speed** (ABBA against the 6b build):
 
@@ -193,16 +193,77 @@ prepended. Each step copies all of `v`, so the loop copies O(n²) bytes.
   `text-between`, `decode-text`, `write-messages`) are where a builder type
   would matter.
 
+### Step 3: literal lists prepared at compile time
+
+This follows the user's direction: big operations should be bulk copies or
+references to compile-time constants, prepared before run time and only
+once.
+
+- **Before:** `["a", "abbr", …]` in a function body, 52 Strings in
+  `allowed-tag?`, was built on every call:
+  1. one String copy per element;
+  2. a list built by copying each element again;
+  3. a measure of each element on every loop over it.
+- **Change, in trusted builds:** when `ListOf(T, n)` directly follows n String
+  or Int constants, the compiler encodes the whole list once, in the runtime's
+  layout, as read-only data:
+  - the image is the u32 count and 4 zero bytes, then each element at its
+    8-byte-aligned extent;
+  - its payload and extent are worked out at compile time;
+  - identical lists share one image.
+
+  The use site is then one `copy_constant` of the finished image. The result is
+  an ordinary fresh value in the arena, so nothing can write into the shared
+  image. That includes the in-place append, which only fires for lists at the
+  top of the arena.
+  - A list feeding `string.join` keeps its existing fusion.
+  - Diagnostic builds keep the element-by-element build, so the parity tests
+    compare the two paths.
+- **Campfire's module has 19 list images.**
+- **Bulk copies.** `al_owning_bytes_copy` already moved 16 bytes at a time, so
+  the copies themselves were already memcpy-style. The cost was their number.
+
+**Checks:**
+- NativeParity, 6,780 assertions. Four new words run in all three
+  configurations:
+  - a 15-entry String membership test with `é` and `🚀`, called twice per
+    case;
+  - an Int literal sum near ±9.2×10¹⁸;
+  - a literal list appended to twice, called repeatedly. If the shared image
+    were ever written, the next call would differ.
+  - a literal list joined with `string.join`.
+
+  The trusted module carries the image; the diagnostic module doesn't.
+- All 33 responses match. Build: 38.9 s. All 17 suites pass.
+
+**Speed** (ABBA against 6c-1):
+
+| | 1 A (6c-1) | 2 B (this) | 3 B (this) | 4 A (6c-1) |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 1,710 | 1,889 | 1,897 | 1,716 |
+| Uncached CPU ms per request | 2.37 | 2.14 | 2.15 | 2.39 |
+| Cached req/s | 6,235 | 6,269 | 6,338 | 6,253 |
+| Cached CPU ms per request | 0.628 | 0.635 | 0.625 | 0.609 |
+
+- **Uncached: 10.6% more requests a second, and 10% less CPU per request.**
+  That is twice the 4–5% estimated from `copy_constant` alone: the element
+  measures and the list build went too.
+- Cached: no change.
+- **Item 6 so far:** the uncached room page has gone from 1,205 req/s (item 4)
+  to about 1,893 req/s (**+57%**), and CPU per request from 3.32 ms to 2.14 ms.
+  The cached page has gone from about 5,700 to about 6,270 req/s (+10%).
+  Memory is unchanged, at 15 MB uncached and 47 MB cached.
+
 ### Not done in (c), for the user
 
 - **A builder or rope type.** This is the general fix for the 80 sites, and the
   final report's recommendation ("plan a builder or rope type early"). It is a
   language design decision.
-- **A constant pool for literal lists and Strings.** It should win about 4–5%
-  (`copy_constant`, and `allowed-tag?`'s and `emoji.ranges`' shares of
-  `copy_range`). One question has to be settled first: whether any in-place
-  path, such as unaliased list appends or loop relocation, could write through
-  a descriptor into a shared region. It isn't built yet.
+- **A shared constant region.** Today each call still copies the prepared
+  image into its arena; one memcpy, but a copy. Referencing a constant in
+  place would need borrowed descriptors that drops never rewind, set up in each
+  worker's protected prefix. It is a larger change, for whatever remains after
+  step 3.
 - **Writing the page straight to the response.** The final copy of the page is
   about 1.2% of CPU on this page, so on today's numbers this headline idea is
   a small win.
