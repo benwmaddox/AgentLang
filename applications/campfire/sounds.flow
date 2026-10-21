@@ -121,7 +121,7 @@ test campfire.sounds.command/play {
 fn campfire.views.sound(sound: Sound) -> Html {
     effects none
     doc "MessagesHelper#message_sound_presentation: the play button and the sound's image or text."
-    let visual = if sound.image == "" { Html.new(sound.text) } else { html"<img width=\"{int.to-string(sound.width)}\" height=\"{int.to-string(sound.height)}\" class=\"align--middle\" src=\"{sound.image}\" />" }
+    let visual = if sound.image == "" { Html.new(sound.text) } else { html"<img width=\"{int.to-string(sound.width)}\" height=\"{int.to-string(sound.height)}\" class=\"align--middle\" src=\"{Url.new(sound.image)}\" />" }
     html"<div class=\"sound\" data-controller=\"sound\" data-action=\"messages:play-&gt;sound#play\" data-sound-url-value=\"{sound.audio}\"><button class=\"btn btn--plain\" data-action=\"sound#play\">🔊</button>{visual}</div>"
 }
 

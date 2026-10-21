@@ -911,7 +911,9 @@ module OwningStdlib =
               "string.less-than", (47, [ IrString; IrString ], [ IrBool ])
               "string.less-or-equal", (48, [ IrString; IrString ], [ IrBool ])
               "string.greater-than", (49, [ IrString; IrString ], [ IrBool ])
-              "string.greater-or-equal", (50, [ IrString; IrString ], [ IrBool ]) ]
+              "string.greater-or-equal", (50, [ IrString; IrString ], [ IrBool ])
+              // The built-in Url type's validator (report 302).
+              "string.url-safe?", (51, [ IrString ], [ IrBool ]) ]
 
     /// Effectful stdlib primitives the owning backend admits, with the exact
     /// effect set each one must declare.
@@ -1343,6 +1345,8 @@ module OwningStackAot =
                             "Owning-stack validator target is absent from the verified snapshot."
                             (Some owner) None [ "reachable user word" ] [ sprintf "%A" id ]
                 | PrimitiveTarget _ when IrHtml.isHtmlValidator (Some validator) && scalar.BaseType = IrString -> ()
+                // The built-in Url type's validator runs natively too (report 302).
+                | PrimitiveTarget(PrimitiveId operation) when operation = UrlBuiltIn.validatorPrimitive && scalar.BaseType = IrString -> ()
                 | _ ->
                     Diagnostics.raiseError "IR_OWNING_STACK_VALIDATOR_TARGET"
                         "A refined owning scalar validator must retain an exact user-word target and revision."
@@ -1897,6 +1901,7 @@ module OwningStackAot =
                         match validator.ResolvedTarget with
                         | UserWordTarget(id, revision) -> enqueueUserFunction owner id revision
                         | PrimitiveTarget _ when IrHtml.isHtmlValidator (Some validator) -> ()
+                        | PrimitiveTarget(PrimitiveId operation) when operation = UrlBuiltIn.validatorPrimitive -> ()
                         | _ -> invalidOp "Owning refined scalar validator passed validation without a user-word target."
                     | None -> ()
         let rec inspectCalls owner (block: IrBlock) =
@@ -4616,6 +4621,32 @@ module OwningStackAot =
                 w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {refinementError}, i32 0, i32 0)")
                 w.Inst($"br label %%{failureLabel}")
                 w.Line($"{validLabel}:")
+            elif validator.ResolvedTarget = PrimitiveTarget(PrimitiveId UrlBuiltIn.validatorPrimitive) then
+                // Url: string.url-safe? through the stdlib dispatcher (op 51).
+                let scalar = scalarDefinition program scalarType |> Option.defaultWith (fun () -> invalidOp "Url validator lost its scalar definition.")
+                let constructorName, constructorSpan = scalarConstructorInfo scalarType
+                let refinementError =
+                    addDiagnostic "REFINEMENT_FAILED"
+                        $"Value does not satisfy {scalar.TypeName}'s refinement validator."
+                        constructorName constructorSpan [ "validator returns true" ] [ "false" ]
+                let internalError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to check a verified String as a Url." constructorName callSiteSpan [] []
+                let result = w.Fresh "url.safe"
+                w.Inst($"{result} = alloca i64, align 8")
+                let opId, _, _ = OwningStdlib.operations[UrlBuiltIn.validatorPrimitive]
+                let status = w.Fresh "url.safe.status"
+                w.Inst($"{status} = call i32 @al_owning_stdlib_scalar(ptr %%ctx, i32 {opId}, i32 {valueEntry.Offset}, i32 {valueEntry.Extent}, i32 0, i32 0, i32 {internalError}, ptr {result})")
+                emitStatusResult w status failureLabel
+                let loaded = w.Fresh "url.safe.value"
+                w.Inst($"{loaded} = load i64, ptr {result}, align 8")
+                let isValid = w.Fresh "url.safe.ok"
+                let validLabel = w.Label "url.safe.valid"
+                let invalidLabel = w.Label "url.safe.invalid"
+                w.Inst($"{isValid} = icmp ne i64 {loaded}, 0")
+                w.Inst($"br i1 {isValid}, label %%{validLabel}, label %%{invalidLabel}")
+                w.Line($"{invalidLabel}:")
+                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {refinementError}, i32 0, i32 0)")
+                w.Inst($"br label %%{failureLabel}")
+                w.Line($"{validLabel}:")
             else
                 emitUserValidatorCall w scalarType validator valueEntry isConstructorWrap callSiteSpan failureLabel
 
@@ -5346,13 +5377,14 @@ module OwningStackAot =
                                 match part with
                                 | HtmlTemplatePart.Text "" -> None
                                 | HtmlTemplatePart.Text text -> Some(Choice1Of2 text)
-                                | HtmlTemplatePart.StringHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
+                                | HtmlTemplatePart.StringHole | HtmlTemplatePart.IntHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
                                     let hole = List.head remaining
                                     remaining <- List.tail remaining
                                     let mode =
                                         match part with
                                         | HtmlTemplatePart.StringHole -> 2
                                         | HtmlTemplatePart.HtmlListHole -> 3
+                                        | HtmlTemplatePart.IntHole -> 4
                                         | _ -> 1
                                     Some(Choice2Of2(hole, mode)))
                         let count = max 1 entries.Length

@@ -918,11 +918,22 @@ module IrVerifier =
                             parts
                             |> List.choose (function
                                 | HtmlTemplatePart.StringHole -> Some IrString
+                                | HtmlTemplatePart.IntHole -> Some IrInt
                                 | HtmlTemplatePart.HtmlHole -> Some(IrNominal key)
                                 | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal key))
                                 | HtmlTemplatePart.Text _ -> None)
                         let prefix, actual = pop holeTypes.Length
-                        if actual <> holeTypes then operationError "IR_CALL_STACK_MISMATCH" "html template holes do not match the stack." (holeTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
+                        // A String hole also takes a refined String, escaped the same way (report 302).
+                        let fits expected actualType =
+                            expected = actualType
+                            || (expected = IrString
+                                && match actualType with
+                                   | IrNominal candidate ->
+                                       match program.NominalTypesByKey.TryFind candidate with
+                                       | Some(IrScalarDefinition scalar) -> scalar.BaseType = IrString
+                                       | _ -> false
+                                   | _ -> false)
+                        if actual.Length <> holeTypes.Length || not (List.forall2 fits holeTypes actual) then operationError "IR_CALL_STACK_MISMATCH" "html template holes do not match the stack." (holeTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrNominal key ] }, Set.empty
                     | IrOperation.MakeRecord(call, key, validator) ->
                         verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call

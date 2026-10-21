@@ -41,7 +41,8 @@ enum {
   AL_STDLIB_STRING_LESS_THAN = 47,
   AL_STDLIB_STRING_LESS_OR_EQUAL = 48,
   AL_STDLIB_STRING_GREATER_THAN = 49,
-  AL_STDLIB_STRING_GREATER_OR_EQUAL = 50
+  AL_STDLIB_STRING_GREATER_OR_EQUAL = 50,
+  AL_STDLIB_STRING_URL_SAFE = 51
 };
 
 /* ---------------------------------------------------------- OS crypto */
@@ -1665,13 +1666,49 @@ static int64_t al_stdlib2_compare(const uint8_t *x, uint32_t nx,
   return nx == ny ? 0 : (nx < ny ? -1 : 1);
 }
 
-/* Int and Bool results: json.null?, cookie.count and string ordering. */
+/* string.url-safe? (TrustedValues.isSafeUrl): no C0 control or DEL, no leading
+ * or trailing space, and a scheme before any '/', '?' or '#' only if it is
+ * http, https, mailto or tel (ASCII case-insensitive). */
+static int64_t al_stdlib2_url_safe(const uint8_t *x, uint32_t n) {
+  uint32_t k, stop = n;
+  for (k = 0u; k < n; ++k)
+    if (x[k] < 0x20u || x[k] == 0x7fu)
+      return 0;
+  if (n > 0u && (x[0] == ' ' || x[n - 1u] == ' '))
+    return 0;
+  for (k = 0u; k < n; ++k)
+    if (x[k] == ':' || x[k] == '/' || x[k] == '?' || x[k] == '#') {
+      stop = k;
+      break;
+    }
+  if (stop == n || x[stop] != ':')
+    return 1;
+  {
+    static const char *const schemes[4] = {"http", "https", "mailto", "tel"};
+    uint32_t s;
+    for (s = 0u; s < 4u; ++s) {
+      const char *scheme = schemes[s];
+      uint32_t j = 0u;
+      while (j < stop && scheme[j] != 0 &&
+             (x[j] >= 'A' && x[j] <= 'Z' ? x[j] + 32u : x[j]) == (uint8_t)scheme[j])
+        ++j;
+      if (j == stop && scheme[j] == 0)
+        return 1;
+    }
+  }
+  return 0;
+}
+
+/* Int and Bool results: json.null?, cookie.count, string ordering and
+ * string.url-safe?. */
 static int64_t al_stdlib2_scalar(al_owning_stack_context *ctx, int32_t op,
                                  const al_stdlib_argument *a,
                                  const uint32_t *n) {
   const uint8_t *x = al_stdlib_data(ctx, a[0]);
   if (op == AL_STDLIB_JSON_NULL)
     return n[0] == 4u && x[0] == 'n' ? 1 : 0;
+  if (op == AL_STDLIB_STRING_URL_SAFE)
+    return al_stdlib2_url_safe(x, n[0]);
   if (op >= AL_STDLIB_STRING_COMPARE &&
       op <= AL_STDLIB_STRING_GREATER_OR_EQUAL) {
     const int64_t order = al_stdlib2_compare(x, n[0], al_stdlib_data(ctx, a[1]), n[1]);

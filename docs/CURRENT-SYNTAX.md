@@ -527,11 +527,32 @@ fn page.card(title: String, items: List<Html>) -> Html {
   - CRLF reads as LF.
 - **Holes.** `{expr}` is a hole. `{{` and `}}` are literal braces.
 - **Hole types.**
-  - A `String` hole is escaped, like `Html.new`.
+  - A `String` hole is escaped, like `Html.new`. So is a refined String (a
+    nominal `type Name : String`, or `Url`).
+  - An `Int` hole is written in decimal, with no `int.to-string`.
   - An `Html` hole is inserted as-is.
   - A `List<Html>` hole inserts its items in order.
   - Any other type is a compile error (`FLOW_TEMPLATE_HOLE_TYPE`); convert it
-    first, for example with `int.to-string`.
+    first.
+- **Holes by context** (`FLOW_TEMPLATE_HOLE_CONTEXT`; report 302). HTML
+  escaping protects text and quoted attribute values, but not a URL's scheme,
+  script or CSS, so:
+  - **URL attributes** (`href`, `src`, `action`, `formaction` and the rest): a
+    hole before any `/`, `?`, `#` or `:` of the value must be a `Url` or an
+    `Int`. `href="/rooms/{id}"` takes any String; `href="{target}"` needs
+    `Url.new(target)`.
+  - **`on*` handlers, `style` and `srcdoc`, and `<style>` text** take only Int
+    holes.
+  - **`<script>` text** takes no holes, unless the script's `type` is an HTML
+    template (`text/template`, `text/html`, `text/x-…`). Put values in a
+    `data-` attribute instead.
+- **`Url` is built in**, like `Html`: `type Url : String { validate
+  string.url-safe? }`, added to the first document that uses it. A safe URL
+  has no control characters and no leading or trailing space. If it has a
+  scheme before any `/`, `?` or `#`, the scheme is `http`, `https`, `mailto` or
+  `tel`. Relative URLs are safe. `Url.new` with a literal is checked at compile
+  time; any other value is checked at run time (`REFINEMENT_FAILED`). Test it
+  first with `string.url-safe?` to fall back instead of failing.
 - **Compile-time check.** The whole markup skeleton is checked at compile time
   (`FLOW_TEMPLATE_MARKUP`), with each hole treated as an opaque, balanced unit:
   - elements must be balanced and close in order (void elements and `/>`

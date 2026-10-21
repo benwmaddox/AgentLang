@@ -187,6 +187,7 @@ module VocabularyAnalysis =
                         | HtmlTemplatePart.StringHole -> writer.Write 2uy
                         | HtmlTemplatePart.HtmlHole -> writer.Write 3uy
                         | HtmlTemplatePart.HtmlListHole -> writer.Write 4uy
+                        | HtmlTemplatePart.IntHole -> writer.Write 5uy
                 writeTypeList writer types
             | MapList(name, _) ->
                 writer.Write 4uy

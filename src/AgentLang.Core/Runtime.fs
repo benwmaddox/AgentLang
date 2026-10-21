@@ -6732,6 +6732,16 @@ module Runtime =
                     | Ok builtIn -> { document with Scalars = document.Scalars @ builtIn.Scalars }
                     | Error diagnostic -> raise (LanguageException diagnostic)
                 | None -> document
+            // Url is built in the same way (report 302).
+            let document =
+                match document.Scalars |> List.tryFind (fun scalar -> scalar.Name = UrlBuiltIn.typeName) with
+                | Some declared ->
+                    error "FLOW_URL_BUILT_IN" "Url is a built-in type: a String validated by string.url-safe?. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]
+                | None when syntaxVersion = 2 && not (data.Scalars.ContainsKey UrlBuiltIn.typeName) && UrlBuiltIn.usedBy source ->
+                    match FlowParser.parseDocumentWithVersion 2 "<built-in:Url>" UrlBuiltIn.source with
+                    | Ok builtIn -> { document with Scalars = document.Scalars @ builtIn.Scalars }
+                    | Error diagnostic -> raise (LanguageException diagnostic)
+                | None -> document
             match document.Words |> List.tryFind (fun word -> word.Name = HtmlBuiltIn.rawName) with
             | Some declared ->
                 error "FLOW_HTML_BUILT_IN" "html.raw is built in: it keeps markup checked by string.html-fragment?. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]

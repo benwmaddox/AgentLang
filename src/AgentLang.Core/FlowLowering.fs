@@ -859,7 +859,7 @@ module FlowLowering =
             | Some binding -> [ binding.Type ]
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some span) [] [ name ]
         | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
-            let htmlName, _ = analyzeTemplate context state environment arguments templateSpan
+            let htmlName, _, _ = analyzeTemplate context state environment arguments templateSpan
             [ TNamed htmlName ]
         | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
             escapingHtmlArgument context state environment arguments newSpan |> ignore
@@ -1062,9 +1062,17 @@ module FlowLowering =
                 fail "FLOW_HTML_NEW_ARGUMENT" "Html.new escapes one String; use html.raw(text) to keep markup." None (Some(spanOfExpression argument)) [ "String" ] [ Types.format actual ]
         | _ -> fail "FLOW_HTML_NEW_ARGUMENT" "Html.new takes exactly one positional String argument." None (Some newSpan) [ "Html.new(text)" ] []
 
+    /// The program's built-in Url type (a String validated by string.url-safe?).
+    and private isBuiltInUrl (context: Context) =
+        match context.CompilerContext.Scalars.TryFind UrlBuiltIn.typeName with
+        | Some scalar -> scalar.BaseType = TString && scalar.Validator = Some UrlBuiltIn.validatorPrimitive
+        | None -> false
+
     /// html"…" (parsed as the reserved call `%html-template`): resolves the
-    /// program's Html type, types each hole (String is escaped, Html is inserted
-    /// as-is), and checks the markup skeleton with holes as opaque units.
+    /// program's Html type, types each hole (String, Url and Int are escaped text,
+    /// Html is inserted as-is), and checks the markup skeleton with holes as
+    /// opaque units, plus the context rules for each hole's kind (report 302).
+    /// Returns the Html type name, the IR parts and each hole's kind.
     and private analyzeTemplate (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (arguments: FlowArgument list) (templateSpan: SourceSpan) =
         let htmlName = "Html"
         match context.CompilerContext.Scalars.TryFind htmlName with
@@ -1073,23 +1081,38 @@ module FlowLowering =
             fail "FLOW_TEMPLATE_HTML_TYPE" "html templates produce the Html type, which must be declared as a String validated by string.html-fragment?." None (Some templateSpan) [ "type Html : String { validate string.html-fragment? }" ] [ htmlName ]
         | None ->
             fail "FLOW_TEMPLATE_HTML_TYPE" "html templates need an Html type in the program." None (Some templateSpan) [ "type Html : String { validate string.html-fragment? }" ] []
-        let parts =
+        let typed =
             arguments
             |> List.mapi (fun index argument ->
                 match index % 2, argument with
-                | 0, FlowArgument.Positional(FlowExpression.Literal(LString text, _)) -> HtmlTemplatePart.Text text
+                | 0, FlowArgument.Positional(FlowExpression.Literal(LString text, _)) -> HtmlTemplatePart.Text text, None
                 | 1, FlowArgument.Positional hole ->
                     match inferExpression context state environment hole with
-                    | TString -> HtmlTemplatePart.StringHole
-                    | TNamed name when name = htmlName -> HtmlTemplatePart.HtmlHole
-                    | TList(TNamed name) when name = htmlName -> HtmlTemplatePart.HtmlListHole
+                    | TString -> HtmlTemplatePart.StringHole, Some HoleKind.Text
+                    | TInt -> HtmlTemplatePart.IntHole, Some HoleKind.Int
+                    | TNamed name when name = UrlBuiltIn.typeName && isBuiltInUrl context -> HtmlTemplatePart.StringHole, Some HoleKind.Url
+                    | TNamed name when name = htmlName -> HtmlTemplatePart.HtmlHole, Some HoleKind.Markup
+                    | TNamed name when (match context.CompilerContext.Scalars.TryFind name with Some scalar -> scalar.BaseType = TString | None -> false) ->
+                        // A refined String (a nominal name, an id) is escaped text like a String.
+                        HtmlTemplatePart.StringHole, Some HoleKind.Text
+                    | TList(TNamed name) when name = htmlName -> HtmlTemplatePart.HtmlListHole, Some HoleKind.Markup
                     | actual ->
-                        fail "FLOW_TEMPLATE_HOLE_TYPE" "An html template hole must be a String (escaped), Html or List<Html> (inserted as-is); convert other values first, for example with int.to-string." None (Some(spanOfExpression hole)) [ "String"; "Html"; "List<Html>" ] [ Types.format actual ]
+                        fail "FLOW_TEMPLATE_HOLE_TYPE" "An html template hole must be a String, Int or Url (escaped), or Html or List<Html> (inserted as-is); convert other values first." None (Some(spanOfExpression hole)) [ "String"; "Int"; "Url"; "Html"; "List<Html>" ] [ Types.format actual ]
                 | _ -> failwith "parser produced a malformed html template")
+        let parts = typed |> List.map fst
+        let kinds = typed |> List.choose snd
         match HtmlMarkup.check parts with
         | Ok() -> ()
         | Error(_, message) -> fail "FLOW_TEMPLATE_MARKUP" ("html template markup is not a well-formed fragment: " + message) None (Some templateSpan) [ "balanced, well-formed markup" ] []
-        htmlName, parts
+        match HtmlMarkup.checkContexts parts kinds with
+        | Ok() -> ()
+        | Error(index, message) ->
+            let holeSpan =
+                match List.tryItem index arguments with
+                | Some(FlowArgument.Positional hole) when index % 2 = 1 -> spanOfExpression hole
+                | _ -> templateSpan
+            fail "FLOW_TEMPLATE_HOLE_CONTEXT" message None (Some holeSpan) [ "a hole of the kind its context allows" ] []
+        htmlName, parts, kinds
 
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
@@ -1316,7 +1339,8 @@ module FlowLowering =
             | Some binding -> fragment [ Load(binding.InternalName, sourceSpan) ] []
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some sourceSpan) [] [ name ]
         | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
-            let htmlName, parts = analyzeTemplate context state environment arguments templateSpan
+            let htmlName, parts, kinds = analyzeTemplate context state environment arguments templateSpan
+            ignore kinds
             // Holes sit at odd argument positions, in order.
             let fragments =
                 arguments

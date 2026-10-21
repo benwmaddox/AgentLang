@@ -65,7 +65,7 @@ test campfire.views.reply-actions/button {
 fn campfire.views.attachment-actions(download: String, share: String, filename: String) -> Html {
     effects none
     doc "The Download link and Share button _actions shows in place of Reply for a message with an attachment: download is the blob path with disposition=attachment, share the blob path."
-    html"""          <a class="btn message__action-btn center full-width hide-in-ios-pwa" title="Download" aria-label="Download" href="{download}">
+    html"""          <a class="btn message__action-btn center full-width hide-in-ios-pwa" title="Download" aria-label="Download" href="{Url.new(download)}">
             <img class="colorize--black" aria-hidden="true" src="/assets/download-04029899.svg" width="20" height="20" />
 </a>
           <button class="btn message__action-btn center full-width" data-controller="web-share" data-action="web-share#share" data-web-share-files-value="{share}" data-web-share-title-value="{filename}" title="Share" aria-label="Share">
@@ -93,7 +93,7 @@ fn campfire.views.boost(boost: BoostView) -> Html {
       class="boost boost-item flex-inline postion--relative max-width align-center fill-white gap"
       data-controller="boost-delete" data-boost-delete-perform-class="boost--deleting" data-boost-delete-reveal-class="expanded" data-boost-delete-booster-id-value="{booster-id}">
     <figure class="avatar boost__avatar flex-item-no-shrink">
-      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{boost.booster-avatar-url}" width="48" height="48" /></a>
+      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{Url.new(boost.booster-avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <span role="button" class="{span-class}" data-action="click-&gt;boost-delete#reveal keydown.enter-&gt;boost-delete#reveal:prevent" data-boost-delete-target="content">{boost.content}</span>
@@ -152,7 +152,7 @@ fn campfire.views.rails-message-shown(context: MessageContext, message: MessageW
     <h2 class="message__day-separator"><time datetime="{iso}" data-local-time-target="date"></time></h2>
 
     <figure class="avatar message__avatar">
-      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{creator-id}"><img aria-hidden="true" src="{avatar-url}" width="48" height="48" /></a>
+      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{creator-id}"><img aria-hidden="true" src="{Url.new(avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <turbo-frame id="edit_message_{message.client-message-id}">

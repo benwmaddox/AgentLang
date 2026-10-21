@@ -1,0 +1,36 @@
+type Name : String {
+}
+
+fn native.template.link(target: String) -> Html {
+    let url = Url.new(target)
+    html"<a href=\"{url}\">go</a>"
+}
+
+fn native.template.safe?(target: String) -> Bool {
+    string.url-safe?(target)
+}
+
+fn native.template.count(n: Int) -> Html {
+    html"<p data-n=\"{n}\" style=\"order: {n}\">{n} items</p>"
+}
+
+fn native.template.name(text: String) -> Html {
+    let name = Name.new(text)
+    html"<b title=\"{name}\">{name}</b>"
+}
+
+test native.template.link/relative {
+    expect Html.value(native.template.link("/rooms/1")) == "<a href=\"/rooms/1\">go</a>"
+}
+
+test native.template.safe?/javascript {
+    expect bool.not(native.template.safe?("javascript:alert(1)"))
+}
+
+test native.template.count/negative {
+    expect Html.value(native.template.count(-3)) == "<p data-n=\"-3\" style=\"order: -3\">-3 items</p>"
+}
+
+test native.template.name/escaped {
+    expect Html.value(native.template.name("<A&B>")) == "<b title=\"&lt;A&amp;B&gt;\">&lt;A&amp;B&gt;</b>"
+}

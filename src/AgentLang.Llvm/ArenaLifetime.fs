@@ -51,7 +51,7 @@ module internal ArenaLifetime =
     let private owningPrimitiveSet =
         set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
               "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
-              "string.compare"; "string.less-than"; "string.less-or-equal"; "string.greater-than"; "string.greater-or-equal"
+              "string.compare"; "string.less-than"; "string.less-or-equal"; "string.greater-than"; "string.greater-or-equal"; "string.url-safe?"
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"

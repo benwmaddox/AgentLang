@@ -500,6 +500,7 @@ module IrFormatting =
                     addString partNode "part" "text"
                     addString partNode "text" text
                 | HtmlTemplatePart.StringHole -> addString partNode "part" "string-hole"
+                | HtmlTemplatePart.IntHole -> addString partNode "part" "int-hole"
                 | HtmlTemplatePart.HtmlHole -> addString partNode "part" "html-hole"
                 | HtmlTemplatePart.HtmlListHole -> addString partNode "part" "html-list-hole"
                 partNodes.Add(partNode)

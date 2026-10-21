@@ -79,7 +79,7 @@ module Compiler =
         | "<expect>" -> [ TBool ], []
         | "bool.and" | "bool.or" -> [ TBool; TBool ], [ TBool ]
         | "bool.not" -> [ TBool ], [ TBool ]
-        | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" -> [ TString ], [ TBool ]
+        | "string.guid-canonical?" | "string.email-address-valid?" | "instant.is-canonical-utc?" | "string.url-safe?" -> [ TString ], [ TBool ]
         | "string.guid-normalize" | "instant.parse-utc" -> [ TString ], [ TResult(TString, TString) ]
         | "int.add-checked" | "int.multiply-checked" -> [ TInt; TInt ], [ TResult(TInt, TString) ]
         | "int.scale-ratio-toward-zero" -> [ TInt; TInt; TInt ], [ TResult(TInt, TString) ]
@@ -173,6 +173,7 @@ module Compiler =
             [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
               "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
               "string.less-than"; "string.greater-than"; "string.less-or-equal"; "string.greater-or-equal"; "string.compare"
+              "string.url-safe?"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
@@ -220,6 +221,7 @@ module Compiler =
                     | "int.shift-left" -> "Shifts an Int64 left by 0 to 63 bits (a << n); bits shifted out are dropped, with no overflow check. Any other count raises RUNTIME_SHIFT_RANGE."
                     | "int.shift-right" -> "Shifts an Int64 right by 0 to 63 bits (a >> n), keeping the sign (arithmetic shift). Any other count raises RUNTIME_SHIFT_RANGE."
                     | "string.less-than" | "string.greater-than" | "string.less-or-equal" | "string.greater-or-equal" -> "Compares two Strings by their UTF-8 bytes (the same order as Unicode code points, and as Ruby's String#<=>); not locale collation. The operators are <, >, <= and >=."
+                    | "string.url-safe?" -> "Returns true when the String is safe as a URL attribute value: no control characters, no leading or trailing space, and a scheme, if any, of http, https, mailto or tel. Relative URLs (/path, ?query, #fragment, path) are safe. The validator of the built-in Url type."
                     | "string.compare" -> "Returns -1, 0 or 1 as the first String sorts before, equal to or after the second, by UTF-8 bytes (Ruby's String#<=>)."
                     | "list.count" -> "Returns the number of elements in List<T>; the closed List<T> parameter is inferred from the input."
                     | "list.tail" -> "Returns List<T> without its first element; empty lists remain empty, the element type and order are preserved, and the input is unchanged."
@@ -450,16 +452,26 @@ module Compiler =
                             let holeTypes =
                                 parts |> List.choose (function
                                     | HtmlTemplatePart.StringHole -> Some TString
+                                    | HtmlTemplatePart.IntHole -> Some TInt
                                     | HtmlTemplatePart.HtmlHole -> Some arguments.Head
                                     | HtmlTemplatePart.HtmlListHole -> Some(TList arguments.Head)
                                     | HtmlTemplatePart.Text _ -> None)
                             if stack.Length < holeTypes.Length then
                                 Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "html template requires one value per hole." (Some wordName) (Some expressionSpan) [ string holeTypes.Length ] [ string stack.Length ]
                             let prefix = stack |> List.take (stack.Length - holeTypes.Length)
+                            // A String hole also takes a refined String (its generated accessor
+                            // unwraps it to a String): it is escaped the same way (report 302).
+                            let refinedString name =
+                                match words.TryFind(name + ".value") with
+                                | Some entry -> entry.Definition.Inputs = [ TNamed name ] && entry.Definition.Outputs = [ TString ]
+                                | None -> false
                             for expected, actual in List.zip holeTypes (stack |> List.skip (stack.Length - holeTypes.Length)) do
-                                try unify Map.empty expected actual |> ignore
-                                with _ ->
-                                    Diagnostics.raiseError "TYPE_TEMPLATE_HOLE" "An html template hole must be a String (escaped) or Html (inserted as-is)." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
+                                match expected, actual with
+                                | TString, TNamed name when refinedString name -> ()
+                                | _ ->
+                                    try unify Map.empty expected actual |> ignore
+                                    with _ ->
+                                        Diagnostics.raiseError "TYPE_TEMPLATE_HOLE" "An html template hole must be a String, Int or refined String (escaped), or Html (inserted as-is)." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
                             prefix @ [ arguments.Head ], locals
                     | (MapList(target, expressionSpan) | FilterList(target, expressionSpan) | EachList(target, expressionSpan)) as operation ->
                         if List.isEmpty stack then
@@ -1161,6 +1173,7 @@ module Compiler =
                             match part with
                             | HtmlTemplatePart.Text text -> appendText "text"; appendText text
                             | HtmlTemplatePart.StringHole -> appendText "string-hole"
+                            | HtmlTemplatePart.IntHole -> appendText "int-hole"
                             | HtmlTemplatePart.HtmlHole -> appendText "html-hole"
                             | HtmlTemplatePart.HtmlListHole -> appendText "html-list-hole"
                     | _ -> ()

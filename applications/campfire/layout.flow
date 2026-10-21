@@ -22,6 +22,8 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     let direct = chrome.room-key == "rooms_direct"
     let ping-with = if direct { html"        <span class=\"for-screen-reader\">Ping with</span>\n" } else { html.raw("") }
     let room-word = if direct { "Ping" } else { "room" }
+    // style= takes only Int holes (report 302).
+    let room-number = match int.parse(chrome.room-id) { none => 0; some id => id }
 
     html"""
 <!DOCTYPE html>
@@ -47,7 +49,7 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
       {chrome.room-name}
     </h1>
 </span>
-  <a class="btn" style="view-transition-name: edit-room-{chrome.room-id}" data-room-id="{chrome.room-id}" href="/rooms/{chrome.room-path}/{chrome.room-id}/edit">
+  <a class="btn" style="view-transition-name: edit-room-{room-number}" data-room-id="{chrome.room-id}" href="/rooms/{chrome.room-path}/{chrome.room-id}/edit">
     <img aria-hidden="true" src="/assets/menu-dots-horizontal-f6a5d793.svg" width="20" height="20" />
     <span class="for-screen-reader">Settings for this {room-word}</span>
 </a>
@@ -143,7 +145,7 @@ fn campfire.views.page(chrome: PageChrome, messages: List<Html>) -> Html {
     <div class="message__day-separator"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="date"></time></div>
 
     <figure class="avatar message__avatar">
-      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{chrome.user-id}"><img aria-hidden="true" src="{chrome.user-avatar-url}" width="48" height="48" /></a>
+      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{chrome.user-id}"><img aria-hidden="true" src="{Url.new(chrome.user-avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <div class="message__body">

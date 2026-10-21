@@ -3844,10 +3844,24 @@ static uint32_t al_owning_html_escape_into(uint8_t *destination,
   return written + (length - run_start);
 }
 
+/* Decimal digits of an Int template hole (mode 4, report 302): the sign and
+ * digits written backwards into out[20], returning the first used index. */
+static uint32_t al_owning_int_digits(int64_t value, uint8_t out[20]) {
+  uint64_t magnitude = value < 0 ? 0ull - (uint64_t)value : (uint64_t)value;
+  uint32_t at = 20u;
+  do {
+    out[--at] = (uint8_t)('0' + magnitude % 10ull);
+    magnitude /= 10ull;
+  } while (magnitude != 0ull);
+  if (value < 0)
+    out[--at] = '-';
+  return at;
+}
+
 /* html"…" templates: parts are read-only literal byte ranges (bytes != 0) or
  * stack values (bytes == 0; offset/extent): a String inserted as-is (mode 1,
- * Html) or escaped (mode 2, String), or a List<Html> whose items are inserted
- * in order (mode 3). The plan measures the exact result; the write
+ * Html) or escaped (mode 2, String), a List<Html> whose items are inserted
+ * in order (mode 3), or an Int written in decimal (mode 4). The plan measures the exact result; the write
  * copies every literal and hole byte once into the reserved destination, so
  * literals are never staged in the arena and no escaped temporary exists. */
 int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
@@ -3869,6 +3883,13 @@ int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
     const al_owning_template_part *part = &parts[index];
     if (part->bytes != 0) {
       total += part->offset_or_length;
+    } else if (part->mode == 4u) {
+      uint8_t digits[20];
+      if ((uint64_t)part->offset_or_length + 8u > ctx->cursor_bytes) {
+        al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, index, part->mode);
+        return 1;
+      }
+      total += 20u - al_owning_int_digits((int64_t)al_owning_read_u64_le(ctx->stack_data, part->offset_or_length), digits);
     } else if (part->mode == 3u) {
       uint32_t item_count;
       uint64_t list_units;
@@ -3965,7 +3986,12 @@ int32_t al_owning_html_template_write(al_owning_stack_context *ctx,
     } else {
       const uint32_t source = part->offset_or_length;
       const uint32_t data_bytes = al_owning_read_u32_le(ctx->stack_data, source);
-      if (part->mode == 3u) {
+      if (part->mode == 4u) {
+        uint8_t digits[20];
+        const uint32_t first = al_owning_int_digits((int64_t)al_owning_read_u64_le(ctx->stack_data, source), digits);
+        al_owning_bytes_copy(ctx->stack_data + cursor, digits + first, 20u - first);
+        cursor += 20u - first;
+      } else if (part->mode == 3u) {
         /* List<Html>: a u32 item count, 4 reserved bytes, then packed items. */
         uint32_t item = source + 8u;
         uint32_t item_index;
@@ -4826,13 +4852,13 @@ enum {
   AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
   AL_STDLIB_RANDOM_BYTES = 22,
   /* Slice 2 (report 274): ids 23..45 in owning_stdlib2.h; string ordering
-   * 46..50 there too. */
-  AL_STDLIB_LAST = 50
+   * 46..50 there too, and string.url-safe? 51. */
+  AL_STDLIB_LAST = 51
 };
 
 #define AL_STDLIB_MAX_ARGUMENTS 8u
 /* Argument shapes for ids 23..AL_STDLIB_LAST. */
-#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------",       "tt------", "tt------", "tt------", "tt------", "tt------"
+#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------",       "tt------", "tt------", "tt------", "tt------", "tt------", "t-------"
 
 /* The OS random source. Modules that call crypto.random-bytes define
  * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
@@ -5712,14 +5738,14 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
   if (out_value == 0 ||
       (op != AL_STDLIB_BYTES_LENGTH && op != AL_STDLIB_BYTES_EQUAL &&
        op != AL_STDLIB_JSON_NULL && op != AL_STDLIB_COOKIE_COUNT &&
-       (op < AL_STDLIB_STRING_COMPARE || op > AL_STDLIB_STRING_GREATER_OR_EQUAL))) {
+       (op < AL_STDLIB_STRING_COMPARE || op > AL_STDLIB_STRING_URL_SAFE))) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
   if (!al_stdlib_arguments(ctx, op, arguments, error_id, lengths))
     return 1;
   if (op == AL_STDLIB_JSON_NULL || op == AL_STDLIB_COOKIE_COUNT ||
-      (op >= AL_STDLIB_STRING_COMPARE && op <= AL_STDLIB_STRING_GREATER_OR_EQUAL)) {
+      (op >= AL_STDLIB_STRING_COMPARE && op <= AL_STDLIB_STRING_URL_SAFE)) {
     *out_value = al_stdlib2_scalar(ctx, op, arguments, lengths);
   } else if (op == AL_STDLIB_BYTES_LENGTH) {
     *out_value = (int64_t)lengths[0];

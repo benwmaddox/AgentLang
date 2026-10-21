@@ -69,7 +69,8 @@ let private run () =
     rejects "a hole between attributes" "FLOW_TEMPLATE_MARKUP" "html\"<a {name}></a>\""
     rejects "an Html hole in script raw text" "FLOW_TEMPLATE_MARKUP" "html\"<script>{h}</script>\""
     rejects "a hole in a comment" "FLOW_TEMPLATE_MARKUP" "html\"<!-- {name} -->\""
-    rejects "an Int hole" "FLOW_TEMPLATE_HOLE_TYPE" "html\"<p>{n}</p>\""
+    // Int holes are written in decimal since report 302; a Float still has no text form.
+    rejects "a Float hole" "FLOW_TEMPLATE_HOLE_TYPE" "html\"<p>{1.5}</p>\""
     rejects "a lone closing brace" "FLOW_TEMPLATE_BRACE" "html\"<p>}</p>\""
     rejects "an empty hole" "FLOW_TEMPLATE_HOLE" "html\"<p>{ }</p>\""
     rejects "two expressions in one hole" "FLOW_TEMPLATE_HOLE" "html\"<p>{name name}</p>\""

@@ -126,7 +126,7 @@ fn campfire.views.sidebar-avatar(url: String) -> Html {
     effects none
     doc "One avatar of a direct room's group (20 px)."
     html"""          <span class="avatar">
-            <img aria-hidden="true" src="{url}" width="20" height="20" />
+            <img aria-hidden="true" src="{Url.new(url)}" width="20" height="20" />
           </span>
 """
 }
@@ -158,7 +158,7 @@ fn campfire.views.sidebar-direct(direct: SidebarDirect) -> Html {
 """
     } else {
         html"""      <span class="avatar">
-        <img aria-hidden="true" src="{first.avatar-url}" width="48" height="48" />
+        <img aria-hidden="true" src="{Url.new(first.avatar-url)}" width="48" height="48" />
       </span>
 """
     }
@@ -187,7 +187,7 @@ fn campfire.views.sidebar-placeholder(user: SidebarPlaceholder) -> Html {
     let name = campfire.views.first-word(user.name)
     let form = html"""<form class="button_to" method="post" action="/rooms/directs?user_ids%5B%5D={id}"><button class="direct borderless fill-transparent unpad" type="submit">
   <span class="avatar">
-    <img aria-hidden="true" src="{user.avatar-url}" />
+    <img aria-hidden="true" src="{Url.new(user.avatar-url)}" />
   </span>
 
   <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
@@ -281,7 +281,7 @@ fn campfire.views.sidebar-frame(sidebar: SidebarView) -> Html {
 
   <div class="flex align-end sidebar__tools gap justify-end">
     <a class="btn avatar flex-item-no-shrink sidebar__tool" href="/users/me/profile">
-      <img aria-hidden="true" style="view-transition-name: avatar-{user-id}" src="{sidebar.user-avatar-url}" width="48" height="48" />
+      <img aria-hidden="true" style="view-transition-name: avatar-{sidebar.user-id}" src="{Url.new(sidebar.user-avatar-url)}" width="48" height="48" />
       <span class="for-screen-reader">My Settings</span>
 </a>
     <a class="btn align-center gap txt-reversed sidebar__tool" href="/account/edit">

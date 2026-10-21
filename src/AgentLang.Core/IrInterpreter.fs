@@ -158,6 +158,7 @@ module IrInterpreter =
             "add"; "subtract"; "multiply"; "divide"; "int.remainder"
             "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
             "string.less-than"; "string.greater-than"; "string.less-or-equal"; "string.greater-or-equal"; "string.compare"
+            "string.url-safe?"
             "float.add"; "float.subtract"; "float.multiply"; "float.divide"
             "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
             "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -1331,6 +1332,7 @@ module IrInterpreter =
             | "int.remainder", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
             | "int.remainder", [ RuntimeInt _; RuntimeInt -1L ] -> [ RuntimeInt 0L ]
             | "int.remainder", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left % right) ]
+            | "string.url-safe?", [ RuntimeString value ] -> [ RuntimeBool(TrustedValues.isSafeUrl value) ]
             | "int.bit-and", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left &&& right) ]
             | "int.bit-or", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left ||| right) ]
             | "int.bit-xor", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left ^^^ right) ]
@@ -1598,6 +1600,7 @@ module IrInterpreter =
                     let holeTypes =
                         parts |> List.choose (function
                             | HtmlTemplatePart.StringHole -> Some IrString
+                            | HtmlTemplatePart.IntHole -> Some IrInt
                             | HtmlTemplatePart.HtmlHole -> Some(IrNominal key)
                             | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal key))
                             | HtmlTemplatePart.Text _ -> None)
@@ -1607,7 +1610,7 @@ module IrInterpreter =
                     for part in parts do
                         match part with
                         | HtmlTemplatePart.Text text -> builder.Append(text) |> ignore
-                        | HtmlTemplatePart.StringHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
+                        | HtmlTemplatePart.StringHole | HtmlTemplatePart.IntHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
                             match remaining with
                             | RuntimeList(_, items) :: rest when part = HtmlTemplatePart.HtmlListHole ->
                                 for item in items do
@@ -1617,6 +1620,13 @@ module IrInterpreter =
                                 remaining <- rest
                             | RuntimeString value :: rest when part = HtmlTemplatePart.StringHole ->
                                 builder.Append(TrustedValues.htmlEscape value) |> ignore
+                                remaining <- rest
+                            // A refined String (Url, a nominal name) is escaped like a String.
+                            | RuntimeScalar(_, RuntimeString value) :: rest when part = HtmlTemplatePart.StringHole ->
+                                builder.Append(TrustedValues.htmlEscape value) |> ignore
+                                remaining <- rest
+                            | RuntimeInt value :: rest when part = HtmlTemplatePart.IntHole ->
+                                builder.Append(value.ToString(Globalization.CultureInfo.InvariantCulture)) |> ignore
                                 remaining <- rest
                             | RuntimeScalar(_, RuntimeString value) :: rest when part = HtmlTemplatePart.HtmlHole ->
                                 builder.Append(value) |> ignore

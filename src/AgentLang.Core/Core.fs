@@ -56,6 +56,8 @@ type HtmlTemplatePart =
     | HtmlHole
     /// A List<Html>: every item is inserted as-is, in order.
     | HtmlListHole
+    /// An Int written as decimal digits (report 302): no text to escape.
+    | IntHole
 
 type ContainerConstructor =
     | ListEmpty

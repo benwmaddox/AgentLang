@@ -59,6 +59,22 @@ module TrustedValues =
         if result <> 0 then result
         else compare (left.Length - index) (right.Length - index) |> sign
 
+    /// string.url-safe?: no C0 control character or DEL anywhere (browsers drop tabs
+    /// and newlines inside a scheme), no leading or trailing space (browsers strip
+    /// it before reading the scheme), and a scheme, if the text has one before any
+    /// '/', '?' or '#', of http, https, mailto or tel. Relative URLs are safe.
+    let isSafeUrl (value: string) =
+        if isNull value then false
+        elif value |> Seq.exists (fun ch -> ch < ' ' || ch = '\u007f') then false
+        elif value.Length > 0 && (value[0] = ' ' || value[value.Length - 1] = ' ') then false
+        else
+            let stop = value.IndexOfAny([| ':'; '/'; '?'; '#' |])
+            if stop < 0 || value[stop] <> ':' then true
+            else
+                match value.Substring(0, stop).ToLowerInvariant() with
+                | "http" | "https" | "mailto" | "tel" -> true
+                | _ -> false
+
     /// Rails ERB::Util.html_escape: replaces exactly & < > " ' and leaves every
     /// other UTF-16 code unit (including surrogates) unchanged.
     let htmlEscape (value: string) =
