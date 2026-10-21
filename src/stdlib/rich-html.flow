@@ -804,18 +804,26 @@ test rich-html.char-ref/kinds {
 }
 
 fn rich-html.tag(text: String, at: Int) -> HtmlTag {
-    doc "The start tag beginning at this '<', read with the HTML5 tokenizer's tag states. ok is false when it has no stop or holds a reference this library cannot decode."
+    doc "The start tag beginning at this '<', read with the HTML5 tokenizer's tag states. ok is false when it has no stop or holds a reference this library cannot decode. Names and values are taken as byte ranges of the text (one slice each), not built a character at a time (report 304)."
     let length = string.byte-length(text)
-    var name = ""
+    var name-end = at + 1
     var attributes = list.empty<HtmlAttribute>()
     var state = 0
-    var attr-name = ""
+    // The attribute name is text[name-from, name-to); its value is value-prefix (the part
+    // before the last character reference, decoded) then text[value-from, i).
+    var name-from = 0
+    var name-to = 0
+    var value-prefix = ""
+    var value-from = 0
     var attr-value = ""
     var quote = 0
     var stop = -1
     var ok = true
     var i = at + 1
-    let steps = length + 1
+    // A state change can re-read a byte (advance = 0), at most twice more: 1 -> 2,
+    // 2 -> 3, 3 -> 2. length + 1 steps (report 285) could stop before the last
+    // attribute of a tag with several (report 304).
+    let steps = 3 * length + 3
     // States: 0 tag name, 1 before attribute name, 2 attribute name, 3 after attribute name,
     // 4 before attribute value, 5 quoted value, 6 unquoted value, 7 after quoted value, 8 self-closing.
     for step in 0..steps {
@@ -823,57 +831,81 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
             break
         }
         let byte = string.byte-at-or(text, i, 0)
-        let char = match string.slice(text, i, 1) { none => ""; some s => s }
         var advance = 1
         var emit-attr = false
         if state == 0 {
-            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { name = string.concat(name, char) }
+            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { name-end = i + 1 }
         } else if state == 1 {
-            if rich-html.space?(byte) { state = 1 } else if byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { attr-name = "="; attr-value = ""; state = 2 } else { attr-name = ""; attr-value = ""; state = 2; advance = 0 }
+            if rich-html.space?(byte) {
+                state = 1
+            } else if byte == 47 || byte == 62 {
+                state = 3
+                advance = 0
+            } else if byte == 61 {
+                name-from = i
+                name-to = i + 1
+                attr-value = ""
+                state = 2
+            } else {
+                name-from = i
+                name-to = i
+                attr-value = ""
+                state = 2
+                advance = 0
+            }
         } else if state == 2 {
-            if rich-html.space?(byte) || byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { state = 4 } else { attr-name = string.concat(attr-name, char) }
+            if rich-html.space?(byte) || byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { state = 4 } else { name-to = i + 1 }
         } else if state == 3 {
             if rich-html.space?(byte) {
                 state = 3
             } else if byte == 47 {
-                emit-attr = attr-name != ""
+                emit-attr = name-to > name-from
                 state = 8
             } else if byte == 61 {
                 state = 4
             } else if byte == 62 {
-                emit-attr = attr-name != ""
+                emit-attr = name-to > name-from
                 stop = i
             } else {
-                emit-attr = attr-name != ""
+                emit-attr = name-to > name-from
                 state = 2
                 advance = 0
             }
         } else if state == 4 {
-            if rich-html.space?(byte) { state = 4 } else if byte == 34 || byte == 39 { quote = byte; state = 5 } else if byte == 62 { emit-attr = true; stop = i } else { state = 6; advance = 0 }
-        } else if state == 5 {
-            if byte == quote {
-                emit-attr = true
-                state = 7
-            } else if byte == 38 {
-                let ref = rich-html.char-ref(text, i)
-                let size = match int.parse(match list.get(ref, 1) { none => "0"; some n => n }) { none => 0; some n => n }
-                if size == 0 { ok = false } else { attr-value = string.concat(attr-value, match list.get(ref, 0) { none => ""; some s => s }); advance = size }
-            } else {
-                attr-value = string.concat(attr-value, char)
-            }
-        } else if state == 6 {
             if rich-html.space?(byte) {
-                emit-attr = true
-                state = 1
+                state = 4
+            } else if byte == 34 || byte == 39 {
+                quote = byte
+                value-prefix = ""
+                value-from = i + 1
+                state = 5
             } else if byte == 62 {
                 emit-attr = true
                 stop = i
+            } else {
+                value-prefix = ""
+                value-from = i
+                state = 6
+                advance = 0
+            }
+        } else if state == 5 || state == 6 {
+            let ends = if state == 5 { byte == quote } else { rich-html.space?(byte) || byte == 62 }
+            if ends {
+                let run = match string.slice(text, value-from, i - value-from) { none => ""; some s => s }
+                attr-value = if value-prefix == "" { run } else { string.concat(value-prefix, run) }
+                emit-attr = true
+                if state == 5 { state = 7 } else if byte == 62 { stop = i } else { state = 1 }
             } else if byte == 38 {
                 let ref = rich-html.char-ref(text, i)
                 let size = match int.parse(match list.get(ref, 1) { none => "0"; some n => n }) { none => 0; some n => n }
-                if size == 0 { ok = false } else { attr-value = string.concat(attr-value, match list.get(ref, 0) { none => ""; some s => s }); advance = size }
-            } else {
-                attr-value = string.concat(attr-value, char)
+                if size == 0 {
+                    ok = false
+                } else {
+                    let run = match string.slice(text, value-from, i - value-from) { none => ""; some s => s }
+                    value-prefix = string.join([value-prefix, run, match list.get(ref, 0) { none => ""; some s => s }])
+                    value-from = i + size
+                    advance = size
+                }
             }
         } else if state == 7 {
             if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { state = 1; advance = 0 }
@@ -882,7 +914,7 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
         }
         if emit-attr {
             // The tokenizer lower-cases ASCII letters in attribute names.
-            attr-name = string.to-lower-ascii(attr-name)
+            let attr-name = string.to-lower-ascii(match string.slice(text, name-from, name-to - name-from) { none => ""; some s => s })
             var seen = false
             for attribute in attributes {
                 if attribute.name == attr-name {
@@ -892,11 +924,14 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
             if bool.not(seen) {
                 attributes = list.append(attributes, htmlAttribute.new(name = attr-name, value = attr-value))
             }
-            attr-name = ""
+            // A next attribute read straight from state 3 starts at this byte.
+            name-from = i
+            name-to = i
             attr-value = ""
         }
         i = i + advance
     }
+    let name = match string.slice(text, at + 1, name-end - at - 1) { none => ""; some s => s }
     htmlTag.new(name = string.to-lower-ascii(name), attributes = attributes, stop = stop, valid = ok && stop >= 0)
 }
 
@@ -909,6 +944,9 @@ test rich-html.tag/spec-states {
     expect rich-html.tag("<p class=\"a&quot;b\">", 0).attributes == [htmlAttribute.new(name = "class", value = "a\"b")]
     expect bool.not(rich-html.tag("<p title=\"&copy;\">", 0).valid)
     expect bool.not(rich-html.tag("<p title=\"x", 0).valid)
+    // Multi-byte text is kept whole (report 304; it used to be dropped).
+    expect rich-html.tag("<p title=\"é🚀\" data-x=y&amp;z>", 0).attributes == [htmlAttribute.new(name = "title", value = "é🚀"), htmlAttribute.new(name = "data-x", value = "y&z")]
+    expect rich-html.tag("<p a b=1 c>", 0).attributes == [htmlAttribute.new(name = "a", value = ""), htmlAttribute.new(name = "b", value = "1"), htmlAttribute.new(name = "c", value = "")]
 }
 
 fn rich-html.attribute(tag: HtmlTag, name: String) -> Option<String> {

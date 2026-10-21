@@ -261,3 +261,60 @@ module FlowLint =
                 Error
                     { Code = "FLOW_LINT_NESTING_LIMIT"
                       Message = $"Flow lint analysis is limited to {maximumTraversalDepth} nested syntax blocks or expressions." }
+
+    /// FLOW_APPEND_IN_LOOP (report 304): inside a loop, `v = string.concat(...)`,
+    /// `list.append(...)`, `list.concat(...)` or `string.join([...])` with v itself among
+    /// the arguments (appended or prepended). Values are
+    /// immutable, so each step copies all of v: a loop doing it n times copies O(n^2) bytes.
+    /// Take a slice of the source once, or collect the pieces in one list and join them once.
+    /// Binding is the variable; DeclarationSpan is the assignment.
+    let appendsInLoops (definition: FlowWordDefinition) : FlowLintWarning list =
+        let found = ResizeArray<FlowLintWarning>()
+        let isLocal name = function
+            | FlowArgument.Positional(FlowExpression.Local(local, _)) -> local = name
+            | _ -> false
+        let selfAppend name (value: FlowExpression) =
+            match value with
+            | FlowExpression.Call(("string.concat" | "list.append" | "list.concat"), arguments, _) -> arguments |> List.exists (isLocal name)
+            | FlowExpression.Call("string.join", [ FlowArgument.Positional(FlowExpression.ListLiteral(items, _)) ], _) ->
+                items |> List.exists (function FlowExpression.Local(local, _) -> local = name | _ -> false)
+            | _ -> false
+        let rec statements inLoop (items: FlowStatement list) = List.iter (statement inLoop) items
+        and statement inLoop item =
+            match item with
+            | FlowStatement.Assign(name, value, span) ->
+                if inLoop && selfAppend name value then
+                    found.Add { Code = "FLOW_APPEND_IN_LOOP"; Binding = name; DeclarationSpan = span; FirstUseSpan = None; Gap = None }
+                expression inLoop value
+            | FlowStatement.Let(_, value, _) | FlowStatement.LetMany(_, value, _) | FlowStatement.Var(_, value, _) -> expression inLoop value
+            | FlowStatement.Evaluate value -> expression inLoop value
+            | FlowStatement.Return(values, _) -> List.iter (expression inLoop) values
+            | FlowStatement.ForRange(_, first, last, body, _) ->
+                expression inLoop first
+                expression inLoop last
+                statements true body
+            | FlowStatement.ForEach(_, _, items, body, _) ->
+                expression inLoop items
+                statements true body
+            | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
+        and expression inLoop value =
+            match value with
+            | FlowExpression.If(condition, thenBranch, elseBranch, _) ->
+                expression inLoop condition
+                statements inLoop thenBranch
+                statements inLoop elseBranch
+            | FlowExpression.Compact(body, _) -> statements inLoop body
+            | FlowExpression.MatchOption(scrutinee, some, none, _) ->
+                expression inLoop scrutinee
+                statements inLoop some.Statements
+                statements inLoop none.Statements
+            | FlowExpression.MatchResult(scrutinee, ok, error, _) ->
+                expression inLoop scrutinee
+                statements inLoop ok.Statements
+                statements inLoop error.Statements
+            | FlowExpression.MatchEnum(scrutinee, cases, _) ->
+                expression inLoop scrutinee
+                for case in cases do statements inLoop case.Statements
+            | _ -> ()
+        statements false definition.Body
+        List.ofSeq found

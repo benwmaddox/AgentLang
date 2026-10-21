@@ -117,3 +117,92 @@ passes after it, with the trusted artifacts confirmed to carry the new C.
 
   Report 285 measured the Rust port at 1,554 req/s under the same protocol,
   but in another session, so that comparison is not made here.
+
+## (c) Concatenation and output, from the profile after (b)
+
+**The profile after (b)** (uncached; inclusive unless marked self):
+
+| Cost | Share | What it is |
+| --- | ---: | --- |
+| `al_owning_copy_range` | 6.1% | over half in `allowed-tag?` and `emoji.ranges`, which rebuild literal lists on every call; the final page copy (`http-response`, `show-room`) is about 1.2% |
+| `al_owning_loop_relocate` | 5.7% | values carried round loops (`rich-html.tag`, `rich-html.scan`, `message-row`), moved every step to reclaim the arena |
+| `al_owning_copy_constant` | 3.9% | String literals copied into the arena (`allowed-tag?`, `text-ok-for?`) |
+| template write and plan | 6.1% | writing the page's own bytes (mostly `rails-message-shown`) |
+| concat and replace | 5.6% | |
+| host database operations | 9.3% | SQLite 8.7%; rows are external bytes, still validated |
+
+### Step 1: `rich-html.tag` reads names and values as ranges
+
+**Before:** the tag reader built names and values one character at a time:
+`name = string.concat(name, char)`, where `char` was `string.slice(text, i, 1)`.
+- Each step allocated a one-character String and copied the whole name so far.
+- `string.slice` uses byte offsets and returns `none` off a character boundary,
+  so each byte of a multi-byte character became `""`. Multi-byte text was
+  silently dropped from tag names and attribute values.
+
+**Change:** the reader now records start and end indices and takes one slice
+per name or value. A value with a character reference adds a decoded prefix
+before the ref.
+
+**Two bugs fixed in the same function:**
+- Multi-byte text is now kept. `title="é🚀"` used to read as `""`.
+- **The loop's step budget.** It was `length + 1`, but a state change re-reads
+  a byte (`advance = 0`) up to twice more. So a tag with several attributes
+  could stop before its last one: `<p a b=1 c>` lost `c`. The new attached test
+  caught that the old reader had the same bug. The budget is now
+  `3 × length + 3`.
+
+**This is a stdlib rewrite, not a language change.** It shows the cost the
+language imposes on character-at-a-time building, but doesn't remove it.
+
+**Checks:**
+- Two new attached tests: multi-byte values with an unquoted `&amp;`, and
+  `<p a b=1 c>`. All 43 rich-html tests pass.
+- The byte comparison now covers every room in the fixture. That adds open,
+  closed and direct rooms, and room 654632876 (sounds, embeds, mentions,
+  attachments, emoji; 356,704 bytes, Rails' bytes in report 285), for 33
+  responses. All 33 match the base build, so Campfire's own messages had
+  neither multi-byte attribute values nor tags long enough to hit the budget.
+- Suites: below.
+
+**Speed** (ABBA against the 6b build):
+
+| | 1 A (6b) | 2 B (6c-1) | 3 B (6c-1) | 4 A (6b) |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 1,678 | 1,722 | 1,710 | 1,669 |
+| Uncached CPU ms per request | 2.43 | 2.36 | 2.39 | 2.42 |
+| Cached req/s | 6,264 | 6,248 | 6,285 | 6,228 |
+| Cached CPU ms per request | 0.628 | 0.628 | 0.626 | 0.630 |
+
+- **Uncached: about 2.5% faster.** Cached: no change. Build: 39.6 s.
+- **What this bounds.** This was the page's character-at-a-time building, so
+  2–3% is roughly what any concatenation optimization could save here. An
+  in-place append in the runtime would also need a proof that the operand is
+  dead. On this page that isn't worth the risk.
+
+### Step 2: the pattern, counted
+
+`FlowLint.appendsInLoops` (`FLOW_APPEND_IN_LOOP`) reports a loop that rebuilds
+a value from itself. That covers `v = string.concat(…v…)`,
+`list.append(…v…)`, `list.concat(…v…)` and `string.join([…v…])`, appended or
+prepended. Each step copies all of `v`, so the loop copies O(n²) bytes.
+- Three Flow.Lint tests cover it: inside an `if` in a loop, outside a loop,
+  and a value rebuilt without itself.
+- **Over Campfire and the stdlib it finds 80 sites.** Most are short lists of
+  ids or headers. The ones in rich-text and page code (`link`,
+  `text-between`, `decode-text`, `write-messages`) are where a builder type
+  would matter.
+
+### Not done in (c), for the user
+
+- **A builder or rope type.** This is the general fix for the 80 sites, and the
+  final report's recommendation ("plan a builder or rope type early"). It is a
+  language design decision.
+- **A constant pool for literal lists and Strings.** It should win about 4–5%
+  (`copy_constant`, and `allowed-tag?`'s and `emoji.ranges`' shares of
+  `copy_range`). One question has to be settled first: whether any in-place
+  path, such as unaliased list appends or loop relocation, could write through
+  a descriptor into a shared region. It isn't built yet.
+- **Writing the page straight to the response.** The final copy of the page is
+  about 1.2% of CPU on this page, so on today's numbers this headline idea is
+  a small win.

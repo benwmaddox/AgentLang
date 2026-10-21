@@ -409,8 +409,24 @@ let private testReturnVectorReadsKeepDeclarationAndSourceOrderDistinct () =
     equal "beta warning uses beta's earlier written return-member span" (Some(returnMembers["beta"])) warnings[1].FirstUseSpan
     check "written Return member order differs from warning declaration order" (returnMembers["beta"].Column < returnMembers["alpha"].Column)
 
+let private testAppendsInLoops () =
+    let parse source =
+        match FlowParser.parseWordWithVersion 2 "<flow-lint-test>" source with
+        | Ok definition -> definition
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+    let flagged source = FlowLint.appendsInLoops (parse source) |> List.map (fun warning -> warning.Code, warning.Binding)
+    let loop = "fn build(items: List<String>) -> String {\n    var out = \"\"\n    var parts = list.empty<String>()\n    for item in items {\n        out = string.concat(out, item)\n        if item != \"\" {\n            parts = list.append(parts, item)\n        }\n        out = string.join([out, item])\n    }\n    out\n}"
+    equal "self-appends in a loop, including inside an if" [ "FLOW_APPEND_IN_LOOP", "out"; "FLOW_APPEND_IN_LOOP", "parts"; "FLOW_APPEND_IN_LOOP", "out" ] (flagged loop)
+    let outside = "fn once(a: String, b: String) -> String {\n    var out = a\n    out = string.concat(out, b)\n    out\n}"
+    equal "a self-append outside a loop is fine" [] (flagged outside)
+    let other = "fn other(items: List<String>) -> String {\n    var out = \"\"\n    for item in items {\n        out = string.concat(item, out)\n    }\n    out\n}"
+    equal "a prepend copies all of out too" [ "FLOW_APPEND_IN_LOOP", "out" ] (flagged other)
+    let fresh = "fn fresh(items: List<String>) -> String {\n    var out = \"\"\n    for item in items {\n        out = string.concat(item, \"!\")\n    }\n    out\n}"
+    equal "a value rebuilt without itself is fine" [] (flagged fresh)
+
 [<EntryPoint>]
 let main _ =
+    testAppendsInLoops ()
     testDefaultThresholdAndDisableOption ()
     testLexicalStatementCountingIgnoresLineEndings ()
     testInitializerDoesNotUseItsOwnBinding ()
