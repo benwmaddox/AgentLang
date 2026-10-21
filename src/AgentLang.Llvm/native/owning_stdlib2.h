@@ -36,7 +36,12 @@ enum {
   AL_STDLIB_TIME_ADD_YEARS = 42,
   AL_STDLIB_TIME_RFC1123 = 43,
   AL_STDLIB_TIME_ISO8601 = 44,
-  AL_STDLIB_TIME_PARSE_ISO8601 = 45
+  AL_STDLIB_TIME_PARSE_ISO8601 = 45,
+  AL_STDLIB_STRING_COMPARE = 46,
+  AL_STDLIB_STRING_LESS_THAN = 47,
+  AL_STDLIB_STRING_LESS_OR_EQUAL = 48,
+  AL_STDLIB_STRING_GREATER_THAN = 49,
+  AL_STDLIB_STRING_GREATER_OR_EQUAL = 50
 };
 
 /* ---------------------------------------------------------- OS crypto */
@@ -1648,13 +1653,41 @@ static int32_t al_stdlib2_emit(al_owning_stack_context *ctx, int32_t op,
   return 0;
 }
 
-/* Int and Bool results: json.null? and cookie.count. */
+/* -1, 0 or 1 by UTF-8 bytes, unsigned: the order of Unicode code points and
+ * of Ruby's String#<=>. */
+static int64_t al_stdlib2_compare(const uint8_t *x, uint32_t nx,
+                                  const uint8_t *y, uint32_t ny) {
+  const uint32_t shorter = nx < ny ? nx : ny;
+  uint32_t k;
+  for (k = 0u; k < shorter; ++k)
+    if (x[k] != y[k])
+      return x[k] < y[k] ? -1 : 1;
+  return nx == ny ? 0 : (nx < ny ? -1 : 1);
+}
+
+/* Int and Bool results: json.null?, cookie.count and string ordering. */
 static int64_t al_stdlib2_scalar(al_owning_stack_context *ctx, int32_t op,
                                  const al_stdlib_argument *a,
                                  const uint32_t *n) {
   const uint8_t *x = al_stdlib_data(ctx, a[0]);
   if (op == AL_STDLIB_JSON_NULL)
     return n[0] == 4u && x[0] == 'n' ? 1 : 0;
+  if (op >= AL_STDLIB_STRING_COMPARE &&
+      op <= AL_STDLIB_STRING_GREATER_OR_EQUAL) {
+    const int64_t order = al_stdlib2_compare(x, n[0], al_stdlib_data(ctx, a[1]), n[1]);
+    switch (op) {
+    case AL_STDLIB_STRING_LESS_THAN:
+      return order < 0;
+    case AL_STDLIB_STRING_LESS_OR_EQUAL:
+      return order <= 0;
+    case AL_STDLIB_STRING_GREATER_THAN:
+      return order > 0;
+    case AL_STDLIB_STRING_GREATER_OR_EQUAL:
+      return order >= 0;
+    default:
+      return order;
+    }
+  }
   {
     const uint8_t *name = al_stdlib_data(ctx, a[1]);
     uint32_t cursor = 0u;

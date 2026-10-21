@@ -1,0 +1,123 @@
+fn native.bits.and(a: Int, b: Int) -> Int {
+    a & b
+}
+
+fn native.bits.or(a: Int, b: Int) -> Int {
+    a | b
+}
+
+fn native.bits.xor(a: Int, b: Int) -> Int {
+    a ^ b
+}
+
+fn native.bits.not(a: Int) -> Int {
+    int.bit-not(a)
+}
+
+fn native.bits.shift-left(a: Int, n: Int) -> Int {
+    a << n
+}
+
+fn native.bits.shift-right(a: Int, n: Int) -> Int {
+    a >> n
+}
+
+fn native.bits.has-all?(flags: Int, mask: Int) -> Bool {
+    (flags & mask) == mask
+}
+
+fn native.bits.mixed(a: Int, b: Int, c: Int) -> Int {
+    a & b ^ c | a << 2 + b
+}
+
+fn native.bits.crc32(text: String) -> Int {
+    doc "CRC-32 (zlib's crc32) of the String's UTF-8 bytes."
+    var crc = 4294967295
+    for i in 0..string.byte-length(text) {
+        crc = crc ^ string.byte-at-or(text, i, 0)
+        for k in 0..8 {
+            if (crc & 1) == 1 {
+                crc = (crc >> 1) ^ 3988292384
+            } else {
+                crc = crc >> 1
+            }
+        }
+    }
+    crc ^ 4294967295
+}
+
+fn native.text.less?(a: String, b: String) -> Bool {
+    a < b
+}
+
+fn native.text.less-or-equal?(a: String, b: String) -> Bool {
+    a <= b
+}
+
+fn native.text.greater?(a: String, b: String) -> Bool {
+    a > b
+}
+
+fn native.text.greater-or-equal?(a: String, b: String) -> Bool {
+    a >= b
+}
+
+fn native.text.compare(a: String, b: String) -> Int {
+    string.compare(a, b)
+}
+
+test native.bits.and/mask {
+    expect native.bits.and(12, 10) == 8
+}
+
+test native.bits.or/mask {
+    expect native.bits.or(12, 10) == 14
+}
+
+test native.bits.xor/mask {
+    expect native.bits.xor(12, 10) == 6
+}
+
+test native.bits.not/zero {
+    expect native.bits.not(0) == -1
+}
+
+test native.bits.shift-left/one {
+    expect native.bits.shift-left(1, 4) == 16
+}
+
+test native.bits.shift-right/sign {
+    expect native.bits.shift-right(-16, 2) == -4
+}
+
+test native.bits.has-all?/yes {
+    native.bits.has-all?(7, 5)
+}
+
+test native.bits.mixed/precedence {
+    expect native.bits.mixed(6, 3, 5) == 199
+}
+
+test native.bits.crc32/check {
+    expect native.bits.crc32("123456789") == 3421780262
+}
+
+test native.text.less?/bytes {
+    native.text.less?("Zebra", "apple")
+}
+
+test native.text.less-or-equal?/same {
+    native.text.less-or-equal?("a", "a")
+}
+
+test native.text.greater?/prefix {
+    native.text.greater?("ab", "a")
+}
+
+test native.text.greater-or-equal?/same {
+    native.text.greater-or-equal?("b", "b")
+}
+
+test native.text.compare/order {
+    expect native.text.compare("a", "b") == -1
+}

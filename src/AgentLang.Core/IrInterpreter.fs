@@ -156,6 +156,8 @@ module IrInterpreter =
     let private implementedPrimitiveOperations =
         set [
             "add"; "subtract"; "multiply"; "divide"; "int.remainder"
+            "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
+            "string.less-than"; "string.greater-than"; "string.less-or-equal"; "string.greater-or-equal"; "string.compare"
             "float.add"; "float.subtract"; "float.multiply"; "float.divide"
             "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
             "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -1329,6 +1331,22 @@ module IrInterpreter =
             | "int.remainder", [ RuntimeInt _; RuntimeInt 0L ] -> fail "RUNTIME_DIVIDE_BY_ZERO" "Integer division by zero." (Some operation) None [] []
             | "int.remainder", [ RuntimeInt _; RuntimeInt -1L ] -> [ RuntimeInt 0L ]
             | "int.remainder", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left % right) ]
+            | "int.bit-and", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left &&& right) ]
+            | "int.bit-or", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left ||| right) ]
+            | "int.bit-xor", [ RuntimeInt left; RuntimeInt right ] -> [ RuntimeInt(left ^^^ right) ]
+            | "int.bit-not", [ RuntimeInt value ] -> [ RuntimeInt(~~~value) ]
+            | ("int.shift-left" | "int.shift-right"), [ RuntimeInt _; RuntimeInt count ] when count < 0L || count > 63L ->
+                fail "RUNTIME_SHIFT_RANGE" "Shift count must be from 0 to 63." (Some operation) None [ "0 to 63" ] [ string count ]
+            | "int.shift-left", [ RuntimeInt value; RuntimeInt count ] -> [ RuntimeInt(value <<< int count) ]
+            | "int.shift-right", [ RuntimeInt value; RuntimeInt count ] -> [ RuntimeInt(value >>> int count) ]
+            | ("string.less-than" | "string.greater-than" | "string.less-or-equal" | "string.greater-or-equal" | "string.compare"), [ RuntimeString left; RuntimeString right ] ->
+                let order = TrustedValues.compareUtf8 left right
+                match operation with
+                | "string.less-than" -> [ RuntimeBool(order < 0) ]
+                | "string.greater-than" -> [ RuntimeBool(order > 0) ]
+                | "string.less-or-equal" -> [ RuntimeBool(order <= 0) ]
+                | "string.greater-or-equal" -> [ RuntimeBool(order >= 0) ]
+                | _ -> [ RuntimeInt(int64 order) ]
             | "int.add-checked", [ RuntimeInt left; RuntimeInt right ] ->
                 [ RuntimeResult(IrInt, IrString, TrustedValues.addChecked left right |> Result.map RuntimeInt |> Result.mapError RuntimeString) ]
             | "int.multiply-checked", [ RuntimeInt left; RuntimeInt right ] ->

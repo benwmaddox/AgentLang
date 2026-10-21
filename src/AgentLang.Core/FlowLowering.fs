@@ -466,21 +466,31 @@ module FlowLowering =
     let private exactCandidateFor (state: LoweringState) name =
         state.Signatures.TryFind name
 
-    /// Primitive behind a spaced arithmetic or comparison operator. There are no implicit
-    /// conversions: both operands must be Int or both Float (nominal scalars must be unwrapped).
+    /// Primitive behind a spaced arithmetic, bitwise or comparison operator. There are no implicit
+    /// conversions: both operands must be Int or both Float (nominal scalars must be unwrapped);
+    /// bitwise operators and shifts take Int, and comparisons also take two Strings (byte order).
     let private operatorPrimitive operator leftType rightType span =
         let symbol = FlowBinaryOperator.symbol operator
+        let accepted =
+            match operator with
+            | FlowBinaryOperator.BitAnd | FlowBinaryOperator.BitOr | FlowBinaryOperator.BitXor
+            | FlowBinaryOperator.ShiftLeft | FlowBinaryOperator.ShiftRight | FlowBinaryOperator.Remainder -> [ "Int and Int" ]
+            | FlowBinaryOperator.Less | FlowBinaryOperator.LessOrEqual | FlowBinaryOperator.Greater | FlowBinaryOperator.GreaterOrEqual ->
+                [ "Int and Int"; "Float and Float"; "String and String" ]
+            | _ -> [ "Int and Int"; "Float and Float" ]
         let reject () =
             let hint =
                 match leftType, rightType with
                 | TString, TString when operator = FlowBinaryOperator.Add -> " Use string.concat to join strings."
                 | TInt, TFloat | TFloat, TInt -> " Convert explicitly with int.to-float or float.to-int."
                 | TFloat, TFloat when operator = FlowBinaryOperator.Remainder -> " '%' is defined only for Int."
+                | _ when FlowBinaryOperator.isBitwise operator || operator = FlowBinaryOperator.ShiftLeft || operator = FlowBinaryOperator.ShiftRight ->
+                    " Bitwise operators and shifts are defined only for Int."
                 | TNamed _, _ | _, TNamed _ -> " Nominal scalars are not numeric; unwrap them first."
                 | _ -> ""
             fail "FLOW_OPERATOR_TYPE"
                 $"The '{symbol}' operator does not accept {Types.format leftType} and {Types.format rightType}.{hint}"
-                None (Some span) [ "Int and Int"; "Float and Float" ] [ Types.format leftType; Types.format rightType ]
+                None (Some span) accepted [ Types.format leftType; Types.format rightType ]
         match operator, leftType, rightType with
         | FlowBinaryOperator.Add, TInt, TInt -> "add"
         | FlowBinaryOperator.Subtract, TInt, TInt -> "subtract"
@@ -499,6 +509,15 @@ module FlowLowering =
         | FlowBinaryOperator.LessOrEqual, TFloat, TFloat -> "float.less-or-equal"
         | FlowBinaryOperator.Greater, TFloat, TFloat -> "float.greater-than"
         | FlowBinaryOperator.GreaterOrEqual, TFloat, TFloat -> "float.greater-or-equal"
+        | FlowBinaryOperator.Less, TString, TString -> "string.less-than"
+        | FlowBinaryOperator.LessOrEqual, TString, TString -> "string.less-or-equal"
+        | FlowBinaryOperator.Greater, TString, TString -> "string.greater-than"
+        | FlowBinaryOperator.GreaterOrEqual, TString, TString -> "string.greater-or-equal"
+        | FlowBinaryOperator.BitAnd, TInt, TInt -> "int.bit-and"
+        | FlowBinaryOperator.BitOr, TInt, TInt -> "int.bit-or"
+        | FlowBinaryOperator.BitXor, TInt, TInt -> "int.bit-xor"
+        | FlowBinaryOperator.ShiftLeft, TInt, TInt -> "int.shift-left"
+        | FlowBinaryOperator.ShiftRight, TInt, TInt -> "int.shift-right"
         | _ -> reject ()
 
     let private fieldAccessorCandidate (state: LoweringState) recordName fieldName span =

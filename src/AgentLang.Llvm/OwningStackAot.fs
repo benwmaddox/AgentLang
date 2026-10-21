@@ -905,7 +905,13 @@ module OwningStdlib =
               "time.add-years", (42, [ IrInt; IrInt ], [ IrOption IrInt ])
               "time.rfc1123", (43, [ IrInt ], [ IrOption IrString ])
               "time.iso8601-ms", (44, [ IrInt ], [ IrOption IrString ])
-              "time.parse-iso8601", (45, [ IrString ], [ IrOption IrInt ]) ]
+              "time.parse-iso8601", (45, [ IrString ], [ IrOption IrInt ])
+              // String ordering by UTF-8 bytes (reopen 300).
+              "string.compare", (46, [ IrString; IrString ], [ IrInt ])
+              "string.less-than", (47, [ IrString; IrString ], [ IrBool ])
+              "string.less-or-equal", (48, [ IrString; IrString ], [ IrBool ])
+              "string.greater-than", (49, [ IrString; IrString ], [ IrBool ])
+              "string.greater-or-equal", (50, [ IrString; IrString ], [ IrBool ]) ]
 
     /// Effectful stdlib primitives the owning backend admits, with the exact
     /// effect set each one must declare.
@@ -1608,6 +1614,7 @@ module OwningStackAot =
         let rec checkType owner ty = buildType owner 0 ty |> ignore
         let supportedPrimitives =
             set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
+                  "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
                   "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
                   "float.add"; "float.subtract"; "float.multiply"; "float.divide"
                   "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
@@ -1633,6 +1640,8 @@ module OwningStackAot =
             let valid =
                 match operation, call.InputTypes, call.OutputTypes with
                 | ("add" | "subtract" | "multiply" | "divide" | "int.remainder"), [ IrInt; IrInt ], [ IrInt ] -> true
+                | ("int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.shift-left" | "int.shift-right"), [ IrInt; IrInt ], [ IrInt ] -> true
+                | "int.bit-not", [ IrInt ], [ IrInt ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
                 | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ IrFloat; IrFloat ], [ IrFloat ] -> true
                 | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
@@ -5108,6 +5117,7 @@ module OwningStackAot =
                 | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"
                 | "int.to-float" | "float.to-int" | "float.round" | "int.to-string" | "float.to-string"
                 | "add" | "subtract" | "multiply" | "divide" | "int.remainder"
+                | "int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.bit-not" | "int.shift-left" | "int.shift-right"
                 | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
                 | "string.byte-at-or" | "string.byte-at" -> true
                 | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
@@ -7683,6 +7693,41 @@ module OwningStackAot =
                                     w.Inst($"br label %%{failBody}")
                                     w.Line($"{validLabel}:")
                                     emitScalarResult IrInt result
+                            | ("int.bit-and" | "int.bit-or" | "int.bit-xor"), [ left; right ] ->
+                                let a = w.Fresh "bits.left"
+                                let b = w.Fresh "bits.right"
+                                emitScalarInto a left
+                                emitScalarInto b right
+                                let opcode = match operation with "int.bit-and" -> "and" | "int.bit-or" -> "or" | _ -> "xor"
+                                let result = w.Fresh "bits.result"
+                                w.Inst($"{result} = {opcode} i64 {a}, {b}")
+                                emitScalarResult IrInt result
+                            | "int.bit-not", [ value ] ->
+                                let a = w.Fresh "bits.value"
+                                emitScalarInto a value
+                                let result = w.Fresh "bits.not"
+                                w.Inst($"{result} = xor i64 {a}, -1")
+                                emitScalarResult IrInt result
+                            | ("int.shift-left" | "int.shift-right"), [ left; right ] ->
+                                let a = w.Fresh "shift.value"
+                                let b = w.Fresh "shift.count"
+                                emitScalarInto a left
+                                emitScalarInto b right
+                                // One unsigned compare covers both n < 0 and n > 63.
+                                let outside = w.Fresh "shift.outside"
+                                w.Inst($"{outside} = icmp ugt i64 {b}, 63")
+                                let rangeLabel = w.Label "shift.range"
+                                let validLabel = w.Label "shift.valid"
+                                let rangeError = addDiagnostic "RUNTIME_SHIFT_RANGE" "Shift count must be from 0 to 63." operation instructionSpan [] []
+                                w.Inst($"br i1 {outside}, label %%{rangeLabel}, label %%{validLabel}")
+                                w.Line($"{rangeLabel}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {rangeError}, i32 0, i32 0)")
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{validLabel}:")
+                                let opcode = if operation = "int.shift-left" then "shl" else "ashr"
+                                let result = w.Fresh "shift.result"
+                                w.Inst($"{result} = {opcode} i64 {a}, {b}")
+                                emitScalarResult IrInt result
                             | _ -> invalidOp $"Verified dynamic primitive '{operation}' signature is not implemented."
                         | UserWordTarget(id, revision) ->
                             // Register calling (report 280): scalars travel as i64

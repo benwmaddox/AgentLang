@@ -6008,6 +6008,14 @@ let private testFlow2InfixOperators () =
     bool "int <=" true "2 <= 2"
     bool "int >" false "1 > 2"
     bool "int >=" true "3 >= 2"
+    // Strings compare by UTF-8 bytes (reopen 300): uppercase sorts before lowercase.
+    bool "string <" true "\"Zebra\" < \"apple\""
+    bool "string >= on equal" true "\"b\" >= \"b\""
+    bool "string > on a longer prefix" true "\"ab\" > \"a\""
+    int "bitwise precedence" 199L "6 & 3 ^ 5 | 6 << 2 + 3"
+    int "xor" 6L "12 ^ 10"
+    int "arithmetic shift keeps the sign" -4L "-16 >> 2"
+    bool "parenthesized mask" true "(7 & 5) == 5"
     bool "float <" true "1.5 < 2.5"
     bool "float >=" false "1.5 >= 2.5"
     bool "!= on Int" true "1 != 2"
@@ -6033,7 +6041,9 @@ let private testFlow2InfixOperators () =
     typeError "Float % Float" "Float {\n    1.0 % 2.0\n}" |> ignore
     typeError "Bool + Bool" "Bool {\n    true + false\n}" |> ignore
     typeError "Int && Int" "Bool {\n    1 && 2\n}" |> ignore
-    typeError "String < String" "Bool {\n    \"a\" < \"b\"\n}" |> ignore
+    typeError "String < Int" "Bool {\n    \"a\" < 1\n}" |> ignore
+    typeError "Float & Float" "Float {\n    1.0 & 2.0\n}" |> ignore
+    typeError "Bool | Bool" "Bool {\n    true | false\n}" |> ignore
     typeError "Int != String" "Bool {\n    1 != \"1\"\n}" |> ignore
     let moneyType =
         { Name = "Money"

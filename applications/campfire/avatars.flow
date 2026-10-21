@@ -14,46 +14,19 @@ test campfire.views.avatar-colors/count {
 
 fn campfire.views.crc32(text: String) -> Int {
     effects none
-    doc "Zlib.crc32 of the text's bytes (the IEEE polynomial, reflected), as an unsigned Int. A checksum, not cryptography; bitwise steps are done with arithmetic."
+    doc "Zlib.crc32 of the text's bytes (the IEEE polynomial, reflected), as an unsigned Int. A checksum, not cryptography."
     var crc = 4294967295
     for index in 0..string.byte-length(text) {
-        var value = crc
-        var byte = string.byte-at-or(text, index, 0)
-        // value ^= byte (low 8 bits only).
-        var mixed = 0
-        var bit = 1
-        for step in 0..8 {
-            let a = value / bit % 2
-            let b = byte / bit % 2
-            if a != b {
-                mixed = mixed + bit
-            }
-            bit = bit * 2
-        }
-        value = value - value % 256 + mixed
+        crc = crc ^ string.byte-at-or(text, index, 0)
         for round in 0..8 {
-            let low = value % 2
-            value = value / 2
-            if low == 1 {
-                // value ^= 0xEDB88320
-                var poly = 3988292384
-                var result = 0
-                var place = 1
-                var left = value
-                for k in 0..32 {
-                    if left % 2 != poly % 2 {
-                        result = result + place
-                    }
-                    left = left / 2
-                    poly = poly / 2
-                    place = place * 2
-                }
-                value = result
+            if (crc & 1) == 1 {
+                crc = (crc >> 1) ^ 3988292384
+            } else {
+                crc = crc >> 1
             }
         }
-        crc = value
     }
-    4294967295 - crc
+    crc ^ 4294967295
 }
 
 test campfire.views.crc32/zlib {

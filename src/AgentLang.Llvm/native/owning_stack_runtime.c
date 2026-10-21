@@ -4825,13 +4825,14 @@ enum {
   AL_STDLIB_INT_PARSE = 20,
   AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
   AL_STDLIB_RANDOM_BYTES = 22,
-  /* Slice 2 (report 274): ids 23..45 in owning_stdlib2.h. */
-  AL_STDLIB_LAST = 45
+  /* Slice 2 (report 274): ids 23..45 in owning_stdlib2.h; string ordering
+   * 46..50 there too. */
+  AL_STDLIB_LAST = 50
 };
 
 #define AL_STDLIB_MAX_ARGUMENTS 8u
 /* Argument shapes for ids 23..AL_STDLIB_LAST. */
-#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------"
+#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------",       "tt------", "tt------", "tt------", "tt------", "tt------"
 
 /* The OS random source. Modules that call crypto.random-bytes define
  * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
@@ -5687,7 +5688,8 @@ int64_t al_owning_stdlib_call(al_owning_stack_context *ctx, int32_t op,
   return (int64_t)((w.payload << 32) | w.extent);
 }
 
-/* Int and Bool results: bytes.length and bytes.equal-constant-time?. */
+/* Int and Bool results: bytes.length, bytes.equal-constant-time?, and the
+ * slice 2 scalars (json.null?, cookie.count, string ordering). */
 int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
                                 uint32_t o0, uint32_t e0, uint32_t o1,
                                 uint32_t e1, uint32_t error_id,
@@ -5709,13 +5711,15 @@ int32_t al_owning_stdlib_scalar(al_owning_stack_context *ctx, int32_t op,
     return 1;
   if (out_value == 0 ||
       (op != AL_STDLIB_BYTES_LENGTH && op != AL_STDLIB_BYTES_EQUAL &&
-       op != AL_STDLIB_JSON_NULL && op != AL_STDLIB_COOKIE_COUNT)) {
+       op != AL_STDLIB_JSON_NULL && op != AL_STDLIB_COOKIE_COUNT &&
+       (op < AL_STDLIB_STRING_COMPARE || op > AL_STDLIB_STRING_GREATER_OR_EQUAL))) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, 0u, 0u);
     return 1;
   }
   if (!al_stdlib_arguments(ctx, op, arguments, error_id, lengths))
     return 1;
-  if (op == AL_STDLIB_JSON_NULL || op == AL_STDLIB_COOKIE_COUNT) {
+  if (op == AL_STDLIB_JSON_NULL || op == AL_STDLIB_COOKIE_COUNT ||
+      (op >= AL_STDLIB_STRING_COMPARE && op <= AL_STDLIB_STRING_GREATER_OR_EQUAL)) {
     *out_value = al_stdlib2_scalar(ctx, op, arguments, lengths);
   } else if (op == AL_STDLIB_BYTES_LENGTH) {
     *out_value = (int64_t)lengths[0];

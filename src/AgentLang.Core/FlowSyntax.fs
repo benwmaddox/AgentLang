@@ -87,6 +87,11 @@ type FlowBinaryOperator =
     | NotEqual
     | And
     | Or
+    | BitAnd
+    | BitOr
+    | BitXor
+    | ShiftLeft
+    | ShiftRight
 
 module FlowBinaryOperator =
     let symbol = function
@@ -102,6 +107,11 @@ module FlowBinaryOperator =
         | FlowBinaryOperator.NotEqual -> "!="
         | FlowBinaryOperator.And -> "&&"
         | FlowBinaryOperator.Or -> "||"
+        | FlowBinaryOperator.BitAnd -> "&"
+        | FlowBinaryOperator.BitOr -> "|"
+        | FlowBinaryOperator.BitXor -> "^"
+        | FlowBinaryOperator.ShiftLeft -> "<<"
+        | FlowBinaryOperator.ShiftRight -> ">>"
 
     let tryParse = function
         | "*" -> Some FlowBinaryOperator.Multiply
@@ -116,16 +126,33 @@ module FlowBinaryOperator =
         | "!=" -> Some FlowBinaryOperator.NotEqual
         | "&&" -> Some FlowBinaryOperator.And
         | "||" -> Some FlowBinaryOperator.Or
+        | "&" -> Some FlowBinaryOperator.BitAnd
+        | "|" -> Some FlowBinaryOperator.BitOr
+        | "^" -> Some FlowBinaryOperator.BitXor
+        | "<<" -> Some FlowBinaryOperator.ShiftLeft
+        | ">>" -> Some FlowBinaryOperator.ShiftRight
         | _ -> None
 
-    /// C precedence, higher binds tighter. `==` (FlowExpression.Equality) shares level 3 with `!=`.
+    /// Higher binds tighter. `==` (FlowExpression.Equality) shares level 3 with `!=`.
+    /// Arithmetic, comparison and logic follow C. The bitwise operators bind tighter
+    /// than comparisons, as in Rust and Go (C's `x & 1 == 1` trap), and a bitwise
+    /// operand of a comparison must still be parenthesized (FLOW_BITWISE_PARENS).
     let precedence = function
-        | FlowBinaryOperator.Multiply | FlowBinaryOperator.Divide | FlowBinaryOperator.Remainder -> 6
-        | FlowBinaryOperator.Add | FlowBinaryOperator.Subtract -> 5
+        | FlowBinaryOperator.Multiply | FlowBinaryOperator.Divide | FlowBinaryOperator.Remainder -> 10
+        | FlowBinaryOperator.Add | FlowBinaryOperator.Subtract -> 9
+        | FlowBinaryOperator.ShiftLeft | FlowBinaryOperator.ShiftRight -> 8
+        | FlowBinaryOperator.BitAnd -> 7
+        | FlowBinaryOperator.BitXor -> 6
+        | FlowBinaryOperator.BitOr -> 5
         | FlowBinaryOperator.Less | FlowBinaryOperator.LessOrEqual | FlowBinaryOperator.Greater | FlowBinaryOperator.GreaterOrEqual -> 4
         | FlowBinaryOperator.NotEqual -> 3
         | FlowBinaryOperator.And -> 2
         | FlowBinaryOperator.Or -> 1
+
+    /// `&`, `|` and `^`: never a bare operand of a comparison or equality.
+    let isBitwise = function
+        | FlowBinaryOperator.BitAnd | FlowBinaryOperator.BitOr | FlowBinaryOperator.BitXor -> true
+        | _ -> false
 
     let equalityPrecedence = 3
 
@@ -801,7 +828,13 @@ module FlowSource =
             | FlowExpression.Equality _ -> Some FlowBinaryOperator.equalityPrecedence
             | FlowExpression.Binary(operator, _, _, _) -> Some(FlowBinaryOperator.precedence operator)
             | _ -> None
+        let bitwiseUnderComparison =
+            match expression with
+            | FlowExpression.Binary(operator, _, _, _) -> FlowBinaryOperator.isBitwise operator && FlowBinaryOperator.nonAssociative parentLevel
+            | _ -> false
         match operandLevel with
+        | Some _ when bitwiseUnderComparison ->
+            "(" + renderInlineExpression syntaxVersion locals expression + ")"
         | Some level when level < parentLevel || (level = parentLevel && (isRight || FlowBinaryOperator.nonAssociative parentLevel)) ->
             "(" + renderInlineExpression syntaxVersion locals expression + ")"
         | _ -> renderInlineExpression syntaxVersion locals expression

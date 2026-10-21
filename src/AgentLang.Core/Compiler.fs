@@ -67,6 +67,10 @@ module Compiler =
         let b = TVar "b"
         match name with
         | "add" | "subtract" | "multiply" | "divide" | "int.remainder" | "int.min" | "int.max" -> [ TInt; TInt ], [ TInt ]
+        | "int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.shift-left" | "int.shift-right" -> [ TInt; TInt ], [ TInt ]
+        | "int.bit-not" -> [ TInt ], [ TInt ]
+        | "string.less-than" | "string.greater-than" | "string.less-or-equal" | "string.greater-or-equal" -> [ TString; TString ], [ TBool ]
+        | "string.compare" -> [ TString; TString ], [ TInt ]
         | "float.add" | "float.subtract" | "float.multiply" | "float.divide" -> [ TFloat; TFloat ], [ TFloat ]
         | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal" -> [ TInt; TInt ], [ TBool ]
         | "float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal" -> [ TFloat; TFloat ], [ TBool ]
@@ -167,6 +171,8 @@ module Compiler =
     /// The initial standard vocabulary is deliberately small and boring.
     let private primitiveNames =
             [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"; "float.add"; "float.subtract"; "float.multiply"; "float.divide"
+              "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
+              "string.less-than"; "string.greater-than"; "string.less-or-equal"; "string.greater-or-equal"; "string.compare"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"
@@ -209,6 +215,12 @@ module Compiler =
                     | "instant.is-canonical-utc?" -> "Returns true only for the exact UTC O-format text emitted by instant.parse-utc."
                     | "instant.before?" -> "Compares two canonical UTC O-format instants; equality is false and invalid operands raise RUNTIME_INVALID_INSTANT."
                     | "instant.add-days" -> "Adds an integral Int64 day count to a canonical UTC O-format instant; invalid input returns INVALID_INSTANT and range failures return INSTANT_RANGE."
+                    | "int.bit-and" | "int.bit-or" | "int.bit-xor" -> "Bitwise and, or, or exclusive-or of two Int64 values (two's complement); the operators are a & b, a | b and a ^ b."
+                    | "int.bit-not" -> "Flips every bit of an Int64 value (two's complement), so int.bit-not(x) is -x - 1."
+                    | "int.shift-left" -> "Shifts an Int64 left by 0 to 63 bits (a << n); bits shifted out are dropped, with no overflow check. Any other count raises RUNTIME_SHIFT_RANGE."
+                    | "int.shift-right" -> "Shifts an Int64 right by 0 to 63 bits (a >> n), keeping the sign (arithmetic shift). Any other count raises RUNTIME_SHIFT_RANGE."
+                    | "string.less-than" | "string.greater-than" | "string.less-or-equal" | "string.greater-or-equal" -> "Compares two Strings by their UTF-8 bytes (the same order as Unicode code points, and as Ruby's String#<=>); not locale collation. The operators are <, >, <= and >=."
+                    | "string.compare" -> "Returns -1, 0 or 1 as the first String sorts before, equal to or after the second, by UTF-8 bytes (Ruby's String#<=>)."
                     | "list.count" -> "Returns the number of elements in List<T>; the closed List<T> parameter is inferred from the input."
                     | "list.tail" -> "Returns List<T> without its first element; empty lists remain empty, the element type and order are preserved, and the input is unchanged."
                     | "list.append" -> "Appends one value with exactly the element type T to List<T>."

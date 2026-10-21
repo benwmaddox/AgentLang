@@ -213,7 +213,7 @@ module FlowParser =
                     let symbol =
                         match pair with
                         | "->" | "::" | "=>" | "==" | ".." -> pair
-                        | "<=" | ">=" | "!=" | "&&" | "||" when spacedPair -> pair
+                        | "<=" | ">=" | "!=" | "&&" | "||" | "<<" | ">>" when spacedPair -> pair
                         | _ -> string source[offset]
                     for _ in symbol do advance ()
                     add Symbol startOffset startLine startColumn
@@ -869,7 +869,7 @@ module FlowParser =
             fail state.File matchSpan.Line matchSpan.Column matchSpan.Length "FLOW_MATCH_CASE_KIND" "Match cases must form exactly the Option pair or the Result pair."
 
     and private parseExpressionState state =
-        withDepth state (fun () -> parseBinaryExpression state 1)
+        withDepth state (fun () -> parseBinaryExpression state 1 |> fst)
 
     /// Infix operator at the cursor with its precedence level: `==` keeps its historical
     /// spelling rules; every other operator must be a spaced Flow/2 symbol.
@@ -882,9 +882,12 @@ module FlowParser =
         | _ -> None
 
     /// Precedence climbing over postfix expressions (C levels; see FlowBinaryOperator.precedence).
-    and private parseBinaryExpression state minimumLevel =
+    /// Also returns the operator that formed the result by climbing (None for a postfix or
+    /// parenthesized operand), so a bare bitwise operand of a comparison can be rejected.
+    and private parseBinaryExpression state minimumLevel : FlowExpression * FlowBinaryOperator option =
         let first = current state |> Option.defaultWith (fun () -> tokenError state "FLOW_INCOMPLETE_INPUT" "Expected a Flow expression.")
         let mutable left = parsePostfixExpressionState state
+        let mutable leftTop : FlowBinaryOperator option = None
         let mutable chained = 0
         let mutable looping = true
         while looping do
@@ -896,12 +899,19 @@ module FlowParser =
                 if state.Depth + chained > maxNesting then
                     fail state.File token.Line token.Column token.Text.Length "FLOW_NESTING_LIMIT" $"Flow syntax exceeds the nesting limit of {maxNesting}."
                 consume state |> ignore
-                let right = withDepth state (fun () -> parseBinaryExpression state (level + 1))
+                let right, rightTop = withDepth state (fun () -> parseBinaryExpression state (level + 1))
+                if FlowBinaryOperator.nonAssociative level then
+                    match [ leftTop; rightTop ] |> List.tryPick (Option.filter FlowBinaryOperator.isBitwise) with
+                    | Some bitwise ->
+                        let symbol = FlowBinaryOperator.symbol bitwise
+                        fail state.File token.Line token.Column token.Text.Length "FLOW_BITWISE_PARENS" $"Parenthesize the '{symbol}' operand of a comparison, for example (flags {symbol} mask) == 0."
+                    | None -> ()
                 let span = sourceSpan state.File first (previous state)
                 left <-
                     match operator with
                     | None -> FlowExpression.Equality(left, right, span)
                     | Some binary -> FlowExpression.Binary(binary, left, right, span)
+                leftTop <- operator
                 if FlowBinaryOperator.nonAssociative level then
                     match currentInfixOperator state with
                     | Some(following, _, followingLevel) when followingLevel = level ->
@@ -911,7 +921,7 @@ module FlowParser =
                             fail state.File following.Line following.Column following.Text.Length "FLOW_COMPARISON_CHAIN" "Comparison operators cannot be chained; parenthesize one comparison or join them with &&."
                     | _ -> ()
             | _ -> looping <- false
-        left
+        left, leftTop
 
     /// Decodes an html"…" or html"""…""" token into alternating literal parts and
     /// hole expressions, desugared to the reserved call `%html-template` with

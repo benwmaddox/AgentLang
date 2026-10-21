@@ -45,6 +45,20 @@ module TrustedValues =
             count <- count + 1L
         count
 
+    /// -1, 0 or 1 by UTF-8 byte order, which is Unicode code-point order (Ruby's
+    /// String#<=>). Ordinal UTF-16 order differs: it puts U+E000..U+FFFF after
+    /// surrogate pairs, so compare scalar values instead.
+    let compareUtf8 (left: string) (right: string) =
+        let mutable index = 0
+        let mutable result = 0
+        while result = 0 && index < left.Length && index < right.Length do
+            let a = Char.ConvertToUtf32(left, index)
+            let b = Char.ConvertToUtf32(right, index)
+            if a <> b then result <- (if a < b then -1 else 1)
+            else index <- index + (if a > 0xFFFF then 2 else 1)
+        if result <> 0 then result
+        else compare (left.Length - index) (right.Length - index) |> sign
+
     /// Rails ERB::Util.html_escape: replaces exactly & < > " ' and leaves every
     /// other UTF-16 code unit (including surrogates) unchanged.
     let htmlEscape (value: string) =

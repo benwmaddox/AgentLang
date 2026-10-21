@@ -187,7 +187,7 @@ fn marker.read(path: String) -> String {
 
 ## Operators
 
-Flow/2 has C-like binary infix operators. An operator glyph is an operator
+Flow/2 has C-like binary infix operators (bitwise precedence as in Rust). An operator glyph is an operator
 only when it has whitespace (space, tab or newline) on both sides:
 
 ```flow
@@ -207,10 +207,15 @@ negative literal (so `f(-1)` and `x - -1` both work), and `List<String>` or
 | | `*` `/` | Float, Float | `float.multiply`, `float.divide` |
 | 2 | `+` `-` (left-assoc) | Int, Int | `add`, `subtract` |
 | | | Float, Float | `float.add`, `float.subtract` |
-| 3 | `<` `<=` `>` `>=` (do not chain) | Int, Int or Float, Float | `int.less-than` ... / `float.less-than` ... |
-| 4 | `==` `!=` (do not chain) | two values of one type | `equals`; `!=` is `equals` negated |
-| 5 | `&&` | Bool, Bool | `if a { b } else { false }` |
-| 6 | `\|\|` | Bool, Bool | `if a { true } else { b }` |
+| 3 | `<<` `>>` (left-assoc) | Int, Int | `int.shift-left`, `int.shift-right` |
+| 4 | `&` | Int, Int | `int.bit-and` |
+| 5 | `^` | Int, Int | `int.bit-xor` |
+| 6 | `\|` | Int, Int | `int.bit-or` |
+| 7 | `<` `<=` `>` `>=` (do not chain) | Int, Int or Float, Float | `int.less-than` ... / `float.less-than` ... |
+| | | String, String | `string.less-than` ... (UTF-8 byte order) |
+| 8 | `==` `!=` (do not chain) | two values of one type | `equals`; `!=` is `equals` negated |
+| 9 | `&&` | Bool, Bool | `if a { b } else { false }` |
+| 10 | `\|\|` | Bool, Bool | `if a { true } else { b }` |
 
 - There are no implicit conversions. Int with Float, `%` on Float, and nominal
   scalars such as `MessageId : Int` are `FLOW_OPERATOR_TYPE` errors; unwrap
@@ -222,6 +227,16 @@ negative literal (so `f(-1)` and `x - -1` both work), and `List<String>` or
   and `%` by zero fail with `RUNTIME_DIVIDE_BY_ZERO`. `/` truncates toward
   zero and `%` takes the dividend's sign, as in C: `-7 % 3` is `-1`,
   `7 % -3` is `1`, and `Int64.MinValue % -1` is `0`.
+- **Bitwise operators** work on Int's 64 bits (two's complement). They bind
+  tighter than comparisons, as in Rust and Go rather than C. A bitwise operand of
+  a comparison or equality must still be parenthesized, so `x & 1 == 1` is
+  `FLOW_BITWISE_PARENS`; write `(x & 1) == 1`. `int.bit-not(x)` flips every bit.
+- **Shifts** take a count from 0 to 63; any other count fails with
+  `RUNTIME_SHIFT_RANGE`. `>>` keeps the sign (arithmetic shift). Unlike `+ - *`,
+  `<<` has no overflow check: bits shifted out are dropped.
+- **String comparison** is by UTF-8 bytes, which is Unicode code-point order and
+  Ruby's `String#<=>`, not locale collation. `string.compare(a, b)` gives -1, 0
+  or 1.
 - `a < b < c` is `FLOW_COMPARISON_CHAIN` and `a == b != c` is
   `FLOW_EQUALITY_CHAIN`; parenthesize or join with `&&`.
 - `expect a == b` still reports both values; `expect a != b` is an ordinary
