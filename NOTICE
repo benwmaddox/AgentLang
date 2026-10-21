@@ -1,0 +1,8 @@
+AgentLang
+Copyright 2026 Maddox Labs LLC
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+The Campfire application in applications/campfire/ reimplements the behavior of
+ONCE Campfire by 37signals, LLC, which is distributed under the MIT license.
+That license is reproduced in applications/campfire/MIT-LICENSE.37signals.
