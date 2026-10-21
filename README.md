@@ -465,3 +465,7 @@ AOT Campfire is now the primary delivery target. The interpreter application is
 a semantic reference; [the native delivery plan](docs/CAMPFIRE-AOT-PLAN.md) lists
 required typed host calls, lists and native adapters before endpoint performance
 can be compared with reported Campfire workloads.
+
+## License
+
+Copyright 2026 Maddox Labs LLC. Licensed under the [Apache License, Version 2.0](LICENSE). The Campfire application credits 37signals, LLC under its MIT license; see `NOTICE`.
