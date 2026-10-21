@@ -1,0 +1,64 @@
+record Note {
+    title: String
+    tags: List<String>
+    extra: Option<String>
+    score: Result<Int, String>
+    flag: Bool
+}
+
+record Shelf {
+    name: String
+    notes: List<Note>
+    best: Option<Note>
+}
+
+fn native.shapes.describe(shelves: List<Shelf>) -> String {
+    doc "Walks every value kind: lists of records holding lists, Options and Results, read in order."
+    var parts = list.empty<String>()
+    for shelf in shelves {
+        parts = list.append(parts, shelf.name)
+        for note in shelf.notes {
+            parts = list.append(parts, note.title)
+            for tag in note.tags {
+                parts = list.append(parts, tag)
+            }
+            parts = list.append(parts, match note.extra { none => "-"; some text => text })
+            parts = list.append(parts, match note.score { ok n => int.to-string(n); error text => text })
+            parts = list.append(parts, if note.flag { "y" } else { "n" })
+        }
+        parts = list.append(parts, match shelf.best { none => "no best"; some note => note.title })
+    }
+    string.join(parts)
+}
+
+fn native.shapes.pick(shelves: List<Shelf>, shelf: Int, note: Int) -> Option<Note> {
+    doc "list.get twice: measures dynamic elements to reach the one asked for."
+    match list.get(shelves, shelf) {
+        none => option.none<Note>()
+        some found => list.get(found.notes, note)
+    }
+}
+
+fn native.shapes.last-tag(shelves: List<Shelf>) -> Option<String> {
+    var found = option.none<String>()
+    for shelf in shelves {
+        for note in shelf.notes {
+            for tag in note.tags {
+                found = option.some<String>(tag)
+            }
+        }
+    }
+    found
+}
+
+test native.shapes.describe/empty {
+    expect native.shapes.describe(list.empty<Shelf>()) == ""
+}
+
+test native.shapes.pick/none {
+    expect native.shapes.pick(list.empty<Shelf>(), 0, 0) == option.none<Note>()
+}
+
+test native.shapes.last-tag/none {
+    expect native.shapes.last-tag(list.empty<Shelf>()) == option.none<String>()
+}

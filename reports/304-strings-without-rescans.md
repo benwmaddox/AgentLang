@@ -60,4 +60,60 @@ compared their bytes.
 
 ## (b) Trusted measuring
 
-Next. Report to follow.
+**Target:** the scans under list iteration, `list.get` and Option/Result case
+access in generated code:
+- `al_owning_measure_value`, 14.6% inclusive;
+- `al_owning_locate_sum_case`, 10.1%;
+- `al_owning_locate_field`, 3.9%.
+
+Their flat costs were mostly `scan_text` (11.2% self),
+`validate_type_descriptor` (6.7% self) and `scan_readable`. Report 270 had
+already skipped the type-graph check for values verified code built, but each
+node was still re-checked.
+
+**Change:** C only, in trusted builds, for internal views (values the generated
+code built). It extends report 270's rule one level down:
+- `validate_type_descriptor` returns the compiler-emitted descriptor without
+  re-checking it.
+- `scan_readable` checks bounds only, and skips the initialization bitmap:
+  generated code initializes every byte it builds.
+- `scan_text` takes a String's or Bytes value's size from its header, checked
+  against its owner. It skips the reserved-byte and padding loops, which are
+  zero by construction. UTF-8 was already checked only for external views.
+
+External views keep the full walk: host input, cache hits and anything
+`measure_external_value` reads. So do diagnostic builds.
+
+**The differential test** (NativeParity, now 6,590 assertions). 24 seeded
+random `List<Shelf>` values are generated:
+- a `Shelf` holds a String, a `List<Note>` and an `Option<Note>`;
+- a `Note` holds a String, a `List<String>`, an `Option<String>`, a
+  `Result<Int, String>` and a Bool;
+- Strings are 0 to 20 characters, mixing ASCII, `é`, `🚀`, `日`, space, `<`
+  and `&`.
+
+Three programs walk those values: nested loops, `list.get` twice, and matches
+on every Option and Result. The interpreter must match an F# reference, and
+diagnostic O2 (the full scanner) and trusted O2 (the fast path) must both
+match the interpreter. The test passed on the runtime before this change, and
+passes after it, with the trusted artifacts confirmed to carry the new C.
+
+**Speed** (ABBA against the 6a build):
+
+| | 1 A (6a) | 2 B (6b) | 3 B (6b) | 4 A (6a) |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 1,411 | 1,660 | 1,651 | 1,416 |
+| Uncached CPU ms per request | 2.84 | 2.42 | 2.42 | 2.84 |
+| Cached req/s | 5,804 | 6,154 | 6,074 | 5,772 |
+| Cached CPU ms per request | 0.676 | 0.631 | 0.634 | 0.679 |
+
+- **Uncached: 17% more requests a second, and 15% less CPU per request.**
+- **Cached: 5% more requests a second, and 7% less CPU.** The cached page
+  still loops over its messages, users and Options outside the store. Hits from
+  the store are external bytes, so they are still validated.
+- Output: all 22 sampled responses match. Build: 39.0 s.
+- **Together, (a) and (b)** take the uncached room page from 1,205 to 1,655
+  req/s (+37%), at 2.42 ms of CPU per request instead of 3.32.
+
+  Report 285 measured the Rust port at 1,554 req/s under the same protocol,
+  but in another session, so that comparison is not made here.

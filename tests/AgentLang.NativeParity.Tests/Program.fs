@@ -118,6 +118,96 @@ let private valueChecks (runRoot: string) =
             | [ StringValue t ] -> Ok [ StringValue(t.Trim()) ]
             | other -> failwith $"bad case {other}")
 
+/// Trusted measuring and case access (report 304) against the full scanner: the same
+/// programs over every value kind, compared between the interpreter, diagnostic O2 (the
+/// validating scan) and trusted O2 (the fast path), on seeded random values.
+let private shapeChecks (runRoot: string) =
+    let engine = Runtime.Engine(Path.Combine(runRoot, "shapes-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+    let defined = engine.Dispatch("define", flowArgs (File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "native-shapes.flow"))))
+    if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
+    for name in [ "native.shapes.describe"; "native.shapes.pick"; "native.shapes.last-tag" ] do
+        let response = engine.Dispatch("commit", wordArgs name)
+        check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
+    let random = Random(304)
+    let alphabet = [| "a"; "b"; "é"; "🚀"; "日"; " "; "<"; "&" |]
+    let text () = String.Join("", [| for _ in 1 .. random.Next(0, 21) -> alphabet[random.Next(alphabet.Length)] |])
+    let note () =
+        RecordValue(
+            "Note",
+            Map.ofList
+                [ "title", StringValue(text ())
+                  "tags", ListValue(TString, [ for _ in 1 .. random.Next(0, 6) -> StringValue(text ()) ])
+                  "extra", OptionValue(TString, (if random.Next(2) = 0 then None else Some(StringValue(text ()))))
+                  "score", ResultValue(TInt, TString, (if random.Next(2) = 0 then Ok(IntValue(int64 (random.Next(-1000, 1000)))) else Error(StringValue(text ()))))
+                  "flag", BoolValue(random.Next(2) = 0) ])
+    let shelf () =
+        let notes = [ for _ in 1 .. random.Next(0, 5) -> note () ]
+        RecordValue(
+            "Shelf",
+            Map.ofList
+                [ "name", StringValue(text ())
+                  "notes", ListValue(TNamed "Note", notes)
+                  "best", OptionValue(TNamed "Note", (if random.Next(3) = 0 then None else Some(note ()))) ])
+    let shelves = [ for _ in 1 .. 24 -> ListValue(TNamed "Shelf", [ for _ in 1 .. random.Next(0, 5) -> shelf () ]) ]
+    /// The describe reference, from the F# values.
+    let describe (value: Value) =
+        let parts = ResizeArray<string>()
+        let field (fields: Map<string, Value>) name = fields[name]
+        match value with
+        | ListValue(_, items) ->
+            for item in items do
+                match item with
+                | RecordValue(_, s) ->
+                    match field s "name" with StringValue n -> parts.Add n | _ -> ()
+                    match field s "notes" with
+                    | ListValue(_, notes) ->
+                        for n in notes do
+                            match n with
+                            | RecordValue(_, f) ->
+                                match field f "title" with StringValue t -> parts.Add t | _ -> ()
+                                match field f "tags" with ListValue(_, tags) -> (for t in tags do match t with StringValue v -> parts.Add v | _ -> ()) | _ -> ()
+                                match field f "extra" with OptionValue(_, Some(StringValue e)) -> parts.Add e | _ -> parts.Add "-"
+                                match field f "score" with
+                                | ResultValue(_, _, Ok(IntValue k)) -> parts.Add(string k)
+                                | ResultValue(_, _, Error(StringValue e)) -> parts.Add e
+                                | _ -> ()
+                                match field f "flag" with BoolValue true -> parts.Add "y" | _ -> parts.Add "n"
+                            | _ -> ()
+                    | _ -> ()
+                    match field s "best" with
+                    | OptionValue(_, Some(RecordValue(_, b))) -> (match field b "title" with StringValue t -> parts.Add t | _ -> ())
+                    | _ -> parts.Add "no best"
+                | _ -> ()
+        | _ -> ()
+        String.Join("", parts)
+    let interpret word inputs outputs values =
+        match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
+        | Ok value -> Ok value.Values
+        | Error(diagnostic: Diagnostic) -> Error diagnostic.Code
+    let toolchain = LlvmToolchain.discover ()
+    let shelvesType = TList(TNamed "Shelf")
+    for configuration, level, profile in [ "O2", LlvmOptimization.O2, OwningRuntimeProfile.Diagnostic; "trusted-O2", LlvmOptimization.O2, OwningRuntimeProfile.TrustedGenerated ] do
+        let native word inputs outputs =
+            let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
+            OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, "shapes", configuration, word)) body
+        let runNative (program: OwningStackCompiledProgram) values =
+            try Ok(program.Execute(values, 1 <<< 20, 1 <<< 20).Values)
+            with :? OwningStackExecutionException as failure -> Error failure.Diagnostic.Code
+        use describeProgram = native "native.shapes.describe" [ shelvesType ] [ TString ]
+        use pickProgram = native "native.shapes.pick" [ shelvesType; TInt; TInt ] [ TOption(TNamed "Note") ]
+        use lastProgram = native "native.shapes.last-tag" [ shelvesType ] [ TOption TString ]
+        shelves |> List.iteri (fun index value ->
+            let interpreted = interpret "native.shapes.describe" [ shelvesType ] [ TString ] [ value ]
+            check $"shapes {index}/{configuration}: interpreter describe = reference" (interpreted = Ok [ StringValue(describe value) ])
+            check $"shapes {index}/{configuration}: native describe = interpreter" (runNative describeProgram [ value ] = interpreted)
+            for shelfIndex in -1L .. 4L do
+                for noteIndex in [ -1L; 0L; 1L; 3L; 9L ] do
+                    let inputs = [ value; IntValue shelfIndex; IntValue noteIndex ]
+                    let expected = interpret "native.shapes.pick" [ shelvesType; TInt; TInt ] [ TOption(TNamed "Note") ] inputs
+                    check $"shapes {index} pick {shelfIndex},{noteIndex}/{configuration}: native = interpreter" (runNative pickProgram inputs = expected)
+            let lastExpected = interpret "native.shapes.last-tag" [ shelvesType ] [ TOption TString ] [ value ]
+            check $"shapes {index} last-tag/{configuration}: native = interpreter" (runNative lastProgram [ value ] = lastExpected))
+
 /// A server whose handler reaches an interpreter-only primitive fails the native
 /// check before its attached tests run: the counter app with counter.count on
 /// list.tail, so its own test (expecting 2) would fail too if tests ran first.
@@ -143,6 +233,7 @@ let private run () =
     Directory.CreateDirectory(runRoot) |> ignore
     let nativeCount, onlyCount = setChecks ()
     valueChecks runRoot
+    shapeChecks runRoot
     earlyCheck runRoot
     printfn "native parity: %d assertions passed (%d native primitives, %d interpreter-only with reasons); artifacts %s" assertionCount.Value nativeCount onlyCount runRoot
 

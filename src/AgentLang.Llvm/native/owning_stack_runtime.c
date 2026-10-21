@@ -939,12 +939,23 @@ static int32_t al_owning_scan_readable(al_owning_scan_view *view,
         view, al_owning_saturating_add_u32(offset, byte_count), view->length);
     return 0;
   }
+#if AL_OWNING_TRUSTED_GENERATED
+  /* Trusted: bounds only. Values verified code built are initialized by
+   * construction, so the per-byte initialization bitmap is not consulted
+   * (report 304). */
+  if (!view->external &&
+      (offset > view->ctx->stack_capacity_bytes ||
+       byte_count > view->ctx->stack_capacity_bytes - offset ||
+       offset > view->ctx->cursor_bytes ||
+       byte_count > view->ctx->cursor_bytes - offset)) {
+#else
   if (!view->external &&
       (offset > view->ctx->stack_capacity_bytes ||
        byte_count > view->ctx->stack_capacity_bytes - offset ||
        offset > view->ctx->cursor_bytes ||
        byte_count > view->ctx->cursor_bytes - offset ||
        al_owning_check_initialized(view->ctx, offset, byte_count) != 0)) {
+#endif
     if (view->ctx->status == AL_OWNING_STATUS_OK) {
       al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
                             view->error_id,
@@ -1049,6 +1060,15 @@ static int32_t al_owning_validate_type_descriptor(
     return 0;
   }
   type = &layout->types[type_index];
+#if AL_OWNING_TRUSTED_GENERATED
+  /* Trusted builds take the compiler-emitted descriptor as it is for values
+   * verified code built, as report 270 does for the type graph (report 304).
+   * Host and caller values (external views) keep the full check. */
+  if (!view->external) {
+    *out_type = type;
+    return 1;
+  }
+#endif
   if (type->first_field > layout->field_count ||
       type->field_count > layout->field_count - type->first_field) {
     al_owning_set_failure(
@@ -1579,6 +1599,24 @@ static int32_t al_owning_scan_text(al_owning_scan_view *view, uint32_t offset,
     return 0;
   }
   string_bytes = al_owning_read_u32_le(view->bytes, offset);
+#if AL_OWNING_TRUSTED_GENERATED
+  /* Trusted, for values verified code built: the size is the header's, within
+   * the owner; reserved and padding bytes are zero by construction and the
+   * text is well formed (report 304). */
+  if (!view->external) {
+    const uint64_t trusted_payload = 8ull + (uint64_t)string_bytes;
+    const uint64_t trusted_extent = (trusted_payload + 7ull) & ~7ull;
+    if (trusted_extent > (uint64_t)(containing_owner_end - offset)) {
+      al_owning_scan_failure(view, trusted_extent > UINT32_MAX ? UINT32_MAX : (uint32_t)trusted_extent,
+                             containing_owner_end - offset);
+      return 0;
+    }
+    *out_string_bytes = string_bytes;
+    *out_payload_bytes = (uint32_t)trusted_payload;
+    *out_extent_bytes = (uint32_t)trusted_extent;
+    return 1;
+  }
+#endif
   if (view->bytes[offset + 4u] != 0u || view->bytes[offset + 5u] != 0u ||
       view->bytes[offset + 6u] != 0u || view->bytes[offset + 7u] != 0u) {
     al_owning_scan_failure(

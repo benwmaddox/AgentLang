@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <Content Include="native-parity.flow" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="native-shapes.flow" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
