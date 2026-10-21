@@ -16,8 +16,16 @@ source (`FLOW_TEMPLATE_HOLE_CONTEXT`):
 | Where | Allowed holes |
 | --- | --- |
 | Element content, other quoted attributes | String, Int, refined String, Url (escaped); Html, List<Html> in content |
-| A URL attribute (`href`, `src`, `action`, `formaction`, `poster`, `cite`, `srcset`, …) before any `/`, `?`, `#` or `:` | Url or Int only |
-| The same attribute after such a character (`/rooms/{id}`, `?q={s}`, `mailto:{s}`) | as in content |
+| A URL attribute (`href`, `src`, `action`, `formaction`, `poster`, `cite`, `srcset`, …) until its scheme is fixed | Url or Int only |
+| The same attribute once its scheme is fixed (`/rooms/{id}`, `?q={s}`, `mailto:{s}`) | as in content |
+
+**When the scheme is fixed.**
+- A literal `/`, `?` or `#` fixes it.
+- So does a literal `:`, but only if no hole comes before it.
+- After a Url or Int hole, a `:` could complete a scheme the hole began, so it
+  is rejected: `Url.new("javascript")` is a valid relative URL.
+- Character references count as the characters they stand for: `&#58;` is a
+  `:`. The `#` inside `&#106;` is not a fragment.
 | `on*` handlers, `style`, `srcdoc`; `<style>` text | Int only |
 | `<script>` text | none, unless `type` is `text/template`, `text/html` or `text/x-…` (HTML data) |
 
@@ -46,6 +54,21 @@ source (`FLOW_TEMPLATE_HOLE_CONTEXT`):
 is the only producer of templates. The IR verifier still re-checks each
 template's structure, and now also accepts Int holes and refined-String
 operands.
+
+## Correction (same day, before item 6)
+
+The first version of this check let any hole through once a URL attribute had
+had one hole. So `href="{u}{s}"` compiled, and an empty Url followed by
+`"javascript:…"` would have made a script URL. So did `href="{u}:{s}"`, where
+Url `"javascript"` is followed by a literal `:`.
+
+The rule above replaces it. Ten new assertions cover the bypasses (`{u}{s}`,
+`{u}:{s}`, `{u}:alert(1)`, `{i}{s}`, `{u}&#58;x`, `&#106;{s}`), the safe forms
+(`{u}?q={s}`, `&#47;{s}`), and a duplicate `type=` on `<script>`, where the
+browser reads the first.
+
+Campfire needed no change: its only hole followed by more text is
+`{Url.new(base-url)}/searches/clear`. All 22 sampled responses still match.
 
 ## Decisions for review
 
@@ -87,7 +110,7 @@ page, avatars, user pages, sidebar, account, search, paging).
 
 ## Checks
 
-- **New suite:** `tests/AgentLang.TemplateContext.Tests`, 405 assertions.
+- **New suite:** `tests/AgentLang.TemplateContext.Tests`, 415 assertions after the correction (405 before).
   - 33 rule cases. Each URL attribute rejects a String at the start, including
     single quotes, upper-case `HREF`, `j{s}` and a leading space. They accept a
     Url, a String after `/`, `?`, `#` or `mailto:`, or an Int.

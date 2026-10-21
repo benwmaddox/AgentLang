@@ -537,10 +537,15 @@ fn page.card(title: String, items: List<Html>) -> Html {
 - **Holes by context** (`FLOW_TEMPLATE_HOLE_CONTEXT`; report 302). HTML
   escaping protects text and quoted attribute values, but not a URL's scheme,
   script or CSS, so:
-  - **URL attributes** (`href`, `src`, `action`, `formaction` and the rest): a
-    hole before any `/`, `?`, `#` or `:` of the value must be a `Url` or an
-    `Int`. `href="/rooms/{id}"` takes any String; `href="{target}"` needs
+  - **URL attributes** (`href`, `src`, `action`, `formaction` and the rest):
+    until the value's scheme is fixed, a hole must be a `Url` or an `Int`.
+    `href="/rooms/{id}"` takes any String; `href="{target}"` needs
     `Url.new(target)`.
+    - A literal `/`, `?` or `#` fixes the scheme. So does a literal `:` with
+      no hole before it.
+    - A `:` after a hole is rejected, because it could complete a scheme the
+      hole began.
+    - Character references count as their characters (`&#58;` is `:`).
   - **`on*` handlers, `style` and `srcdoc`, and `<style>` text** take only Int
     holes.
   - **`<script>` text** takes no holes, unless the script's `type` is an HTML

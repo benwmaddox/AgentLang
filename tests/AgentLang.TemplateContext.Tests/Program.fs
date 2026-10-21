@@ -66,6 +66,16 @@ let private ruleChecks (runRoot: string) =
     rejects "an upper-case HREF" "<a HREF=\"{s}\">x</a>"
     rejects "a String after a letter (j + avascript:)" "<a href=\"j{s}\">x</a>"
     rejects "a String after a space" "<a href=\" {s}\">x</a>"
+    // After a Url or Int hole only '/', '?' or '#' fixes the scheme: an empty Url then
+    // "javascript:...", or Url "javascript" then ':', would make a script URL.
+    rejects "a String right after a Url" "<a href=\"{u}{s}\">x</a>"
+    rejects "a ':' after a Url" "<a href=\"{u}:{s}\">x</a>"
+    rejects "a ':' after a Url, then text" "<a href=\"{u}:alert(1)\">x</a>"
+    rejects "a String right after an Int" "<a href=\"{i}{s}\">x</a>"
+    rejects "a character-reference ':' after a Url" "<a href=\"{u}&#58;x\">x</a>"
+    rejects "a String after '&#106;' (its '#' is not a fragment)" "<a href=\"&#106;{s}\">x</a>"
+    accepts "a String after a Url and '?'" "<a href=\"{u}?q={s}\">x</a>"
+    accepts "a String after '&#47;' (a '/')" "<a href=\"&#47;{s}\">x</a>"
     accepts "href starting with a Url" "<a href=\"{u}\">x</a>"
     accepts "a String after a Url" "<a href=\"{u}/{s}\">x</a>"
     accepts "a String after a path" "<a href=\"/rooms/{s}\">x</a>"
@@ -90,6 +100,9 @@ let private ruleChecks (runRoot: string) =
     rejects "a String in a style element" "<style>p {{ color: {s} }}</style>"
     accepts "an Int in a style element" "<style>p {{ order: {i} }}</style>"
     accepts "a String in a template script" "<script type=\"text/template\"><p>{s}</p></script>"
+    // The browser reads a tag's first type=.
+    rejects "a script whose first type is module" "<script type=\"module\" type=\"text/template\">{s}</script>"
+    accepts "a script whose first type is a template" "<script type=\"text/template\" type=\"module\"><p>{s}</p></script>"
     accepts "a String in a text/x- script" "<script type=\"text/x-tmpl\"><p>{s}</p></script>"
     // Content: unchanged rules.
     accepts "Int and String content" "<p>{i} of {s}</p>"

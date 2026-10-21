@@ -105,13 +105,17 @@ module HtmlMarkup =
         let name = StringBuilder()
         let mutable state = Data
         let mutable rawElement = ""
-        // Context: the current attribute's name and value, whether the value has had a
-        // hole or a character that ends a URL scheme, and the current tag's type attribute.
+        // Context: the current attribute's name and value; for a URL, whether its scheme
+        // is fixed, whether a hole came before that, and any character reference being
+        // read (`&#58;` is a ':'; its '#' is not a fragment); the current tag's first type=.
         let attribute = StringBuilder()
         let value = StringBuilder()
+        let entity = StringBuilder()
+        let mutable inEntity = false
         let mutable valueSawHole = false
         let mutable valueSchemeFixed = false
         let mutable tagType = ""
+        let mutable tagTypeSeen = false
         let mutable rawTemplate = false
         let holeKinds = kinds |> Option.map Array.ofList
         let mutable holeIndex = 0
@@ -140,11 +144,45 @@ module HtmlMarkup =
         let startValue () =
             valueSawHole <- false
             valueSchemeFixed <- false
+            inEntity <- false
+            entity.Clear() |> ignore
             value.Clear() |> ignore
         let endValue () =
-            if attribute.ToString().ToLowerInvariant() = "type" then
-                // A hole in type= leaves the script's kind unknown: treat it as script.
+            // The browser reads a tag's first type=; a hole in it leaves the kind unknown.
+            if attribute.ToString().ToLowerInvariant() = "type" && not tagTypeSeen then
+                tagTypeSeen <- true
                 tagType <- if valueSawHole then "" else value.ToString()
+        /// One decoded character of a URL attribute's literal text, before its scheme is
+        /// fixed: '/', '?' or '#' means no scheme can follow; ':' fixes the scheme only when
+        /// no hole came before it, since after a Url or Int hole it could complete a scheme
+        /// the hole began (Url.new("javascript") is a valid relative URL).
+        let urlCharacter index (ch: char) =
+            if not valueSchemeFixed && urlAttributes.Contains(attribute.ToString().ToLowerInvariant()) then
+                if ch = '/' || ch = '?' || ch = '#' then valueSchemeFixed <- true
+                elif ch = ':' then
+                    if valueSawHole && holeKinds.IsSome then
+                        fail index "A ':' after a hole in a URL attribute could complete a scheme the hole began, such as javascript:; put the scheme before the hole, or a '/' between them."
+                    valueSchemeFixed <- true
+        /// A literal character of a quoted attribute value, with character references decoded.
+        let literalValueCharacter index (ch: char) =
+            value.Append(ch) |> ignore
+            if inEntity then
+                if ch = ';' then
+                    inEntity <- false
+                    match entity.ToString().ToLowerInvariant() with
+                    | "#58" | "#x3a" | "#0058" | "colon" -> urlCharacter index ':'
+                    | "#47" | "#x2f" | "sol" -> urlCharacter index '/'
+                    | "#63" | "#x3f" | "quest" -> urlCharacter index '?'
+                    | "#35" | "#x23" | "num" -> urlCharacter index '#'
+                    | _ -> ()
+                elif Char.IsLetterOrDigit ch || ch = '#' then entity.Append(ch) |> ignore
+                else
+                    inEntity <- false
+                    urlCharacter index ch
+            elif ch = '&' then
+                inEntity <- true
+                entity.Clear() |> ignore
+            else urlCharacter index ch
         /// The context rules for one hole (only when kinds were given).
         let checkContext index (kind: HoleKind) =
             let attributeName = attribute.ToString().ToLowerInvariant()
@@ -152,8 +190,9 @@ module HtmlMarkup =
             | AttributeValueDouble | AttributeValueSingle ->
                 if codeAttribute attributeName && kind <> HoleKind.Int then
                     fail index $"A hole in {attributeName}=\"...\" must be an Int: HTML escaping does not make text safe as script or CSS."
-                elif urlAttributes.Contains attributeName && not valueSawHole && not valueSchemeFixed && kind <> HoleKind.Url && kind <> HoleKind.Int then
-                    fail index $"A hole at the start of {attributeName}=\"...\" could begin a javascript: URL; make it a Url (Url.new validates it), or start the value with literal text such as '/'."
+                elif urlAttributes.Contains attributeName && not valueSchemeFixed && kind <> HoleKind.Url && kind <> HoleKind.Int then
+                    fail index $"A hole before {attributeName}=\"...\" has a '/', '?' or '#' could begin a javascript: URL; make it a Url (Url.new validates it), or put literal text such as '/' before it."
+                inEntity <- false
                 valueSawHole <- true
             | RawText when rawElement = "style" && kind <> HoleKind.Int ->
                 fail index "A hole in <style> text must be an Int: HTML escaping does not make text safe as CSS."
@@ -193,6 +232,7 @@ module HtmlMarkup =
                             if isTagNameStart ch then
                                 name.Clear().Append(ch) |> ignore
                                 tagType <- ""
+                                tagTypeSeen <- false
                                 state <- TagName
                             elif ch = '/' then state <- EndTagOpen
                             elif ch = '!' then
@@ -259,9 +299,7 @@ module HtmlMarkup =
                             if (state = AttributeValueDouble && ch = '"') || (state = AttributeValueSingle && ch = '\'') then
                                 endValue ()
                                 state <- BeforeAttribute
-                            else
-                                value.Append(ch) |> ignore
-                                if ch = '/' || ch = '?' || ch = '#' || ch = ':' then valueSchemeFixed <- true
+                            else literalValueCharacter index ch
                         | AttributeValueUnquoted ->
                             if isSpace ch then
                                 endValue ()
