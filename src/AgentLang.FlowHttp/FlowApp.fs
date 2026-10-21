@@ -212,6 +212,20 @@ module FlowApp =
         |> List.iter (fun (symbol, name, revision) -> builder.Append($"{symbol}\t{name}\t{revision}\n") |> ignore)
         builder.ToString()
 
+    /// Loads an app for a verified native build (report 303): defines it, checks that
+    /// everything reachable from the native entries has a native lowering (the owning
+    /// backend's validation, without emitting), and only then commits, which runs
+    /// every attached test. A primitive without a native lowering fails in seconds,
+    /// not after the tests.
+    let loadNativeVerified projectDirectory app sourcePaths databasePath storeBytes =
+        let defined = loadWith false projectDirectory app sourcePaths databasePath storeBytes
+        try timed "native-check" (fun () -> nativeSymbolsText defined |> ignore)
+        with LanguageException diagnostic ->
+            let word = defaultArg diagnostic.Word "?"
+            failwith $"Native check, before the attached tests: {diagnostic.Code} in {word}: {diagnostic.Message} {String.Join(' ', diagnostic.Actual)}"
+        timed "commit" (fun () -> dispatch defined.Engine "commit" [] |> ignore)
+        { defined with Verified = true }
+
     let diagnosticsText (diagnostics: Diagnostic array) =
         let builder = StringBuilder()
         diagnostics |> Array.iteri (fun index diagnostic ->

@@ -1,0 +1,39 @@
+fn native.parity.abs(n: Int) -> Int {
+    int.abs(n)
+}
+
+fn native.parity.min(a: Int, b: Int) -> Int {
+    int.min(a, b)
+}
+
+fn native.parity.max(a: Int, b: Int) -> Int {
+    int.max(a, b)
+}
+
+fn native.parity.empty?(items: List<String>) -> Bool {
+    list.is-empty?(items)
+}
+
+fn native.parity.trim(text: String) -> String {
+    string.trim(text)
+}
+
+test native.parity.abs/negative {
+    expect native.parity.abs(-4) == 4
+}
+
+test native.parity.min/order {
+    expect native.parity.min(3, -2) == -2
+}
+
+test native.parity.max/order {
+    expect native.parity.max(3, -2) == 3
+}
+
+test native.parity.empty?/one {
+    expect bool.not(native.parity.empty?(["a"]))
+}
+
+test native.parity.trim/spaces {
+    expect native.parity.trim("  a b  ") == "a b"
+}

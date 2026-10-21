@@ -244,6 +244,30 @@ module Compiler =
 
     let primitives = standardEntries primitiveNames
 
+    /// Primitives the interpreter runs but the owning native backend does not, each with
+    /// its reason (report 303). tests/AgentLang.NativeParity.Tests requires every other
+    /// primitive to have a native lowering, and this list to stay exact.
+    let interpreterOnlyPrimitives : Map<string, string> =
+        Map.ofList
+            [ "clock.now", "a host effect; native code reads time through the host's operations"
+              "console.write", "a host effect; native hosts own their output"
+              "file.read", "a host effect; native hosts own files"
+              "file.write", "a host effect; native hosts own files"
+              "file.exists?", "a host effect; native hosts own files"
+              "instant.parse-utc", "business-language demo (.NET round-trip text); not used by native apps"
+              "instant.is-canonical-utc?", "business-language demo; not used by native apps"
+              "instant.before?", "business-language demo; not used by native apps"
+              "instant.add-days", "business-language demo; not used by native apps"
+              "int.add-checked", "business-language demo (Result of INT_OVERFLOW); use + with its overflow check"
+              "int.multiply-checked", "business-language demo (Result of INT_OVERFLOW); use * with its overflow check"
+              "int.scale-ratio-toward-zero", "business-language demo (Int128 intermediate)"
+              "string.guid-canonical?", "business-language demo (.NET Guid parsing)"
+              "string.guid-normalize", "business-language demo (.NET Guid parsing)"
+              "string.email-address-valid?", "business-language demo address policy"
+              "string.to-lower", "Unicode case mapping needs case tables; string.to-lower-ascii is native"
+              "string.to-upper", "Unicode case mapping needs case tables"
+              "list.tail", "a copy of every element but the first; for loops with an index, or list.get, are native" ]
+
     /// Test-only intrinsics: reachable only from test bodies through Call names, never listed in the public vocabulary.
     let testIntrinsics = standardEntries [ "<expect>"; "<expect-equal>" ]
 

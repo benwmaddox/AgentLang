@@ -62,7 +62,9 @@ const char flow_app_schema[] = \"\";
 ", UTF8Encoding(false))
     let project = Path.Combine(out, "engine-" + Guid.NewGuid().ToString("N").Substring(0, 8))
     // The build never runs requests; its production provider is a scratch database.
-    use flowApp = FlowApp.loadWith verify project app (List.ofSeq sources) ":memory:" 0
+    use flowApp =
+        if verify then FlowApp.loadNativeVerified project app (List.ofSeq sources) ":memory:" 0
+        else FlowApp.loadWith false project app (List.ofSeq sources) ":memory:" 0
     if verify && not (isNull (Environment.GetEnvironmentVariable "AGENTLANG_BUILD_ADD_PROBE")) then
         // How long adding one function takes once the project is loaded: define a word
         // with its attached test, then commit that word alone.

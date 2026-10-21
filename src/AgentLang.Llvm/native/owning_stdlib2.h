@@ -42,7 +42,8 @@ enum {
   AL_STDLIB_STRING_LESS_OR_EQUAL = 48,
   AL_STDLIB_STRING_GREATER_THAN = 49,
   AL_STDLIB_STRING_GREATER_OR_EQUAL = 50,
-  AL_STDLIB_STRING_URL_SAFE = 51
+  AL_STDLIB_STRING_URL_SAFE = 51,
+  AL_STDLIB_STRING_TRIM = 52
 };
 
 /* ---------------------------------------------------------- OS crypto */
@@ -1327,6 +1328,40 @@ static void al_stdlib2_scrub(uint8_t *data, uint32_t length) {
     bytes[k] = 0u;
 }
 
+/* .NET Char.IsWhiteSpace for one code point: the set String.Trim removes. */
+static int32_t al_stdlib2_white_space(uint32_t c) {
+  return (c >= 0x09u && c <= 0x0Du) || c == 0x20u || c == 0x85u || c == 0xA0u ||
+         c == 0x1680u || (c >= 0x2000u && c <= 0x200Au) || c == 0x2028u ||
+         c == 0x2029u || c == 0x202Fu || c == 0x205Fu || c == 0x3000u;
+}
+
+/* The code point of the well-formed UTF-8 sequence at x[k], and its length. */
+static uint32_t al_stdlib2_decode(const uint8_t *x, uint32_t k, uint32_t *size) {
+  const uint8_t lead = x[k];
+  if (lead < 0x80u) { *size = 1u; return lead; }
+  if (lead < 0xE0u) { *size = 2u; return ((uint32_t)(lead & 0x1Fu) << 6) | (x[k + 1u] & 0x3Fu); }
+  if (lead < 0xF0u) { *size = 3u; return ((uint32_t)(lead & 0x0Fu) << 12) | ((uint32_t)(x[k + 1u] & 0x3Fu) << 6) | (x[k + 2u] & 0x3Fu); }
+  *size = 4u;
+  return ((uint32_t)(lead & 0x07u) << 18) | ((uint32_t)(x[k + 1u] & 0x3Fu) << 12) | ((uint32_t)(x[k + 2u] & 0x3Fu) << 6) | (x[k + 3u] & 0x3Fu);
+}
+
+/* string.trim: the byte range left after removing white space at both ends. */
+static void al_stdlib2_trim_range(const uint8_t *x, uint32_t n, uint32_t *first, uint32_t *end) {
+  uint32_t start = 0u, stop = n, size = 0u;
+  while (start < n && al_stdlib2_white_space(al_stdlib2_decode(x, start, &size)))
+    start += size;
+  while (stop > start) {
+    uint32_t lead = stop - 1u;
+    while (lead > start && (x[lead] & 0xC0u) == 0x80u)
+      --lead;
+    if (!al_stdlib2_white_space(al_stdlib2_decode(x, lead, &size)))
+      break;
+    stop = lead;
+  }
+  *first = start;
+  *end = stop;
+}
+
 /* Slice 2 operations; returns 1 on success, 0 after setting a failure or for
  * an unknown id (the caller reports it). */
 static int32_t al_stdlib2_emit(al_owning_stack_context *ctx, int32_t op,
@@ -1336,6 +1371,12 @@ static int32_t al_stdlib2_emit(al_owning_stack_context *ctx, int32_t op,
   const uint8_t *y = al_stdlib_data(ctx, a[1]);
   uint32_t ks, ke, vs, ve, cursor;
   switch (op) {
+  case AL_STDLIB_STRING_TRIM: {
+    uint32_t first, end;
+    al_stdlib2_trim_range(x, n[0], &first, &end);
+    al_stdlib_text(w, x + first, end - first);
+    return 1;
+  }
   case AL_STDLIB_HMAC_SHA1:
     al_stdlib_begin_text(w, 20u);
     if (w->base != 0 &&

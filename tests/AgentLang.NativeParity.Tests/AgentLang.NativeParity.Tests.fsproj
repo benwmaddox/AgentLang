@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AgentLang.FlowHttp\AgentLang.FlowHttp.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="native-parity.flow" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

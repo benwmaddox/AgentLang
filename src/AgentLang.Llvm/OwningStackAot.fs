@@ -913,13 +913,36 @@ module OwningStdlib =
               "string.greater-than", (49, [ IrString; IrString ], [ IrBool ])
               "string.greater-or-equal", (50, [ IrString; IrString ], [ IrBool ])
               // The built-in Url type's validator (report 302).
-              "string.url-safe?", (51, [ IrString ], [ IrBool ]) ]
+              "string.url-safe?", (51, [ IrString ], [ IrBool ])
+              // .NET String.Trim (Char.IsWhiteSpace at both ends); report 303.
+              "string.trim", (52, [ IrString ], [ IrString ]) ]
 
     /// Effectful stdlib primitives the owning backend admits, with the exact
     /// effect set each one must declare.
     let effectful : Map<string, Set<IrEffect>> = Map.ofList [ "crypto.random-bytes", Set.singleton IrEffect.RandomRead ]
 
 module OwningStackAot =
+    /// The lifetime analysis's fresh-output primitives (ArenaLifetime is internal), for the parity test.
+    let lifetimeFreshPrimitives : Set<string> = ArenaLifetime.owningPrimitiveSet
+
+    /// Every canonical primitive the owning backend lowers natively (report 303). The
+    /// parity test (tests/AgentLang.NativeParity.Tests) checks it against the interpreter
+    /// and Compiler.interpreterOnlyPrimitives.
+    let nativePrimitives =
+        set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
+              "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
+              "int.abs"; "int.min"; "int.max"; "list.is-empty?"
+              "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
+              "float.add"; "float.subtract"; "float.multiply"; "float.divide"
+              "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
+              "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
+              "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
+              "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
+              "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
+              "list.append"; "list.concat"; "list.count"; "list.get"
+              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
+            |> Set.union (OwningStdlib.operations |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+
     let private unsupported code message owner actual =
         Diagnostics.raiseError code message (Some owner) None [ "Int | Bool | Float | Unit | String | payload-free enum | acyclic inline record | List<T> | Option<T> | Result<T, E>" ] [ actual ]
 
@@ -1616,19 +1639,7 @@ module OwningStackAot =
             int total
 
         let rec checkType owner ty = buildType owner 0 ty |> ignore
-        let supportedPrimitives =
-            set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
-                  "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
-                  "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
-                  "float.add"; "float.subtract"; "float.multiply"; "float.divide"
-                  "float.less-than"; "float.greater-than"; "float.less-or-equal"; "float.greater-or-equal"
-                  "int.to-float"; "int.to-string"; "float.to-int"; "float.round"; "float.to-string"
-                  "equals"; "bool.and"; "bool.or"; "bool.not"; "dup"; "drop"; "swap"
-                  "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
-                  "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
-                  "list.append"; "list.concat"; "list.count"; "list.get"
-                  "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
-                |> Set.union (OwningStdlib.operations |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
+        let supportedPrimitives = nativePrimitives
 
         let validatePrimitive owner span (call: IrResolvedCall) operation =
             match OwningStdlib.effectful.TryFind operation with
@@ -1646,6 +1657,9 @@ module OwningStackAot =
                 | ("add" | "subtract" | "multiply" | "divide" | "int.remainder"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | ("int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.shift-left" | "int.shift-right"), [ IrInt; IrInt ], [ IrInt ] -> true
                 | "int.bit-not", [ IrInt ], [ IrInt ] -> true
+                | ("int.min" | "int.max"), [ IrInt; IrInt ], [ IrInt ] -> true
+                | "int.abs", [ IrInt ], [ IrInt ] -> true
+                | "list.is-empty?", [ IrList _ ], [ IrBool ] -> true
                 | ("int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"), [ IrInt; IrInt ], [ IrBool ] -> true
                 | ("float.add" | "float.subtract" | "float.multiply" | "float.divide"), [ IrFloat; IrFloat ], [ IrFloat ] -> true
                 | ("float.less-than" | "float.greater-than" | "float.less-or-equal" | "float.greater-or-equal"), [ IrFloat; IrFloat ], [ IrBool ] -> true
@@ -5149,6 +5163,7 @@ module OwningStackAot =
                 | "int.to-float" | "float.to-int" | "float.round" | "int.to-string" | "float.to-string"
                 | "add" | "subtract" | "multiply" | "divide" | "int.remainder"
                 | "int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.bit-not" | "int.shift-left" | "int.shift-right"
+                | "int.abs" | "int.min" | "int.max"
                 | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
                 | "string.byte-at-or" | "string.byte-at" -> true
                 | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
@@ -6931,7 +6946,7 @@ module OwningStackAot =
                                     stack <- prefix @ [ registerEntry (IrOption IrInt) (emitMakeOption w tag result) ]
                                 else
                                     emitScalarResult IrInt result
-                            | ("list.count" | "list.get") as operation, listEntry :: rest ->
+                            | ("list.count" | "list.get" | "list.is-empty?") as operation, listEntry :: rest ->
                                 // The count is the list header. list.get finds the element (fixed
                                 // stride, or one measure per earlier element) and copies it into a
                                 // fresh Option; an index outside [0, count) gives none.
@@ -6953,6 +6968,12 @@ module OwningStackAot =
                                 w.Inst($"{count} = zext i32 {count32} to i64")
                                 match operation, rest with
                                 | "list.count", [] -> emitScalarResult IrInt count
+                                | "list.is-empty?", [] ->
+                                    let empty = w.Fresh "list.empty"
+                                    w.Inst($"{empty} = icmp eq i64 {count}, 0")
+                                    let asInt = w.Fresh "list.empty.int"
+                                    w.Inst($"{asInt} = zext i1 {empty} to i64")
+                                    emitScalarResult IrBool asInt
                                 | _, [ index ] ->
                                     let itemType =
                                         match listEntry.Type with
@@ -7733,6 +7754,37 @@ module OwningStackAot =
                                 let opcode = match operation with "int.bit-and" -> "and" | "int.bit-or" -> "or" | _ -> "xor"
                                 let result = w.Fresh "bits.result"
                                 w.Inst($"{result} = {opcode} i64 {a}, {b}")
+                                emitScalarResult IrInt result
+                            | ("int.min" | "int.max"), [ left; right ] ->
+                                let a = w.Fresh "minmax.left"
+                                let b = w.Fresh "minmax.right"
+                                emitScalarInto a left
+                                emitScalarInto b right
+                                let pick = w.Fresh "minmax.pick"
+                                w.Inst($"""{pick} = icmp {(if operation = "int.min" then "slt" else "sgt")} i64 {a}, {b}""")
+                                let result = w.Fresh "minmax.result"
+                                w.Inst($"{result} = select i1 {pick}, i64 {a}, i64 {b}")
+                                emitScalarResult IrInt result
+                            | "int.abs", [ value ] ->
+                                let a = w.Fresh "abs.value"
+                                emitScalarInto a value
+                                // abs(MinValue) overflows, as in the interpreter.
+                                let isMin = w.Fresh "abs.min"
+                                w.Inst($"{isMin} = icmp eq i64 {a}, -9223372036854775808")
+                                let overflowLabel = w.Label "abs.overflow"
+                                let validLabel = w.Label "abs.valid"
+                                let overflowError = addDiagnostic "RUNTIME_OVERFLOW" "Absolute value of Int64.MinValue overflows." operation instructionSpan [] []
+                                w.Inst($"br i1 {isMin}, label %%{overflowLabel}, label %%{validLabel}")
+                                w.Line($"{overflowLabel}:")
+                                w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {overflowError}, i32 0, i32 0)")
+                                w.Inst($"br label %%{failBody}")
+                                w.Line($"{validLabel}:")
+                                let negative = w.Fresh "abs.negative"
+                                w.Inst($"{negative} = icmp slt i64 {a}, 0")
+                                let negated = w.Fresh "abs.negated"
+                                w.Inst($"{negated} = sub i64 0, {a}")
+                                let result = w.Fresh "abs.result"
+                                w.Inst($"{result} = select i1 {negative}, i64 {negated}, i64 {a}")
                                 emitScalarResult IrInt result
                             | "int.bit-not", [ value ] ->
                                 let a = w.Fresh "bits.value"

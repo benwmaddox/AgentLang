@@ -48,10 +48,13 @@ module internal ArenaLifetime =
     let private templateHoleCount (parts: HtmlTemplatePart list) =
         parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1)
 
-    let private owningPrimitiveSet =
+    /// Primitives whose outputs are fresh values in the current region (the rest are
+    /// treated as possibly retained). The parity test keeps it within the native set.
+    let owningPrimitiveSet =
         set [ "add"; "subtract"; "multiply"; "divide"; "int.remainder"
               "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"
               "string.compare"; "string.less-than"; "string.less-or-equal"; "string.greater-than"; "string.greater-or-equal"; "string.url-safe?"
+              "int.abs"; "int.min"; "int.max"; "list.is-empty?"; "string.trim"
               "int.to-string"
               "int.less-than"; "int.greater-than"; "int.less-or-equal"; "int.greater-or-equal"
               "equals"; "bool.and"; "bool.or"; "bool.not"

@@ -153,7 +153,7 @@ module IrInterpreter =
 
     // This is intentionally a closed backend table. A compiler catalog entry by
     // itself cannot create an implementation or authorize dispatch to one.
-    let private implementedPrimitiveOperations =
+    let implementedPrimitiveOperations =
         set [
             "add"; "subtract"; "multiply"; "divide"; "int.remainder"
             "int.bit-and"; "int.bit-or"; "int.bit-xor"; "int.bit-not"; "int.shift-left"; "int.shift-right"

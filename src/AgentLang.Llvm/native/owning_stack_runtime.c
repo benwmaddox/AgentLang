@@ -4852,13 +4852,13 @@ enum {
   AL_STDLIB_STRING_TO_LOWER_ASCII = 21,
   AL_STDLIB_RANDOM_BYTES = 22,
   /* Slice 2 (report 274): ids 23..45 in owning_stdlib2.h; string ordering
-   * 46..50 there too, and string.url-safe? 51. */
-  AL_STDLIB_LAST = 51
+   * 46..50 there too, string.url-safe? 51 and string.trim 52. */
+  AL_STDLIB_LAST = 52
 };
 
 #define AL_STDLIB_MAX_ARGUMENTS 8u
 /* Argument shapes for ids 23..AL_STDLIB_LAST. */
-#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------",       "tt------", "tt------", "tt------", "tt------", "tt------", "t-------"
+#define AL_STDLIB_SLICE2_SHAPES                                                "tt------", "tttt----", "ttttt---", "t-------", "tt------", "ti------",          "ti------", "t-------", "t-------", "t-------", "t-------", "t-------",       "t-------", "t-------", "tt------", "tt------", "t-------", "t-------",       "tttttii-", "ii------", "i-------", "i-------", "t-------",       "tt------", "tt------", "tt------", "tt------", "tt------", "t-------",       "t-------"
 
 /* The OS random source. Modules that call crypto.random-bytes define
  * al_owning_os_random_fill in their generated IR (BCryptGenRandom); every
