@@ -13,15 +13,42 @@ test campfire.emoji.ranges/pairs {
 }
 
 fn campfire.emoji.code-point?(code: Int, ranges: List<Int>) -> Bool {
-    doc "True when the code point is in one of the ranges."
+    doc "True when the code point is in one of the ranges: a binary search over the [first, last] pairs, which are sorted and do not overlap (campfire.emoji.ranges/sorted; report 312)."
+    var low = 0
+    var high = list.count(ranges) / 2
     var found = false
-    for value, index in ranges {
-        if index % 2 == 0 && code >= value && code <= campfire.emoji.at(ranges, index + 1) {
+    for step in 0..64 {
+        if low >= high {
+            break
+        }
+        let middle = (low + high) / 2
+        if code < campfire.emoji.at(ranges, 2 * middle) {
+            high = middle
+        } else if code > campfire.emoji.at(ranges, 2 * middle + 1) {
+            low = middle + 1
+        } else {
             found = true
             break
         }
     }
     found
+}
+
+test campfire.emoji.ranges/sorted {
+    let ranges = campfire.emoji.ranges()
+    var sorted = true
+    for value, index in ranges {
+        if index > 0 && value < campfire.emoji.at(ranges, index - 1) + (if index % 2 == 0 { 1 } else { 0 }) {
+            sorted = false
+        }
+    }
+    expect sorted
+}
+
+test campfire.emoji.code-point?/edges {
+    let ranges = campfire.emoji.ranges()
+    expect campfire.emoji.code-point?(169, ranges) && campfire.emoji.code-point?(131069, ranges) && campfire.emoji.code-point?(126976, ranges) && campfire.emoji.code-point?(127231, ranges)
+    expect bool.not(campfire.emoji.code-point?(168, ranges)) && bool.not(campfire.emoji.code-point?(170, ranges)) && bool.not(campfire.emoji.code-point?(131070, ranges)) && bool.not(campfire.emoji.code-point?(0, ranges))
 }
 
 test campfire.emoji.code-point?/eyes {

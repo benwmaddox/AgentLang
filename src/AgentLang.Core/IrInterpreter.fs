@@ -365,7 +365,7 @@ module IrInterpreter =
             "list.count"; "list.tail"; "list.append"; "list.concat"; "list.get"; "list.is-empty?"
             "dup"; "drop"; "swap"
             "file.read"; "file.write"; "file.exists?"; "clock.now"; "console.write"
-            "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"
+            "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "crypto.random-bytes"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "string.next-byte-in"; "string.next-byte-not-in"; "int.parse"; "string.to-lower-ascii"
             "crypto.hmac-sha1"; "crypto.aes-256-gcm-seal"; "crypto.aes-256-gcm-open"; "json.parse"; "json.field"; "json.index"; "json.key-at"; "json.count"; "json.text"; "json.int"; "json.bool"; "json.null?"; "json.encode"; "json.quote"; "cookie.find"; "cookie.count"; "cookie.escape"; "cookie.unescape"; "cookie.set-cookie"; "time.add-years"; "time.rfc1123"; "time.iso8601-ms"; "time.parse-iso8601"
             "<expect>"; "<expect-equal>"
         ]
@@ -795,6 +795,18 @@ module IrInterpreter =
             let textBytes = utf8.GetBytes text
             if index < 0L || index >= int64 textBytes.Length then [ RuntimeInt fallback ]
             else [ RuntimeInt(int64 textBytes[int index]) ]
+        | ("string.next-byte-in" | "string.next-byte-not-in") as operation, [ RuntimeString text; RuntimeString set; RuntimeInt from ] ->
+            // The first byte index at or after from (clamped to 0..byte-length) whose
+            // byte is (next-byte-in) or is not (next-byte-not-in) one of set's UTF-8
+            // bytes; byte-length when there is none (report 312).
+            let textBytes = utf8.GetBytes text
+            let members = utf8.GetBytes set |> Set.ofArray
+            let wanted = operation = "string.next-byte-in"
+            let start = int (max 0L (min from (int64 textBytes.Length)))
+            let mutable index = start
+            while index < textBytes.Length && members.Contains textBytes[index] <> wanted do
+                index <- index + 1
+            [ RuntimeInt(int64 index) ]
         | "string.to-lower-ascii", [ RuntimeString text ] ->
             // ASCII A-Z only: every other scalar value is unchanged.
             [ RuntimeString(String(text.ToCharArray() |> Array.map (fun ch -> if ch >= 'A' && ch <= 'Z' then char (int ch + 32) else ch))) ]
@@ -1605,7 +1617,7 @@ module IrInterpreter =
                       Depth = max 1 typeDepth
                       EstimatedOutputBytes = estimatedBytes }
                 [ RuntimeString(left + right) ]
-            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "int.parse" | "string.to-lower-ascii" | "crypto.hmac-sha1"), _ ->
+            | ("bytes.from-utf8" | "bytes.to-utf8" | "bytes.length" | "bytes.concat" | "bytes.slice" | "bytes.xor" | "bytes.equal-constant-time?" | "base64.encode" | "base64.decode" | "base64.url-encode" | "base64.url-decode" | "hex.encode" | "crypto.sha256" | "crypto.hmac-sha256" | "crypto.pbkdf2-sha256" | "string.split" | "string.index-of" | "string.slice" | "string.byte-at" | "string.byte-at-or" | "string.next-byte-in" | "string.next-byte-not-in" | "int.parse" | "string.to-lower-ascii" | "crypto.hmac-sha1"), _ ->
                 match stdlibPrimitive operation arguments with
                 | [] -> fail "IR_PRIMITIVE_ARGUMENTS" $"Primitive '{operation}' received unsupported arguments." (Some currentWord) (site |> Option.bind sourceSpan) [] []
                 | results -> results

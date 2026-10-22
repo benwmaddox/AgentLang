@@ -60,7 +60,7 @@ let private valueChecks (runRoot: string) =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "native.parity.member?"; "native.parity.literal-sum"; "native.parity.literal-grow"; "native.parity.literal-join"; "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim" ] do
+    for name in [ "native.parity.member?"; "native.parity.literal-sum"; "native.parity.literal-grow"; "native.parity.literal-join"; "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim"; "native.parity.next-in"; "native.parity.next-not-in" ] do
         let response = engine.Dispatch("commit", wordArgs name)
         check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
     let interpret word inputs outputs values =
@@ -102,6 +102,23 @@ let private valueChecks (runRoot: string) =
             | other -> failwith $"bad case {other}")
         pair "native.parity.max" [ TInt; TInt ] [ TInt ] intPairs (function
             | [ IntValue a; IntValue b ] -> Ok [ IntValue(max a b) ]
+            | other -> failwith $"bad case {other}")
+        // Byte scans (report 312): ASCII and multi-byte texts and sets, from below 0,
+        // inside, at the end and past it; the answer is a byte index.
+        let scanTexts = [ ""; "abc"; "a<b>&c"; "  x y "; "é<🚀&"; " <p>"; String('x', 40) + "<" ]
+        let scanSets = [ ""; "<"; "<>&"; " "; "abcx"; "é"; " " ]
+        let scanCases = [ for text in scanTexts do for set in scanSets do for from in [ -3L; 0L; 1L; 2L; 41L; 99L ] -> [ StringValue text; StringValue set; IntValue from ] ]
+        let scan wanted (text: string) (set: string) (from: int64) =
+            let bytes = Text.Encoding.UTF8.GetBytes text
+            let members = Text.Encoding.UTF8.GetBytes set |> Set.ofArray
+            let mutable index = int (max 0L (min from (int64 bytes.Length)))
+            while index < bytes.Length && members.Contains bytes[index] <> wanted do index <- index + 1
+            int64 index
+        pair "native.parity.next-in" [ TString; TString; TInt ] [ TInt ] scanCases (function
+            | [ StringValue text; StringValue set; IntValue from ] -> Ok [ IntValue(scan true text set from) ]
+            | other -> failwith $"bad case {other}")
+        pair "native.parity.next-not-in" [ TString; TString; TInt ] [ TInt ] scanCases (function
+            | [ StringValue text; StringValue set; IntValue from ] -> Ok [ IntValue(scan false text set from) ]
             | other -> failwith $"bad case {other}")
         let lists = [ []; [ "a" ]; [ ""; "b" ]; [ for k in 1..20 -> string k ] ]
         pair "native.parity.empty?" [ TList TString ] [ TBool ] [ for items in lists -> [ ListValue(TString, items |> List.map StringValue) ] ] (function

@@ -947,7 +947,7 @@ module OwningStackAot =
               "string.concat"; "string.replace"; "string.length"; "string.byte-length"; "string.char-length"; "string.join"; "string.html-escape"
               "string.html-fragment?"; "string.contains"; "string.starts-with"; "string.ends-with"
               "list.append"; "list.concat"; "list.count"; "list.get"
-              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
+              "bytes.from-utf8"; "bytes.to-utf8"; "bytes.length"; "bytes.concat"; "bytes.slice"; "bytes.xor"; "bytes.equal-constant-time?"; "base64.encode"; "base64.decode"; "base64.url-encode"; "base64.url-decode"; "hex.encode"; "crypto.sha256"; "crypto.hmac-sha256"; "crypto.pbkdf2-sha256"; "string.split"; "string.index-of"; "string.slice"; "string.byte-at"; "string.byte-at-or"; "string.next-byte-in"; "string.next-byte-not-in"; "int.parse"; "string.to-lower-ascii"; "crypto.random-bytes" ]
             |> Set.union (OwningStdlib.operations |> Map.toSeq |> Seq.map fst |> Set.ofSeq)
 
     let private unsupported code message owner actual =
@@ -1714,6 +1714,7 @@ module OwningStackAot =
                 | "list.count", [ IrList _ ], [ IrInt ] -> true
                 | "list.get", [ IrList item; IrInt ], [ IrOption result ] -> item = result
                 | "string.byte-at-or", [ IrString; IrInt; IrInt ], [ IrInt ] -> true
+                | ("string.next-byte-in" | "string.next-byte-not-in"), [ IrString; IrString; IrInt ], [ IrInt ] -> true
                 | _ when OwningStdlib.operations.ContainsKey operation ->
                     let _, inputs, outputs = OwningStdlib.operations[operation]
                     call.InputTypes = inputs && call.OutputTypes = outputs
@@ -4508,6 +4509,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_stdlib_plan(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, ptr, ptr)")
         writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
+        writer.Line("declare i64 @al_owning_string_next_byte(ptr, i32, i32, i64, i32)")
         writer.Line("declare i64 @al_owning_stdlib_call(ptr, i32, i64, i64, i64, i64, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
@@ -5476,7 +5478,7 @@ module OwningStackAot =
                 | "int.bit-and" | "int.bit-or" | "int.bit-xor" | "int.bit-not" | "int.shift-left" | "int.shift-right"
                 | "int.abs" | "int.min" | "int.max"
                 | "int.less-than" | "int.greater-than" | "int.less-or-equal" | "int.greater-or-equal"
-                | "string.byte-at-or" | "string.byte-at" -> true
+                | "string.byte-at-or" | "string.byte-at" | "string.next-byte-in" | "string.next-byte-not-in" -> true
                 | "equals" -> inputTypes |> List.forall (fun ty -> ty = IrInt || ty = IrBool || ty = IrUnit)
                 // The stdlib dispatcher materializes (or passes by value) only its own arguments (report 279).
                 | _ when OwningStdlib.operations.ContainsKey operation -> true
@@ -7722,6 +7724,33 @@ module OwningStackAot =
                                     stack <- prefix @ [ registerEntry (IrOption IrInt) (emitMakeOption w tag result) ]
                                 else
                                     emitScalarResult IrInt result
+                            | ("string.next-byte-in" | "string.next-byte-not-in") as operation, [ text; set; from ] ->
+                                // One runtime call scans from `from` with a byte table built
+                                // from set (report 312): no arena copies, no Option.
+                                match runtimeProfile with
+                                | OwningRuntimeProfile.Diagnostic ->
+                                    for operand in [ text; set; from ] |> List.filter (fun entry -> entry.Register.IsNone) |> List.map (fun entry -> entry.Offset) do
+                                        let status = w.Fresh "next.byte.check.status"
+                                        w.Inst($"{status} = call i32 @al_owning_check_initialized(ptr %%ctx, i32 {operand}, i32 8)")
+                                        emitStatusResult w status failBody
+                                | OwningRuntimeProfile.TrustedGenerated -> ()
+                                let fromValue =
+                                    match from.Register with
+                                    | Some value -> value
+                                    | None ->
+                                        let dataPointer = w.Fresh "next.byte.data.pointer"
+                                        w.Inst($"{dataPointer} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                                        let data = w.Fresh "next.byte.data"
+                                        w.Inst($"{data} = load ptr, ptr {dataPointer}, align 8")
+                                        let pointer = w.Fresh "next.byte.from.pointer"
+                                        w.Inst($"{pointer} = getelementptr inbounds i8, ptr {data}, i32 {from.Offset}")
+                                        let value = w.Fresh "next.byte.from"
+                                        w.Inst($"{value} = load i64, ptr {pointer}, align 8")
+                                        value
+                                let wanted = if operation = "string.next-byte-in" then 1 else 0
+                                let result = w.Fresh "next.byte.index"
+                                w.Inst($"{result} = call i64 @al_owning_string_next_byte(ptr %%ctx, i32 {text.Offset}, i32 {set.Offset}, i64 {fromValue}, i32 {wanted})")
+                                emitScalarResult IrInt result
                             | ("list.count" | "list.get" | "list.is-empty?") as operation, listEntry :: rest ->
                                 // The count is the list header. list.get finds the element (fixed
                                 // stride, or one measure per earlier element) and copies it into a

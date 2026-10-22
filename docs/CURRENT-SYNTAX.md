@@ -405,6 +405,14 @@ Search and escaping work on whole characters.
 `fallback` outside `0..byte-length`. Natively it is an inline bounds check and
 one load, with no Option and no runtime call.
 
+To skip a run of bytes instead of reading them one at a time, use
+`string.next-byte-in(text, set, from)` and `string.next-byte-not-in(text, set, from)`.
+They return the first byte index at or after `from` whose byte is (or is not)
+one of `set`'s UTF-8 bytes, or `byte-length` when there is none. `from` is
+clamped to `0..byte-length`. For example,
+`string.next-byte-in(text, "<&", at)` is the next `<` or `&`. Natively each is
+one runtime call that scans with a byte table.
+
 ## Stdlib value types: Bytes and Json
 
 `Bytes` and `Json` are built-in type names (reserved, like `String`). Neither

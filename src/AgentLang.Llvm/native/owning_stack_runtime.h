@@ -180,6 +180,12 @@ void al_owning_release_to(al_owning_stack_context *ctx, uint32_t new_cursor,
 int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
                                     uint32_t offset, uint32_t byte_count);
 int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset);
+/* string.next-byte-in (wanted = 1) and string.next-byte-not-in (wanted = 0):
+ * the first byte index at or after from (clamped to 0..length) whose byte is,
+ * or is not, one of set's bytes; the text's byte length when none is. */
+int64_t al_owning_string_next_byte(al_owning_stack_context *ctx,
+                                   uint32_t text_offset, uint32_t set_offset,
+                                   int64_t from, int32_t wanted);
 void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
                          int64_t value, uint32_t type_id);
 void al_owning_store_token(al_owning_stack_context *ctx, uint32_t offset,

@@ -168,11 +168,16 @@ test rich-html.entity-at/escapes {
 
 fn rich-html.last-slash(stack: String) -> Int {
     doc "The index of the last '/' in the stack path, or -1."
+    // Jump from '/' to '/' (report 312).
+    let length = string.byte-length(stack)
     var found = -1
-    for index in 0..string.byte-length(stack) {
-        if string.byte-at-or(stack, index, 0) == 47 {
-            found = index
+    var at = string.next-byte-in(stack, "/", 0)
+    for step in 0..length {
+        if at >= length {
+            break
         }
+        found = at
+        at = string.next-byte-in(stack, "/", at + 1)
     }
     found
 }
@@ -338,14 +343,8 @@ fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
             let run = match string.slice(text, text-start, at - text-start) { none => ""; some s => s }
             ok = ok && rich-html.text-ok-for?(stack, run, links-allowed)
             let closing = string.byte-at-or(text, at + 1, 0) == 47
-            var name-end = if closing { at + 2 } else { at + 1 }
-            let name-scan = name-end
-            for k in name-scan..length {
-                if bool.not(rich-html.name-char?(string.byte-at-or(text, k, 0))) {
-                    break
-                }
-                name-end = k + 1
-            }
+            // The name is the run of rich-html.name-char? bytes (report 312: one scan).
+            let name-end = string.next-byte-not-in(text, "abcdefghijklmnopqrstuvwxyz0123456789-:", if closing { at + 2 } else { at + 1 })
             let name-start = if closing { at + 2 } else { at + 1 }
             let name = match string.slice(text, name-start, name-end - name-start) { none => ""; some s => s }
             if name == "" || bool.not(rich-html.allowed-tag?(name)) {
@@ -368,14 +367,7 @@ fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
                         ok = false
                         break
                     }
-                    var attr-end = cursor + 1
-                    let attr-scan = cursor + 1
-                    for k in attr-scan..length {
-                        if bool.not(rich-html.name-char?(string.byte-at-or(text, k, 0))) {
-                            break
-                        }
-                        attr-end = k + 1
-                    }
+                    let attr-end = string.next-byte-not-in(text, "abcdefghijklmnopqrstuvwxyz0123456789-:", cursor + 1)
                     let attr-name = match string.slice(text, cursor + 1, attr-end - cursor - 1) { none => ""; some s => s }
                     if attr-name == "" || bool.not(rich-html.allowed-attribute?(attr-name)) || rich-html.open?(seen, attr-name) || string.byte-at-or(text, attr-end, 0) != 61 || string.byte-at-or(text, attr-end + 1, 0) != 34 {
                         ok = false
@@ -383,17 +375,16 @@ fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
                     }
                     seen = string.join([seen, "/", attr-name])
                     // The value runs to the next '"'; only Nokogiri's attribute escapes may appear.
-                    var value-end = attr-end + 2
-                    let value-scan = attr-end + 2
-                    for k in value-scan..length {
-                        let value-byte = string.byte-at-or(text, k, 0)
-                        if value-byte == 34 {
+                    // Jump from '&' to '&' until the closing '"' (report 312).
+                    var value-end = string.next-byte-in(text, "\"&", attr-end + 2)
+                    for k in 0..length {
+                        if string.byte-at-or(text, value-end, 0) != 38 {
                             break
                         }
-                        if value-byte == 38 && rich-html.entity-at(text, k, true) == 0 {
+                        if rich-html.entity-at(text, value-end, true) == 0 {
                             ok = false
                         }
-                        value-end = k + 1
+                        value-end = string.next-byte-in(text, "\"&", value-end + 1)
                     }
                     let value = match string.slice(text, attr-end + 2, value-end - attr-end - 2) { none => ""; some s => s }
                     if string.byte-at-or(text, value-end, 0) != 34 || string.contains(value, " ") || string.contains(value, "\n") || string.contains(value, "<") || string.contains(value, ">") {
@@ -429,7 +420,8 @@ fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
             // A raw U+00A0 would be serialized as &nbsp;.
             ok = false
         } else {
-            at = at + 1
+            // Plain text: jump to the next byte this loop acts on (report 312).
+            at = string.next-byte-in(text, "<>&\u00a0", at + 1)
         }
     }
     let tail = match string.slice(text, text-start, length - text-start) { none => ""; some s => s }
@@ -847,7 +839,11 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
         var advance = 1
         var emit-attr = false
         if state == 0 {
-            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { name-end = i + 1 }
+            if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else {
+                // The rest of the name, up to the next byte this state acts on (report 312).
+                name-end = string.next-byte-in(text, " \t\n\f\r/>", i + 1)
+                advance = name-end - i
+            }
         } else if state == 1 {
             if rich-html.space?(byte) {
                 state = 1
@@ -867,7 +863,10 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
                 advance = 0
             }
         } else if state == 2 {
-            if rich-html.space?(byte) || byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { state = 4 } else { name-to = i + 1 }
+            if rich-html.space?(byte) || byte == 47 || byte == 62 { state = 3; advance = 0 } else if byte == 61 { state = 4 } else {
+                name-to = string.next-byte-in(text, " \t\n\f\r/>=", i + 1)
+                advance = name-to - i
+            }
         } else if state == 3 {
             if rich-html.space?(byte) {
                 state = 3
@@ -919,6 +918,11 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
                     value-from = i + size
                     advance = size
                 }
+            } else {
+                // Plain value bytes: jump to the closing quote, the end of an unquoted
+                // value, or the next '&' (report 312).
+                let stops = if state == 6 { " \t\n\f\r>&" } else if quote == 34 { "\"&" } else { "'&" }
+                advance = string.next-byte-in(text, stops, i + 1) - i
             }
         } else if state == 7 {
             if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { state = 1; advance = 0 }

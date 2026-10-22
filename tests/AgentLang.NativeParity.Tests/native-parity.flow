@@ -112,3 +112,21 @@ test native.parity.empty?/one {
 test native.parity.trim/spaces {
     expect native.parity.trim("  a b  ") == "a b"
 }
+
+fn native.parity.next-in(text: String, set: String, from: Int) -> Int {
+    string.next-byte-in(text, set, from)
+}
+
+test native.parity.next-in/first {
+    expect native.parity.next-in("ab<c&", "<&", 0) == 2
+    expect native.parity.next-in("abc", "<", 1) == 3
+}
+
+fn native.parity.next-not-in(text: String, set: String, from: Int) -> Int {
+    string.next-byte-not-in(text, set, from)
+}
+
+test native.parity.next-not-in/run {
+    expect native.parity.next-not-in("  x", " ", 0) == 2
+    expect native.parity.next-not-in("aaa", "a", -4) == 3
+}
