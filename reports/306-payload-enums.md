@@ -287,3 +287,27 @@ unchanged in this item: they still build their paths themselves.
   tests, plus a new `campfire.server.route/forms` test. CampfireViews and
   SqlCheck pass.
 - **Build:** the verified build takes 37.8 s, and `module.ll` is 3 KB smaller.
+
+**Speed:** ABBA against the item-2b build.
+
+| | 1 A (2b) | 2 B (2c) | 3 B (2c) | 4 A (2b) |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 2,213 | 2,222 | 2,214 | 2,218 |
+| Uncached CPU ms per request | 1.886 | 1.878 | 1.889 | 1.883 |
+| Cached req/s | 7,070 | 7,201 | 7,139 | 7,004 |
+| Cached CPU ms per request | 0.572 | 0.565 | 0.572 | 0.578 |
+
+Neutral. Uncached is flat, and cached is about +2% (0.575 → 0.568 ms of CPU),
+because the route is worked out once instead of from repeated `http.path`
+calls. Item 2 is about correctness and clarity, not speed.
+
+## Not done, for the user
+
+- **View links** still build their paths by hand. `campfireRoute.path` returns
+  `Url`, so a link can be `{campfireRoute.path(CampfireRoute.room(id))}` in an
+  `href`. Converting the views is mechanical, but each changed link puts the
+  byte-identical output at risk, so it was left out.
+- **Routes for writes** (`POST /rooms/{id}/messages` and others) are not in the
+  table. The native host serves only the read routes.
+- **The table has no method.** GET and HEAD are checked before dispatch, as
+  before.
