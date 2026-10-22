@@ -11,20 +11,11 @@ record ServerRequest {
     session-cookie: Option<String>
     // The message id of /rooms/<id>/@<message> (rooms#show's message_id), as ActiveRecord casts it.
     around: Option<Int>
-    // GET/HEAD /rooms/<id>/messages (messages#index) and its before/after parameters.
-    paging: Bool
+    // messages#index's before/after parameters (the messages route only).
     before: Option<String>
     after: Option<String>
-    // GET/HEAD /users/me/sidebar (users/sidebars#show).
-    sidebar: Bool
-    // GET/HEAD /searches (searches#index).
-    search: Bool
-    // GET/HEAD /users/<id> (users#show).
-    user-page: Bool
-    // GET/HEAD /users/<avatar token>/avatar (users/avatars#show).
-    avatar: Bool
-    // GET/HEAD /account/edit (accounts#edit).
-    account: Bool
+    // The route; campfire.server.handle dispatches on it.
+    route: CampfireRoute
 }
 
 fn campfire.server.status(status: Int) -> HttpResponse {
@@ -122,41 +113,59 @@ test campfire.server.equal-ignoring-case?/ascii {
     expect bool.not(campfire.server.equal-ignoring-case?("/rooms", "/rooms/"))
 }
 
-record RoomPath {
+// The read routes (report 306). Room ids and the @message stay text here: a room id
+// that does not parse is a 400 (campfire.server.parse-room-id), and the message is
+// cast as ActiveRecord casts it (campfire.server.ruby-to-i).
+record AroundPath {
     room: String
-    around: Option<String>
-    paging: Bool
+    message: String
 }
 
-fn campfire.server.room-path(path: String) -> Option<RoomPath> {
-    doc "/rooms/<id> (campfire.server.room-id-text), or /rooms/<id>/@<message> (the at_message route: a segment of no '/' or '.')."
-    match campfire.server.room-id-text(path) {
-        some room => option.some<RoomPath>(roomPath.new(room = room, around = option.none<String>(), paging = false))
-        none => {
-            let length = string.byte-length(path)
-            let rest = if length > 7 && campfire.server.equal-ignoring-case?(campfire.server.cut(path, 0, 7), "/rooms/") { campfire.server.cut(path, 7, length - 7) } else { "" }
-            let slash = match string.index-of(rest, "/@", 0) { none => -1; some at => at }
-            let room = if slash > 0 { campfire.server.cut(rest, 0, slash) } else { "" }
-            let message = if slash > 0 { campfire.server.cut(rest, slash + 2, string.byte-length(rest) - slash - 2) } else { "" }
-            let paging-room = if string.ends-with(rest, "/messages") { campfire.server.cut(rest, 0, string.byte-length(rest) - 9) } else { "" }
-            if paging-room != "" && bool.not(string.contains(paging-room, "/")) {
-                option.some<RoomPath>(roomPath.new(room = paging-room, around = option.none<String>(), paging = true))
-            } else if room == "" || message == "" || string.contains(room, "/") || string.contains(message, "/") || string.contains(message, ".") {
-                option.none<RoomPath>()
-            } else {
-                option.some<RoomPath>(roomPath.new(room = room, around = option.some<String>(message), paging = false))
+enum CampfireRoute {
+    room(String) at "/rooms/{room}"
+    around(AroundPath) at "/rooms/{room}/@{message}"
+    messages(String) at "/rooms/{room}/messages"
+    sidebar at "/users/me/sidebar"
+    searches at "/searches"
+    user(String) at "/users/{user}"
+    avatar(String) at "/users/{token}/avatar"
+    account at "/account/edit"
+}
+
+fn campfire.server.route(path: String) -> Option<CampfireRoute> {
+    doc "The route of a request path. Two parity quirks stay here, outside the route table: the /rooms/ prefix matches in any case, and an @message segment may not contain a dot (the at_message route's constraint)."
+    let length = string.byte-length(path)
+    let normalized = if length >= 7 && campfire.server.equal-ignoring-case?(campfire.server.cut(path, 0, 7), "/rooms/") { string.concat("/rooms/", campfire.server.cut(path, 7, length - 7)) } else { path }
+    match campfireRoute.parse(normalized) {
+        none => option.none<CampfireRoute>()
+        some route => {
+            let dotted = match route {
+                around place => string.contains(place.message, ".")
+                room => false
+                messages => false
+                sidebar => false
+                searches => false
+                user => false
+                avatar => false
+                account => false
             }
+            if dotted { option.none<CampfireRoute>() } else { option.some<CampfireRoute>(route) }
         }
     }
 }
 
-test campfire.server.room-path/forms {
-    expect campfire.server.room-path("/rooms/1") == option.some<RoomPath>(roomPath.new(room = "1", around = option.none<String>(), paging = false))
-    expect campfire.server.room-path("/rooms/1/@25") == option.some<RoomPath>(roomPath.new(room = "1", around = option.some<String>("25"), paging = false))
-    expect campfire.server.room-path("/rooms/1/@") == option.none<RoomPath>()
-    expect campfire.server.room-path("/rooms/1/@2.json") == option.none<RoomPath>()
-    expect campfire.server.room-path("/rooms/1/messages") == option.some<RoomPath>(roomPath.new(room = "1", around = option.none<String>(), paging = true))
-    expect campfire.server.room-path("/rooms/1/x/messages") == option.none<RoomPath>()
+test campfire.server.route/forms {
+    expect campfire.server.route("/rooms/1") == option.some<CampfireRoute>(CampfireRoute.room("1"))
+    expect campfire.server.route("/Rooms/x") == option.some<CampfireRoute>(CampfireRoute.room("x"))
+    expect campfire.server.route("/rooms/1/@25") == option.some<CampfireRoute>(CampfireRoute.around(aroundPath.new(room = "1", message = "25")))
+    expect campfire.server.route("/rooms/1/@") == option.none<CampfireRoute>()
+    expect campfire.server.route("/rooms/1/@2.json") == option.none<CampfireRoute>()
+    expect campfire.server.route("/ROOMS/1/messages") == option.some<CampfireRoute>(CampfireRoute.messages("1"))
+    expect campfire.server.route("/rooms/1/x/messages") == option.none<CampfireRoute>()
+    expect campfire.server.route("/rooms/") == option.none<CampfireRoute>()
+    expect campfire.server.route("/users/me/sidebar") == option.some<CampfireRoute>(CampfireRoute.sidebar())
+    expect campfire.server.route("/users//avatar") == option.none<CampfireRoute>()
+    expect campfire.server.route("/up") == option.none<CampfireRoute>()
 }
 
 fn campfire.server.ruby-to-i(text: String) -> Int {
@@ -195,29 +204,6 @@ fn campfire.server.ruby-to-i(text: String) -> Int {
 test campfire.server.ruby-to-i/forms {
     expect campfire.server.ruby-to-i("25") == 25 && campfire.server.ruby-to-i("12abc") == 12 && campfire.server.ruby-to-i("abc") == 0
     expect campfire.server.ruby-to-i(" -1_0") == -10
-}
-
-fn campfire.server.room-id-text(path: String) -> Option<String> {
-    doc "The id text of /rooms/<id> (prefix compared case-insensitively, no further slash), else none."
-
-    let length = string.byte-length(path)
-    if length < 8 || bool.not(campfire.server.equal-ignoring-case?(campfire.server.cut(path, 0, 7), "/rooms/")) {
-        option.none<String>()
-    } else {
-        let rest = campfire.server.cut(path, 7, length - 7)
-        if string.contains(rest, "/") {
-            option.none<String>()
-        } else {
-            option.some<String>(rest)
-        }
-    }
-}
-
-test campfire.server.room-id-text/paths {
-    expect campfire.server.room-id-text("/rooms/12") == option.some<String>("12")
-    expect campfire.server.room-id-text("/Rooms/x") == option.some<String>("x")
-    expect campfire.server.room-id-text("/rooms/") == option.none<String>()
-    expect campfire.server.room-id-text("/rooms/1/messages") == option.none<String>()
 }
 
 fn campfire.server.parse-room-id(text: String) -> Option<Int> {
@@ -421,14 +407,30 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
     let host = if campfire.server.header-count(incoming.headers, "host") == 1 { campfire.server.header-last(incoming.headers, "host") } else { option.none<String>() }
     let host-ok = match host { none => false; some value => campfire.server.equal-ignoring-case?(value, context.authority) }
     let length-status = campfire.server.content-length-status(incoming.headers)
-    let user-page = string.starts-with(path, "/users/") && string.byte-length(path) > 7 && bool.not(string.contains(campfire.server.cut(path, 7, string.byte-length(path) - 7), "/"))
-    let avatar = string.starts-with(path, "/users/") && string.ends-with(path, "/avatar") && string.byte-length(path) > 14 && bool.not(string.contains(campfire.server.cut(path, 7, string.byte-length(path) - 14), "/"))
-    let routed = if path == "/users/me/sidebar" || path == "/searches" || path == "/account/edit" || user-page || avatar { option.some<RoomPath>(roomPath.new(room = "0", around = option.none<String>(), paging = false)) } else { campfire.server.room-path(path) }
-    match routed {
+    match campfire.server.route(path) {
         none => result.error<ServerRequest, HttpResponse>(campfire.server.status(404))
-        some room-path => {
-            let id-text = room-path.room
-            let around = match room-path.around { none => option.none<Int>(); some text => option.some<Int>(campfire.server.ruby-to-i(text)) }
+        some route => {
+            // Routes without a room carry room 0, which parses, so the checks below run in order.
+            let id-text = match route {
+                room id => id
+                around place => place.room
+                messages id => id
+                sidebar => "0"
+                searches => "0"
+                user => "0"
+                avatar => "0"
+                account => "0"
+            }
+            let around = match route {
+                around place => option.some<Int>(campfire.server.ruby-to-i(place.message))
+                room => option.none<Int>()
+                messages => option.none<Int>()
+                sidebar => option.none<Int>()
+                searches => option.none<Int>()
+                user => option.none<Int>()
+                avatar => option.none<Int>()
+                account => option.none<Int>()
+            }
             if bool.not(is-get || is-head) {
                 let refused = campfire.server.status(405)
                 result.error<ServerRequest, HttpResponse>(httpResponse.new(status = 405, headers = list.append(refused.headers, httpHeader.new(name = "Allow", value = "GET, HEAD")), body = "", streamed = false))
@@ -441,7 +443,7 @@ fn campfire.server.request(incoming: HttpRequest, context: CampfireServerContext
             } else {
                 match campfire.server.parse-room-id(id-text) {
                     none => result.error<ServerRequest, HttpResponse>(campfire.server.status(400))
-                    some room-id => campfire.server.room-request(incoming, context, room-id, is-head, around, room-path.paging)
+                    some room-id => campfire.server.room-request(incoming, context, room-id, is-head, around, route)
                 }
             }
         }
@@ -461,7 +463,7 @@ test campfire.server.request/transport {
     expect match bad-id { ok request => 0; error response => response.status } == 400
 }
 
-fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerContext, room-id: Int, is-head: Bool, around: Option<Int>, paging: Bool) -> Result<ServerRequest, HttpResponse> {
+fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerContext, room-id: Int, is-head: Bool, around: Option<Int>, route: CampfireRoute) -> Result<ServerRequest, HttpResponse> {
     doc "The room-read CampfireHttpRequest: cookies (session_token, last_room; _campfire_session kept raw for a later mutation), the bot key, and fixed transport flags. No CSRF secret: pages carry no tokens."
 
     let cookie-count = campfire.server.header-count(incoming.headers, "cookie")
@@ -502,7 +504,17 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
                             accepts-html = true,
                             last-room = last-room-value,
                             csrf-token = option.none<String>())
-                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, paging = paging, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }, sidebar = http.path(incoming.target) == "/users/me/sidebar", search = http.path(incoming.target) == "/searches", user-page = string.starts-with(http.path(incoming.target), "/users/") && bool.not(string.contains(campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 7), "/")), avatar = string.starts-with(http.path(incoming.target), "/users/") && string.ends-with(http.path(incoming.target), "/avatar") && string.byte-length(http.path(incoming.target)) > 14 && bool.not(string.contains(campfire.server.cut(http.path(incoming.target), 7, string.byte-length(http.path(incoming.target)) - 14), "/")), account = http.path(incoming.target) == "/account/edit"))
+                        let paging = match route {
+                            messages => true
+                            room => false
+                            around => false
+                            sidebar => false
+                            searches => false
+                            user => false
+                            avatar => false
+                            account => false
+                        }
+                        result.ok<ServerRequest, HttpResponse>(serverRequest.new(campfire = built, session-cookie = session-cookie, around = around, before = if paging { campfire.server.query-param(incoming.target, "before") } else { option.none<String>() }, after = if paging { campfire.server.query-param(incoming.target, "after") } else { option.none<String>() }, route = route))
                     }
                 }
             }
@@ -513,9 +525,9 @@ fn campfire.server.room-request(incoming: HttpRequest, context: CampfireServerCo
 test campfire.server.room-request/cookies {
     let context = campfire.server.test-context()
     let incoming = httpRequest.new(method = "HEAD", target = "/rooms/5?bot_key=1-x", headers = [httpHeader.new(name = "host", value = "127.0.0.1:13773"), httpHeader.new(name = "cookie", value = "last_room=4; session_token=abc"), httpHeader.new(name = "user-agent", value = "UA")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7)
-    let built = campfire.server.room-request(incoming, context, 5, true, option.none<Int>(), false)
+    let built = campfire.server.room-request(incoming, context, 5, true, option.none<Int>(), CampfireRoute.room("5"))
     expect match built { error response => false; ok request => request.campfire.last-room == option.some<String>("4") && request.campfire.session-token == option.some<String>("abc") && request.campfire.method == RequestMethod.head() }
     expect match built { error response => false; ok request => request.campfire.bot-key == option.some<BotKey>(BotKey.new("1-x")) && request.campfire.csrf-token == option.none<String>() && request.session-cookie == option.none<String>() }
-    let duplicated = campfire.server.room-request(httpRequest.new(method = "GET", target = "/rooms/5", headers = [httpHeader.new(name = "cookie", value = "session_token=a; session_token=b")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7), context, 5, false, option.none<Int>(), false)
+    let duplicated = campfire.server.room-request(httpRequest.new(method = "GET", target = "/rooms/5", headers = [httpHeader.new(name = "cookie", value = "session_token=a; session_token=b")], body = bytes.from-utf8(""), remote-ip = "10.0.0.1", now-microseconds = 7), context, 5, false, option.none<Int>(), CampfireRoute.room("5"))
     expect match duplicated { ok request => 0; error response => response.status } == 400
 }

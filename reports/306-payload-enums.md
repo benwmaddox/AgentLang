@@ -230,3 +230,60 @@ no handler covers fails to compile.
 - **Payload enums are untested at the host boundary:** as a host input or
   output, a worker context, a store value or a mailbox message. Campfire's
   route stays internal to the app.
+
+## (c2) Campfire's router
+
+Before this change, `campfire.server.request` worked out the route through
+string tests: `room-path`, `room-id-text`, a `starts-with`/`ends-with` test for
+user pages and avatars, and six Bool flags on `ServerRequest` (`paging`,
+`sidebar`, `search`, `user-page`, `avatar`, `account`). `handle` then read those
+flags in a chain of `if`s. Now the routes are a table:
+
+```flow
+enum CampfireRoute {
+    room(String) at "/rooms/{room}"
+    around(AroundPath) at "/rooms/{room}/@{message}"
+    messages(String) at "/rooms/{room}/messages"
+    sidebar at "/users/me/sidebar"
+    searches at "/searches"
+    user(String) at "/users/{user}"
+    avatar(String) at "/users/{token}/avatar"
+    account at "/account/edit"
+}
+```
+
+**Dispatch.** `ServerRequest` carries the route, and `handle` dispatches on it
+with one exhaustive `match`. Two parity quirks stay in Campfire's own code, in
+`campfire.server.route`, rather than in the table:
+- the `/rooms/` prefix matches in any case: `/Rooms/1` is a room;
+- an `@message` segment may not contain a dot, which is the `at_message`
+  route's constraint.
+
+**Parameter checks** stay in the app:
+- Room ids and the message are text in the table. A room id that does not parse
+  is still a 400 (`parse-room-id`), and the message is still cast as
+  ActiveRecord casts it (`ruby-to-i`).
+- A route without a room still carries room 0, so the checks still run in the
+  same order: 404, 405, 400 Host, 431, Content-Length, 400 id.
+
+`room-path`, `room-id-text` and their tests are gone. The view links are
+unchanged in this item: they still build their paths themselves.
+
+**Checks:**
+- **Byte comparison:** it gained 12 router cases, which the old router answers
+  as follows:
+  - `/Rooms/1` and `/ROOMS/1/messages`: 200;
+  - `/rooms/x1` and `/rooms/%31`: 400;
+  - 404 for each of:
+    - `/rooms/1/MESSAGES`;
+    - `/rooms/1/@2.json` and `/rooms/1/@`;
+    - `/rooms/1/`;
+    - `/users//avatar`;
+    - `/users/me/sidebar/` and `/searches/`;
+    - `/up`.
+
+  All 45 responses are byte-identical to the item-2b build.
+- **Tests:** the verified build commits the generated route words with their
+  tests, plus a new `campfire.server.route/forms` test. CampfireViews and
+  SqlCheck pass.
+- **Build:** the verified build takes 37.8 s, and `module.ll` is 3 KB smaller.
