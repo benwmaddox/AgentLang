@@ -63,6 +63,7 @@ let private snapshot () =
         { Name = "RenewalState"
           Cases = [ "pending"; "renewed"; "cancelled" ]
           Payloads = [ None; None; None ]
+          Paths = [ None; None; None ]
           SourceText = "enum RenewalState"
           Span = span "values.agent" 5 }
     let words = Compiler.primitives

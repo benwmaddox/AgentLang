@@ -1753,6 +1753,7 @@ module FlowParser =
         expect state "{" |> ignore
         let caseNames = ResizeArray<string>()
         let payloads = ResizeArray<LangType option>()
+        let paths = ResizeArray<string option>()
         let seen = HashSet<string>(StringComparer.Ordinal)
         while not (atEnd state) && peek state <> Some "}" do
             // Cases are bare names (report 272); the older `case name` spelling stays readable.
@@ -1770,15 +1771,25 @@ module FlowParser =
                     expect state ")" |> ignore
                     Some payloadType
                 else None
+            // `at "/rooms/{room}"`: the case's route path (report 306).
+            let path =
+                if peek state = Some "at" then
+                    consume state |> ignore
+                    match current state with
+                    | Some token when token.Kind = StringLiteral -> Some(JsonSerializer.Deserialize<string>((consume state).Text))
+                    | _ -> tokenError state "FLOW_ROUTE_PATTERN" "A route path is a quoted string: at \"/rooms/{room}\"."
+                else None
             requireNewlineOrSeparator state "}" "FLOW_ENUM_CASE_SEMICOLON" "Separate Flow enum cases with a newline or ';'."
             caseNames.Add caseToken.Text
             payloads.Add payload
+            paths.Add path
         let endToken = expect state "}"
         if caseNames.Count = 0 then
             fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_ENUM_EMPTY" "A Flow enum must declare at least one case."
         { Name = nameToken.Text
           Cases = List.ofSeq caseNames
           Payloads = List.ofSeq payloads
+          Paths = List.ofSeq paths
           SourceText = sourceSlice state startToken endToken
           Span = sourceSpan state.File startToken (Some endToken) }
 

@@ -1,0 +1,46 @@
+// Typed routes (report 306): an enum's at paths generate siteRoute.parse,
+// siteRoute.path and siteRoute.escape, with their tests.
+
+record RoomAround {
+    room: String
+    message: String
+}
+
+record Pair {
+    left: Int
+    right: String
+}
+
+enum SiteRoute {
+    home at "/"
+    room(String) at "/rooms/{room}"
+    around(RoomAround) at "/rooms/{room}/@{message}"
+    messages(String) at "/rooms/{room}/messages"
+    sidebar at "/users/me/sidebar"
+    avatar(String) at "/users/{token}/avatar"
+    numbered(Int) at "/numbers/{n}"
+    pair(Pair) at "/pairs/{left}/p{right}"
+}
+
+fn site.describe(target: String) -> String {
+    doc "Dispatches a path by an exhaustive match on its route."
+    match siteRoute.parse(target) {
+        none => "404"
+        some route => match route {
+            home => "home"
+            room id => string.concat("room ", id)
+            around place => string.join(["around ", place.room, "@", place.message])
+            messages id => string.concat("messages ", id)
+            sidebar => "sidebar"
+            avatar token => string.concat("avatar ", token)
+            numbered n => string.concat("numbered ", int.to-string(n))
+            pair both => string.join(["pair ", int.to-string(both.left), " ", both.right])
+        }
+    }
+}
+
+test site.describe/paths {
+    expect site.describe("/rooms/1/@25") == "around 1@25"
+    expect site.describe("/rooms/1/MESSAGES") == "404"
+    expect site.describe("/users/me/sidebar") == "sidebar"
+}

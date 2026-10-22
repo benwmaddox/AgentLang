@@ -14,6 +14,7 @@ open AgentLang.Llvm
 
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sourcePath = Path.Combine(__SOURCE_DIRECTORY__, "payload-enums.flow")
+let private routesPath = Path.Combine(__SOURCE_DIRECTORY__, "routes.flow")
 let private assertionCount = ref 0
 
 let private check label condition =
@@ -67,10 +68,106 @@ let private syntaxChecks (runRoot: string) =
     check $"formatter keeps a payload binding: {formatted}" (formatted.Contains("circle radius =>", StringComparison.Ordinal))
     check "formatted source formats to itself" (format formatted = formatted)
 
+/// Typed routes (306c): the generated words commit with their generated tests,
+/// rejections name the broken rule, and parse/path agree between the interpreter
+/// and native builds.
+let private routeChecks (runRoot: string) =
+    let syntax = Runtime.Engine(Path.Combine(runRoot, "route-syntax"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+    let rejects label (code: string) source =
+        let response = syntax.Dispatch("define", flowArgs source).ToJsonString()
+        check $"{label} is {code}: {response}" (response.Contains(code, StringComparison.Ordinal))
+    rejects "overlapping paths" "FLOW_ROUTE_OVERLAP" "enum A {\n    one(String) at \"/a/{x}\"\n    two(String) at \"/a/{y}\"\n}\n"
+    rejects "a literal inside a prefix parameter" "FLOW_ROUTE_OVERLAP" "enum B {\n    one at \"/b/@me\"\n    two(String) at \"/b/@{x}\"\n}\n"
+    rejects "a case without a path" "FLOW_ROUTE_MISSING" "enum C {\n    one at \"/c\"\n    two\n}\n"
+    rejects "a parameter on a bare case" "FLOW_ROUTE_PAYLOAD" "enum D {\n    one at \"/d/{x}\"\n}\n"
+    rejects "a Bool parameter" "FLOW_ROUTE_PAYLOAD" "enum E {\n    one(Bool) at \"/e/{x}\"\n}\n"
+    rejects "two parameters for a String payload" "FLOW_ROUTE_PAYLOAD" "enum F {\n    one(String) at \"/f/{x}/{y}\"\n}\n"
+    rejects "a path without its leading slash" "FLOW_ROUTE_PATTERN" "enum G {\n    one at \"g\"\n}\n"
+    rejects "an empty segment" "FLOW_ROUTE_PATTERN" "enum H {\n    one at \"/h//x\"\n}\n"
+    rejects "a parameter inside a segment" "FLOW_ROUTE_PATTERN" "enum I {\n    one(String) at \"/i/{x}y\"\n}\n"
+    rejects "a word named like a generated one" "FLOW_ROUTE_NAME" "enum J {\n    one at \"/j\"\n}\n\nfn j.parse(target: String) -> Int {\n    1\n}\n"
+    let format (source: string) =
+        let response = syntax.Dispatch("format", flowArgs source)
+        check $"format succeeds: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
+        (response["data"]["source"]).GetValue<string>()
+    let formatted = format (File.ReadAllText routesPath)
+    check $"formatter keeps at paths: {formatted}" (formatted.Contains("room(String) at \"/rooms/{room}\"", StringComparison.Ordinal))
+    check "formatted routes format to themselves" (format formatted = formatted)
+
+    let engine = Runtime.Engine(Path.Combine(runRoot, "route-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
+    let defined = engine.Dispatch("define", flowArgs (File.ReadAllText routesPath))
+    if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
+    for name in [ "siteRoute.parse"; "siteRoute.path"; "siteRoute.escape"; "site.describe" ] do
+        let response = engine.Dispatch("commit", wordArgs name)
+        // Committing a word commits the words its tests use, so a later one may already be in.
+        let text = response.ToJsonString()
+        check $"{name} commits (its generated or attached tests pass): {text}" (response["ok"].GetValue<bool>() || text.Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
+    let interpret word inputs outputs values =
+        match engine.BindFlowEntryPoint(word, inputs, outputs).Invoke(values) with
+        | Ok value -> Ok value.Values
+        | Error (diagnostic: Diagnostic) -> Error diagnostic.Code
+    let route = TNamed "SiteRoute"
+    let some value = OptionValue(route, Some value)
+    let none = OptionValue(route, None)
+    let case name payload = EnumValue("SiteRoute", name, payload)
+    let around room message = case "around" (Some(RecordValue("RoomAround", Map.ofList [ "room", StringValue room; "message", StringValue message ])))
+    let expectations =
+        [ "/", some (case "home" None)
+          "/rooms/1", some (case "room" (Some(StringValue "1")))
+          "/rooms/%31", some (case "room" (Some(StringValue "%31")))
+          "/rooms/", none
+          "/rooms/1/", none
+          "/Rooms/1", none
+          "/rooms/1/@25", some (around "1" "25")
+          "/rooms/1/@2.json", some (around "1" "2.json")
+          "/rooms/1/@", none
+          "/rooms/1/messages", some (case "messages" (Some(StringValue "1")))
+          "/rooms/1/MESSAGES", none
+          "/users/me/sidebar", some (case "sidebar" None)
+          "/users/me/sidebar/", none
+          "/users/me/avatar", some (case "avatar" (Some(StringValue "me")))
+          "/users//avatar", none
+          "/numbers/42", some (case "numbered" (Some(IntValue 42L)))
+          "/numbers/x", none
+          "/pairs/3/pz", some (case "pair" (Some(RecordValue("Pair", Map.ofList [ "left", IntValue 3L; "right", StringValue "z" ]))))
+          "/pairs/3/p", none
+          "rooms/1", none
+          "", none ]
+    for target, expected in expectations do
+        check $"parse {target}" (interpret "siteRoute.parse" [ TString ] [ TOption route ] [ StringValue target ] = Ok [ expected ])
+    let url text = NamedValue("Url", StringValue text)
+    let printed =
+        [ case "room" (Some(StringValue "a b/é")), "/rooms/a%20b%2F%C3%A9"
+          around "1" "25", "/rooms/1/@25"
+          case "numbered" (Some(IntValue -3L)), "/numbers/-3"
+          case "home" None, "/" ]
+    for value, expected in printed do
+        check $"path {value}" (interpret "siteRoute.path" [ route ] [ TNamed "Url" ] [ value ] = Ok [ url expected ])
+    let toolchain = LlvmToolchain.discover ()
+    // O2 only: at O0 the generated parser of this eight-route table keeps a stack slot
+    // per temporary and exceeds the 64 KB frame screen (report 306).
+    let configurations =
+        [ "O2", LlvmOptimization.O2, OwningRuntimeProfile.Diagnostic
+          "trusted-O2", LlvmOptimization.O2, OwningRuntimeProfile.TrustedGenerated ]
+    for optimization, level, profile in configurations do
+        let pair word inputs outputs (cases: Value list list) =
+            let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
+            use program = OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, "route-native", optimization, word)) body
+            for values in cases do
+                let interpreted = interpret word inputs outputs values
+                let nativeResult =
+                    try Ok(program.Execute(values, 65536, 4096).Values)
+                    with :? OwningStackExecutionException as failure -> Error failure.Diagnostic.Code
+                check $"{word} {values}/{optimization}: native {nativeResult} = interpreter {interpreted}" (nativeResult = interpreted)
+        pair "siteRoute.parse" [ TString ] [ TOption route ] [ for target, _ in expectations -> [ StringValue target ] ]
+        pair "siteRoute.path" [ route ] [ TNamed "Url" ] [ for value, _ in printed -> [ value ] ]
+        pair "site.describe" [ TString ] [ TString ] [ for target, _ in expectations -> [ StringValue target ] ]
+
 let private run () =
     let runRoot = Path.Combine(repo, ".agentlang", "payload-enums-306", "runs", DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + "-" + Guid.NewGuid().ToString("N"))
     Directory.CreateDirectory(runRoot) |> ignore
     syntaxChecks runRoot
+    routeChecks runRoot
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())

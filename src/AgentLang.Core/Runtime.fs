@@ -6722,6 +6722,27 @@ module Runtime =
                 | _ ->
                     let source = requiredFlowString arguments "source"
                     source, parse "<flow-project>" source
+            // Route enums (report 306): their generated parse/path words and tests join
+            // the document, so they are checked, tested and committed with it.
+            let document, routed =
+                let records name =
+                    match document.Records |> List.tryFind (fun record -> record.Name = name) with
+                    | Some record -> Some record
+                    | None -> data.Records.TryFind name |> Option.map (fun entry -> entry.Definition)
+                let expanded, routed = FlowRoutes.expand records document
+                // Words the dictionary already holds with the same text are left as they are.
+                let fresh =
+                    expanded.Words |> List.filter (fun word ->
+                        match data.Words.TryFind word.Name with
+                        | Some existing when (document.Words |> List.exists (fun authored -> authored.Name = word.Name)) |> not ->
+                            if existing.Definition.SourceText <> word.SourceText then
+                                error "FLOW_ROUTE_WORDS_CHANGED" $"Route word '{word.Name}' is already defined from other paths; route tables are fixed once defined in this dictionary." (Some word.Name) (Some word.Span) [] [ word.Name ]
+                            false
+                        | _ -> true)
+                let freshNames = fresh |> List.map (fun word -> word.Name) |> Set.ofList
+                let generatedNames = document.Enums |> List.collect FlowRoutes.generatedNames |> Set.ofList
+                let tests = expanded.Tests |> List.filter (fun test -> not (generatedNames.Contains test.Word) || freshNames.Contains test.Word)
+                { expanded with Words = fresh; Tests = tests }, routed
             // Html is built in: declared once, automatically, by the first Flow/2
             // document that uses it (an html template, Html, or html.raw).
             let document =
@@ -6738,7 +6759,7 @@ module Runtime =
                 match document.Scalars |> List.tryFind (fun scalar -> scalar.Name = UrlBuiltIn.typeName) with
                 | Some declared ->
                     error "FLOW_URL_BUILT_IN" "Url is a built-in type: a String validated by string.url-safe?. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]
-                | None when syntaxVersion = 2 && not (data.Scalars.ContainsKey UrlBuiltIn.typeName) && UrlBuiltIn.usedBy source ->
+                | None when syntaxVersion = 2 && not (data.Scalars.ContainsKey UrlBuiltIn.typeName) && (routed || UrlBuiltIn.usedBy source) ->
                     match FlowParser.parseDocumentWithVersion 2 "<built-in:Url>" UrlBuiltIn.source with
                     | Ok builtIn -> { document with Scalars = document.Scalars @ builtIn.Scalars }
                     | Error diagnostic -> raise (LanguageException diagnostic)

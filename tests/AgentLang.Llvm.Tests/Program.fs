@@ -5878,6 +5878,7 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
         { Name = "NativeState"
           Cases = [ "active"; "cancelled" ]
           Payloads = [ None; None ]
+          Paths = [ None; None ]
           SourceText = "enum NativeState"
           Span = enumSpan }
     let enumContext = contextWithEnums [] [ enumDefinition ]

@@ -128,3 +128,105 @@ kind 6.
 - **Suites:** all 23 pass.
 - **Campfire:** its `module.ll` is byte-identical to (a), and all 33 responses
   match. The build takes 38.3 s.
+
+**Speed:** ABBA against the (a) build. Campfire has no payload enums, so its
+module is identical; only the C runtime's sum checks changed.
+
+| | 1 A (2a) | 2 B (2b) | 3 B (2b) | 4 A (2a) |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 2,247 | 2,265 | 2,280 | 2,199 |
+| Uncached CPU ms per request | 1.89 | 1.88 | 1.88 | 1.89 |
+| Cached req/s | 7,010 | 6,942 | 7,045 | 6,898 |
+| Cached CPU ms per request | 0.573 | 0.552 | 0.571 | 0.556 |
+
+The result is neutral, within run-to-run noise (+2% uncached, about 0% cached).
+Reading the case bound from the descriptor costs nothing measurable.
+
+## (c) Typed routes
+
+```flow
+enum SiteRoute {
+    home at "/"
+    room(String) at "/rooms/{room}"
+    around(RoomAround) at "/rooms/{room}/@{message}"
+    sidebar at "/users/me/sidebar"
+    numbered(Int) at "/numbers/{n}"
+}
+```
+
+A path is matched literally, segment by segment:
+- **A literal segment** matches its exact text, case-sensitively.
+- **`{name}`** matches one non-empty segment.
+- **`prefix{name}`** matches a segment that starts with the prefix and has more
+  after it.
+- **Parameter types:** a parameter is a String or an Int. A segment that does
+  not parse as an Int names no route.
+- **Payloads:** a case with a String or Int payload has exactly one parameter.
+  A case with a record payload names each of the record's fields once, and that
+  record has no validator. A bare case has no parameters.
+- **No percent-decoding:** `/rooms/%31` is the room `"%31"`, not room 1.
+
+**Checked when the enum is defined:**
+- Every path starts with `/` and has no empty segment (`FLOW_ROUTE_PATTERN`).
+- When one case has a path, every case does (`FLOW_ROUTE_MISSING`).
+- The parameters fit the payload (`FLOW_ROUTE_PAYLOAD`).
+- **No two paths can match the same text** (`FLOW_ROUTE_OVERLAP`). Two paths
+  overlap when they have as many segments, and every pair of segments can match
+  the same text:
+  - two literals match only if they are equal;
+  - a literal and a parameter can always match;
+  - `@me` and `@{x}` can match the same text.
+
+  So the order of the cases never matters. This also rules out the common
+  `/users/me` beside `/users/{id}`; such a table needs a different shape.
+
+**Generated words.** For `SiteRoute`, the generated words are:
+- `siteRoute.parse(target) -> Option<SiteRoute>`;
+- `siteRoute.path(route) -> Url`;
+- `siteRoute.escape(text)`, when a path has a String parameter. It
+  percent-encodes every byte except `A-Z a-z 0-9 - . _ ~`.
+
+They are ordinary Flow words, generated as source when the enum is defined. So
+the interpreter, the verifier and native builds treat them like any other
+words, and `describe` shows their code.
+
+`path` returns the built-in `Url`, so a route goes straight into an `href` hole
+(report 302), and the escaping means `Url.new` never fails. Each word comes
+with generated tests:
+- every case's sample path, with `"x"` for a String and `7` for an Int;
+- every case's round trip through `parse(path(sample))`;
+- two paths that name no route;
+- the escaping of a few bytes.
+
+The words commit with those tests, like anything else. A word of yours with a
+generated name is an error (`FLOW_ROUTE_NAME`).
+
+An exhaustive `match` on the parsed route is the dispatcher, so a new route that
+no handler covers fails to compile.
+
+**Checks:** `AgentLang.PayloadEnums.Tests` now has 871 assertions:
+- one rejection for each rule above;
+- formatting that keeps `at` paths;
+- the generated words committing with their tests;
+- `parse` on 21 paths, chosen to cover Campfire's edge cases:
+  - `/Rooms/1` and `/rooms/1/MESSAGES` (case);
+  - `/rooms/` and `/rooms/1/` (trailing slash);
+  - `/rooms/1/@` and `/rooms/1/@2.json` (the `@{message}` segment);
+  - `/users//avatar` (an empty segment);
+  - `/numbers/x` (an Int that does not parse);
+  - `rooms/1` and the empty path;
+- `path` with escaping;
+- an exhaustive dispatcher, interpreter against native at O2 and trusted O2.
+
+**Limits:**
+- **A route table is fixed once defined in a live dictionary.** Defining the
+  same enum again with other paths is `FLOW_ROUTE_WORDS_CHANGED`, and removing
+  its paths leaves the generated words in place, because the dictionary has no
+  way to retire words. A fresh build, such as every app build, is unaffected.
+- **At O0, a large table can exceed the native 64 KB frame screen.** The
+  eight-route test table's parser uses 67 KB at O0, because O0 keeps a stack
+  slot per temporary. O2, which every app build uses, has no such problem.
+  Splitting `parse` per route would fix it.
+- **Payload enums are untested at the host boundary:** as a host input or
+  output, a worker context, a store value or a mailbox message. Campfire's
+  route stays internal to the app.

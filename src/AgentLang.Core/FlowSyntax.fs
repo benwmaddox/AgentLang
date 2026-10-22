@@ -1213,11 +1213,16 @@ module FlowSource =
                 Diagnostics.raiseError "FLOW_ENUM_CASE_NAME_INVALID" "Enum cases must use non-reserved identifiers." (Some definition.Name) (Some definition.Span) [ "case-name" ] [ caseName ]
         if definition.Payloads.Length <> definition.Cases.Length then
             Diagnostics.raiseError "FLOW_ENUM_PAYLOADS" "An enum gives one payload entry per case." (Some definition.Name) (Some definition.Span) [ string definition.Cases.Length ] [ string definition.Payloads.Length ]
-        let caseLine caseName payload =
-            match payload with
-            | Some payloadType -> "    " + caseName + "(" + Types.format payloadType + ")"
-            | None -> "    " + caseName
-        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (List.map2 caseLine definition.Cases definition.Payloads) @ [ "}" ])
+        let caseLine (caseName, payload, path) =
+            let head =
+                match payload with
+                | Some payloadType -> "    " + caseName + "(" + Types.format payloadType + ")"
+                | None -> "    " + caseName
+            match path with
+            | Some text -> head + " at " + System.Text.Json.JsonSerializer.Serialize(text)
+            | None -> head
+        let paths = if definition.Paths.Length = definition.Cases.Length then definition.Paths else definition.Cases |> List.map (fun _ -> None)
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (List.zip3 definition.Cases definition.Payloads paths |> List.map caseLine) @ [ "}" ])
 
     let renderEnum definition = renderEnumWithVersion 2 definition
 

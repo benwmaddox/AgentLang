@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <Content Include="payload-enums.flow" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="routes.flow" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

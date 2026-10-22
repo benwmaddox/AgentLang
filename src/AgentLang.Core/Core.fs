@@ -171,6 +171,8 @@ type EnumDefinition =
       Cases: string list
       /// One entry per case: the type of its single payload value, if any (report 306).
       Payloads: LangType option list
+      /// One entry per case: its route path, `at "/rooms/{room}"`, if any (report 306).
+      Paths: string option list
       SourceText: string
       Span: SourceSpan }
 
