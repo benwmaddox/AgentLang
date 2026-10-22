@@ -134,3 +134,50 @@ That is 826 assertions.
 - **Suites:** all 24 pass, including the new one.
 - **Campfire:** it has no bindings, so its `module.ll` is byte-identical to the
   item-2c build. The build takes 38.4 s.
+
+## (b) zlib on Linux
+
+`tests/AgentLang.ForeignCalls.Tests/zlib-app.flow` is a Flow HTTP app with the
+zlib binding at the top of this report. Its `/crc?<text>` route answers both
+zlib's CRC-32 of the text and Flow's own, the bitwise one from report 300.
+
+**Run.** A Linux trusted build served it in WSL, and every answer matched:
+
+| Query | zlib `crc32_z` | Flow | |
+| --- | ---: | ---: | --- |
+| `123456789` | 3421780262 | 3421780262 | same |
+| (empty) | 0 | 0 | same |
+| `a` | 3904355907 | 3904355907 | same |
+| `The%20quick%20brown%20fox` (raw) | 3362174616 | 3362174616 | same |
+| `%C3%A9` (raw) | 2475635383 | 2475635383 | same |
+| 3,000 × `x` | 2565740519 | 2565740519 | same |
+
+The process maps `libz.so.1.3`. So the binding reached the system zlib
+through `dlopen` with no link flag.
+
+**Why the build is unverified.** A verified build runs every attached test in
+the interpreter on the build machine, which is Windows, and Windows has no
+zlib. So zlib's binding cannot commit there: its test would fail with
+`RUNTIME_C_LIBRARY_MISSING`.
+
+**Campfire keeps its Flow `crc32`.** Item 5 already made it 34× faster, and
+moving it to zlib would break Campfire's verified build on Windows.
+
+## Not done, for the user
+
+- **Windows has no zlib.** For an app to use a C library and still build
+  verified on Windows, the library has to exist there too. The options are:
+  - vendor a prebuilt `zlib1.dll` for the build machine;
+  - build zlib from source with the toolchain's clang;
+  - let a verified build skip a binding's tests on a platform that lacks the
+    library, which would make that platform's verification weaker.
+
+  Which one is your call.
+- **What a binding can't do yet:**
+  - write into an output buffer, or return Bytes or a String;
+  - take callbacks;
+  - pass a struct.
+
+  Each would need an ownership rule for memory the C side writes.
+- **Effects are trusted, not checked.** A binding with no effects that writes a
+  file is a bug in the binding, not a type error.

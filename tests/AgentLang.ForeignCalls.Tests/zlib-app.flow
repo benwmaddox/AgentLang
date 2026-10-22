@@ -1,0 +1,50 @@
+// The zlib demo of report 307: a Flow HTTP app whose /crc?<text> route answers
+// zlib's CRC-32 of the text (through a C binding) and Flow's own (item 5), so a
+// Linux build shows the binding reaching the system libz. Built unverified: on
+// Windows there is no zlib for the attached tests to call.
+
+record ZlibContext {
+    ready: Bool
+}
+
+fn zlibapp.worker-init(config: List<HttpHeader>) -> ZlibContext {
+    zlibContext.new(ready = true)
+}
+
+test zlibapp.worker-init/ready {
+    expect zlibapp.worker-init(list.empty<HttpHeader>()).ready
+}
+
+fn zlib.crc32-update(crc: Int, data: Bytes) -> Int = c "unsigned long crc32_z(unsigned long, bytes)" from "z"
+
+fn zlib.crc32(data: Bytes) -> Int {
+    doc "zlib's CRC-32 of data. The binding takes the seed, as zlib's crc32_z does; this word starts from 0."
+    zlib.crc32-update(0, data)
+}
+
+fn zlibapp.flow-crc32(text: String) -> Int {
+    doc "CRC-32 of the String's UTF-8 bytes, written in Flow (report 300)."
+    var crc = 4294967295
+    for i in 0..string.byte-length(text) {
+        crc = crc ^ string.byte-at-or(text, i, 0)
+        for k in 0..8 {
+            if (crc & 1) == 1 {
+                crc = (crc >> 1) ^ 3988292384
+            } else {
+                crc = crc >> 1
+            }
+        }
+    }
+    crc ^ 4294967295
+}
+
+test zlibapp.flow-crc32/check {
+    expect zlibapp.flow-crc32("123456789") == 3421780262
+}
+
+fn zlibapp.handle(request: HttpRequest, context: ZlibContext) -> HttpResponse {
+    let text = http.query(request.target)
+    let from-zlib = zlib.crc32(bytes.from-utf8(text))
+    let from-flow = zlibapp.flow-crc32(text)
+    http.response(200, "text/plain; charset=utf-8", string.join([int.to-string(from-zlib), " ", int.to-string(from-flow), if from-zlib == from-flow { " same" } else { " DIFFERENT" }]))
+}
