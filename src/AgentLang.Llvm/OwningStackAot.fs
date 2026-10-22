@@ -370,6 +370,13 @@ type internal OwningTypeInfo =
       Fields: (string * IrType * int) list
       Cases: (string * IrType option * int) list }
 
+/// A value size the trusted build computes inline (report 310): a constant,
+/// a String or Bytes length header, or a record of those (its fields' sums).
+type internal OwningInlineSize =
+    | InlineFixed of payloadBytes: int * extentBytes: int
+    | InlineText
+    | InlineRecord of OwningInlineSize list
+
 type internal OwningProgramInfo =
     { Program: IrProgram
       Body: IrExecutableBody
@@ -4582,6 +4589,83 @@ module OwningStackAot =
             let value = w.Fresh "stack.sub"
             w.Inst($"{value} = sub i32 {left}, {right}")
             value
+        // The sizes trusted builds compute inline, as the trusted al_owning_scan_value
+        // does: fixed types are constants, Strings and Bytes add their padded length
+        // header, and a record sums its fields (zero-width fields add nothing). Sums
+        // and Lists are None and keep the runtime call.
+        let rec inlineSizeOf (ty: IrType) =
+            let child = typeInfo ty
+            if not child.IsDynamic then Some(InlineFixed(child.PayloadBytes, child.ExtentBytes))
+            else
+                match typeKind ty with
+                | 5u | 11u -> Some InlineText
+                | 4u ->
+                    let fields = child.Fields |> List.map (fun (_, fieldType, _) -> inlineSizeOf fieldType)
+                    if fields |> List.forall Option.isSome then Some(InlineRecord(fields |> List.map Option.get)) else None
+                | _ -> None
+        let rec inlineSizeReadsText size =
+            match size with
+            | InlineFixed _ -> false
+            | InlineText -> true
+            | InlineRecord fields -> fields |> List.exists inlineSizeReadsText
+        // The (payload, extent) of a value of this size at offset.
+        let emitInlineSize (w: OwningLlvmWriter) size offset =
+            let stackData =
+                if inlineSizeReadsText size then
+                    let field = w.Fresh "inline.stack.data.field"
+                    let data = w.Fresh "inline.stack.data"
+                    w.Inst($"{field} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                    w.Inst($"{data} = load ptr, ptr {field}, align 8")
+                    data
+                else ""
+            let rec sizeAt size cursor =
+                match size with
+                | InlineFixed(payload, extent) -> string payload, string extent
+                | InlineText ->
+                    let header = w.Fresh "inline.string.header"
+                    let units = w.Fresh "inline.string.units"
+                    w.Inst($"{header} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
+                    w.Inst($"{units} = load i32, ptr {header}, align 8")
+                    let rounded = emitOffset w units "15"
+                    let extent = w.Fresh "inline.string.extent"
+                    w.Inst($"{extent} = and i32 {rounded}, -8")
+                    emitOffset w units "8", extent
+                | InlineRecord fields ->
+                    let mutable at = cursor
+                    let mutable payload = "0"
+                    let mutable extent = "0"
+                    for field in fields do
+                        match field with
+                        | InlineFixed(0, _) -> () // zero-width
+                        | _ ->
+                            let fieldPayload, fieldExtent = sizeAt field at
+                            payload <- emitOffset w payload fieldPayload
+                            extent <- emitOffset w extent fieldExtent
+                            at <- emitOffset w at fieldExtent
+                    payload, extent
+            sizeAt size offset
+        // A List element's (payload, extent) without al_owning_measure_value, in
+        // trusted builds when its size is inline-computable and nonzero (report 310).
+        // The element must end inside its list. Diagnostic builds measure.
+        let emitTrustedElementSize (w: OwningLlvmWriter) itemType offset listEnd errorId failureLabel =
+            match runtimeProfile with
+            | OwningRuntimeProfile.Diagnostic -> None
+            | OwningRuntimeProfile.TrustedGenerated ->
+                match inlineSizeOf itemType with
+                | Some(InlineFixed(0, _)) | None -> None
+                | Some size ->
+                    let payload, extent = emitInlineSize w size offset
+                    let elementEnd = emitOffset w offset extent
+                    let inside = w.Fresh "element.inside"
+                    let insideLabel = w.Label "element.inside.ok"
+                    let outsideLabel = w.Label "element.outside"
+                    w.Inst($"{inside} = icmp ule i32 {elementEnd}, {listEnd}")
+                    w.Inst($"br i1 {inside}, label %%{insideLabel}, label %%{outsideLabel}")
+                    w.Line($"{outsideLabel}:")
+                    w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 5, i32 {errorId}, i32 0, i32 0)")
+                    w.Inst($"br label %%{failureLabel}")
+                    w.Line($"{insideLabel}:")
+                    Some(payload, extent)
         let emitPointerOffset (w: OwningLlvmWriter) pointer offset =
             let result = w.Fresh "host.pointer"
             w.Inst($"{result} = getelementptr inbounds i8, ptr {pointer}, i32 {offset}")
@@ -6219,17 +6303,22 @@ module OwningStackAot =
                         // Measure the current element and return its descriptor; advances the cursor.
                         let nextElement () =
                             let offset = loadI32 elementCursor
-                            let status = w.Fresh "list.measure.status"
-                            w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
-                            emitStatusResult w status failBody
-                            let payloadPointer = w.Fresh "list.element.payload.pointer"
-                            let extentPointer = w.Fresh "list.element.extent.pointer"
-                            w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
-                            w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
-                            let payload = w.Fresh "list.element.payload"
-                            let extent = w.Fresh "list.element.extent"
-                            w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
-                            w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                            let payload, extent =
+                                match emitTrustedElementSize w itemType offset listEnd measureError failBody with
+                                | Some sizes -> sizes
+                                | None ->
+                                    let status = w.Fresh "list.measure.status"
+                                    w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                                    emitStatusResult w status failBody
+                                    let payloadPointer = w.Fresh "list.element.payload.pointer"
+                                    let extentPointer = w.Fresh "list.element.extent.pointer"
+                                    w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                                    w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                                    let payload = w.Fresh "list.element.payload"
+                                    let extent = w.Fresh "list.element.extent"
+                                    w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                                    w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                                    payload, extent
                             storeI32 elementCursor (emitOffset w offset extent)
                             { Type = itemType; Offset = offset; Extent = extent; Payload = payload; OwnerEnd = listEntry.OwnerEnd; Register = None }
                         let callbackError = addDiagnostic "RUNTIME_CALL_DEPTH" "Execution exceeded the 64 word call-depth limit." callback.ResolvedName instructionSpan [] []
@@ -6806,20 +6895,25 @@ module OwningStackAot =
                             w.Inst($"{advanced} = add i32 {current}, 1")
                             w.Inst($"store i32 {advanced}, ptr {index}, align 8")
                             let offset = loadSlot "i32" elementCursor
-                            let elementSize = w.Fresh "loop.element.size"
-                            w.Inst($"{elementSize} = alloca %%AlOwningValueSize, align 4")
                             let measureError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to measure a verified List element." currentOwner instructionSpan [] []
-                            let status = w.Fresh "loop.measure.status"
-                            w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
-                            emitStatusResult w status failBody
-                            let payloadPointer = w.Fresh "loop.element.payload.pointer"
-                            let extentPointer = w.Fresh "loop.element.extent.pointer"
-                            w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
-                            w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
-                            let payload = w.Fresh "loop.element.payload"
-                            let extent = w.Fresh "loop.element.extent"
-                            w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
-                            w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                            let payload, extent =
+                                match emitTrustedElementSize w itemType offset listEnd measureError failBody with
+                                | Some sizes -> sizes
+                                | None ->
+                                    let elementSize = w.Fresh "loop.element.size"
+                                    w.Inst($"{elementSize} = alloca %%AlOwningValueSize, align 4")
+                                    let status = w.Fresh "loop.measure.status"
+                                    w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {offset}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                                    emitStatusResult w status failBody
+                                    let payloadPointer = w.Fresh "loop.element.payload.pointer"
+                                    let extentPointer = w.Fresh "loop.element.extent.pointer"
+                                    w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                                    w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                                    let payload = w.Fresh "loop.element.payload"
+                                    let extent = w.Fresh "loop.element.extent"
+                                    w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                                    w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                                    payload, extent
                             w.Inst($"store i32 {emitOffset w offset extent}, ptr {elementCursor}, align 8")
                             // The item is a view into the list, which predates the loop mark.
                             emitStoreLocal (localBinding itemLocal childLocals)
@@ -7704,18 +7798,21 @@ module OwningStackAot =
                                             let measure () =
                                                 let at = w.Fresh "list.get.at"
                                                 w.Inst($"{at} = load i32, ptr {cursorSlot}, align 4")
-                                                let status = w.Fresh "list.get.measure.status"
-                                                w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {at}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
-                                                emitStatusResult w status failBody
-                                                let payloadPointer = w.Fresh "list.get.payload.pointer"
-                                                let extentPointer = w.Fresh "list.get.extent.pointer"
-                                                w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
-                                                w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
-                                                let payload = w.Fresh "list.get.payload"
-                                                let extent = w.Fresh "list.get.extent"
-                                                w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
-                                                w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
-                                                at, extent, payload
+                                                match emitTrustedElementSize w itemType at listEnd measureError failBody with
+                                                | Some(payload, extent) -> at, extent, payload
+                                                | None ->
+                                                    let status = w.Fresh "list.get.measure.status"
+                                                    w.Inst($"{status} = call i32 @al_owning_measure_value(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex itemType}, i32 {at}, i32 {listEnd}, i32 {measureError}, ptr {elementSize})")
+                                                    emitStatusResult w status failBody
+                                                    let payloadPointer = w.Fresh "list.get.payload.pointer"
+                                                    let extentPointer = w.Fresh "list.get.extent.pointer"
+                                                    w.Inst($"{payloadPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 0")
+                                                    w.Inst($"{extentPointer} = getelementptr inbounds %%AlOwningValueSize, ptr {elementSize}, i32 0, i32 1")
+                                                    let payload = w.Fresh "list.get.payload"
+                                                    let extent = w.Fresh "list.get.extent"
+                                                    w.Inst($"{payload} = load i32, ptr {payloadPointer}, align 4")
+                                                    w.Inst($"{extent} = load i32, ptr {extentPointer}, align 4")
+                                                    at, extent, payload
                                             let skipHead = w.Label "list.get.skip.head"
                                             let skipBody = w.Label "list.get.skip.body"
                                             let found = w.Label "list.get.found"

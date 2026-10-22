@@ -441,3 +441,85 @@ test native.lists.count/two {
     native.lists.count(["a", "b"])
     => value 2
 }
+
+// Element walks whose sizes trusted builds compute inline (report 310): fixed
+// elements, Strings, and records of fixed fields, Strings and String scalars.
+record Mixed {
+    field name: String
+    field count: Int
+    field flags: Flags
+    field tag: Tag
+    field note: String
+}
+
+fn walk.line(item: Mixed) -> String {
+    effects none
+    string.join([item.name, ":", int.to-string(item.count + item.flags.size), ":", tag.text(item.tag), ":", item.note])
+}
+
+test walk.line/fields {
+    walk.line(mixed.new("a", 1, flags.new(2, true), Tag.new("t"), "n"))
+    => value "a:3:t:n"
+}
+
+fn native.walk.loop(values: List<Mixed>) -> String {
+    effects none
+    var text = ""
+    for item, index in values {
+        text = string.join([text, int.to-string(index), "=", walk.line(item), ";"])
+    }
+    text
+}
+
+test native.walk.loop/one {
+    native.walk.loop([mixed.new("a", 1, flags.new(2, true), Tag.new("t"), "n")])
+    => value "0=a:3:t:n;"
+}
+
+fn native.walk.map(values: List<Mixed>) -> List<String> {
+    effects none
+    values.map(walk.line)
+}
+
+test native.walk.map/one {
+    native.walk.map([mixed.new("a", 1, flags.new(2, true), Tag.new("t"), "n")])
+    => value ["a:3:t:n"]
+}
+
+fn native.walk.get(values: List<Mixed>, index: Int) -> String {
+    effects none
+    match list.get(values, index) { none => "none"; some item => walk.line(item) }
+}
+
+test native.walk.get/second {
+    native.walk.get([mixed.new("a", 1, flags.new(2, true), Tag.new("t"), "n"), mixed.new("bb", 3, flags.new(4, false), Tag.new("u"), "")], 1)
+    => value "bb:7:u:"
+}
+
+fn native.walk.ints(values: List<Int>) -> Int {
+    effects none
+    var total = 0
+    for value, index in values {
+        total = total + value * (index + 1)
+    }
+    total
+}
+
+test native.walk.ints/weighted {
+    native.walk.ints([5, 6, 7])
+    => value 38
+}
+
+fn native.walk.strings(values: List<String>) -> String {
+    effects none
+    var text = ""
+    for value, index in values {
+        text = string.join([text, value, "|"])
+    }
+    text
+}
+
+test native.walk.strings/joined {
+    native.walk.strings(["a", "", "bc"])
+    => value "a||bc|"
+}

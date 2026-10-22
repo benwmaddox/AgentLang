@@ -41,7 +41,8 @@ let private words =
       "native.acc.ints"; "native.acc.strings"; "native.acc.records"; "native.acc.aliases"; "native.acc.snapshots"
       "native.acc.break"; "native.acc.branches"; "native.acc.with-text"; "native.acc.rows"; "native.acc.kept"
       "native.lists.get"; "native.lists.get-int"; "native.lists.get-pair"; "native.lists.count"
-      "native.lists.get-bool"; "native.lists.get-float"; "native.lists.get-flags"; "native.lists.get-nested" ]
+      "native.lists.get-bool"; "native.lists.get-float"; "native.lists.get-flags"; "native.lists.get-nested"
+      "native.walk.loop"; "native.walk.map"; "native.walk.get"; "native.walk.ints"; "native.walk.strings" ]
 
 let private wordArgs (name: string) =
     let args = JsonObject()
@@ -265,6 +266,40 @@ let private run () =
                 let got, _ = execute optimization word [ TList itemType; TInt ] [ TOption itemType ] [ values; IntValue index ]
                 check $"{word} {index}/{optimization}" (got = expected)
             check $"{word} {index}/trusted O2" (trusted.Execute([ values; IntValue index ], 1_048_576, 1_048_576).Values = expected)
+
+    // Element walks (for loops, map, list.get's skip) over fixed elements,
+    // Strings and records of fixed fields, Strings and String scalars: trusted
+    // builds size each element inline (report 310), and every build must equal
+    // the interpreter. Lengths 0-17 cover every padding remainder.
+    let texts = [ ""; "a"; "bé"; "c🚀"; "1234567"; "12345678"; "123456789"; String.replicate 17 "x" ]
+    let mixedItem i (name: string) =
+        let flags = RecordValue("Flags", Map.ofList [ "size", IntValue(int64 (10 * i)); "on", BoolValue(i % 2 = 0) ])
+        let tag = NamedValue("Tag", StringValue(String.replicate (i % 9 + 1) "t"))
+        RecordValue("Mixed", Map.ofList [ "name", StringValue name; "count", IntValue(int64 i); "flags", flags; "tag", tag; "note", StringValue(texts[(i + 3) % texts.Length]) ])
+    let mixedList count = ListValue(TNamed "Mixed", [ for i in 0 .. count - 1 -> mixedItem i texts[i % texts.Length] ])
+    let walkCases =
+        [ for count in [ 0; 1; 9 ] do
+            yield "native.walk.loop", [ TList(TNamed "Mixed") ], [ TString ], [ mixedList count ]
+            yield "native.walk.map", [ TList(TNamed "Mixed") ], [ TList TString ], [ mixedList count ]
+            yield "native.walk.ints", [ TList TInt ], [ TInt ], [ ListValue(TInt, [ for i in 1 .. count -> IntValue(int64 (i * 7 - 20)) ]) ]
+            yield "native.walk.strings", [ TList TString ], [ TString ], [ strings (List.truncate count (texts @ texts)) ]
+          for index in [ -1L; 0L; 4L; 8L; 9L ] do
+            yield "native.walk.get", [ TList(TNamed "Mixed"); TInt ], [ TString ], [ mixedList 9; IntValue index ] ]
+    let trustedWalks = Collections.Generic.Dictionary<string, OwningStackCompiledProgram>()
+    for word, inputTypes, outputTypes, inputs in walkCases do
+        let interpreted =
+            match engine.BindFlowEntryPoint(word, inputTypes, outputTypes).Invoke(inputs) with
+            | Ok value -> value.Values
+            | Error diagnostic -> failwith $"Interpreter rejected {word}: {diagnostic.Message}"
+        for optimization in [ LlvmOptimization.O0; LlvmOptimization.O2 ] do
+            execute optimization word inputTypes outputTypes inputs |> ignore
+            let key = $"{optimization}/{word}"
+            if not (trustedWalks.ContainsKey key) then
+                let body = engine.ExportVerifiedFlowEntryPoint(word, inputTypes, outputTypes)
+                trustedWalks[key] <- OwningStackAot.compileWithRuntimeProfile toolchain optimization OwningRuntimeProfile.TrustedGenerated (Path.Combine(runRoot, "native", "trusted-walk", string optimization, word)) body
+            let got = trustedWalks[key].Execute(inputs, 1_048_576, 1_048_576).Values
+            check $"{word} {inputs.Head |> function ListValue(_, items) -> items.Length | _ -> -1}/trusted {optimization} equals interpreter" (got = interpreted)
+    for program in trustedWalks.Values do (program :> IDisposable).Dispose()
 
     // Accumulation is linear: copied/moved bytes and peak arena double (not
     // quadruple) when the element count doubles, in every profile. Trusted O0 and
