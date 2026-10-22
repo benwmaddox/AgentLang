@@ -12,6 +12,7 @@ enum Route {
     around(Around)
     search(Option<String>)
     tags(List<String>)
+    label(String)
     sidebar
 }
 
@@ -29,6 +30,7 @@ fn route.describe(route: Route) -> String {
             some text => string.concat("search ", text)
         }
         tags names => string.join(["tags ", int.to-string(list.count(names))])
+        label text => string.concat("label ", text)
         sidebar => "sidebar"
     }
 }
@@ -40,6 +42,7 @@ test route.describe/each-case {
     expect route.describe(Route.search(option.none<String>())) == "search"
     expect route.describe(Route.tags(["a", "b"])) == "tags 2"
     expect route.describe(Route.sidebar()) == "sidebar"
+    expect route.describe(Route.label("é🚀")) == "label é🚀"
 }
 
 fn route.kind(route: Route) -> Int {
@@ -49,6 +52,7 @@ fn route.kind(route: Route) -> Int {
         around => 2
         search => 3
         tags => 4
+        label => 6
         sidebar => 5
     }
 }

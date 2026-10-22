@@ -311,8 +311,12 @@ module internal ArenaLifetime =
                     let prefix, inputs = pop 1 state.Stack
                     { state with Stack = prefix @ [ inputs.Head ] }
             | IrOperation.MakeEnumCase(call, _, _) ->
+                // A case is a new sum owner; a payload is copied into it, as ResultOk does
+                // (report 306), and its origins are kept so the proof stays conservative.
                 if callEffects call then unmodeled ()
-                else { state with Stack = state.Stack @ [ Set.singleton currentRegion ] }
+                else
+                    let prefix, payloads = pop call.InputTypes.Length state.Stack
+                    { state with Stack = prefix @ [ Set.add currentRegion (Set.unionMany payloads) ] }
             | IrOperation.HtmlTemplate(_, parts) ->
                 // A new String owner in the current region; every hole is copied
                 // (escaped or as-is), never aliased.
@@ -323,10 +327,16 @@ module internal ArenaLifetime =
                 let prefix, _ = pop 1 state.Stack
                 { state with Stack = prefix @ [ Set.singleton currentRegion ] }
             | IrOperation.MatchEnum(_, caseBlocks) ->
-                let prefix, _ = pop 1 state.Stack
-                let entry = { state with Stack = prefix }
+                let prefix, sums = pop 1 state.Stack
+                let sumOrigins = sums.Head
+                // A bound payload is a view into the sum owner, as a Result payload is.
                 caseBlocks
-                |> List.map (fun (_, _, block) -> analyzeBlock scopePath block entry)
+                |> List.map (fun (_, binding, block) ->
+                    match binding with
+                    | Some slot ->
+                        analyzeBlock scopePath block { state with Stack = prefix; Locals = Map.add slot sumOrigins state.Locals }
+                        |> fun exit -> { exit with Locals = Map.remove slot exit.Locals }
+                    | None -> analyzeBlock scopePath block { state with Stack = prefix })
                 |> List.reduce combineStates
             | IrOperation.ListSingleton _ ->
                 // A new list owner in the current region holding a copy of the item.
@@ -469,8 +479,13 @@ module internal ArenaLifetime =
                               Escaped = Set.union merged.Escaped possible }
             | IrOperation.MatchEnum(_, caseBlocks) ->
                 let prefix, _ = pop 1 state.Stack
-                let entry = { retainedState with Stack = prefix }
-                let exits = caseBlocks |> List.map (fun (_, _, block) -> analyzeBlock scopePath block entry)
+                let exits =
+                    caseBlocks |> List.map (fun (_, binding, block) ->
+                        match binding with
+                        | Some slot ->
+                            analyzeBlock scopePath block { retainedState with Stack = prefix; Locals = Map.add slot unknownOutputOrigins retainedState.Locals }
+                            |> fun exit -> { exit with Locals = Map.remove slot exit.Locals }
+                        | None -> analyzeBlock scopePath block { retainedState with Stack = prefix })
                 let merged = exits |> List.reduce combineStates
                 { merged with Stack = merged.Stack |> List.map (Set.union unknownOutputOrigins)
                               Escaped = Set.union merged.Escaped possible }
@@ -484,7 +499,8 @@ module internal ArenaLifetime =
                 let prefix, inputs = pop 1 state.Stack
                 finishUnknown prefix inputs 1
             | IrOperation.MakeEnumCase(call, _, _) ->
-                finishUnknown state.Stack [] call.OutputTypes.Length
+                let prefix, inputs = pop call.InputTypes.Length state.Stack
+                finishUnknown prefix inputs call.OutputTypes.Length
             | IrOperation.HtmlTemplate(_, parts) ->
                 let prefix, inputs = pop (templateHoleCount parts) state.Stack
                 finishUnknown prefix inputs 1

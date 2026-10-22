@@ -32,7 +32,10 @@ enum {
   AL_OWNING_TYPE_RESULT = 8u,
   AL_OWNING_TYPE_F64 = 9u,
   AL_OWNING_TYPE_BYTES = 11u,
-  AL_OWNING_TYPE_LIST = 10u
+  AL_OWNING_TYPE_LIST = 10u,
+  /* An enum whose cases carry a payload (report 306): Option's and Result's
+     sum layout with case_count cases, any of which may be bare. */
+  AL_OWNING_TYPE_UNION = 12u
 };
 
 enum { AL_OWNING_FIELD_ZERO_WIDTH = 1u };

@@ -83,3 +83,48 @@ until (b). The legacy LLVM backend already rejects every enum.
   changed types touch.
 - **Campfire:** unchanged. The verified build takes 39.2 s, and its
   `module.ll` is byte-identical to the item-1b build.
+
+## (b) Native builds
+
+A payload enum is laid out the way `Result` is: an 8-byte case tag, then the
+active case's payload. A bare case is the tag alone. It uses a new layout kind,
+`AL_OWNING_TYPE_UNION` (12), and `case_count` cases, any of which may be bare.
+
+**The emitter:**
+- `buildSum` already took any list of cases. A payload enum passes its own
+  cases.
+- A payload case is built by the code that builds `Result.ok`, which writes the
+  tag and copies the payload in. A bare case is one 8-byte store.
+- A match locates the active case with `al_owning_locate_sum_case`, as a
+  `Result` match does. It switches over every case and stores the payload in
+  the arm's local when the arm binds one.
+- Local planning, binder collection and the arena-lifetime proof treat an arm's
+  binding the way they treat a `Result` match's ok local.
+- Host values (test inputs and outputs) encode and decode the tag and the
+  payload.
+
+**The C runtime:** five functions branched on Option and Result:
+- descriptor validation;
+- type-graph validation;
+- value scanning;
+- typed equality;
+- locating the active case.
+
+Each now asks `al_owning_is_sum_kind`, and reads its case bound from the
+descriptor's case count instead of a fixed 2. Option and Result keep their
+exact two-case rules. Payload-free enums are unchanged: an 8-byte ordinal of
+kind 6.
+
+**Checks:**
+- `AgentLang.PayloadEnums.Tests` now has 736 assertions. Every entry point gives
+  the interpreter's values at O0, O2 and trusted O2:
+  - all 13 sample routes through `describe` and `kind`;
+  - the 169-pair equality matrix;
+  - construction;
+  - a payload enum in a list, an option and a record.
+
+  The payloads cover Int, String (including `é🚀` and a value longer than a
+  word), a record, an `Option<String>` and a `List<String>`, plus a bare case.
+- **Suites:** all 23 pass.
+- **Campfire:** its `module.ll` is byte-identical to (a), and all 33 responses
+  match. The build takes 38.3 s.

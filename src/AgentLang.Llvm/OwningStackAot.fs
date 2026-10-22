@@ -951,14 +951,22 @@ module OwningStackAot =
             "Native backends do not execute host operations; use the interpreter with its registered provider."
             (Some owner) span [ "program without host operations" ] [ sprintf "%A" operationId ]
 
+    /// A payload-free enum: an 8-byte ordinal.
     let private enumDefinition (program: IrProgram) ty =
         match ty with
         | IrNominal key ->
             match program.NominalTypesByKey.TryFind key with
-            | Some(IrEnumDefinition definition) when IrEnums.hasPayload definition ->
-                // Every native enum path asks here first (report 306).
-                Diagnostics.raiseError "IR_OWNING_STACK_ENUM_PAYLOAD" "Native builds do not support enums whose cases carry payloads yet; the interpreter runs them." None None [ "payload-free enum" ] [ definition.TypeName ]
-            | Some(IrEnumDefinition definition) -> Some definition
+            | Some(IrEnumDefinition definition) when not (IrEnums.hasPayload definition) -> Some definition
+            | _ -> None
+        | _ -> None
+
+    /// An enum whose cases carry payloads (report 306): laid out as a sum of its
+    /// cases, an 8-byte case tag and then the active case's payload, as Result is.
+    let private payloadEnumDefinition (program: IrProgram) ty =
+        match ty with
+        | IrNominal key ->
+            match program.NominalTypesByKey.TryFind key with
+            | Some(IrEnumDefinition definition) when IrEnums.hasPayload definition -> Some definition
             | _ -> None
         | _ -> None
 
@@ -1129,7 +1137,10 @@ module OwningStackAot =
                     collectBinders right
                 | IrOperation.Scope inner | IrOperation.Compact inner -> collectBinders inner
                 | IrOperation.If(left, right) -> collectBinders left; collectBinders right
-                | IrOperation.MatchEnum(_, cases) -> for _, _, inner in cases do collectBinders inner
+                | IrOperation.MatchEnum(_, cases) ->
+                    for _, binding, inner in cases do
+                        binding |> Option.iter (excluded.Add >> ignore)
+                        collectBinders inner
                 | _ -> ()
         collectBinders body
         let mutable slotTags = Map.empty<LocalSlot, Set<ProgramTypeKey option>>
@@ -1467,6 +1478,9 @@ module OwningStackAot =
                     buildSum owner depth ty [ "Some", Some itemType; "None", None ]
                 | IrResult(okType, errorType) ->
                     buildSum owner depth ty [ "Ok", Some okType; "Error", Some errorType ]
+                | IrNominal _ when Option.isSome (payloadEnumDefinition program ty) ->
+                    let definition = payloadEnumDefinition program ty |> Option.get
+                    buildSum owner depth ty (List.zip definition.Cases definition.CasePayloads)
                 | IrNominal _ when Option.isSome (enumDefinition program ty) ->
                     let definition = enumDefinition program ty |> Option.get
                     let value =
@@ -1814,9 +1828,9 @@ module OwningStackAot =
                 | IrOperation.MatchEnum(key, caseBlocks) ->
                     checkType owner (IrNominal key)
                     let expectedCases =
-                        match enumDefinition program (IrNominal key) with
-                        | Some definition -> [ 0 .. definition.Cases.Length - 1 ]
-                        | None -> []
+                        match program.NominalTypesByKey.TryFind key with
+                        | Some(IrEnumDefinition definition) -> [ 0 .. definition.Cases.Length - 1 ]
+                        | _ -> []
                     let actualCases = caseBlocks |> List.map (fun (caseIndex, _, _) -> caseIndex)
                     if actualCases.Length <> expectedCases.Length || (actualCases |> List.sort) <> expectedCases then
                         Diagnostics.raiseError "IR_OWNING_STACK_ENUM_MATCH_CASE_SET"
@@ -1886,10 +1900,10 @@ module OwningStackAot =
             | _ -> Diagnostics.raiseError "IR_OWNING_STACK_FIELD_TARGET" "GetRecordField requires its verified generated record accessor target." (Some owner) span [ "generated record accessor" ] [ call.ResolvedName ]
 
         and validateEnumCall owner span (call: IrResolvedCall) key caseIndex =
-            let caseNames =
+            let caseNames, payloads =
                 match program.NominalTypesByKey.TryFind key with
-                | Some(IrEnumDefinition definition) -> definition.Cases
-                | _ -> []
+                | Some(IrEnumDefinition definition) -> definition.Cases, definition.CasePayloads
+                | _ -> [], []
             match call.ResolvedTarget with
             | GeneratedWordTarget(id, revision) ->
                 match program.GeneratedTargetsById.TryFind id with
@@ -1898,9 +1912,9 @@ module OwningStackAot =
                     requireEffectFree owner call.ResolvedEffects
                 | _ -> Diagnostics.raiseError "IR_OWNING_STACK_ENUM_TARGET" "Enum case construction is not bound to its verified matching generated constructor." (Some owner) span [ sprintf "%A" (MakeEnumCaseOperation(key, caseIndex)) ] [ call.ResolvedName ]
             | _ -> Diagnostics.raiseError "IR_OWNING_STACK_ENUM_TARGET" "Enum case construction requires its verified generated constructor target." (Some owner) span [ "generated enum-case constructor" ] [ call.ResolvedName ]
-            if caseIndex < 0 || caseIndex >= caseNames.Length || not call.InputTypes.IsEmpty || call.OutputTypes <> [ IrNominal key ] then
+            if caseIndex < 0 || caseIndex >= caseNames.Length || call.InputTypes <> Option.toList payloads[caseIndex] || call.OutputTypes <> [ IrNominal key ] then
                 let actual = sprintf "%d: %s -> %s" caseIndex (String.concat " " (call.InputTypes |> List.map IrTypes.format)) (String.concat " " (call.OutputTypes |> List.map IrTypes.format))
-                Diagnostics.raiseError "IR_OWNING_STACK_ENUM_CONSTRUCTION" "Enum constructor must identify a verified zero-input case and return its exact nominal enum type." (Some owner) span [ "verified enum case; () -> enum" ] [ actual ]
+                Diagnostics.raiseError "IR_OWNING_STACK_ENUM_CONSTRUCTION" "Enum constructor must identify a verified case, take exactly its payload and return its exact nominal enum type." (Some owner) span [ "verified enum case; payload -> enum" ] [ actual ]
 
         for current in bodies do
             requireProgramEffects current.BodyName current.BodyDeclaredEffects
@@ -2182,6 +2196,19 @@ module OwningStackAot =
                 | Error item ->
                     let childPayload, childExtent = measure false errorType item
                     checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
+            | IrNominal key, EnumValue(actualName, caseName, payload) when Option.isSome (payloadEnumDefinition info.Program ty) ->
+                let definition = payloadEnumDefinition info.Program ty |> Option.get
+                let caseIndex =
+                    definition.Cases |> List.tryFindIndex ((=) caseName)
+                    |> Option.defaultWith (fun () -> invalidArg (nameof values) $"Enum input '{actualName}.{caseName}' is absent from its verified case table.")
+                if actualName <> definition.TypeName then
+                    invalidArg (nameof values) $"Input enum {Types.formatValue value} does not match verified type {IrTypes.format ty}."
+                match definition.CasePayloads[caseIndex], payload with
+                | None, None -> 8, 8
+                | Some payloadType, Some item ->
+                    let childPayload, childExtent = measure false payloadType item
+                    checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
+                | _ -> invalidArg (nameof values) $"Enum input '{actualName}.{caseName}' does not carry the payload its case declares."
             | IrNominal key, EnumValue(actualName, caseName, None) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
@@ -2334,6 +2361,15 @@ module OwningStackAot =
                 | Error item ->
                     writeInt64 bytes offset 1L
                     checkedHostAdd (nameof values) 8 (encode false (offset + 8) errorType item)
+            | IrNominal key, EnumValue(actualName, caseName, payload) when Option.isSome (payloadEnumDefinition info.Program ty) ->
+                let definition = payloadEnumDefinition info.Program ty |> Option.get
+                let caseIndex =
+                    definition.Cases |> List.tryFindIndex ((=) caseName)
+                    |> Option.defaultWith (fun () -> invalidArg (nameof values) $"Enum input '{actualName}.{caseName}' is absent from its verified case table.")
+                writeInt64 bytes offset (int64 caseIndex)
+                match definition.CasePayloads[caseIndex], payload with
+                | Some payloadType, Some item -> checkedHostAdd (nameof values) 8 (encode false (offset + 8) payloadType item)
+                | _ -> 8
             | IrNominal key, EnumValue(actualName, caseName, None) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
@@ -2507,6 +2543,20 @@ module OwningStackAot =
                     if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack Result Error payload is truncated."))
                     ResultValue(langTypeFor info.Program okType, langTypeFor info.Program errorType, Error item), extentBytes, payloadBytes
                 | tag -> raise (InvalidDataException($"Owning-stack Result tag {tag} is outside the verified case table."))
+            | IrNominal key when Option.isSome (payloadEnumDefinition info.Program (IrNominal key)) ->
+                let definition = payloadEnumDefinition info.Program (IrNominal key) |> Option.get
+                if offset < 0 || offset > bytes.Length - 8 then raise (InvalidDataException("Owning-stack enum case tag is truncated."))
+                let tag = readInt64 bytes offset
+                if tag < 0L || tag >= int64 definition.Cases.Length then
+                    raise (InvalidDataException($"Owning-stack enum case tag {tag} is outside '{definition.TypeName}' case table."))
+                match definition.CasePayloads[int tag] with
+                | None -> EnumValue(definition.TypeName, definition.Cases[int tag], None), 8, 8
+                | Some payloadType ->
+                    let item, childExtent, childPayload = decode false (offset + 8) payloadType
+                    let extentBytes = checkedDecodedAdd 8 childExtent "enum extent"
+                    let payloadBytes = checkedDecodedAdd 8 childPayload "enum payload"
+                    if offset > bytes.Length - extentBytes then raise (InvalidDataException("Owning-stack enum payload is truncated."))
+                    EnumValue(definition.TypeName, definition.Cases[int tag], Some item), extentBytes, payloadBytes
             | IrNominal key when Option.isSome (enumDefinition info.Program (IrNominal key)) ->
                 let definition = enumDefinition info.Program (IrNominal key) |> Option.get
                 ensureRange offset 8 "enum ordinal"
@@ -2844,12 +2894,24 @@ module OwningStackAot =
                         invalidOp "Verified If branches diverged while planning local storage."
                 | IrOperation.MatchEnum(_, caseBlocks) ->
                     let _ , _ = pop 1
-                    for _, _, caseBlock in caseBlocks do visit caseBlock
+                    // A payload binding is the arm's own local (report 306), typed by the arm's entry shape.
+                    for _, binding, caseBlock in caseBlocks do
+                        match binding with
+                        | Some slot ->
+                            match caseBlock.EntryShape.LocalTypes.TryFind slot with
+                            | Some payloadType -> addStore slot payloadType
+                            | None -> invalidOp "Verified enum match binding has no type in its arm while planning local storage."
+                        | None -> ()
+                        visit caseBlock
+                    let outerLocals (binding: LocalSlot option) (block: IrBlock) =
+                        match binding with
+                        | Some slot -> Map.remove slot block.ExitShape.LocalTypes
+                        | None -> block.ExitShape.LocalTypes
                     match caseBlocks with
-                    | (_, _, firstBlock) :: remaining ->
+                    | (_, firstBinding, firstBlock) :: remaining ->
                         stack <- firstBlock.ExitShape.StackTypes
-                        locals <- firstBlock.ExitShape.LocalTypes
-                        if remaining |> List.exists (fun (_, _, branch) -> branch.ExitShape.StackTypes <> stack || branch.ExitShape.LocalTypes <> locals) then
+                        locals <- outerLocals firstBinding firstBlock
+                        if remaining |> List.exists (fun (_, binding, branch) -> branch.ExitShape.StackTypes <> stack || outerLocals binding branch <> locals) then
                             invalidOp "Verified enum-match branches diverged while planning local storage."
                     | [] -> invalidOp "Verified enum match has no branches while planning local storage."
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -3118,10 +3180,12 @@ module OwningStackAot =
                 | None ->
                     match enumDefinition program ty with
                     | Some _ -> 6u
+                    | None when Option.isSome (payloadEnumDefinition program ty) -> 12u
                     | None -> 4u
         let typeCaseCount ty =
             match ty with
             | IrOption _ | IrResult _ -> uint32 (infoFor info ty).Cases.Length
+            | _ when Option.isSome (payloadEnumDefinition program ty) -> uint32 (infoFor info ty).Cases.Length
             | _ -> enumDefinition program ty |> Option.map (fun definition -> uint32 definition.Cases.Length) |> Option.defaultValue 0u
         let firstFields = Dictionary<IrType, int>()
         let descriptorFields = ResizeArray<uint32 * uint32 * uint32 * uint32>()
@@ -4154,10 +4218,12 @@ module OwningStackAot =
                 | None ->
                     match enumDefinition info.Program ty with
                     | Some _ -> 6u
+                    | None when Option.isSome (payloadEnumDefinition info.Program ty) -> 12u
                     | None -> 4u
         let typeCaseCount ty =
             match ty with
             | IrOption _ | IrResult _ -> uint32 (typeInfo ty).Cases.Length
+            | _ when Option.isSome (payloadEnumDefinition info.Program ty) -> uint32 (typeInfo ty).Cases.Length
             | _ ->
                 enumDefinition info.Program ty
                 |> Option.map (fun definition -> uint32 definition.Cases.Length)
@@ -5661,6 +5727,24 @@ module OwningStackAot =
                             emitDropEntry stack index
                         emitUpdateLive w resultPayload "0" failBody
                         stack <- push prefix htmlType cursor resultExtent resultPayload resultEnd
+                    | IrOperation.MakeEnumCase(call, key, caseIndex) when Option.isSome (payloadEnumDefinition program (IrNominal key)) ->
+                        // A payload enum case (report 306): the case tag, then its payload copied
+                        // in, as ResultOk builds a Result; a bare case is the tag alone.
+                        emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
+                        let ty = IrNominal key
+                        if call.InputTypes.IsEmpty then
+                            let cursor = emitContextLoad w "%ctx" 2
+                            let next = emitOffset w cursor "8"
+                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve a bare enum case." currentOwner instructionSpan [] []
+                            emitReserve w next reserveError failBody
+                            w.Inst($"call void @al_owning_store_i64(ptr %%ctx, i32 {cursor}, i64 {caseIndex}, i32 {typeId ty})")
+                            emitRuntimeStatus w "%ctx" failBody
+                            emitUpdateLive w "8" "0" failBody
+                            emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId ty}, i32 {cursor}, i32 8, i32 8, i32 0, i32 0)" failBody
+                            stack <- push stack ty cursor "8" "8" next
+                        else
+                            let values, prefix = pop 1
+                            stack <- emitSumPayloadConstruction ty caseIndex prefix (List.head values) instructionSpan
                     | IrOperation.MakeEnumCase(call, key, caseIndex) ->
                         emitInlineTargetDepthGuard w call.ResolvedName instructionSpan failBody
                         let ty = IrNominal key
@@ -6808,6 +6892,78 @@ module OwningStackAot =
                         stack <- joinBranches [ okStack, okPredecessor; errorStack, errorPredecessor ] "result.value"
                         locals <- currentLocals
                         localTypes <- okLocals
+                    | IrOperation.MatchEnum(key, caseBlocks) when Option.isSome (payloadEnumDefinition program (IrNominal key)) ->
+                        // A payload enum is a sum (report 306): locate the active case, as a
+                        // Result match does, and bind its payload for the arm that names it.
+                        let definition = payloadEnumDefinition program (IrNominal key) |> Option.get
+                        let values, prefix = pop 1
+                        let scrutinee = List.head values
+                        let caseIndexPointer = w.Fresh "enum.case.index.pointer"
+                        let location = w.Fresh "enum.case.location"
+                        w.Inst($"{caseIndexPointer} = alloca i32, align 4")
+                        w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                        let locateError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate the checked active enum case." currentOwner instructionSpan [] []
+                        let locateStatus = w.Fresh "enum.case.location.status"
+                        w.Inst($"{locateStatus} = call i32 @al_owning_locate_sum_case(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex scrutinee.Type}, i32 {scrutinee.Offset}, i32 {scrutinee.Extent}, i32 {locateError}, ptr {caseIndexPointer}, ptr {location})")
+                        emitStatusResult w locateStatus failBody
+                        let activeCase = w.Fresh "enum.case.index"
+                        w.Inst($"{activeCase} = load i32, ptr {caseIndexPointer}, align 4")
+                        let loadCaseLocation index name =
+                            let pointer = w.Fresh $"enum.{name}.pointer"
+                            let value = w.Fresh $"enum.{name}"
+                            w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {index}")
+                            w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                            value
+                        let payloadOffset = loadCaseLocation 0 "payload.offset"
+                        let payloadBytes = loadCaseLocation 1 "payload.bytes"
+                        let payloadExtent = loadCaseLocation 2 "payload.extent"
+                        emitDropEntry stack (stack.Length - 1)
+                        stack <- prefix
+                        let caseLabels = caseBlocks |> List.map (fun (caseIndex, _, _) -> caseIndex, w.Label $"enum.case.{caseIndex}")
+                        let invalidLabel = w.Label "enum.invalid-tag"
+                        let joinLabel = w.Label "enum.join"
+                        let switchCases = caseLabels |> List.map (fun (caseIndex, label) -> $"i32 {caseIndex}, label %%{label}") |> String.concat " "
+                        w.Inst($"switch i32 {activeCase}, label %%{invalidLabel} [ {switchCases} ]")
+                        w.Line($"{invalidLabel}:")
+                        w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {locateError}, i32 {activeCase}, i32 {definition.Cases.Length})")
+                        w.Inst($"br label %%{failBody}")
+                        let bindings = caseBlocks |> List.choose (fun (_, binding, _) -> binding |> Option.map (fun slot -> localBinding slot locals))
+                        let branches = ResizeArray<LocalSlot option * IrBlock * OwningDynamicStackEntry list * string>()
+                        for caseIndex, binding, caseBlock in caseBlocks do
+                            let caseLabel = caseLabels |> List.find (fun (index, _) -> index = caseIndex) |> snd
+                            w.Line($"{caseLabel}:")
+                            for other in bindings do removeLocal other.FlagId
+                            match binding, definition.CasePayloads[caseIndex] with
+                            | Some slot, Some payloadType ->
+                                let payloadEntry =
+                                    { Type = payloadType
+                                      Offset = payloadOffset
+                                      Extent = payloadExtent
+                                      Payload = payloadBytes
+                                      OwnerEnd = scrutinee.OwnerEnd; Register = None }
+                                emitDescriptorBounds w payloadEntry (Some(string (typeId payloadType))) failBody
+                                emitStoreLocal (localBinding slot locals) payloadEntry
+                            | Some _, None -> invalidOp "Verified enum match binds a case without a payload."
+                            | None, _ -> ()
+                            let branchStack = emitBlock currentOwner env prefix locals caseBlock |> normalizeBranch
+                            binding |> Option.iter (fun slot -> removeLocal (localBinding slot locals).FlagId)
+                            let predecessor = w.CurrentBlock
+                            w.Inst($"br label %%{joinLabel}")
+                            branches.Add((binding, caseBlock, branchStack, predecessor))
+                        w.Line($"{joinLabel}:")
+                        let outerLocals (binding: LocalSlot option) (block: IrBlock) =
+                            match binding with
+                            | Some slot -> Map.remove slot block.ExitShape.LocalTypes
+                            | None -> block.ExitShape.LocalTypes
+                        let firstBinding, firstBlock, firstStack, _ = branches[0]
+                        let firstLocals = outerLocals firstBinding firstBlock
+                        if branches |> Seq.exists (fun (binding, branch, output, _) ->
+                            outerLocals binding branch <> firstLocals ||
+                            (output |> List.map (fun item -> item.Type)) <> (firstStack |> List.map (fun item -> item.Type))) then
+                            invalidOp "Verified dynamic payload-enum match branches diverged."
+                        stack <- joinBranches [ for _, _, output, predecessor in branches -> output, predecessor ] "enum.value"
+                        locals <- currentLocals
+                        localTypes <- firstLocals
                     | IrOperation.MatchEnum(key, caseBlocks) ->
                         let values, prefix = pop 1
                         let scrutinee = List.head values
@@ -10027,6 +10183,7 @@ module OwningStackAot =
                      | IrOption _ -> "Option"
                      | IrResult _ -> "Result"
                      | IrNominal _ as ty when Option.isSome (enumDefinition programInfo.Program ty) -> "Enum"
+                     | IrNominal _ as ty when Option.isSome (payloadEnumDefinition programInfo.Program ty) -> "Union"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrInt)) -> "Int"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrFloat)) -> "Float"
                      | IrNominal _ as ty when (scalarDefinition programInfo.Program ty |> Option.exists (fun scalar -> scalar.BaseType = IrString)) -> "String"

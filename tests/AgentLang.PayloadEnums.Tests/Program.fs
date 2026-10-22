@@ -87,8 +87,9 @@ let private run () =
     let around room message = EnumValue("Route", "around", Some(RecordValue("Around", Map.ofList [ "room", IntValue room; "message", StringValue message ])))
     let search text = EnumValue("Route", "search", Some(OptionValue(TString, text |> Option.map StringValue)))
     let tags names = EnumValue("Route", "tags", Some(ListValue(TString, names |> List.map StringValue)))
+    let label text = EnumValue("Route", "label", Some(StringValue text))
     let sidebar = EnumValue("Route", "sidebar", None)
-    let routes = [ room 5L; room -1L; around 2L "m9"; around 2L ""; search (Some "cats"); search None; tags [ "a"; "b" ]; tags []; sidebar ]
+    let routes = [ room 5L; room -1L; around 2L "m9"; around 2L ""; search (Some "cats"); search None; tags [ "a"; "b" ]; tags []; label "x"; label ""; label "é🚀 long enough to pass a word"; sidebar ]
     let describe = function
         | EnumValue(_, "room", Some(IntValue id)) -> $"room {id}"
         | EnumValue(_, "around", Some(RecordValue(_, fields))) ->
@@ -98,6 +99,7 @@ let private run () =
         | EnumValue(_, "search", Some(OptionValue(_, Some(StringValue text)))) -> $"search {text}"
         | EnumValue(_, "search", Some(OptionValue(_, None))) -> "search"
         | EnumValue(_, "tags", Some(ListValue(_, names))) -> $"tags {names.Length}"
+        | EnumValue(_, "label", Some(StringValue text)) -> $"label {text}"
         | EnumValue(_, "sidebar", None) -> "sidebar"
         | other -> failwith $"bad route {other}"
     for value in routes do
@@ -114,16 +116,31 @@ let private run () =
     check "a value lacking its declared payload is rejected" (interpret "route.describe" [ route ] [ TString ] [ EnumValue("Route", "room", None) ] |> Result.isError)
     check "a payload on a bare case is rejected" (interpret "route.describe" [ route ] [ TString ] [ EnumValue("Route", "sidebar", Some(IntValue 1L)) ] |> Result.isError)
 
-    // Native builds reject payload enums until they lay them out.
+    // Native builds lay payload enums out as sums (306b): every entry point gives
+    // the interpreter's values, at O0, O2 and trusted O2.
     let toolchain = LlvmToolchain.discover ()
-    let body = engine.ExportVerifiedFlowEntryPoint("route.describe", [ route ], [ TString ])
-    let nativeError =
-        try
-            use _program = OwningStackAot.compileWithRuntimeProfile toolchain LlvmOptimization.O0 OwningRuntimeProfile.Diagnostic (Path.Combine(runRoot, "native", "describe")) body
-            "compiled"
-        with
-        | LanguageException diagnostic -> diagnostic.Code
-    check $"native builds reject a payload enum ({nativeError})" (nativeError = "IR_OWNING_STACK_ENUM_PAYLOAD")
+    let configurations =
+        [ "O0", LlvmOptimization.O0, OwningRuntimeProfile.Diagnostic
+          "O2", LlvmOptimization.O2, OwningRuntimeProfile.Diagnostic
+          "trusted-O2", LlvmOptimization.O2, OwningRuntimeProfile.TrustedGenerated ]
+    for optimization, level, profile in configurations do
+        let pair word inputs outputs (cases: Value list list) =
+            let body = engine.ExportVerifiedFlowEntryPoint(word, inputs, outputs)
+            use program = OwningStackAot.compileWithRuntimeProfile toolchain level profile (Path.Combine(runRoot, "native", optimization, word.Replace("?", "-p"))) body
+            for values in cases do
+                let interpreted = interpret word inputs outputs values
+                let nativeResult =
+                    try Ok(program.Execute(values, 65536, 4096).Values)
+                    with
+                    | :? OwningStackExecutionException as failure -> Error failure.Diagnostic.Code
+                check $"{word} {values}/{optimization}: native {nativeResult} = interpreter {interpreted}" (nativeResult = interpreted)
+        pair "route.describe" [ route ] [ TString ] [ for value in routes -> [ value ] ]
+        pair "route.kind" [ route ] [ TInt ] [ for value in routes -> [ value ] ]
+        pair "route.same?" [ route; route ] [ TBool ] [ for left in routes do for right in routes -> [ left; right ] ]
+        pair "route.room" [ TInt ] [ route ] [ [ IntValue 9L ]; [ IntValue Int64.MinValue ] ]
+        pair "route.all" [ TInt ] [ TList route ] [ [ IntValue 4L ] ]
+        pair "route.maybe" [ TInt ] [ TOption route ] [ [ IntValue 2L ]; [ IntValue 0L ] ]
+        pair "route.held" [ TString; route ] [ TNamed "Holder" ] [ for value in routes -> [ StringValue "x"; value ] ]
 
     let receipt = JsonObject()
     receipt["status"] <- JsonValue.Create("pass")

@@ -1048,6 +1048,13 @@ static int32_t al_owning_validate_layout_header(al_owning_stack_context *ctx,
   return 1;
 }
 
+/* Option, Result and a payload enum share the sum layout: an 8-byte case
+   tag, then the active case's payload (report 306). */
+static int32_t al_owning_is_sum_kind(uint32_t kind) {
+  return kind == AL_OWNING_TYPE_OPTION || kind == AL_OWNING_TYPE_RESULT ||
+         kind == AL_OWNING_TYPE_UNION;
+}
+
 static int32_t al_owning_validate_type_descriptor(
     al_owning_scan_view *view, const al_owning_layout *layout,
     uint32_t type_index, const al_owning_type_descriptor **out_type) {
@@ -1089,14 +1096,16 @@ static int32_t al_owning_validate_type_descriptor(
        type->kind != AL_OWNING_TYPE_ENUM &&
        type->kind != AL_OWNING_TYPE_OPTION &&
        type->kind != AL_OWNING_TYPE_RESULT &&
+       type->kind != AL_OWNING_TYPE_UNION &&
        type->kind != AL_OWNING_TYPE_LIST) ||
       (type->kind == AL_OWNING_TYPE_ENUM && type->case_count == 0u) ||
+      (type->kind == AL_OWNING_TYPE_UNION &&
+       (type->case_count == 0u || type->field_count != type->case_count)) ||
       ((type->kind == AL_OWNING_TYPE_OPTION ||
         type->kind == AL_OWNING_TYPE_RESULT) &&
        (type->case_count != 2u || type->field_count != 2u)) ||
-      (type->kind != AL_OWNING_TYPE_ENUM &&
-       type->kind != AL_OWNING_TYPE_OPTION &&
-       type->kind != AL_OWNING_TYPE_RESULT && type->case_count != 0u) ||
+      (type->kind != AL_OWNING_TYPE_ENUM && !al_owning_is_sum_kind(type->kind) &&
+       type->case_count != 0u) ||
       type->minimum_extent_bytes < type->minimum_payload_bytes ||
       (!payload_dynamic &&
        (type->minimum_payload_bytes != type->fixed_payload_bytes ||
@@ -1132,8 +1141,7 @@ static int32_t al_owning_validate_type_descriptor(
                           type_index, layout->type_count);
     return 0;
   }
-  if ((type->kind == AL_OWNING_TYPE_OPTION ||
-       type->kind == AL_OWNING_TYPE_RESULT) &&
+  if (al_owning_is_sum_kind(type->kind) &&
       (type->minimum_payload_bytes < 8u ||
        type->minimum_extent_bytes < 8u ||
        (type->fixed_extent_bytes != AL_OWNING_LAYOUT_DYNAMIC_U32 &&
@@ -1190,15 +1198,14 @@ static int32_t al_owning_validate_type_graph_inner(
   if (!al_owning_validate_type_descriptor(view, layout, type_index, &type))
     return 0;
   state[type_index] = 1u;
-  if (type->kind == AL_OWNING_TYPE_OPTION ||
-      type->kind == AL_OWNING_TYPE_RESULT) {
+  if (al_owning_is_sum_kind(type->kind)) {
     uint64_t minimum_case_payload = UINT64_MAX;
     uint64_t minimum_case_extent = UINT64_MAX;
     uint64_t fixed_case_payload = 0u;
     uint64_t fixed_case_extent = 0u;
     int32_t all_cases_fixed = 1;
     int32_t have_fixed_case = 0;
-    for (index = 0u; index < 2u; ++index) {
+    for (index = 0u; index < type->case_count; ++index) {
       const al_owning_field_descriptor *field =
           &layout->fields[type->first_field + index];
       uint64_t case_minimum_payload;
@@ -1208,6 +1215,7 @@ static int32_t al_owning_validate_type_graph_inner(
           (type->kind == AL_OWNING_TYPE_OPTION && index == 1u &&
            field->child_type_index != AL_OWNING_LAYOUT_DYNAMIC_U32) ||
           (field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32 &&
+           type->kind != AL_OWNING_TYPE_UNION &&
            (type->kind != AL_OWNING_TYPE_OPTION || index != 1u))) {
         al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
                               view->error_id, field->child_type_index,
@@ -1690,8 +1698,7 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
     al_owning_scan_failure(view, offset, containing_owner_end);
     return 0;
   }
-  if (type->kind == AL_OWNING_TYPE_OPTION ||
-      type->kind == AL_OWNING_TYPE_RESULT) {
+  if (al_owning_is_sum_kind(type->kind)) {
     uint64_t tag;
     const al_owning_field_descriptor *case_field;
     uint32_t child_payload = 0u;
@@ -1702,15 +1709,16 @@ static int32_t al_owning_scan_value(al_owning_scan_view *view,
                                           containing_owner_end, 8u))
       return 0;
     tag = al_owning_read_u64_le(view->bytes, offset);
-    if (tag > 1u) {
+    if (tag >= (uint64_t)type->case_count) {
       al_owning_scan_failure(view, tag > UINT32_MAX ? UINT32_MAX
                                                     : (uint32_t)tag,
-                             2u);
+                             type->case_count);
       return 0;
     }
     case_field = &layout->fields[type->first_field + (uint32_t)tag];
     if (case_field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32) {
-      if (type->kind != AL_OWNING_TYPE_OPTION || tag != 1u) {
+      if (type->kind != AL_OWNING_TYPE_UNION &&
+          (type->kind != AL_OWNING_TYPE_OPTION || tag != 1u)) {
         al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL,
                               view->error_id, case_field->child_type_index,
                               layout->type_count);
@@ -2366,8 +2374,7 @@ static int32_t al_owning_equal_typed_inner(
     return left_cursor == left_extent && right_cursor == right_extent;
   }
 
-  if (type->kind == AL_OWNING_TYPE_OPTION ||
-      type->kind == AL_OWNING_TYPE_RESULT) {
+  if (al_owning_is_sum_kind(type->kind)) {
     uint64_t left_tag;
     uint64_t right_tag;
     const al_owning_field_descriptor *case_field;
@@ -2385,16 +2392,17 @@ static int32_t al_owning_equal_typed_inner(
     right_tag = al_owning_read_u64_le(right_view->bytes, right_offset);
     if (left_tag != right_tag)
       return 0;
-    if (left_tag > 1u) {
+    if (left_tag >= (uint64_t)type->case_count) {
       al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id,
                             left_tag > UINT32_MAX ? UINT32_MAX
                                                   : (uint32_t)left_tag,
-                            2u);
+                            type->case_count);
       return 0;
     }
     case_field = &layout->fields[type->first_field + (uint32_t)left_tag];
     if (case_field->child_type_index == AL_OWNING_LAYOUT_DYNAMIC_U32)
-      return type->kind == AL_OWNING_TYPE_OPTION && left_tag == 1u;
+      return type->kind == AL_OWNING_TYPE_UNION ||
+             (type->kind == AL_OWNING_TYPE_OPTION && left_tag == 1u);
     if (left_offset > UINT32_MAX - 8u || right_offset > UINT32_MAX - 8u ||
         !al_owning_equal_typed_scan(
             left_view, layout, case_field->child_type_index, left_offset + 8u,
@@ -2710,8 +2718,7 @@ int32_t AL_OWNING_PROFILE_IMPL(al_owning_locate_sum_case)(
   view.external = 0;
   if (!al_owning_validate_type_descriptor(&view, layout, sum_type_index,
                                           &sum_type) ||
-      (sum_type->kind != AL_OWNING_TYPE_OPTION &&
-       sum_type->kind != AL_OWNING_TYPE_RESULT) ||
+      !al_owning_is_sum_kind(sum_type->kind) ||
       sum_offset > ctx->cursor_bytes ||
       sum_offset > ctx->stack_capacity_bytes ||
       sum_extent_bytes > ctx->cursor_bytes - sum_offset ||
