@@ -136,7 +136,13 @@ type IrScalarDefinitionData =
 type IrEnumDefinitionData =
     { TypeKey: ProgramTypeKey
       TypeName: string
-      Cases: string list }
+      Cases: string list
+      /// One entry per case: its single payload type, if any (report 306).
+      CasePayloads: IrType option list }
+
+module IrEnums =
+    /// True when some case of the enum carries a payload (report 306).
+    let hasPayload (definition: IrEnumDefinitionData) = definition.CasePayloads |> List.exists Option.isSome
 
 type IrNominalDefinition =
     | IrRecordDefinition of IrRecordDefinitionData
@@ -199,7 +205,8 @@ type IrOperation =
     | If of IrBlock * IrBlock
     | MatchOption of SomeLocal: LocalSlot * SomeBlock: IrBlock * NoneBlock: IrBlock
     | MatchResult of OkLocal: LocalSlot * ErrorLocal: LocalSlot * OkBlock: IrBlock * ErrorBlock: IrBlock
-    | MatchEnum of TypeKey: ProgramTypeKey * Cases: (int * IrBlock) list
+    /// Each case: its index, the local its payload binds to (payload cases only), its block.
+    | MatchEnum of TypeKey: ProgramTypeKey * Cases: (int * LocalSlot option * IrBlock) list
     | MakeRecord of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
     | GetRecordField of IrResolvedCall * ProgramTypeKey * int
     | WrapScalar of IrResolvedCall * ProgramTypeKey * IrResolvedCall option
@@ -258,7 +265,7 @@ module IrLoops =
             | IrOperation.Scope inner | IrOperation.Compact inner
             | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> Set.union found (assignedSlots inner)
             | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) -> Set.unionMany [ found; assignedSlots left; assignedSlots right ]
-            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun acc (_, caseBlock) -> Set.union acc (assignedSlots caseBlock)) found
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun acc (_, _, caseBlock) -> Set.union acc (assignedSlots caseBlock)) found
             | _ -> found) Set.empty
 
 type IrSourceSite =
@@ -580,6 +587,8 @@ module IrVerifier =
                 if String.IsNullOrWhiteSpace enumDefinition.TypeName then failure "IR_TYPE_NAME_MISSING" "Enum type name must be nonempty." [ "nonempty type name" ] [ enumDefinition.TypeName ]
                 names.Add enumDefinition.TypeName
                 if List.isEmpty enumDefinition.Cases then failure "IR_ENUM_EMPTY" $"Enum '{enumDefinition.TypeName}' must contain at least one case." [ "one or more cases" ] []
+                if enumDefinition.CasePayloads.Length <> enumDefinition.Cases.Length then
+                    failure "IR_ENUM_PAYLOADS" $"Enum '{enumDefinition.TypeName}' must give one payload entry per case." [ string enumDefinition.Cases.Length ] [ string enumDefinition.CasePayloads.Length ]
                 let validCaseName (name: string) =
                     not (String.IsNullOrWhiteSpace name)
                     && (Char.IsLetter name[0] || name[0] = '_')
@@ -633,7 +642,8 @@ module IrVerifier =
             match program.NominalTypesByKey.TryFind key with
             | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length ->
                 let expectedName = enumDefinition.TypeName + "." + enumDefinition.Cases[caseIndex]
-                if target.TargetName <> expectedName || target.InputTypes <> [] || target.OutputTypes <> [ IrNominal key ] then
+                let payloadInputs = enumDefinition.CasePayloads[caseIndex] |> Option.toList
+                if target.TargetName <> expectedName || target.InputTypes <> payloadInputs || target.OutputTypes <> [ IrNominal key ] then
                     failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated enum constructor '{target.TargetName}' disagrees with its frozen case table." [ expectedName + ": () -> enum" ] [ target.TargetName; target.InputTypes |> List.map IrTypes.format |> String.concat " "; target.OutputTypes |> List.map IrTypes.format |> String.concat " " ]
             | _ -> failure "IR_GENERATED_SIGNATURE_MISMATCH" $"Generated enum constructor '{target.TargetName}' refers to a missing enum case." [ "known enum case index" ] [ string caseIndex ]
         let call =
@@ -902,17 +912,27 @@ module IrVerifier =
                             | Some _ -> operationError "IR_ENUM_MATCH_TYPE" "Enum match type key refers to a non-enum nominal definition." [ "enum definition" ] [ sprintf "%A" typeKey ]
                             | None -> operationError "IR_ENUM_MATCH_TYPE" "Enum match type key is absent from the frozen nominal table." [ "known enum key" ] [ sprintf "%A" typeKey ]
                         if input <> [ IrNominal typeKey ] then operationError "IR_ENUM_MATCH_TYPE" "Enum match scrutinee must have the exact nominal type named by the match operation." [ IrTypes.format (IrNominal typeKey) ] (input |> List.map IrTypes.format)
-                        let indexes = caseBlocks |> List.map fst
+                        let indexes = caseBlocks |> List.map (fun (caseIndex, _, _) -> caseIndex)
                         let expectedIndexes = [ 0 .. enumDefinition.Cases.Length - 1 ]
                         if indexes.Length <> expectedIndexes.Length || (indexes |> List.sort) <> expectedIndexes then
                             operationError "IR_ENUM_MATCH_CASE_SET" "Enum match must contain every frozen case exactly once and no other case index." (expectedIndexes |> List.map string) (indexes |> List.map string)
                         let expectedEntry = { shape with StackTypes = prefix }
                         let mutable joinShape = None
                         let mutable branchEffects = Set.empty
-                        for caseIndex, caseBlock in caseBlocks do
+                        for caseIndex, binding, caseBlock in caseBlocks do
                             if caseIndex < 0 || caseIndex >= enumDefinition.Cases.Length then
                                 operationError "IR_ENUM_MATCH_CASE_SET" "Enum match contains a case index outside its frozen case table." (expectedIndexes |> List.map string) [ string caseIndex ]
-                            let caseShape, caseEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site expectedEntry caseBlock
+                            // A payload case may bind its payload to a fresh local (report 306).
+                            let caseEntry =
+                                match binding, enumDefinition.CasePayloads[caseIndex] with
+                                | None, _ -> expectedEntry
+                                | Some slot, Some payloadType ->
+                                    if not (owner.LocalNames.ContainsKey slot) then operationError "IR_UNKNOWN_LOCAL_SLOT" "Enum case local is absent from the function layout." [] [ sprintf "%A" slot ]
+                                    if shape.LocalTypes.ContainsKey slot then operationError "IR_CASE_LOCAL_SHADOW" "Enum match payload slot shadows an outer local." [] [ sprintf "%A" slot ]
+                                    { expectedEntry with LocalTypes = Map.add slot payloadType expectedEntry.LocalTypes }
+                                | Some slot, None -> operationError "IR_ENUM_MATCH_BINDING" "Only a case with a payload can bind it." [ "payload case" ] [ enumDefinition.Cases[caseIndex] ]
+                            let caseShape, caseEffects = verifyBlockNested program catalog hostCatalog owner sourceOwnerId instruction.Site caseEntry caseBlock
+                            let caseShape = match binding with Some slot -> { caseShape with LocalTypes = Map.remove slot caseShape.LocalTypes } | None -> caseShape
                             match joinShape with
                             | None -> joinShape <- Some caseShape
                             | Some previous when previous <> caseShape ->
@@ -924,9 +944,11 @@ module IrVerifier =
                         verifyCall program catalog hostCatalog owner.FunctionName instruction.Site call
                         requireGeneratedOperation (MakeEnumCaseOperation(key, caseIndex)) call
                         match program.NominalTypesByKey.TryFind key with
-                        | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = [] && call.OutputTypes = [ IrNominal key ] -> ()
-                        | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case with a zero-input signature." [ "() -> enum case" ] [ call.ResolvedName ]
-                        { shape with StackTypes = shape.StackTypes @ call.OutputTypes }, call.ResolvedEffects
+                        | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length && call.InputTypes = Option.toList enumDefinition.CasePayloads[caseIndex] && call.OutputTypes = [ IrNominal key ] -> ()
+                        | _ -> operationError "IR_ENUM_CONSTRUCTION_TYPE" "Enum case construction must target a valid frozen case and take exactly its payload." [ "payload -> enum case" ] [ call.ResolvedName ]
+                        let prefix, actual = pop call.InputTypes.Length
+                        if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Enum case payload does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
                     | IrOperation.HtmlTemplate(key, parts) ->
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) when scalar.BaseType = IrString && IrHtml.isHtmlValidator scalar.ValidatorCall -> ()
@@ -1076,9 +1098,9 @@ module IrVerifier =
                     let labels =
                         match nominalTypes.TryFind typeKey with
                         | Some(IrEnumDefinition enumDefinition) -> enumDefinition.Cases
-                        | _ -> caseBlocks |> List.map (fun (caseIndex, _) -> "case" + string caseIndex)
+                        | _ -> caseBlocks |> List.map (fun (caseIndex, _, _) -> "case" + string caseIndex)
                     let branches = Map.add instruction.Site labels branches
-                    caseBlocks |> List.fold (fun (nestedSites, nestedBranches) (_, caseBlock) -> collectBlock caseBlock.Code nestedSites nestedBranches) (sites, branches)
+                    caseBlocks |> List.fold (fun (nestedSites, nestedBranches) (_, _, caseBlock) -> collectBlock caseBlock.Code nestedSites nestedBranches) (sites, branches)
                 | IrOperation.ListMap _ | IrOperation.ListEach _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFilter _ -> Map.add instruction.Site [ "empty"; "nonempty"; "keep"; "drop" ] branches |> fun branches -> sites, branches
                 | IrOperation.ListFold _ -> Map.add instruction.Site [ "empty"; "nonempty" ] branches |> fun branches -> sites, branches
@@ -1099,7 +1121,7 @@ module IrVerifier =
                     | IrOperation.ForList(_, _, _, innerBlock) -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
-                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
+                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (fun (_, _, caseBlock) -> collect caseBlock.Code)
                     | _ -> []
                 instruction :: nested)
         collect block.Code
@@ -1126,7 +1148,7 @@ module IrVerifier =
                     | IrOperation.ForList(_, _, _, innerBlock) -> collect innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock.Code @ collect noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock.Code @ collect errorBlock.Code
-                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (snd >> fun caseBlock -> collect caseBlock.Code)
+                    | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.collect (fun (_, _, caseBlock) -> collect caseBlock.Code)
                     | _ -> []
                 direct @ nested)
         collect block.Code

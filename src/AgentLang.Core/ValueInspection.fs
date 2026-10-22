@@ -177,7 +177,7 @@ module ValueInspection =
         | OptionValue _ -> "Option"
         | ResultValue _ -> "Result"
         | RecordValue(name, _) -> if isNull name then "record with null name" else $"record {name}"
-        | EnumValue(typeName, caseName) -> if isNull typeName || isNull caseName then "enum with null identity" else $"enum {typeName}.{caseName}"
+        | EnumValue(typeName, caseName, _) -> if isNull typeName || isNull caseName then "enum with null identity" else $"enum {typeName}.{caseName}"
         | NamedValue(name, _) -> if isNull name then "scalar with null name" else $"scalar {name}"
 
     let private typeNameAndKind = function
@@ -452,7 +452,7 @@ module ValueInspection =
                     fail "VALUE_NOMINAL_KIND_MISMATCH" "Scalar value name resolves to an enum type in the verified snapshot." path [ "scalar nominal type" ] [ "enum nominal type" ]
                 | IrScalarDefinition _ ->
                     fail "VALUE_TYPE_MISMATCH" "Scalar value name does not match its declared snapshot type." path [ expectedName ] [ if isNull actualName then "<null>" else actualName ]
-            | TNamed expectedName, EnumValue(actualName, caseName) ->
+            | TNamed expectedName, EnumValue(actualName, caseName, payload) ->
                 let key, definition = nominalInfo path expectedName
                 match definition with
                 | IrEnumDefinition enumDefinition when actualName = expectedName ->
@@ -466,6 +466,17 @@ module ValueInspection =
                     addString budget path node "case" (jsonDepth + 1) caseName
                     let (ProgramTypeKey typeKey) = key
                     addInt budget path node "typeKey" (jsonDepth + 1) typeKey
+                    // A payload case carries its value (report 306); a bare case has none.
+                    let declared = enumDefinition.CasePayloads[List.findIndex ((=) caseName) enumDefinition.Cases]
+                    match declared, payload with
+                    | None, None -> ()
+                    | Some payloadType, Some payloadValue ->
+                        let payloadPath = path + ".payload"
+                        let payloadLangType = toLangType payloadPath 0 payloadType
+                        addChild budget path node "payloadType" (typeNode (payloadPath + ".type") (jsonDepth + 1) 0 payloadLangType)
+                        addChild budget path node "payload" (valueNode payloadPath (jsonDepth + 1) (valueDepth + 1) payloadLangType payloadValue)
+                    | Some _, None -> fail "VALUE_ENUM_PAYLOAD_MISSING" "Enum value lacks the payload its case declares." path [ "payload" ] [ "none" ]
+                    | None, Some _ -> fail "VALUE_ENUM_PAYLOAD_UNEXPECTED" "Enum value carries a payload its case does not declare." path [ "no payload" ] [ "payload" ]
                     node :> JsonNode
                 | IrRecordDefinition _ ->
                     fail "VALUE_NOMINAL_KIND_MISMATCH" "Enum value name resolves to a record type in the verified snapshot." path [ "enum nominal type" ] [ "record nominal type" ]

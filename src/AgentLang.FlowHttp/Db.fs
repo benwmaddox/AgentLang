@@ -53,7 +53,7 @@ module Db =
         RecordValue(
             "DbValue",
             Map.ofList
-                [ "kind", EnumValue("DbValueKind", kind)
+                [ "kind", EnumValue("DbValueKind", kind, None)
                   "int-value", IntValue intValue
                   "text-value", StringValue text
                   "blob-value", BytesValue blob ])
@@ -104,15 +104,15 @@ module Db =
                             match parameter with
                             | RecordValue("DbValue", fields) ->
                                 match fields["kind"] with
-                                | EnumValue(_, "int-value") ->
+                                | EnumValue(_, "int-value", None) ->
                                     match fields["int-value"] with
                                     | IntValue value -> raw.sqlite3_bind_int64(statement, position, value)
                                     | _ -> invalidOp "DbValue.int-value"
-                                | EnumValue(_, "text-value") ->
+                                | EnumValue(_, "text-value", None) ->
                                     match fields["text-value"] with
                                     | StringValue value -> raw.sqlite3_bind_text(statement, position, value)
                                     | _ -> invalidOp "DbValue.text-value"
-                                | EnumValue(_, "blob-value") ->
+                                | EnumValue(_, "blob-value", None) ->
                                     match fields["blob-value"] with
                                     | BytesValue value -> raw.sqlite3_bind_blob(statement, position, ReadOnlySpan<byte>(value))
                                     | _ -> invalidOp "DbValue.blob-value"

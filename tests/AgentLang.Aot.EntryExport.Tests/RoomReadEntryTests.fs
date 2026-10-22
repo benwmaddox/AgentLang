@@ -70,7 +70,7 @@ module RoomReadEntryTests =
           SetScenario: Scenario -> unit
           Calls: unit -> ProviderCall list }
 
-    let private dbError = EnumValue("DbError", "unavailable")
+    let private dbError = EnumValue("DbError", "unavailable", None)
 
     let private resultValue okType value =
         ResultValue(okType, TNamed "DbError", value)
@@ -89,8 +89,8 @@ module RoomReadEntryTests =
             Map.ofList
                 [ "id", NamedValue("UserId", IntValue 7L)
                   "name", StringValue(if role = "bot" then "reader-bot" else "room-reader")
-                  "role", EnumValue("Role", role)
-                  "status", EnumValue("AuthUserStatus", "active") ])
+                  "role", EnumValue("Role", role, None)
+                  "status", EnumValue("AuthUserStatus", "active", None) ])
 
     let private sessionRow lastActiveAt =
         RecordValue(
@@ -111,7 +111,7 @@ module RoomReadEntryTests =
             Map.ofList
                 [ "id", NamedValue("RoomId", IntValue 101L)
                   "name", optionValue TString (Some(StringValue "General"))
-                  "kind", EnumValue("RoomKind", "open")
+                  "kind", EnumValue("RoomKind", "open", None)
                   "creator-id", NamedValue("UserId", IntValue 7L)
                   "created-at", StringValue "2026-01-01T00:00:00Z"
                   "updated-at", StringValue "2026-01-01T00:00:00Z" ])
@@ -238,8 +238,8 @@ module RoomReadEntryTests =
         RecordValue(
             "CampfireHttpRequest",
             Map.ofList
-                [ "route", EnumValue("HttpRoute", scenario.Route)
-                  "method", EnumValue("RequestMethod", scenario.Method)
+                [ "route", EnumValue("HttpRoute", scenario.Route, None)
+                  "method", EnumValue("RequestMethod", scenario.Method, None)
                   "room-id", NamedValue("RoomId", IntValue 101L)
                   "now", NamedValue("UtcInstant", IntValue 3_600_000_001L)
                   "remote-ip", NamedValue("RemoteIp", StringValue "198.51.100.9")
@@ -288,7 +288,7 @@ module RoomReadEntryTests =
             | IrOperation.If(thenBlock, elseBlock) -> callsInBlock thenBlock @ callsInBlock elseBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> callsInBlock someBlock @ callsInBlock noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> callsInBlock okBlock @ callsInBlock errorBlock
-            | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> callsInBlock)
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> callsInBlock caseBlock)
             | IrOperation.MakeRecord(call, _, validator)
             | IrOperation.WrapScalar(call, _, validator) -> call :: Option.toList validator
             | IrOperation.GetRecordField(call, _, _)

@@ -607,7 +607,7 @@ module LlvmAot =
                     visitBlock okBlock
                     visitBlock errorBlock
                 | IrOperation.MatchEnum(_, cases) ->
-                    cases |> List.iter (snd >> visitBlock)
+                    cases |> List.iter (fun (_, _, caseBlock) -> visitBlock caseBlock)
                 | IrOperation.ForRange(_, inner)
                 | IrOperation.ForList(_, _, _, inner) -> visitBlock inner
                 | IrOperation.AssignLocal _

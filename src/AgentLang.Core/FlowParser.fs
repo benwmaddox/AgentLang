@@ -834,10 +834,17 @@ module FlowParser =
                     setCaseKind "enum" label
                     if enumCases |> Seq.exists (fun caseValue -> caseValue.Name = label.Text) then
                         fail state.File label.Line label.Column label.Text.Length "FLOW_MATCH_CASE_DUPLICATE" $"Enum match contains case '{label.Text}' more than once."
-                    let block, bare = parseBlockCase state label
+                    let binding =
+                        if peek state <> Some "=>" then
+                            let name = expectIdentifier state
+                            Some(name.Text, sourceSpan state.File name (Some name))
+                        else None
+                    let lexical = match binding with Some(name, _) -> Set.add name state.LexicalLocals | None -> state.LexicalLocals
+                    let block, bare = withLexicalLocals state lexical (fun () -> parseBlockCase state label)
                     enumCases.Add
                         { Name = label.Text
                           NameSpan = sourceSpan state.File label (Some label)
+                          Binding = binding
                           Statements = block.Statements
                           Span = block.Span }
                     bare
@@ -1745,6 +1752,7 @@ module FlowParser =
             fail state.File nameToken.Line nameToken.Column nameToken.Text.Length "FLOW_TYPE_NAME_INVALID" "Enum names must be identifiers and cannot shadow built-in types or reserved type variables."
         expect state "{" |> ignore
         let caseNames = ResizeArray<string>()
+        let payloads = ResizeArray<LangType option>()
         let seen = HashSet<string>(StringComparer.Ordinal)
         while not (atEnd state) && peek state <> Some "}" do
             // Cases are bare names (report 272); the older `case name` spelling stays readable.
@@ -1754,13 +1762,23 @@ module FlowParser =
                 fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_RESERVED_CASE" "Enum case names cannot use the reserved Option and Result labels."
             if not (seen.Add caseToken.Text) then
                 fail state.File caseToken.Line caseToken.Column caseToken.Text.Length "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseToken.Text}' is repeated."
+            // `case-name(Type)`: the case carries one payload value (report 306).
+            let payload =
+                if peek state = Some "(" then
+                    consume state |> ignore
+                    let payloadType = parseType state
+                    expect state ")" |> ignore
+                    Some payloadType
+                else None
             requireNewlineOrSeparator state "}" "FLOW_ENUM_CASE_SEMICOLON" "Separate Flow enum cases with a newline or ';'."
             caseNames.Add caseToken.Text
+            payloads.Add payload
         let endToken = expect state "}"
         if caseNames.Count = 0 then
             fail state.File startToken.Line startToken.Column (endToken.Offset + endToken.Text.Length - startToken.Offset) "FLOW_ENUM_EMPTY" "A Flow enum must declare at least one case."
         { Name = nameToken.Text
           Cases = List.ofSeq caseNames
+          Payloads = List.ofSeq payloads
           SourceText = sourceSlice state startToken endToken
           Span = sourceSpan state.File startToken (Some endToken) }
 

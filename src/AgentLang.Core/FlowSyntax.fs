@@ -219,6 +219,8 @@ and FlowPayloadCase =
 and FlowEnumCase =
     { Name: string
       NameSpan: SourceSpan
+      /// `case-name value =>`: the local the case's payload binds to (report 306).
+      Binding: (string * SourceSpan) option
       Statements: FlowStatement list
       Span: SourceSpan }
 
@@ -756,7 +758,10 @@ module FlowSource =
         | FlowExpression.MatchEnum(scrutinee, cases, span) ->
             requireFlow2 syntaxVersion None (Some span) "Enum matching"
             renderMatchBlock syntaxVersion locals depth scrutinee
-                (cases |> List.collect (fun caseValue -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name locals caseValue.Statements))
+                (cases |> List.collect (fun caseValue ->
+                    match caseValue.Binding with
+                    | Some(name, _) -> renderMatchCase syntaxVersion (depth + 1) (caseValue.Name + " " + name) (Set.add name locals) caseValue.Statements
+                    | None -> renderMatchCase syntaxVersion (depth + 1) caseValue.Name locals caseValue.Statements))
     /// Renders html"…" text parts (even positions) and holes (odd positions).
     /// Multi-line text uses html"""…""" with every line, including the closing
     /// delimiter, at the same relative indentation, so callers can re-indent the
@@ -1206,7 +1211,13 @@ module FlowSource =
                     Diagnostics.raiseError "FLOW_ENUM_DUPLICATE_CASE" $"Enum case '{caseName}' is repeated." (Some definition.Name) (Some definition.Span) [] [ caseName ]
             else
                 Diagnostics.raiseError "FLOW_ENUM_CASE_NAME_INVALID" "Enum cases must use non-reserved identifiers." (Some definition.Name) (Some definition.Span) [ "case-name" ] [ caseName ]
-        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (definition.Cases |> List.map (fun caseName -> "    " + caseName)) @ [ "}" ])
+        if definition.Payloads.Length <> definition.Cases.Length then
+            Diagnostics.raiseError "FLOW_ENUM_PAYLOADS" "An enum gives one payload entry per case." (Some definition.Name) (Some definition.Span) [ string definition.Cases.Length ] [ string definition.Payloads.Length ]
+        let caseLine caseName payload =
+            match payload with
+            | Some payloadType -> "    " + caseName + "(" + Types.format payloadType + ")"
+            | None -> "    " + caseName
+        String.concat "\n" ([ "enum " + definition.Name + " {" ] @ (List.map2 caseLine definition.Cases definition.Payloads) @ [ "}" ])
 
     let renderEnum definition = renderEnumWithVersion 2 definition
 

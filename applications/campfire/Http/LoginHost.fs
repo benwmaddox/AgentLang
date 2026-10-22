@@ -47,7 +47,7 @@ module LoginHost =
                             result next
                         | false, _ when counters.Count >= MaximumKeys -> result 11L
                         | false, _ when now > Int64.MaxValue - WindowMicroseconds ->
-                            Ok [ ResultValue(TInt, TNamed "DbError", Error(EnumValue("DbError", "invalid-input"))) ]
+                            Ok [ ResultValue(TInt, TNamed "DbError", Error(EnumValue("DbError", "invalid-input", None))) ]
                         | false, _ ->
                             counters.Add(ip, (1L, now + WindowMicroseconds))
                             result 1L)

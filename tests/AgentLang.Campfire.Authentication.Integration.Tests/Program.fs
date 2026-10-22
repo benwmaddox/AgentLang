@@ -31,7 +31,7 @@ type private ProviderProbe(path: string, provider: HostOperationProvider) =
                     | Some("campfire.sessions.find-by-token", [ NamedValue("SessionToken", StringValue "user-error-after-refresh-token") ]) -> true
                     | _ -> false)
             if injectedUserFailure then
-                Ok [ ResultValue(TOption(TNamed "AuthUser"), TNamed "DbError", Error(EnumValue("DbError", "unavailable"))) ]
+                Ok [ ResultValue(TOption(TNamed "AuthUser"), TNamed "DbError", Error(EnumValue("DbError", "unavailable", None))) ]
             else
                 provider.Invoke operationId values
         let dispose () =
@@ -496,7 +496,7 @@ module Program =
 
         let expectUnavailable label result =
             match result with
-            | Ok [ ResultValue(TUnit, TNamed "DbError", Error(EnumValue("DbError", "unavailable"))) ] -> check true label
+            | Ok [ ResultValue(TUnit, TNamed "DbError", Error(EnumValue("DbError", "unavailable", None))) ] -> check true label
             | other -> failwith $"{label}: expected structured DbError.Unavailable, got {other}"
 
         let sessionValue =
@@ -547,8 +547,8 @@ module Program =
                 | other -> failwith $"user lookup contract failed: {other}"
         match userValue with
         | OptionValue(TNamed "AuthUser", Some(RecordValue("AuthUser", fields))) ->
-            equal (Some(EnumValue("Role", "member"))) (fields.TryFind "role") "user role maps into shared Role enum"
-            equal (Some(EnumValue("AuthUserStatus", "deactivated"))) (fields.TryFind "status") "user status maps into closed AuthUserStatus enum without a filter"
+            equal (Some(EnumValue("Role", "member", None))) (fields.TryFind "role") "user role maps into shared Role enum"
+            equal (Some(EnumValue("AuthUserStatus", "deactivated", None))) (fields.TryFind "status") "user status maps into closed AuthUserStatus enum without a filter"
         | other -> failwith $"user lookup returned an unexpected Option payload: {other}"
 
         let botValue =
@@ -558,8 +558,8 @@ module Program =
                 | other -> failwith $"bot lookup contract failed: {other}"
         match botValue with
         | OptionValue(TNamed "AuthUser", Some(RecordValue("AuthUser", fields))) ->
-            equal (Some(EnumValue("Role", "bot"))) (fields.TryFind "role") "active bot lookup preserves bot role"
-            equal (Some(EnumValue("AuthUserStatus", "active"))) (fields.TryFind "status") "active bot lookup preserves active status"
+            equal (Some(EnumValue("Role", "bot", None))) (fields.TryFind "role") "active bot lookup preserves bot role"
+            equal (Some(EnumValue("AuthUserStatus", "active", None))) (fields.TryFind "status") "active bot lookup preserves active status"
         | other -> failwith $"bot lookup returned an unexpected Option payload: {other}"
 
         match provider.Invoke (id "campfire.bans.ip-banned?") [ NamedValue("RemoteIp", StringValue "203.0.113.99") ] with
@@ -573,7 +573,7 @@ module Program =
                 | other -> failwith $"room lookup contract failed: {other}"
         match roomValue with
         | OptionValue(TNamed "RoomRow", Some(RecordValue("RoomRow", fields))) ->
-            equal (Some(EnumValue("RoomKind", "open"))) (fields.TryFind "kind") "room lookup preserves closed room kind"
+            equal (Some(EnumValue("RoomKind", "open", None))) (fields.TryFind "kind") "room lookup preserves closed room kind"
         | other -> failwith $"room lookup returned an unexpected Option payload: {other}"
 
         let destroySession = id "campfire.sessions.destroy"

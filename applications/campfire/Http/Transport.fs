@@ -95,7 +95,7 @@ module Transport =
                 with _ -> false
 
     let private formValue (request: HttpRequest) = task {
-        let error caseName = ResultValue(TOption(TNamed "HttpMessageInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName)))
+        let error caseName = ResultValue(TOption(TNamed "HttpMessageInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName, None)))
         let ok value = ResultValue(TOption(TNamed "HttpMessageInput"), TNamed "HttpFormError", Ok(OptionValue(TNamed "HttpMessageInput", value)))
         let mediaType = if isNull request.ContentType then "" else request.ContentType.Split(';', 2) |> Array.head |> fun value -> value.Trim()
         if not (mediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase)) then
@@ -126,7 +126,7 @@ module Transport =
     }
 
     let private loginFormError caseName =
-        ResultValue(TOption(TNamed "HttpLoginInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName)))
+        ResultValue(TOption(TNamed "HttpLoginInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName, None)))
 
     let private loginFormOk value =
         ResultValue(TOption(TNamed "HttpLoginInput"), TNamed "HttpFormError", Ok(OptionValue(TNamed "HttpLoginInput", value)))
@@ -171,7 +171,7 @@ module Transport =
     }
 
     let private logoutFormValue (request: HttpRequest) = task {
-        let error caseName = ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName)))
+        let error caseName = ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Error(EnumValue("HttpFormError", caseName, None)))
         let ok endpoint =
             let input = endpoint |> Option.map (fun value -> RecordValue("HttpLogoutInput", Map.ofList [ "push-subscription-endpoint", stringOption (Some value) ]))
             ResultValue(TOption(TNamed "HttpLogoutInput"), TNamed "HttpFormError", Ok(OptionValue(TNamed "HttpLogoutInput", input)))
@@ -238,8 +238,8 @@ module Transport =
                 if isNull value then None
                 else try Some(value.GetValue<string>()) with _ -> None)
         return RecordValue("CampfireHttpRequest", Map.ofList
-            [ "route", EnumValue("HttpRoute", route)
-              "method", EnumValue("RequestMethod", methodName)
+            [ "route", EnumValue("HttpRoute", route, None)
+              "method", EnumValue("RequestMethod", methodName, None)
               "room-id", NamedValue("RoomId", IntValue roomId)
               "now", NamedValue("UtcInstant", IntValue instant)
               "remote-ip", NamedValue("RemoteIp", StringValue remote)
@@ -357,7 +357,7 @@ module Transport =
         | RecordValue("CampfireHttpRequest", fields) ->
             let tooLarge name =
                 match Map.tryFind name fields with
-                | Some(ResultValue(_, _, Error(EnumValue("HttpFormError", "body-too-large")))) -> true
+                | Some(ResultValue(_, _, Error(EnumValue("HttpFormError", "body-too-large", None)))) -> true
                 | _ -> false
             tooLarge "message-form" || tooLarge "login-form" || tooLarge "logout-form"
         | _ -> false

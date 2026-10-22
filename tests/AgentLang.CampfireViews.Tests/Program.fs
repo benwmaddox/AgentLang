@@ -52,7 +52,7 @@ let private roomValue (id: int64) (name: string option) =
     RecordValue("RoomRow", Map.ofList [
         "id", NamedValue("RoomId", IntValue id)
         "name", OptionValue(TString, name |> Option.map StringValue)
-        "kind", EnumValue("RoomKind", "closed")
+        "kind", EnumValue("RoomKind", "closed", None)
         "creator-id", NamedValue("UserId", IntValue 1L)
         "created-at", StringValue "2026-01-01T00:00:00Z"
         "updated-at", StringValue "2026-01-01T00:00:00Z" ])

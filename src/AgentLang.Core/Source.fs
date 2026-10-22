@@ -104,8 +104,8 @@ module Source =
         | MatchEnum(cases, _) ->
             let lines = ResizeArray<string>()
             lines.Add(prefix + "match-enum")
-            for caseName, body in cases do
-                lines.Add(prefix + caseName)
+            for caseName, binding, body in cases do
+                lines.Add(prefix + caseName + (match binding with Some name -> " " + name | None -> ""))
                 renderBodyAt (depth + 1) body |> List.iter lines.Add
             lines.Add(prefix + "end")
             String.concat "\n" lines
@@ -186,7 +186,7 @@ module Source =
             | ForList(name, index, body, span) -> ForList(name, index, rewrite body, span)
             | MatchOption(name, someBranch, noneBranch, span) -> MatchOption(name, rewrite someBranch, rewrite noneBranch, span)
             | MatchResult(okName, errorName, okBranch, errorBranch, span) -> MatchResult(okName, errorName, rewrite okBranch, rewrite errorBranch, span)
-            | MatchEnum(cases, span) -> MatchEnum(cases |> List.map (fun (caseName, body) -> caseName, rewrite body), span)
+            | MatchEnum(cases, span) -> MatchEnum(cases |> List.map (fun (caseName, binding, body) -> caseName, binding, rewrite body), span)
             | expression -> expression)
 
     /// Rename a definition header without implicitly changing any body references.

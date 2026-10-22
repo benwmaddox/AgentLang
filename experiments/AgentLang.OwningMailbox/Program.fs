@@ -187,7 +187,7 @@ let rec private blockInstructionCount (block: IrBlock) =
           | IrOperation.If(thenBlock, elseBlock) -> blockInstructionCount thenBlock + blockInstructionCount elseBlock
           | IrOperation.MatchOption(_, someBlock, noneBlock) -> blockInstructionCount someBlock + blockInstructionCount noneBlock
           | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> blockInstructionCount okBlock + blockInstructionCount errorBlock
-          | IrOperation.MatchEnum(_, cases) -> cases |> List.sumBy (snd >> blockInstructionCount)
+          | IrOperation.MatchEnum(_, cases) -> cases |> List.sumBy (fun (_, _, caseBlock) -> blockInstructionCount caseBlock)
           | _ -> 0)
 
 let private functionForName (program: VerifiedIrProgram) (name: string) =

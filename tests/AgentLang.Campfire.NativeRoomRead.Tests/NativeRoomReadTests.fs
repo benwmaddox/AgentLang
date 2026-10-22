@@ -420,8 +420,8 @@ module NativeRoomReadTests =
         RecordValue(
             "CampfireHttpRequest",
             Map.ofList
-                [ "route", EnumValue("HttpRoute", "room-show")
-                  "method", EnumValue("RequestMethod", "get")
+                [ "route", EnumValue("HttpRoute", "room-show", None)
+                  "method", EnumValue("RequestMethod", "get", None)
                   "room-id", NamedValue("RoomId", IntValue testCase.RoomId)
                   "now", NamedValue("UtcInstant", IntValue(unixMicroseconds testCase.RequestNow))
                   "remote-ip", NamedValue("RemoteIp", StringValue "198.51.100.9")
@@ -453,7 +453,7 @@ module NativeRoomReadTests =
     let private withRequestMethod request methodName =
         match request with
         | RecordValue("CampfireHttpRequest", fields) ->
-            RecordValue("CampfireHttpRequest", fields.Add("method", EnumValue("RequestMethod", methodName)))
+            RecordValue("CampfireHttpRequest", fields.Add("method", EnumValue("RequestMethod", methodName, None)))
         | _ -> failwith "room-read request had the wrong record type"
 
     let private createCookieService () =
@@ -584,7 +584,7 @@ module NativeRoomReadTests =
                 | Ok child -> let encoded = encode okType child in let bytes = Array.zeroCreate(8 + encoded.Length) in Array.Copy(encoded, 0, bytes, 8, encoded.Length); bytes
                 | Error child -> let encoded = encode errorType child in let bytes = Array.zeroCreate(8 + encoded.Length) in writeI64 bytes 0 1L; Array.Copy(encoded, 0, bytes, 8, encoded.Length); bytes
             | IrNominal _, NamedValue(_, nested) -> encode (match nested with IntValue _ -> IrInt | BoolValue _ -> IrBool | FloatValue _ -> IrFloat | StringValue _ -> IrString | _ -> failwith "unsupported scalar input") nested
-            | IrNominal _, EnumValue(typeName, caseName) ->
+            | IrNominal _, EnumValue(typeName, caseName, None) ->
                 let itemLayout = layoutFor itemType
                 if itemLayout.TypeName <> typeName then failwith "enum input type differs from its layout"
                 let tag = enumCaseTag typeName caseName
@@ -1248,7 +1248,7 @@ module NativeRoomReadTests =
                         check assertions $"{optimizationName}/{testCase.Name}: full typed interpreter/native values agree" (sameValue actual.Values expected)
                         let fields = outputFields expected
                         check assertions $"{optimizationName}/{testCase.Name}: expected status" (fields.TryFind "status" = Some(IntValue testCase.ExpectedStatus))
-                        check assertions $"{optimizationName}/{testCase.Name}: expected view" (fields.TryFind "view" = Some(EnumValue("HttpView", testCase.ExpectedView)))
+                        check assertions $"{optimizationName}/{testCase.Name}: expected view" (fields.TryFind "view" = Some(EnumValue("HttpView", testCase.ExpectedView, None)))
                         let refreshPresent =
                             match fields.TryFind "refresh-session-token" with
                             | Some(OptionValue(_, Some _)) -> true
@@ -1312,7 +1312,7 @@ module NativeRoomReadTests =
                     let actualUnsafe = native.ExecuteWithNativeHostContext([ unsafeRequest ], 4 * 1024 * 1024, 4 * 1024 * 1024, context)
                     let unsafeFields = outputFields expectedUnsafe
                     check assertions $"{optimizationName}/method-unsafe: full typed interpreter/native values agree" (sameValue actualUnsafe.Values expectedUnsafe)
-                    check assertions $"{optimizationName}/method-unsafe: rejected before room read" (unsafeFields.TryFind "status" = Some(IntValue 500L) && unsafeFields.TryFind "view" = Some(EnumValue("HttpView", "empty")))
+                    check assertions $"{optimizationName}/method-unsafe: rejected before room read" (unsafeFields.TryFind "status" = Some(IntValue 500L) && unsafeFields.TryFind "view" = Some(EnumValue("HttpView", "empty", None)))
                     if optimization = LlvmOptimization.O0 then
                         progress "O0: checking native SQLite connection settings and WAL snapshot behavior"
                         verifyWalSnapshots assertions nativeDatabase handle native.LibraryPath context

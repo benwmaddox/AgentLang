@@ -382,7 +382,7 @@ module Program =
 
         match provider.Invoke roomPageId [ NamedValue("UserId", IntValue 1L); OptionValue(TNamed "RoomId", None); IntValue 10L ] with
         | Ok [ ResultValue(TList(TNamed "RoomRow"), TNamed "DbError", Ok(ListValue(TNamed "RoomRow", [ RecordValue("RoomRow", fields) ]))) ] ->
-            equal (Some(EnumValue("RoomKind", "open"))) (fields.TryFind "kind") "adapter preserves the closed room kind"
+            equal (Some(EnumValue("RoomKind", "open", None))) (fields.TryFind "kind") "adapter preserves the closed room kind"
             equal (Some(NamedValue("RoomId", IntValue 1L))) (fields.TryFind "id") "adapter preserves nominal room IDs"
         | other -> failwith $"adapter did not return the declared typed room-page result: {other}"
 

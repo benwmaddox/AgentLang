@@ -536,12 +536,14 @@ let private testClosedEnumVerification () =
         IrEnumDefinition
             { TypeKey = enumKey
               TypeName = "Color"
-              Cases = [ "red"; "green"; "blue" ] }
+              Cases = [ "red"; "green"; "blue" ]
+              CasePayloads = [ None; None; None ] }
     let otherEnumDefinition =
         IrEnumDefinition
             { TypeKey = otherEnumKey
               TypeName = "Shade"
-              Cases = [ "light"; "dark" ] }
+              Cases = [ "light"; "dark" ]
+              CasePayloads = [ None; None ] }
     let recordDefinition =
         IrRecordDefinition
             { TypeKey = recordKey
@@ -607,7 +609,7 @@ let private testClosedEnumVerification () =
     let matchBody =
         block [ enumType ] Map.empty
             [ { Site = matchSite
-                Operation = IrOperation.MatchEnum(enumKey, matchBranches |> List.map (fun (index, branch, _) -> index, branch)) } ]
+                Operation = IrOperation.MatchEnum(enumKey, matchBranches |> List.map (fun (index, branch, _) -> index, None, branch)) } ]
             [ IrInt ] matchLocalTypes
     let matchFunction =
         functionDefinition matchWord 1 [ enumType ] [ IrInt ] noEffects noEffects
@@ -676,7 +678,7 @@ let private testClosedEnumVerification () =
     let withMatchCases cases =
         let changedBody =
             { matchFunction.FunctionBody with
-                Code = [ { Site = matchSite; Operation = IrOperation.MatchEnum(enumKey, cases) } ] }
+                Code = [ { Site = matchSite; Operation = IrOperation.MatchEnum(enumKey, cases |> List.map (fun (index, branch) -> index, None, branch)) } ] }
         let changedSites =
             seq {
                 yield matchSite
@@ -755,7 +757,7 @@ let private testClosedEnumVerification () =
     let effectFunction =
         functionDefinition effectWord 1 [ enumType ] [ IrInt ] (Set.singleton IrEffect.ConsoleWrite) (Set.singleton IrEffect.ConsoleWrite) Map.empty
             (block [ enumType ] Map.empty
-                [ { Site = effectMatchSite; Operation = IrOperation.MatchEnum(enumKey, effectBranches) } ]
+                [ { Site = effectMatchSite; Operation = IrOperation.MatchEnum(enumKey, effectBranches |> List.map (fun (index, branch) -> index, None, branch)) } ]
                 [ IrInt ] Map.empty)
     let effectSources =
         [ yield effectMatchSite, effectMatchSource
@@ -847,14 +849,15 @@ let private testFiniteCoverageIndependentInputsAndNominality () =
         IrEnumDefinition
             { TypeKey = key
               TypeName = name
-              Cases = [ "ready"; "done" ] }
+              Cases = [ "ready"; "done" ]
+              CasePayloads = [ None; None ] }
     let enums = [ enumDefinition firstKey "SignalA"; enumDefinition secondKey "SignalB" ]
 
     let signature = [ IrBool; IrBool; firstType ]
     let inspected, owner = verifiedFiniteFixture Map.empty enums signature
     let independentRows =
-        [ [ BoolValue false; BoolValue false; EnumValue("SignalA", "ready") ]
-          [ BoolValue true; BoolValue true; EnumValue("SignalA", "done") ] ]
+        [ [ BoolValue false; BoolValue false; EnumValue("SignalA", "ready", None) ]
+          [ BoolValue true; BoolValue true; EnumValue("SignalA", "done", None) ] ]
     let report = FiniteCoverage.analyze inspected owner independentRows []
     for index in 0..1 do
         let parameter = finitePosition "independent Bool parameter" report.Inputs index
@@ -868,8 +871,8 @@ let private testFiniteCoverageIndependentInputsAndNominality () =
     let nominalSignature = [ firstType; secondType ]
     let nominalProgram, nominalOwner = verifiedFiniteFixture Map.empty enums nominalSignature
     let wrongNominalRows =
-        [ [ EnumValue("SignalA", "ready"); EnumValue("SignalA", "ready") ]
-          [ EnumValue("SignalA", "done"); EnumValue("SignalA", "done") ] ]
+        [ [ EnumValue("SignalA", "ready", None); EnumValue("SignalA", "ready", None) ]
+          [ EnumValue("SignalA", "done", None); EnumValue("SignalA", "done", None) ] ]
     let nominalReport = FiniteCoverage.analyze nominalProgram nominalOwner wrongNominalRows []
     let firstParameter = finitePosition "first enum identity" nominalReport.Inputs 0
     let secondParameter = finitePosition "second enum identity" nominalReport.Inputs 1

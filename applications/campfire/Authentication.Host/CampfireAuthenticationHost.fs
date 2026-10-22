@@ -173,27 +173,27 @@ module CampfireAuthenticationHost =
     let private remoteIpValue (RemoteIp value) = NamedValue("RemoteIp", StringValue value)
 
     let private roleValue = function
-        | AuthUserRole.Member -> EnumValue("Role", "member")
-        | AuthUserRole.Administrator -> EnumValue("Role", "administrator")
-        | AuthUserRole.Bot -> EnumValue("Role", "bot")
+        | AuthUserRole.Member -> EnumValue("Role", "member", None)
+        | AuthUserRole.Administrator -> EnumValue("Role", "administrator", None)
+        | AuthUserRole.Bot -> EnumValue("Role", "bot", None)
         | _ -> mismatch ()
 
     let private statusValue = function
-        | AuthUserStatus.Active -> EnumValue("AuthUserStatus", "active")
-        | AuthUserStatus.Deactivated -> EnumValue("AuthUserStatus", "deactivated")
-        | AuthUserStatus.Banned -> EnumValue("AuthUserStatus", "banned")
+        | AuthUserStatus.Active -> EnumValue("AuthUserStatus", "active", None)
+        | AuthUserStatus.Deactivated -> EnumValue("AuthUserStatus", "deactivated", None)
+        | AuthUserStatus.Banned -> EnumValue("AuthUserStatus", "banned", None)
         | _ -> mismatch ()
 
     let private roomKindValue = function
-        | RoomKind.Open -> EnumValue("RoomKind", "open")
-        | RoomKind.Closed -> EnumValue("RoomKind", "closed")
-        | RoomKind.Direct -> EnumValue("RoomKind", "direct")
+        | RoomKind.Open -> EnumValue("RoomKind", "open", None)
+        | RoomKind.Closed -> EnumValue("RoomKind", "closed", None)
+        | RoomKind.Direct -> EnumValue("RoomKind", "direct", None)
 
     let private dbErrorValue = function
-        | DbError.Unavailable -> EnumValue("DbError", "unavailable")
-        | DbError.NotFound -> EnumValue("DbError", "not-found")
-        | DbError.ConstraintConflict -> EnumValue("DbError", "constraint-conflict")
-        | DbError.InvalidInput -> EnumValue("DbError", "invalid-input")
+        | DbError.Unavailable -> EnumValue("DbError", "unavailable", None)
+        | DbError.NotFound -> EnumValue("DbError", "not-found", None)
+        | DbError.ConstraintConflict -> EnumValue("DbError", "constraint-conflict", None)
+        | DbError.InvalidInput -> EnumValue("DbError", "invalid-input", None)
 
     let private authUserValue (user: AuthUser) =
         RecordValue(

@@ -37,7 +37,8 @@ type Value =
     | OptionValue of LangType * Value option
     | ResultValue of LangType * LangType * Result<Value, Value>
     | RecordValue of string * Map<string, Value>
-    | EnumValue of string * string
+    /// An enum case; the payload is `Some` exactly when the case declares one (report 306).
+    | EnumValue of string * string * Value option
     | NamedValue of string * Value
 
 type Literal =
@@ -101,7 +102,8 @@ type Expr =
     | Compact of Expr list * SourceSpan
     | MatchOption of string * Expr list * Expr list * SourceSpan
     | MatchResult of string * string * Expr list * Expr list * SourceSpan
-    | MatchEnum of (string * Expr list) list * SourceSpan
+    /// Each arm: case name, the local its payload binds to (payload cases only), branch.
+    | MatchEnum of (string * string option * Expr list) list * SourceSpan
     /// Pops one value into an existing local of the same type (Flow `var`).
     | Assign of string * SourceSpan
     /// Pops start and end Ints; runs the body for each index in [start, end).
@@ -167,6 +169,8 @@ type ScalarTypeDefinition =
 type EnumDefinition =
     { Name: string
       Cases: string list
+      /// One entry per case: the type of its single payload value, if any (report 306).
+      Payloads: LangType option list
       SourceText: string
       Span: SourceSpan }
 
@@ -319,7 +323,8 @@ module Types =
             |> List.map (fun (field, value) -> $"{field} = {formatValue value}")
             |> String.concat ", "
             |> sprintf "%s { %s }" name
-        | EnumValue(typeName, caseName) -> $"{typeName}::{caseName}"
+        | EnumValue(typeName, caseName, None) -> $"{typeName}::{caseName}"
+        | EnumValue(typeName, caseName, Some payload) -> $"{typeName}::{caseName}({formatValue payload})"
         | NamedValue(name, value) -> $"{name}({formatValue value})"
 
     let rec literalValue = function
@@ -341,7 +346,7 @@ module Types =
         | OptionValue(itemType, _) -> TOption itemType
         | ResultValue(okType, errorType, _) -> TResult(okType, errorType)
         | RecordValue(name, _) -> TNamed name
-        | EnumValue(name, _) -> TNamed name
+        | EnumValue(name, _, _) -> TNamed name
         | NamedValue(name, _) -> TNamed name
 
 module Diagnostics =

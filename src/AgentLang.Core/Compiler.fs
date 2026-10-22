@@ -669,7 +669,7 @@ module Compiler =
                             | TNamed name -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_ENUM" "Enum match scrutinee must have a declared enum type." (Some wordName) (Some expressionSpan) [ "declared enum" ] [ name ]
                             | actual -> Diagnostics.raiseError "TYPE_MATCH_REQUIRES_ENUM" "Enum match scrutinee must have a declared enum type." (Some wordName) (Some expressionSpan) [ "declared enum" ] [ Types.format actual ]
                         let declaredCases = knownEnums[enumName].Cases
-                        let authoredCases = cases |> List.map fst
+                        let authoredCases = cases |> List.map (fun (name, _, _) -> name)
                         let duplicateCases = authoredCases |> List.groupBy id |> List.choose (fun (name, values) -> if values.Length > 1 then Some name else None)
                         let unknownCases = authoredCases |> List.filter (fun name -> not (List.contains name declaredCases)) |> List.distinct
                         let missingCases = declaredCases |> List.filter (fun name -> not (List.contains name authoredCases))
@@ -677,19 +677,32 @@ module Compiler =
                             Diagnostics.raiseError "TYPE_MATCH_ENUM_CASE_SET" "Enum match must contain every declared case exactly once and no other labels." (Some wordName) (Some expressionSpan)
                                 declaredCases ((authoredCases |> List.distinct) @ (duplicateCases |> List.map (fun name -> "duplicate:" + name)) @ (unknownCases |> List.map (fun name -> "extra:" + name)) @ (missingCases |> List.map (fun name -> "missing:" + name)))
                         let before = stack |> List.take (stack.Length - 1)
-                        let branchBodies = cases |> List.map (fun (_, branch) -> visit before locals branch)
-                        match branchBodies with
+                        let enumDefinition = knownEnums[enumName]
+                        let branchBodies =
+                            cases |> List.map (fun (caseName, binding, branch) ->
+                                // A payload case may bind its payload to a local for its branch (report 306).
+                                let payload = enumDefinition.Payloads[List.findIndex ((=) caseName) declaredCases]
+                                match binding, payload with
+                                | None, _ -> visit before locals branch
+                                | Some bindingName, Some payloadType -> visit before (Map.add bindingName payloadType locals) branch
+                                | Some bindingName, None ->
+                                    Diagnostics.raiseError "TYPE_MATCH_ENUM_BINDING" $"Enum case '{caseName}' has no payload to bind to '{bindingName}'." (Some wordName) (Some expressionSpan) [ $"{caseName} =>" ] [ $"{caseName} {bindingName} =>" ])
+                        // An arm's payload binding is its own local; the arms join on the outer locals.
+                        let outerLocals =
+                            List.zip cases branchBodies
+                            |> List.map (fun ((_, binding, _), body) -> match binding with Some name -> Map.remove name body.ExitLocals | None -> body.ExitLocals)
+                        match List.zip branchBodies outerLocals with
                         | [] -> Diagnostics.raiseError "TYPE_MATCH_ENUM_CASE_SET" "Enum match must contain at least one case." (Some wordName) (Some expressionSpan) declaredCases []
-                        | firstBranch :: remainingBranches ->
-                            for branch in remainingBranches do
+                        | (firstBranch, firstLocals) :: remainingBranches ->
+                            for branch, branchLocals in remainingBranches do
                                 if branch.ExitStack <> firstBranch.ExitStack then
                                     Diagnostics.raiseError "TYPE_MATCH_STACK_MISMATCH" "Every enum match case must leave the same output stack types." (Some wordName) (Some expressionSpan) (firstBranch.ExitStack |> List.map Types.format) (branch.ExitStack |> List.map Types.format)
-                                if branch.ExitLocals <> firstBranch.ExitLocals then
+                                if branchLocals <> firstLocals then
                                     Diagnostics.raiseError "TYPE_MATCH_LOCAL_MISMATCH" "Every enum match case must leave the same outer locals with the same types." (Some wordName) (Some expressionSpan)
-                                        (firstBranch.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
-                                        (branch.ExitLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                                        (firstLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
+                                        (branchLocals |> Map.toList |> List.map (fun (name, ty) -> $"{name}:{Types.format ty}"))
                             childBodies <- branchBodies
-                            firstBranch.ExitStack, firstBranch.ExitLocals
+                            firstBranch.ExitStack, firstLocals
                 nodes.Add
                     { SourceExpression = expression
                       InputStack = inputStack
@@ -816,7 +829,7 @@ module Compiler =
                     Set.union found (Set.union (collect thenBranch) (collect elseBranch))
                 | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                     | MatchResult(_, _, thenBranch, elseBranch, _) -> Set.union found (Set.union (collect thenBranch) (collect elseBranch))
-                    | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
+                    | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, _, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
         collect body
 
@@ -902,7 +915,7 @@ module Compiler =
                 | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                     "match-result\nok " + okName + "\n" + sourceExpressions okBranch + "\nerror " + errorName + "\n" + sourceExpressions errorBranch + "\nend"
                 | MatchEnum(cases, _) ->
-                    "match-enum\n" + (cases |> List.map (fun (caseName, body) -> caseName + "\n" + sourceExpressions body) |> String.concat "\n") + "\nend"
+                    "match-enum\n" + (cases |> List.map (fun (caseName, binding, body) -> caseName + (match binding with Some name -> " " + name | None -> "") + "\n" + sourceExpressions body) |> String.concat "\n") + "\nend"
             String.concat "\n" [ current; sourceExpressions rest ] |> fun text -> text.Trim('\n')
 
     /// Complete source snapshot used by compiler lowering. Every effective
@@ -1243,8 +1256,10 @@ module Compiler =
                 | MatchEnum(cases, span) ->
                     appendText "match-enum"
                     appendInt cases.Length
-                    for caseName, branch in cases do
+                    for caseName, binding, branch in cases do
                         appendText caseName
+                        // Only a payload binding adds text, so arms without one fingerprint as before.
+                        binding |> Option.iter (fun name -> appendText ("bind:" + name))
                         appendExpressions branch
                     appendSpan span
         let appendBuiltin = function
@@ -1417,7 +1432,9 @@ module Compiler =
                     match context.Enums.TryFind typeName, typeKeys.TryFind typeName with
                     | Some enumDefinition, Some key ->
                         match enumDefinition.Cases |> List.tryFindIndex ((=) caseName) with
-                        | Some caseIndex -> makeTarget (MakeEnumCaseOperation(key, caseIndex)) [] [ IrNominal key ] enumDefinition.Span "enum-case-declaration"
+                        | Some caseIndex ->
+                            let payload = enumDefinition.Payloads[caseIndex] |> Option.map (closedIrType typeKeys name (Some enumDefinition.Span)) |> Option.toList
+                            makeTarget (MakeEnumCaseOperation(key, caseIndex)) payload [ IrNominal key ] enumDefinition.Span "enum-case-declaration"
                         | None -> irFailure "IR_GENERATED_CASE_UNKNOWN" $"Generated enum constructor '{name}' refers to unknown case '{caseName}'." (Some name) (Some definition.Span) enumDefinition.Cases [ caseName ]
                     | _ -> irFailure "IR_GENERATED_TYPE_UNKNOWN" $"Generated enum constructor '{name}' has no matching enum type." (Some name) (Some definition.Span) [] [ typeName ]
                 | _ -> None)
@@ -1513,7 +1530,8 @@ module Compiler =
             |> Map.toList
             |> List.map (fun (name, enumDefinition) ->
                 let key = typeKeys[name]
-                key, IrEnumDefinition { TypeKey = key; TypeName = name; Cases = enumDefinition.Cases })
+                let payloads = enumDefinition.Payloads |> List.map (Option.map (closedIrType typeKeys name (Some enumDefinition.Span)))
+                key, IrEnumDefinition { TypeKey = key; TypeName = name; Cases = enumDefinition.Cases; CasePayloads = payloads })
         Map.ofList (recordTypes @ scalarTypes @ enumTypes)
 
     let private expressionSpan = function
@@ -1566,7 +1584,7 @@ module Compiler =
                 | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
-                | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, branch) -> Set.union found (collect branch)) found
+                | MatchEnum(cases, _) -> cases |> List.fold (fun found (_, _, branch) -> Set.union found (collect branch)) found
                 | _ -> found) Set.empty
         collect expressions
 
@@ -1828,9 +1846,14 @@ module Compiler =
                                 | Some enumDefinition, Some key ->
                                     let caseBlocks =
                                         List.zip cases childBodies
-                                        |> List.map (fun ((caseName, _), childBody) ->
+                                        |> List.map (fun ((caseName, binding, _), childBody) ->
                                             match enumDefinition.Cases |> List.tryFindIndex ((=) caseName) with
-                                            | Some caseIndex -> caseIndex, lowerBlock env childBody
+                                            | Some caseIndex ->
+                                                match binding with
+                                                | Some bindingName ->
+                                                    let slot = freshSlot bindingName
+                                                    caseIndex, Some slot, lowerBlock (Map.add bindingName slot env) childBody
+                                                | None -> caseIndex, None, lowerBlock env childBody
                                             | None -> irFailure "IR_ENUM_MATCH_CASE_UNKNOWN" $"Enum match refers to unknown case '{caseName}'." (Some ownerName) (Some span) enumDefinition.Cases [ caseName ])
                                     IrOperation.MatchEnum(key, caseBlocks)
                                 | _ -> irFailure "IR_ENUM_MATCH_TYPE_UNKNOWN" $"Enum match type '{typeName}' is absent from the frozen enum table." (Some ownerName) (Some span) [] [ typeName ]

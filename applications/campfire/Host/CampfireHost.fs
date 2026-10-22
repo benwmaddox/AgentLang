@@ -106,15 +106,15 @@ module CampfireHost =
           Body = field fields "body" |> asOptionString }
 
     let private roomKindValue = function
-        | Open -> EnumValue("RoomKind", "open")
-        | Closed -> EnumValue("RoomKind", "closed")
-        | Direct -> EnumValue("RoomKind", "direct")
+        | Open -> EnumValue("RoomKind", "open", None)
+        | Closed -> EnumValue("RoomKind", "closed", None)
+        | Direct -> EnumValue("RoomKind", "direct", None)
 
     let private dbErrorValue = function
-        | Unavailable -> EnumValue("DbError", "unavailable")
-        | NotFound -> EnumValue("DbError", "not-found")
-        | ConstraintConflict -> EnumValue("DbError", "constraint-conflict")
-        | InvalidInput -> EnumValue("DbError", "invalid-input")
+        | Unavailable -> EnumValue("DbError", "unavailable", None)
+        | NotFound -> EnumValue("DbError", "not-found", None)
+        | ConstraintConflict -> EnumValue("DbError", "constraint-conflict", None)
+        | InvalidInput -> EnumValue("DbError", "invalid-input", None)
 
     let private roomRowValue (row: AgentLang.Campfire.Persistence.RoomRow) =
         RecordValue(

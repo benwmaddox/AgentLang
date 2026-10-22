@@ -62,6 +62,7 @@ let private snapshot () =
     let renewalState =
         { Name = "RenewalState"
           Cases = [ "pending"; "renewed"; "cancelled" ]
+          Payloads = [ None; None; None ]
           SourceText = "enum RenewalState"
           Span = span "values.agent" 5 }
     let words = Compiler.primitives
@@ -109,7 +110,7 @@ let private testNestedValuesAndSchema () =
                   "speed", NamedValue("MetersPerSecond", FloatValue 2.5)
                   "alpha", NamedValue("Email", StringValue "a@example.test") ]
         )
-    let document = ValueInspection.toData verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
+    let document = ValueInspection.toData verified [ nested; telemetry; EnumValue("RenewalState", "renewed", None) ]
     check "output has a stable explicit format version" (intField "formatVersion" document = ValueInspection.FormatVersion)
 
     let values = prop "values" document
@@ -146,7 +147,7 @@ let private testNestedValuesAndSchema () =
 
     let enumNode = at 2 values
     let enumType =
-        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("RenewalState", "pending") ]) ]
+        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("RenewalState", "pending", None) ]) ]
         |> prop "values"
         |> at 0
         |> prop "elementType"
@@ -159,8 +160,8 @@ let private testNestedValuesAndSchema () =
          && stringField "nominalKind" enumType = "enum"
          && (prop "cases" enumType |> fun node -> node.AsArray() |> Seq.map stringValue |> Seq.toList) = [ "pending"; "renewed"; "cancelled" ])
 
-    let serializedOnce = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
-    let serializedAgain = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed") ]
+    let serializedOnce = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed", None) ]
+    let serializedAgain = ValueInspection.toJson verified [ nested; telemetry; EnumValue("RenewalState", "renewed", None) ]
     check "same snapshot and values produce deterministic JSON" (serializedOnce = serializedAgain)
     use parsed = JsonDocument.Parse(serializedOnce)
     check "convenience JSON contains the versioned object" (parsed.RootElement.GetProperty("formatVersion").GetInt32() = 1)
@@ -178,7 +179,7 @@ let private testNominalDistinctionAndOrdering () =
          && stringField "name" emailNode = "Email"
          && stringField "name" speedNode = "MetersPerSecond")
     check "Float payload is separate from scalar nominal identity" (stringField "kind" (prop "value" speedNode) = "float")
-    let enumNode = ValueInspection.toData verified [ EnumValue("RenewalState", "cancelled") ] |> prop "values" |> at 0
+    let enumNode = ValueInspection.toData verified [ EnumValue("RenewalState", "cancelled", None) ] |> prop "values" |> at 0
     check "enum values have a closed tag distinct from matching strings" (stringField "kind" enumNode = "enum" && stringField "case" enumNode = "cancelled")
 
 let private testLosslessIntegerAndFloatEncoding () =
@@ -255,9 +256,9 @@ let private testInvalidHostValuesAndSnapshots () =
     expectDiagnostic "null outer collection is a structured failure" "VALUE_INVALID" (fun () ->
         ValueInspection.toData verified (Unchecked.defaultof<Value list>) |> ignore)
     expectDiagnostic "enum values cannot forge a case outside the verified table" "VALUE_ENUM_CASE_INVALID" (fun () ->
-        ValueInspection.toData verified [ EnumValue("RenewalState", "unknown") ] |> ignore)
+        ValueInspection.toData verified [ EnumValue("RenewalState", "unknown", None) ] |> ignore)
     expectDiagnostic "enum values cannot forge another nominal type name" "VALUE_TYPE_MISMATCH" (fun () ->
-        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("OtherState", "pending") ]) ] |> ignore)
+        ValueInspection.toData verified [ ListValue(TNamed "RenewalState", [ EnumValue("OtherState", "pending", None) ]) ] |> ignore)
 
 let private testDeterministicLimits () =
     let verified = snapshot ()

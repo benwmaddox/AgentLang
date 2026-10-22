@@ -266,7 +266,7 @@ module Runtime =
                 | IrOperation.If(left, right)
                 | IrOperation.MatchOption(_, left, right)
                 | IrOperation.MatchResult(_, _, left, right) -> visit owner left; visit owner right
-                | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (snd >> visit owner)
+                | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (fun (_, _, caseBlock) -> visit owner caseBlock)
                 | _ -> ()
         for KeyValue(_, fn) in inspected.FunctionsById do
             if checkFunction fn.FunctionName then visit fn.FunctionName fn.FunctionBody
@@ -641,10 +641,11 @@ module Runtime =
                 state.Enums
                 |> Map.toList
                 |> List.collect (fun (name, enumEntry) ->
-                    enumEntry.Definition.Cases
-                    |> List.map (fun caseName ->
+                    List.zip enumEntry.Definition.Cases enumEntry.Definition.Payloads
+                    |> List.map (fun (caseName, payload) ->
                         let constructorName = name + "." + caseName
-                        let constructor = wordDef constructorName [] [ TNamed name ] Set.empty $"Constructs the {caseName} case of {name}." enumEntry.Definition.SourceText
+                        // A payload case's constructor takes its payload (report 306).
+                        let constructor = wordDef constructorName (Option.toList payload) [ TNamed name ] Set.empty $"Constructs the {caseName} case of {name}." enumEntry.Definition.SourceText
                         constructorName, entry constructor (Some(EnumCaseConstructor(name, caseName))) enumEntry.Status LibraryWord 1))
             let generatedWords = recordWords @ scalarWords @ enumWords
             match generatedWords |> List.groupBy fst |> List.tryFind (fun (_, entries) -> entries.Length > 1) with

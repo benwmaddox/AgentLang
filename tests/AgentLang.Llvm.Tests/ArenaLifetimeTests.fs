@@ -79,7 +79,7 @@ let private allScopeSitesInBlock (root: IrBlock) =
                 | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock @ collect elseBlock
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock @ collect noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock @ collect errorBlock
-                | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> collect)
+                | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> collect caseBlock)
                 | _ -> []
             match instruction.Operation with
             | IrOperation.Scope _ | IrOperation.Compact _ -> instruction.Site :: children
@@ -98,7 +98,7 @@ let private allStoreSlots (root: IrBlock) =
                 | IrOperation.If(thenBlock, elseBlock) -> collect thenBlock @ collect elseBlock
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collect someBlock @ collect noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collect okBlock @ collect errorBlock
-                | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> collect)
+                | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> collect caseBlock)
                 | _ -> []
             match instruction.Operation with
             | IrOperation.StoreLocal slot -> slot :: nested

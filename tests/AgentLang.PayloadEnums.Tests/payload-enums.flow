@@ -1,0 +1,112 @@
+// Enums whose cases carry one payload value (report 306): construction,
+// matching with and without a binding, equality, and payload enums stored in
+// records, lists and options.
+
+record Around {
+    room: Int
+    message: String
+}
+
+enum Route {
+    room(Int)
+    around(Around)
+    search(Option<String>)
+    tags(List<String>)
+    sidebar
+}
+
+record Holder {
+    label: String
+    route: Route
+}
+
+fn route.describe(route: Route) -> String {
+    match route {
+        room id => string.concat("room ", int.to-string(id))
+        around place => string.join(["around ", int.to-string(place.room), "@", place.message])
+        search query => match query {
+            none => "search"
+            some text => string.concat("search ", text)
+        }
+        tags names => string.join(["tags ", int.to-string(list.count(names))])
+        sidebar => "sidebar"
+    }
+}
+
+test route.describe/each-case {
+    expect route.describe(Route.room(5)) == "room 5"
+    expect route.describe(Route.around(around.new(room = 2, message = "m9"))) == "around 2@m9"
+    expect route.describe(Route.search(option.some<String>("cats"))) == "search cats"
+    expect route.describe(Route.search(option.none<String>())) == "search"
+    expect route.describe(Route.tags(["a", "b"])) == "tags 2"
+    expect route.describe(Route.sidebar()) == "sidebar"
+}
+
+fn route.kind(route: Route) -> Int {
+    doc "Arms may ignore a payload."
+    match route {
+        room => 1
+        around => 2
+        search => 3
+        tags => 4
+        sidebar => 5
+    }
+}
+
+test route.kind/ignores-payloads {
+    expect route.kind(Route.room(5)) == 1
+    expect route.kind(Route.sidebar()) == 5
+}
+
+fn route.same?(left: Route, right: Route) -> Bool {
+    left == right
+}
+
+test route.same?/payloads {
+    expect route.same?(Route.room(5), Route.room(5))
+    expect bool.not(route.same?(Route.room(5), Route.room(6)))
+    expect bool.not(route.same?(Route.room(5), Route.sidebar()))
+    expect route.same?(Route.sidebar(), Route.sidebar())
+    expect bool.not(route.same?(Route.search(option.none<String>()), Route.search(option.some<String>(""))))
+}
+
+fn route.room(id: Int) -> Route {
+    Route.room(id)
+}
+
+test route.room/builds {
+    expect route.room(3) == Route.room(3)
+}
+
+fn route.held(label: String, route: Route) -> Holder {
+    holder.new(label = label, route = route)
+}
+
+test route.held/stores {
+    expect route.describe(route.held("x", Route.room(7)).route) == "room 7"
+}
+
+fn route.all(id: Int) -> List<Route> {
+    [Route.room(id), Route.sidebar(), Route.tags(["t"])]
+}
+
+test route.all/lists {
+    var text = ""
+    for item in route.all(4) {
+        text = string.concat(text, route.describe(item))
+    }
+    expect text == "room 4sidebartags 1"
+}
+
+fn route.maybe(id: Int) -> Option<Route> {
+    if id > 0 {
+        option.some<Route>(Route.room(id))
+    } else {
+        option.none<Route>()
+    }
+}
+
+test route.maybe/options {
+    expect match route.maybe(2) { none => ""; some found => route.describe(found) } == "room 2"
+    expect route.maybe(0) == option.none<Route>()
+}

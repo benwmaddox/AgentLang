@@ -1588,7 +1588,7 @@ let private testSparseFlowSourceMarkerAllocation () =
         | Compact(body, source) -> Compact(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
-        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
+        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, binding, body) -> name, binding, List.map shiftExpression body), shiftMarker source)
     let shiftedWords =
         first.Context.CompilerContext.Words
         |> Map.map (fun _ entry ->
@@ -3061,7 +3061,7 @@ let private testFlowAuthoredCases () =
         | Compact(body, source) -> Compact(List.map shiftExpression body, shiftMarker source)
         | MatchOption(name, someBody, noneBody, source) -> MatchOption(name, List.map shiftExpression someBody, List.map shiftExpression noneBody, shiftMarker source)
         | MatchResult(okName, errorName, okBody, errorBody, source) -> MatchResult(okName, errorName, List.map shiftExpression okBody, List.map shiftExpression errorBody, shiftMarker source)
-        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, body) -> name, List.map shiftExpression body), shiftMarker source)
+        | MatchEnum(cases, source) -> MatchEnum(cases |> List.map (fun (name, binding, body) -> name, binding, List.map shiftExpression body), shiftMarker source)
     let shiftedWords =
         compiledEmailLabel.Context.CompilerContext.Words
         |> Map.map (fun _ entry ->
@@ -4714,7 +4714,7 @@ let private testFlowAttachmentCallBindings () =
         | MatchResult(okName, errorName, okBranch, errorBranch, sourceSpan) ->
             MatchResult(okName, errorName, normalizeExpressions origins okBranch, normalizeExpressions origins errorBranch, resolveOrigin origins sourceSpan)
         | MatchEnum(cases, sourceSpan) ->
-            MatchEnum(cases |> List.map (fun (name, body) -> name, normalizeExpressions origins body), resolveOrigin origins sourceSpan)
+            MatchEnum(cases |> List.map (fun (name, binding, body) -> name, binding, normalizeExpressions origins body), resolveOrigin origins sourceSpan)
     and normalizeExpressions origins expressions = expressions |> List.map (normalizeExpression origins)
     let normalizeSpanMap origins sourceSpans = sourceSpans |> Map.map (fun _ sourceSpan -> resolveOrigin origins sourceSpan)
     let normalizeProgram program origins =

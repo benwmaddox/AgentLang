@@ -39,7 +39,7 @@ module ResponseRenderer =
             // host only checks the response contract and sends the bytes.
             let renderedBody = get "body" fields |> stringValue
             let status = match get "status" fields with IntValue status when status >= 100L && status <= 599L -> int status | _ -> fail ()
-            let view = match get "view" fields with EnumValue("HttpView", caseName) -> caseName | _ -> fail ()
+            let view = match get "view" fields with EnumValue("HttpView", caseName, None) -> caseName | _ -> fail ()
             let text = get "text" fields |> stringValue
             let room = get "room" fields |> optional (TNamed "RoomRow") (record "RoomRow")
             let message = get "message" fields |> optional (TNamed "MessageRow") id

@@ -5877,6 +5877,7 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
     let enumDefinition =
         { Name = "NativeState"
           Cases = [ "active"; "cancelled" ]
+          Payloads = [ None; None ]
           SourceText = "enum NativeState"
           Span = enumSpan }
     let enumContext = contextWithEnums [] [ enumDefinition ]
@@ -5884,8 +5885,8 @@ let private testRejectsEffectsAndUnsupportedUntakenBranches () =
         compileBody enumContext "unsupported-enum"
             [ Call("NativeState.active", enumSpan)
               MatchEnum(
-                  [ "active", [ Push(LInt 1L, enumSpan) ]
-                    "cancelled", [ Push(LInt 0L, enumSpan) ] ],
+                  [ "active", None, [ Push(LInt 1L, enumSpan) ]
+                    "cancelled", None, [ Push(LInt 0L, enumSpan) ] ],
                   enumSpan) ]
     let enumError = errorOf (fun () -> LlvmAot.emit enumBody |> ignore)
     check "LLVM refuses enum values and matches with its explicit unsupported diagnostic"

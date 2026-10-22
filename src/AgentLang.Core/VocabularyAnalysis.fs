@@ -253,8 +253,10 @@ module VocabularyAnalysis =
             | MatchEnum(cases, _) ->
                 writer.Write 14uy
                 writeInt writer cases.Length
-                for caseName, body in cases do
+                for caseName, binding, body in cases do
                     writeString writer caseName
+                    // Only a payload binding adds bytes, so arms without one fingerprint as before.
+                    binding |> Option.iter (fun name -> writeString writer ("bind:" + name))
                     writeList body
         writeList expressions
 
@@ -484,7 +486,7 @@ module VocabularyAnalysis =
                             | MatchResult(_, _, okBranch, errorBranch, _) ->
                                 addExpansion (expandExpressions okBranch) (expandExpressions errorBranch)
                             | MatchEnum(cases, _) ->
-                                cases |> List.map snd |> List.map expandExpressions |> List.fold addExpansion emptyExpansion
+                                cases |> List.map (fun (_, _, body) -> expandExpressions body) |> List.fold addExpansion emptyExpansion
                         expandExpressions entry.Definition.Body
                 cache[name] <- computed
                 computed

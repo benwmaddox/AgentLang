@@ -452,9 +452,12 @@ module IrFormatting =
             addString node "kind" "match-enum"
             addKey "typeKey" typeKey
             let caseNodes = JsonArray()
-            for caseIndex, caseBlock in cases do
+            for caseIndex, binding, caseBlock in cases do
                 let caseNode = JsonObject()
                 addInt caseNode "caseIndex" caseIndex
+                match binding with
+                | Some (LocalSlot slot) -> addInt caseNode "payloadLocal" slot
+                | None -> ()
                 match program.NominalTypesByKey.TryFind typeKey with
                 | Some(IrEnumDefinition enumDefinition) when caseIndex >= 0 && caseIndex < enumDefinition.Cases.Length -> addString caseNode "case" enumDefinition.Cases[caseIndex]
                 | _ -> ()
@@ -536,7 +539,7 @@ module IrFormatting =
                     | IrOperation.Scope innerBlock | IrOperation.Compact innerBlock | IrOperation.ForRange(_, innerBlock) | IrOperation.ForList(_, _, _, innerBlock) -> gather innerBlock.Code
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> gather someBlock.Code @ gather noneBlock.Code
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> gather okBlock.Code @ gather errorBlock.Code
-                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> fun caseBlock -> gather caseBlock.Code)
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> gather caseBlock.Code)
                     | _ -> []
                 instruction.Site :: nested)
         gather block.Code
@@ -599,7 +602,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock | IrOperation.Compact innerBlock | IrOperation.ForRange(_, innerBlock) | IrOperation.ForList(_, _, _, innerBlock) -> collectBlockTypes innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypes someBlock @ collectBlockTypes noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypes okBlock @ collectBlockTypes errorBlock
-            | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> collectBlockTypes)
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> collectBlockTypes caseBlock)
             | _ -> []
         collectShapeTypes block.EntryShape
         @ collectShapeTypes block.ExitShape
@@ -615,7 +618,7 @@ module IrFormatting =
                 @ (record.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue [])
             | IrScalarDefinition scalar ->
                 scalar.BaseType :: (scalar.ValidatorCall |> Option.map (fun call -> call.InputTypes @ call.OutputTypes) |> Option.defaultValue [])
-            | IrEnumDefinition _ -> [])
+            | IrEnumDefinition enumDefinition -> enumDefinition.CasePayloads |> List.choose id)
 
     let rec private irTypeDepth = function
         | IrInt | IrFloat | IrBool | IrString | IrBytes | IrJson | IrUnit | IrNominal _ -> 1
@@ -630,7 +633,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock | IrOperation.Compact innerBlock | IrOperation.ForRange(_, innerBlock) | IrOperation.ForList(_, _, _, innerBlock) -> 1 + blockBranchDepth innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> 1 + max (blockBranchDepth someBlock) (blockBranchDepth noneBlock)
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> 1 + max (blockBranchDepth okBlock) (blockBranchDepth errorBlock)
-            | IrOperation.MatchEnum(_, cases) -> 1 + (cases |> List.map (snd >> blockBranchDepth) |> List.fold max 0)
+            | IrOperation.MatchEnum(_, cases) -> 1 + (cases |> List.map (fun (_, _, caseBlock) -> blockBranchDepth caseBlock) |> List.fold max 0)
             | _ -> 0)
         |> List.fold max 0
 
@@ -688,7 +691,7 @@ module IrFormatting =
             | IrOperation.Scope innerBlock | IrOperation.Compact innerBlock | IrOperation.ForRange(_, innerBlock) | IrOperation.ForList(_, _, _, innerBlock) -> collectBlockTypeKeys found innerBlock
             | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found someBlock) noneBlock
             | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectBlockTypeKeys (collectBlockTypeKeys found okBlock) errorBlock
-            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun found (_, caseBlock) -> collectBlockTypeKeys found caseBlock) found
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.fold (fun found (_, _, caseBlock) -> collectBlockTypeKeys found caseBlock) found
             | _ -> found) initial
 
     let private targetTypeKeys (target: IrGeneratedTarget) =
@@ -718,7 +721,7 @@ module IrFormatting =
                         | IrScalarDefinition scalar ->
                             let withBase = collectTypeKeys Set.empty scalar.BaseType
                             scalar.ValidatorCall |> Option.map (collectCallTypeKeys withBase) |> Option.defaultValue withBase
-                        | IrEnumDefinition _ -> Set.empty
+                        | IrEnumDefinition enumDefinition -> enumDefinition.CasePayloads |> List.choose id |> List.fold collectTypeKeys Set.empty
                     expand (Set.union rest dependencies) (Set.add key included)
         expand seed Set.empty
 
@@ -764,7 +767,11 @@ module IrFormatting =
                 { Kind = "enum"
                   Name = enumDefinition.TypeName
                   TypeKey = wrapTypeKey key
-                  Fields = []
+                  // Payload cases (report 306), indexed by case; empty for a payload-free enum.
+                  Fields =
+                    List.zip enumDefinition.Cases enumDefinition.CasePayloads
+                    |> List.indexed
+                    |> List.choose (fun (index, (caseName, payload)) -> payload |> Option.map (fun payloadType -> { Index = index; Name = caseName; Type = typeDto program payloadType }))
                   Cases = enumDefinition.Cases
                   BaseType = typeDto program IrUnit
                   HasBaseType = false
@@ -1054,7 +1061,11 @@ module IrFormatting =
             let validator = if nominal.HasValidator then "; validator=" + formatCall nominal.Validator else ""
             $"record {nominal.Name} @type{nominal.TypeKey} {{ {fields} }}{validator}"
         | "enum" ->
-            let cases = String.concat ", " nominal.Cases
+            let payloadOf index = nominal.Fields |> List.tryFind (fun field -> field.Index = index)
+            let cases =
+                nominal.Cases
+                |> List.mapi (fun index caseName -> match payloadOf index with Some field -> $"{caseName}({field.Type.Display})" | None -> caseName)
+                |> String.concat ", "
             $"enum {nominal.Name} @type{nominal.TypeKey} {{ {cases} }}"
         | _ ->
             let validator = if nominal.HasValidator then "; validator=" + formatCall nominal.Validator else ""

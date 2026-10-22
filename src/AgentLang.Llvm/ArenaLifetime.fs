@@ -326,7 +326,7 @@ module internal ArenaLifetime =
                 let prefix, _ = pop 1 state.Stack
                 let entry = { state with Stack = prefix }
                 caseBlocks
-                |> List.map (snd >> fun block -> analyzeBlock scopePath block entry)
+                |> List.map (fun (_, _, block) -> analyzeBlock scopePath block entry)
                 |> List.reduce combineStates
             | IrOperation.ListSingleton _ ->
                 // A new list owner in the current region holding a copy of the item.
@@ -470,7 +470,7 @@ module internal ArenaLifetime =
             | IrOperation.MatchEnum(_, caseBlocks) ->
                 let prefix, _ = pop 1 state.Stack
                 let entry = { retainedState with Stack = prefix }
-                let exits = caseBlocks |> List.map (snd >> fun block -> analyzeBlock scopePath block entry)
+                let exits = caseBlocks |> List.map (fun (_, _, block) -> analyzeBlock scopePath block entry)
                 let merged = exits |> List.reduce combineStates
                 { merged with Stack = merged.Stack |> List.map (Set.union unknownOutputOrigins)
                               Escaped = Set.union merged.Escaped possible }

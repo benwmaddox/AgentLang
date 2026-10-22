@@ -277,7 +277,7 @@ module FlowLowering =
         | SemanticContinue
         | SemanticMatchOption of string * SemanticExpr list * SemanticExpr list
         | SemanticMatchResult of string * string * SemanticExpr list * SemanticExpr list
-        | SemanticMatchEnum of (string * SemanticExpr list) list
+        | SemanticMatchEnum of (string * string option * SemanticExpr list) list
 
     type private RetainedFlowSource =
         { Document: FlowSourceDocument
@@ -1172,6 +1172,21 @@ module FlowLowering =
                 fail "FLOW_DB_ROWS_PARAMS" $"{paramsName}.{field.Name} is not a parameter of the SQL (expected ${field.Name.Replace('-', '_')})." None (Some(spanOfExpression paramsExpression)) [ "$" + field.Name.Replace('-', '_') ] [])
         rowName, paramsName, order, paramsExpression
 
+    /// The environment of one enum match arm: its payload binding, if any (report 306).
+    and private enumCaseEnvironment (context: Context) (environment: Map<string, Binding>) (enumName: string) (caseValue: FlowEnumCase) =
+        let definition = context.CompilerContext.Enums[enumName]
+        let payload =
+            match definition.Cases |> List.tryFindIndex ((=) caseValue.Name) with
+            | Some index -> definition.Payloads[index]
+            | None -> None
+        match caseValue.Binding, payload with
+        | None, _ -> environment
+        | Some(name, _), Some payloadType ->
+            if environment.ContainsKey name then fail "FLOW_LOCAL_REBOUND" $"Immutable local '{name}' is already declared in this lexical scope." None (Some caseValue.NameSpan) [] [ name ]
+            Map.add name { InternalName = name; Type = payloadType; Mutable = false } environment
+        | Some(name, bindingSpan), None ->
+            fail "FLOW_MATCH_ENUM_BINDING" $"Enum case '{caseValue.Name}' has no payload to bind to '{name}'; write '{caseValue.Name} =>'." None (Some bindingSpan) [ $"{caseValue.Name} =>" ] [ $"{caseValue.Name} {name} =>" ]
+
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
             match inferExpression context state environment scrutinee with
@@ -1190,7 +1205,7 @@ module FlowLowering =
         let missing = declaredCases |> List.filter (fun name -> not (List.contains name actualCases))
         if not (List.isEmpty missing) then
             fail "FLOW_MATCH_CASE_MISSING" $"Enum match must cover every case of '{enumName}'." None (Some matchSpan) declaredCases actualCases
-        let outputs = cases |> List.map (fun caseValue -> caseValue, inferStatements context state environment caseValue.Statements)
+        let outputs = cases |> List.map (fun caseValue -> caseValue, inferStatements context state (enumCaseEnvironment context environment enumName caseValue) caseValue.Statements)
         let firstCase, firstOutputs = outputs.Head
         for caseValue, caseOutputs in outputs |> List.skip 1 do
             match firstOutputs, caseOutputs with
@@ -1581,16 +1596,21 @@ module FlowLowering =
               CallEvents = scrutineeFragment.CallEvents @ okFragment.CallEvents @ errorFragment.CallEvents }
         | FlowExpression.MatchEnum(scrutinee, cases, matchSpan) ->
             inferOutputs context state environment expression |> ignore
+            let enumName =
+                match inferExpression context state environment scrutinee with
+                | TNamed name -> name
+                | _ -> failwith "validated enum match changed type"
             let caseFragments =
                 cases
                 |> List.mapi (fun caseIndex caseValue ->
                     let segment statementIndex = FlowAstPathSegment.EnumCaseStatement(caseIndex, statementIndex)
-                    let caseFragment, _ = lowerStatementsWithPath context state environment path segment caseValue.Statements
+                    let caseEnvironment = enumCaseEnvironment context environment enumName caseValue
+                    let caseFragment, _ = lowerStatementsWithPath context state caseEnvironment path segment caseValue.Statements
                     let scope = Scope(caseFragment.Expressions, syntheticSpan state caseValue.Span)
-                    caseValue.Name, scope, caseFragment)
+                    caseValue.Name, caseValue.Binding |> Option.map fst, scope, caseFragment)
             let scrutineeFragment = lowerFlowExpression context state environment (extendPath path FlowAstPathSegment.EnumScrutinee) scrutinee
-            let loweredCases = caseFragments |> List.map (fun (caseName, scope, _) -> caseName, [ scope ])
-            let armEvents = caseFragments |> List.collect (fun (_, _, caseFragment) -> caseFragment.CallEvents)
+            let loweredCases = caseFragments |> List.map (fun (caseName, binding, scope, _) -> caseName, binding, [ scope ])
+            let armEvents = caseFragments |> List.collect (fun (_, _, _, caseFragment) -> caseFragment.CallEvents)
             { Expressions = scrutineeFragment.Expressions @ [ MatchEnum(loweredCases, matchSpan) ]
               CallEvents = scrutineeFragment.CallEvents @ armEvents }
         | FlowExpression.Compact(body, compactSpan) ->
@@ -1936,7 +1956,7 @@ module FlowLowering =
                     | IrOperation.If(thenBlock, elseBlock) -> walk thenBlock @ walk elseBlock
                     | IrOperation.MatchOption(_, someBlock, noneBlock) -> walk someBlock @ walk noneBlock
                     | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> walk okBlock @ walk errorBlock
-                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (snd >> walk)
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.collect (fun (_, _, caseBlock) -> walk caseBlock)
                     | _ -> []
                 authored @ nested)
         walk block
@@ -2141,7 +2161,7 @@ module FlowLowering =
             | MatchOption(name, someBranch, noneBranch, _) -> SemanticMatchOption(name, semanticExpressions someBranch, semanticExpressions noneBranch)
             | MatchResult(okName, errorName, okBranch, errorBranch, _) ->
                 SemanticMatchResult(okName, errorName, semanticExpressions okBranch, semanticExpressions errorBranch)
-            | MatchEnum(cases, _) -> SemanticMatchEnum(cases |> List.map (fun (caseName, body) -> caseName, semanticExpressions body))
+            | MatchEnum(cases, _) -> SemanticMatchEnum(cases |> List.map (fun (caseName, binding, body) -> caseName, binding, semanticExpressions body))
         expressions |> List.map normalize
 
     let private validateFlowSourceDocument (document: FlowSourceDocument) =
@@ -2745,7 +2765,7 @@ module FlowLowering =
                 | Scope(innerBody, _) | Compact(innerBody, _) | ForRange(_, innerBody, _) | ForList(_, _, innerBody, _) -> Set.union found (collect innerBody)
                 | MatchOption(_, someBranch, noneBranch, _) -> Set.union found (Set.union (collect someBranch) (collect noneBranch))
                 | MatchResult(_, _, okBranch, errorBranch, _) -> Set.union found (Set.union (collect okBranch) (collect errorBranch))
-                | MatchEnum(cases, _) -> cases |> List.fold (fun accumulated (_, caseBody) -> Set.union accumulated (collect caseBody)) found
+                | MatchEnum(cases, _) -> cases |> List.fold (fun accumulated (_, _, caseBody) -> Set.union accumulated (collect caseBody)) found
                 | _ -> found) Set.empty
         collect expressions
 

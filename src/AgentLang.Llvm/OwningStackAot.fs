@@ -955,6 +955,9 @@ module OwningStackAot =
         match ty with
         | IrNominal key ->
             match program.NominalTypesByKey.TryFind key with
+            | Some(IrEnumDefinition definition) when IrEnums.hasPayload definition ->
+                // Every native enum path asks here first (report 306).
+                Diagnostics.raiseError "IR_OWNING_STACK_ENUM_PAYLOAD" "Native builds do not support enums whose cases carry payloads yet; the interpreter runs them." None None [ "payload-free enum" ] [ definition.TypeName ]
             | Some(IrEnumDefinition definition) -> Some definition
             | _ -> None
         | _ -> None
@@ -1126,7 +1129,7 @@ module OwningStackAot =
                     collectBinders right
                 | IrOperation.Scope inner | IrOperation.Compact inner -> collectBinders inner
                 | IrOperation.If(left, right) -> collectBinders left; collectBinders right
-                | IrOperation.MatchEnum(_, cases) -> for _, inner in cases do collectBinders inner
+                | IrOperation.MatchEnum(_, cases) -> for _, _, inner in cases do collectBinders inner
                 | _ -> ()
         collectBinders body
         let mutable slotTags = Map.empty<LocalSlot, Set<ProgramTypeKey option>>
@@ -1176,7 +1179,7 @@ module OwningStackAot =
                             opaque [ left; right ] left.ExitShape.StackTypes.Length
                         | IrOperation.MatchEnum(_, cases) ->
                             match cases with
-                            | (_, first) :: _ -> opaque (List.map snd cases) first.ExitShape.StackTypes.Length
+                            | (_, _, first) :: _ -> opaque (cases |> List.map (fun (_, _, caseBlock) -> caseBlock)) first.ExitShape.StackTypes.Length
                             | [] -> stopped <- true
                         | IrOperation.Break | IrOperation.Continue -> stopped <- true
                         | operation ->
@@ -1814,12 +1817,12 @@ module OwningStackAot =
                         match enumDefinition program (IrNominal key) with
                         | Some definition -> [ 0 .. definition.Cases.Length - 1 ]
                         | None -> []
-                    let actualCases = caseBlocks |> List.map fst
+                    let actualCases = caseBlocks |> List.map (fun (caseIndex, _, _) -> caseIndex)
                     if actualCases.Length <> expectedCases.Length || (actualCases |> List.sort) <> expectedCases then
                         Diagnostics.raiseError "IR_OWNING_STACK_ENUM_MATCH_CASE_SET"
                             "Owning-stack enum matches must retain the verified exhaustive case-index set."
                             (Some owner) span (expectedCases |> List.map string) (actualCases |> List.map string)
-                    caseBlocks |> List.iter (snd >> validateBlock owner)
+                    caseBlocks |> List.iter (fun (_, _, caseBlock) -> validateBlock owner caseBlock)
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ -> ()
                 | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue -> ()
                 | IrOperation.ForRange(_, inner) -> validateBlock owner inner
@@ -1944,7 +1947,7 @@ module OwningStackAot =
                 | IrOperation.WrapScalar _ -> enqueueKnownTypeValidators owner
                 | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> inspectCalls owner inner
                 | IrOperation.If(left, right) -> inspectCalls owner left; inspectCalls owner right
-                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> inspectCalls owner)
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> inspectCalls owner caseBlock)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> inspectCalls owner someBlock; inspectCalls owner noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> inspectCalls owner okBlock; inspectCalls owner errorBlock
                 | _ -> ()
@@ -2042,7 +2045,7 @@ module OwningStackAot =
                     | IrOperation.If(left, right)
                     | IrOperation.MatchOption(_, left, right)
                     | IrOperation.MatchResult(_, _, left, right) -> visit left; visit right
-                    | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (snd >> visit)
+                    | IrOperation.MatchEnum(_, cases) -> cases |> List.iter (fun (_, _, caseBlock) -> visit caseBlock)
                     | _ -> ()
             // Only function bodies: their sites are owner-qualified and unique, while
             // detached entry bodies number sites from zero and may share ids.
@@ -2179,7 +2182,7 @@ module OwningStackAot =
                 | Error item ->
                     let childPayload, childExtent = measure false errorType item
                     checkedHostAdd (nameof values) 8 childPayload, checkedHostAdd (nameof values) 8 childExtent
-            | IrNominal key, EnumValue(actualName, caseName) ->
+            | IrNominal key, EnumValue(actualName, caseName, None) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
                     if isNull caseName then
@@ -2331,7 +2334,7 @@ module OwningStackAot =
                 | Error item ->
                     writeInt64 bytes offset 1L
                     checkedHostAdd (nameof values) 8 (encode false (offset + 8) errorType item)
-            | IrNominal key, EnumValue(actualName, caseName) ->
+            | IrNominal key, EnumValue(actualName, caseName, None) ->
                 match info.Program.NominalTypesByKey.TryFind key with
                 | Some(IrEnumDefinition definition) when actualName = definition.TypeName ->
                     let caseIndex =
@@ -2511,7 +2514,7 @@ module OwningStackAot =
                 let ordinal = readInt64 bytes offset
                 if ordinal < 0L || ordinal >= int64 definition.Cases.Length then
                     raise (InvalidDataException($"Owning-stack enum ordinal {ordinal} is outside '{definition.TypeName}' case table."))
-                EnumValue(definition.TypeName, definition.Cases[int ordinal]), 8, 8
+                EnumValue(definition.TypeName, definition.Cases[int ordinal], None), 8, 8
             | IrNominal key when Option.isSome (scalarDefinition info.Program (IrNominal key)) ->
                 let definition = scalarDefinition info.Program (IrNominal key) |> Option.get
                 match definition.BaseType with
@@ -2661,7 +2664,7 @@ module OwningStackAot =
             | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> blockMentionsSlot slot inner
             | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
                 blockMentionsSlot slot left || blockMentionsSlot slot right
-            | IrOperation.MatchEnum(_, cases) -> cases |> List.exists (snd >> blockMentionsSlot slot)
+            | IrOperation.MatchEnum(_, cases) -> cases |> List.exists (fun (_, _, caseBlock) -> blockMentionsSlot slot caseBlock)
             | _ -> false)
 
     /// Loop accumulation, `items = list.append(items, x)` on a List `var`. Returns
@@ -2727,7 +2730,7 @@ module OwningStackAot =
                 | IrOperation.MatchEnum(_, cases) ->
                     pop 1 |> ignore
                     match cases with
-                    | (_, first) :: _ -> nested (List.map snd cases) first.ExitShape.StackTypes.Length
+                    | (_, _, first) :: _ -> nested (cases |> List.map (fun (_, _, caseBlock) -> caseBlock)) first.ExitShape.StackTypes.Length
                     | [] -> ok <- false
                 | IrOperation.Break | IrOperation.Continue ->
                     if List.exists Option.isSome stack then ok <- false
@@ -2841,12 +2844,12 @@ module OwningStackAot =
                         invalidOp "Verified If branches diverged while planning local storage."
                 | IrOperation.MatchEnum(_, caseBlocks) ->
                     let _ , _ = pop 1
-                    for _, caseBlock in caseBlocks do visit caseBlock
+                    for _, _, caseBlock in caseBlocks do visit caseBlock
                     match caseBlocks with
-                    | (_, firstBlock) :: remaining ->
+                    | (_, _, firstBlock) :: remaining ->
                         stack <- firstBlock.ExitShape.StackTypes
                         locals <- firstBlock.ExitShape.LocalTypes
-                        if remaining |> List.exists (fun (_, branch) -> branch.ExitShape.StackTypes <> stack || branch.ExitShape.LocalTypes <> locals) then
+                        if remaining |> List.exists (fun (_, _, branch) -> branch.ExitShape.StackTypes <> stack || branch.ExitShape.LocalTypes <> locals) then
                             invalidOp "Verified enum-match branches diverged while planning local storage."
                     | [] -> invalidOp "Verified enum match has no branches while planning local storage."
                 | IrOperation.MatchOption(someLocal, someBlock, noneBlock) ->
@@ -2890,7 +2893,7 @@ module OwningStackAot =
                 match instruction.Operation with
                 | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> found.Add(instruction.Site, inner)
                 | IrOperation.If(left, right) -> visit left; visit right
-                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> visit caseBlock)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> visit okBlock; visit errorBlock
                 | _ -> ()
@@ -2952,7 +2955,7 @@ module OwningStackAot =
                 | IrOperation.ForRange(indexLocal, _) when instruction.Site = site -> found <- [ indexLocal ]
                 | IrOperation.ForList(_, itemLocal, indexLocal, _) when instruction.Site = site -> found <- itemLocal :: Option.toList indexLocal
                 | IrOperation.If(left, right) -> visit left; visit right
-                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> visit)
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> visit caseBlock)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> visit someBlock; visit noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> visit okBlock; visit errorBlock
                 | _ -> ()
@@ -4186,7 +4189,7 @@ module OwningStackAot =
                         | _ -> ()
                 | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
-                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectStrings)
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> collectStrings caseBlock)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectStrings someBlock; collectStrings noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectStrings okBlock; collectStrings errorBlock
                 | _ -> ()
@@ -4249,7 +4252,7 @@ module OwningStackAot =
                         for element in elements do constantListElements.Add element |> ignore
                 | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> collectConstantLists inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectConstantLists thenBlock; collectConstantLists elseBlock
-                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (snd >> collectConstantLists)
+                | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> collectConstantLists caseBlock)
                 | IrOperation.MatchOption(_, someBlock, noneBlock) -> collectConstantLists someBlock; collectConstantLists noneBlock
                 | IrOperation.MatchResult(_, _, okBlock, errorBlock) -> collectConstantLists okBlock; collectConstantLists errorBlock
                 | _ -> ()
@@ -6812,7 +6815,7 @@ module OwningStackAot =
                         w.Inst($"{tag} = call i64 @al_owning_load_i64(ptr %%ctx, i32 {scrutinee.Offset})")
                         emitRuntimeStatus w "%ctx" failBody
                         emitDropEntry stack (stack.Length - 1)
-                        let caseLabels = caseBlocks |> List.map (fun (caseIndex, _) -> caseIndex, w.Label $"enum.case.{caseIndex}")
+                        let caseLabels = caseBlocks |> List.map (fun (caseIndex, _, _) -> caseIndex, w.Label $"enum.case.{caseIndex}")
                         let invalidLabel = w.Label "enum.invalid-tag"
                         let joinLabel = w.Label "enum.join"
                         let switchCases =
@@ -6825,7 +6828,7 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {invalidTagError}, i32 0, i32 0)")
                         w.Inst($"br label %%{failBody}")
                         let branches = ResizeArray<IrBlock * OwningDynamicStackEntry list * string>()
-                        for caseIndex, caseBlock in caseBlocks do
+                        for caseIndex, _, caseBlock in caseBlocks do
                             let caseLabel = caseLabels |> List.find (fun (index, _) -> index = caseIndex) |> snd
                             w.Line($"{caseLabel}:")
                             let branchStack = emitBlock currentOwner env prefix locals caseBlock |> normalizeBranch

@@ -235,11 +235,17 @@ module FiniteCoverage =
             when actualOkType = langType program okType && actualErrorType = langType program errorType ->
             canonicalValue program errorType item
             |> Result.map (fun nested -> { Key = $"result:error({nested.Key})"; Label = $"error({nested.Label})" })
-        | IrNominal key, EnumValue(name, caseName) ->
+        | IrNominal key, EnumValue(name, caseName, payload) ->
             match program.NominalTypesByKey.TryFind key with
             | Some(IrEnumDefinition definition) when definition.TypeName = name ->
                 match definition.Cases |> List.tryFindIndex ((=) caseName) with
-                | Some index -> canonical $"enum:{nominalKey key}:{index}" $"{name}.{caseName}"
+                | Some index ->
+                    match definition.CasePayloads[index], payload with
+                    | Some payloadType, Some item ->
+                        canonicalValue program payloadType item
+                        |> Result.map (fun nested -> { Key = $"enum:{nominalKey key}:{index}({nested.Key})"; Label = $"{name}.{caseName}({nested.Label})" })
+                    | None, None -> canonical $"enum:{nominalKey key}:{index}" $"{name}.{caseName}"
+                    | _ -> Error $"enum value {name}.{caseName} does not carry the payload its case declares"
                 | None -> Error $"enum value {name}.{caseName} is not in the declared nominal type"
             | _ -> Error $"enum value {name}.{caseName} does not match {formatType program typeValue}"
         | IrNominal key, RecordValue(name, fields) ->

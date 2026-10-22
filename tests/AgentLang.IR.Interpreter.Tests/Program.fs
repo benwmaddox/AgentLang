@@ -1341,11 +1341,13 @@ let private testClosedEnumExecution () =
     let phase =
         { Name = "Phase"
           Cases = phaseCases
+          Payloads = phaseCases |> List.map (fun _ -> None)
           SourceText = "enum Phase"
           Span = sourceSpan }
     let otherPhase =
         { Name = "OtherPhase"
           Cases = otherCases
+          Payloads = otherCases |> List.map (fun _ -> None)
           SourceText = "enum OtherPhase"
           Span = sourceSpan }
     let point =
@@ -1366,7 +1368,7 @@ let private testClosedEnumExecution () =
             (constructors phase.Name phaseCases @ constructors otherPhase.Name otherCases)
     let verified = Compiler.compileIrProgram context
     let compile name expressions = Compiler.compileIrBodyAgainstProgram context verified name [] expressions
-    let matchArms = phaseCases |> List.map (fun caseName -> caseName, [ Push(LString caseName, sourceSpan) ])
+    let matchArms = phaseCases |> List.map (fun caseName -> caseName, None, [ Push(LString caseName, sourceSpan) ])
 
     for caseName in phaseCases do
         let body =
@@ -1376,7 +1378,7 @@ let private testClosedEnumExecution () =
                   MatchEnum(matchArms, sourceSpan) ]
         check $"enum constructor and MatchEnum execute the {caseName} case" (
             IrInterpreter.executeBody (noOpHost ()) ("match-phase-" + caseName) body =
-                [ EnumValue("Phase", caseName); StringValue caseName ])
+                [ EnumValue("Phase", caseName, None); StringValue caseName ])
 
     let sameCase =
         compile "same-phase-case"
@@ -1402,11 +1404,11 @@ let private testClosedEnumExecution () =
         |> ignore)
 
     expectDiagnostic "structured inspection rejects an enum case outside its closed table" "VALUE_ENUM_CASE_INVALID" (fun () ->
-        ValueInspection.toData verified [ EnumValue("Phase", "unknown") ] |> ignore)
+        ValueInspection.toData verified [ EnumValue("Phase", "unknown", None) ] |> ignore)
     expectDiagnostic "structured inspection rejects a null enum case" "VALUE_ENUM_CASE_INVALID" (fun () ->
-        ValueInspection.toData verified [ EnumValue("Phase", null) ] |> ignore)
+        ValueInspection.toData verified [ EnumValue("Phase", null, None) ] |> ignore)
     expectDiagnostic "structured inspection rejects an enum value naming a record type" "VALUE_NOMINAL_KIND_MISMATCH" (fun () ->
-        ValueInspection.toData verified [ EnumValue("Point", "pending") ] |> ignore)
+        ValueInspection.toData verified [ EnumValue("Point", "pending", None) ] |> ignore)
 
 [<EntryPoint>]
 let main _ =
