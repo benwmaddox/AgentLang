@@ -29,8 +29,8 @@ test campfire.server.optional-text-param/kinds {
 }
 
 test campfire.server.session-row/validation {
-    let good = dbRow.new(values = [db.int-param(1), db.int-param(2), db.text-param("t"), db.null-param(), db.text-param("ua"), db.text-param("2026-10-14 11:30:00"), db.text-param("2026-10-01 00:00:00"), db.text-param("2026-10-14 11:30:00")])
-    let bad = dbRow.new(values = [db.int-param(1), db.int-param(2), db.text-param("t"), db.null-param(), db.text-param("ua"), db.text-param("yesterday"), db.text-param("2026-10-01 00:00:00"), db.text-param("2026-10-14 11:30:00")])
+    let good = sessionDbRow.new(id = 1, user-id = 2, token = "t", ip-address = option.none<String>(), user-agent = option.some<String>("ua"), last-active-at = "2026-10-14 11:30:00", created-at = "2026-10-01 00:00:00", updated-at = "2026-10-14 11:30:00")
+    let bad = sessionDbRow.new(id = 1, user-id = 2, token = "t", ip-address = option.none<String>(), user-agent = option.some<String>("ua"), last-active-at = "yesterday", created-at = "2026-10-01 00:00:00", updated-at = "2026-10-14 11:30:00")
     expect match campfire.server.session-row(good) { none => ""; some loaded => loaded.last-active-text } == "2026-10-14 11:30:00"
     expect campfire.server.session-row(bad) == option.none<LoadedSession>()
 }
@@ -72,12 +72,12 @@ test campfire.sessions.refresh-before/due-and-fresh {
 }
 
 test campfire.server.user-row/validation {
-    expect campfire.server.user-row(dbRow.new(values = [db.int-param(5), db.text-param("Bot"), db.int-param(2), db.int-param(2)])) == option.some<AuthUser>(authUser.new(id = UserId.new(5), name = "Bot", role = Role.bot(), status = AuthUserStatus.banned()))
-    expect campfire.server.user-row(dbRow.new(values = [db.int-param(5), db.text-param("Bot"), db.int-param(3), db.int-param(0)])) == option.none<AuthUser>()
+    expect campfire.server.user-row(userDbRow.new(id = 5, name = "Bot", role = 2, status = 2)) == option.some<AuthUser>(authUser.new(id = UserId.new(5), name = "Bot", role = Role.bot(), status = AuthUserStatus.banned()))
+    expect campfire.server.user-row(userDbRow.new(id = 5, name = "Bot", role = 3, status = 0)) == option.none<AuthUser>()
 }
 
 test campfire.server.user-result/error {
-    expect campfire.server.user-result(result.error<List<DbRow>, SqlError>(sqlError.new(code = 2067, message = ""))) == result.error<Option<AuthUser>, DbError>(DbError.constraint-conflict())
+    expect campfire.server.user-result(result.error<List<UserDbRow>, SqlError>(sqlError.new(code = 2067, message = ""))) == result.error<Option<AuthUser>, DbError>(DbError.constraint-conflict())
 }
 
 test campfire.users.find-by-id/fixture {
@@ -97,8 +97,9 @@ test campfire.server.room-kind/names {
 }
 
 test campfire.server.room-row/validation {
-    expect campfire.server.room-row(dbRow.new(values = [db.int-param(1), db.null-param(), db.text-param("Rooms::Open"), db.int-param(2), db.text-param("2026-01-01 00:00:00"), db.text-param("2026-01-01 00:00:00")])) != option.none<RoomRow>()
-    expect campfire.server.room-row(dbRow.new(values = [db.int-param(1), db.null-param(), db.text-param("Rooms::Open"), db.int-param(2), db.text-param("2026-01-01"), db.text-param("2026-01-01 00:00:00")])) == option.none<RoomRow>()
+    expect campfire.server.room-row(roomDbRow.new(id = 1, name = option.none<String>(), kind = "Rooms::Open", creator-id = 2, created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00")) != option.none<RoomRow>()
+    expect campfire.server.room-row(roomDbRow.new(id = 1, name = option.none<String>(), kind = "Rooms::Open", creator-id = 2, created-at = "2026-01-01", updated-at = "2026-01-01 00:00:00")) == option.none<RoomRow>()
+    expect campfire.server.room-row(roomDbRow.new(id = 1, name = option.none<String>(), kind = "Rooms::Other", creator-id = 2, created-at = "2026-01-01 00:00:00", updated-at = "2026-01-01 00:00:00")) == option.none<RoomRow>()
 }
 
 test campfire.rooms.find-for-user/fixture {
@@ -119,28 +120,22 @@ test campfire.server.avatar-token/shape {
     expect string.byte-length(token) == 56 + 2 + 64
 }
 
-test campfire.server.message-row/validation {
-    let row = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.int-param(5), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
-    expect match campfire.server.message-row(row, bytes.from-utf8("key"), 1, "tok") { none => ""; some message => message.creator-avatar-token } == "tok"
-    let broken = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1), db.null-param(), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
-    expect campfire.server.message-row(broken, bytes.from-utf8("key"), 1, "tok") == option.none<MessageWithCreator>()
-    let derived = match campfire.server.message-row(row, bytes.from-utf8("key"), 2, "tok") { none => ""; some message => message.creator-avatar-token }
-    expect derived == campfire.server.avatar-token(bytes.from-utf8("key"), 1)
-    let short = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(1)])
-    expect campfire.server.message-row(short, bytes.from-utf8("key"), 1, "tok") == option.none<MessageWithCreator>()
+fn campfire.server.test-page-row(creator-id: Int, created-at: String) -> PageRow {
+    pageRow.new(id = 1, room-id = 1, creator-id = creator-id, created-at-ms = 5, updated-at-ms = 6, client-message-id = "c", created-at = created-at, creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", body = option.none<String>())
 }
 
-test campfire.server.value-int/kinds {
-    expect campfire.server.value-int(db.int-param(4)) == option.some<Int>(4)
-    expect campfire.server.value-int(db.text-param("4")) == option.none<Int>()
-    expect campfire.server.value-int(db.null-param()) == option.none<Int>()
+test campfire.server.test-page-row/fields {
+    expect campfire.server.test-page-row(4, "x").creator-id == 4
 }
 
-test campfire.server.value-text/kinds {
-    expect campfire.server.value-text(db.text-param("t")) == option.some<String>("t")
-    expect campfire.server.value-text(db.int-param(4)) == option.some<String>("4")
-    expect campfire.server.value-text(db.null-param()) == option.none<String>()
-    expect campfire.server.value-text(db.blob-param(bytes.from-utf8("b"))) == option.none<String>()
+test campfire.server.page-row-ok?/timestamps {
+    expect campfire.server.page-row-ok?(campfire.server.test-page-row(1, "2026-10-14 10:00:00"))
+    expect bool.not(campfire.server.page-row-ok?(campfire.server.test-page-row(1, "yesterday")))
+}
+
+test campfire.server.message-row/fields {
+    let message = campfire.server.message-row(campfire.server.test-page-row(3, "2026-10-14 10:00:00"), "tok")
+    expect message.creator-avatar-token == "tok" && UserId.value(message.creator-id) == 3 && message.created-at == "2026-10-14 10:00:00"
 }
 
 test campfire.server.int-or-zero/values {
@@ -154,9 +149,13 @@ test campfire.server.text-or-empty/values {
 }
 
 test campfire.server.message-page/tokens-per-creator {
-    let row = dbRow.new(values = [db.int-param(1), db.int-param(1), db.int-param(7), db.int-param(5), db.int-param(6), db.text-param("c"), db.text-param("2026-10-14 10:00:00"), db.text-param("Ann"), db.text-param(""), db.text-param("2026-01-01 00:00:00"), db.null-param()])
-    let page = campfire.server.message-page([row, row], bytes.from-utf8("key"))
-    expect match page { none => 0; some messages => campfire.server.message-count(messages) } == 2
+    let ann = campfire.server.test-page-row(7, "2026-10-14 10:00:00")
+    let bo = campfire.server.test-page-row(8, "2026-10-14 10:00:00")
+    let page = match campfire.server.message-page([ann, ann, bo], bytes.from-utf8("key")) { none => list.empty<MessageWithCreator>(); some messages => messages }
+    expect campfire.server.message-count(page) == 3
+    expect match list.get(page, 2) { none => ""; some message => message.creator-avatar-token } == campfire.server.avatar-token(bytes.from-utf8("key"), 8)
+    expect match list.get(page, 1) { none => ""; some message => message.creator-avatar-token } == campfire.server.avatar-token(bytes.from-utf8("key"), 7)
+    expect campfire.server.message-page([ann, campfire.server.test-page-row(7, "yesterday")], bytes.from-utf8("key")) == option.none<List<MessageWithCreator>>()
 }
 
 test campfire.server.page-query/fixture {
