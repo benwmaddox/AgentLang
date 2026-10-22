@@ -506,6 +506,29 @@ module IrFormatting =
             addKey "rowKey" rowKey
             addKey "dbRowKey" dbRowKey
             addKey "sqlErrorKey" sqlErrorKey
+        | IrOperation.LayoutTemplate(layoutKey, htmlKey, head, tail) ->
+            addString node "kind" "layout-template"
+            addKey "layoutKey" layoutKey
+            addKey "htmlKey" htmlKey
+            for name, parts in [ "head", head; "tail", tail ] do
+                let partNodes = JsonArray()
+                for part in parts do
+                    let partNode = JsonObject()
+                    match part with
+                    | HtmlTemplatePart.Text text ->
+                        addString partNode "part" "text"
+                        addString partNode "text" text
+                    | HtmlTemplatePart.StringHole -> addString partNode "part" "string-hole"
+                    | HtmlTemplatePart.IntHole -> addString partNode "part" "int-hole"
+                    | HtmlTemplatePart.HtmlHole -> addString partNode "part" "html-hole"
+                    | HtmlTemplatePart.HtmlListHole -> addString partNode "part" "html-list-hole"
+                    partNodes.Add(partNode)
+                addNode node name partNodes
+        | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) ->
+            addString node "kind" "layout-wrap"
+            addKey "layoutKey" layoutKey
+            addKey "htmlKey" htmlKey
+            addString node "content" (if isList then "list" else "html")
         | IrOperation.HtmlTemplate(key, parts) ->
             addString node "kind" "html-template"
             addKey "typeKey" key
@@ -587,6 +610,8 @@ module IrFormatting =
         | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
         | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
         | IrOperation.HtmlTemplate(key, _) -> [ IrString; IrNominal key ]
+        | IrOperation.LayoutTemplate(layoutKey, htmlKey, _, _) -> [ IrString; IrNominal htmlKey; IrNominal layoutKey ]
+        | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) -> [ IrNominal layoutKey; IrNominal htmlKey ] @ (if isList then [ IrList(IrNominal htmlKey) ] else [])
         | IrOperation.DbParams(paramsKey, dbValueKey, _) -> [ IrNominal paramsKey; IrList(IrNominal dbValueKey) ]
         | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> [ IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey); IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ]
         | IrOperation.ForeignCall(_, inputs, output) -> inputs @ [ output ]
@@ -685,6 +710,7 @@ module IrFormatting =
                 | IrOperation.MakeEnumCase(call, key, _) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.MatchEnum(key, _) -> Set.add key found
                 | IrOperation.HtmlTemplate(key, _) -> Set.add key found
+                | IrOperation.LayoutTemplate(layoutKey, htmlKey, _, _) | IrOperation.LayoutWrap(layoutKey, htmlKey, _) -> found |> Set.add layoutKey |> Set.add htmlKey
                 | IrOperation.DbParams(paramsKey, dbValueKey, _) -> found |> Set.add paramsKey |> Set.add dbValueKey
                 | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> found |> Set.add rowKey |> Set.add dbRowKey |> Set.add sqlErrorKey
                 | IrOperation.ForeignCall _ -> found

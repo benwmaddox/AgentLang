@@ -985,6 +985,10 @@ module FlowParser =
         let parseHole (start: int) (finish: int) =
             let holeText = text.Substring(start, finish - start)
             if String.IsNullOrWhiteSpace holeText then failAt start "FLOW_TEMPLATE_HOLE" "A template hole must contain an expression."
+            // `{...}`: a layout's slot (report 309), where its content goes.
+            if holeText.Trim() = "..." then
+                FlowExpression.Call(LayoutBuiltIn.slotName, [], sourceSpan state.File token (Some token))
+            else
             let tokens, _, _ = tokenize state.File holeText
             let holeLine, holeColumn = lines[start], columns[start]
             let shifted =

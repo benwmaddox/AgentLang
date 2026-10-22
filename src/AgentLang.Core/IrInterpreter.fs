@@ -1390,6 +1390,9 @@ module IrInterpreter =
                 requireContainerType (TResult(actualOk, actualError))
                 RuntimeResult(okType, errorType, Result.map (importHostValue depth currentWord site okType) value
                               |> Result.mapError (importHostValue depth currentWord site errorType))
+            | IrNominal key, RecordValue(name, _) when name = LayoutBuiltIn.typeName
+                                                       && (match program.NominalTypesByKey.TryFind key with Some(IrRecordDefinition record) -> record.TypeName = LayoutBuiltIn.typeName | _ -> false) ->
+                invalid "a Layout comes only from a layout template, never from outside the program"
             | IrNominal key, RecordValue(actualName, fields) ->
                 match program.NominalTypesByKey.TryFind key with
                 | Some(IrRecordDefinition definition) when definition.TypeName = actualName && not (isNull (box fields)) ->
@@ -1793,6 +1796,62 @@ module IrInterpreter =
                     // Proven at compile time by the same pure validator: retag only.
                     let prefix, arguments = popArguments call.ResolvedName call.InputTypes
                     stack <- prefix @ [ RuntimeScalar(key, List.head arguments) ]
+                | IrOperation.LayoutTemplate(layoutKey, htmlKey, head, tail) ->
+                    // A layout (report 309): head and tail rendered as a template is, with the
+                    // holes of head then tail; the verifier checked them as one fragment.
+                    let holeTypesOf parts =
+                        parts |> List.choose (function
+                            | HtmlTemplatePart.StringHole -> Some IrString
+                            | HtmlTemplatePart.IntHole -> Some IrInt
+                            | HtmlTemplatePart.HtmlHole -> Some(IrNominal htmlKey)
+                            | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal htmlKey))
+                            | HtmlTemplatePart.Text _ -> None)
+                    let headCount = (holeTypesOf head).Length
+                    let prefix, holes = popArguments "layout template" (holeTypesOf head @ holeTypesOf tail)
+                    let render parts (values: IrInterpreterRuntimeValue list) =
+                        let builder = Text.StringBuilder()
+                        let mutable remaining = values
+                        for part in parts do
+                            match part with
+                            | HtmlTemplatePart.Text text -> builder.Append(text) |> ignore
+                            | _ ->
+                                match remaining with
+                                | RuntimeList(_, items) :: rest when part = HtmlTemplatePart.HtmlListHole ->
+                                    for item in items do
+                                        match item with
+                                        | RuntimeScalar(_, RuntimeString value) -> builder.Append(value) |> ignore
+                                        | _ -> fail "RUNTIME_STACK_TYPE" "layout template List<Html> hole holds a non-Html item." (Some currentWord) instructionSpan [] []
+                                    remaining <- rest
+                                | (RuntimeString value | RuntimeScalar(_, RuntimeString value)) :: rest when part = HtmlTemplatePart.StringHole ->
+                                    builder.Append(TrustedValues.htmlEscape value) |> ignore
+                                    remaining <- rest
+                                | RuntimeInt value :: rest when part = HtmlTemplatePart.IntHole ->
+                                    builder.Append(value.ToString(Globalization.CultureInfo.InvariantCulture)) |> ignore
+                                    remaining <- rest
+                                | RuntimeScalar(_, RuntimeString value) :: rest when part = HtmlTemplatePart.HtmlHole ->
+                                    builder.Append(value) |> ignore
+                                    remaining <- rest
+                                | _ -> fail "RUNTIME_STACK_TYPE" "layout template hole has the wrong runtime type." (Some currentWord) instructionSpan [] []
+                        builder.ToString()
+                    let headText = render head (holes |> List.take headCount)
+                    let tailText = render tail (holes |> List.skip headCount)
+                    stack <- prefix @ [ RuntimeRecord(layoutKey, [ RuntimeString headText; RuntimeString tailText ]) ]
+                | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) ->
+                    let prefix, values = popArguments "layout.wrap" [ IrNominal layoutKey; (if isList then IrList(IrNominal htmlKey) else IrNominal htmlKey) ]
+                    match values with
+                    | [ RuntimeRecord(_, [ RuntimeString headText; RuntimeString tailText ]); content ] ->
+                        let builder = Text.StringBuilder(headText)
+                        match content with
+                        | RuntimeScalar(_, RuntimeString value) -> builder.Append(value) |> ignore
+                        | RuntimeList(_, items) ->
+                            for item in items do
+                                match item with
+                                | RuntimeScalar(_, RuntimeString value) -> builder.Append(value) |> ignore
+                                | _ -> fail "RUNTIME_STACK_TYPE" "layout.wrap content holds a non-Html item." (Some currentWord) instructionSpan [] []
+                        | _ -> fail "RUNTIME_STACK_TYPE" "layout.wrap content is not Html." (Some currentWord) instructionSpan [] []
+                        builder.Append(tailText) |> ignore
+                        stack <- prefix @ [ RuntimeScalar(htmlKey, RuntimeString(builder.ToString())) ]
+                    | _ -> fail "RUNTIME_STACK_TYPE" "layout.wrap takes a Layout and its content." (Some currentWord) instructionSpan [] []
                 | IrOperation.HtmlTemplate(key, parts) ->
                     // Html by construction (verified skeleton, escaped String holes,
                     // Html holes): no validator call.

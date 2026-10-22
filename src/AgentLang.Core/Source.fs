@@ -37,6 +37,8 @@ module Source =
                 | ResultOk -> "result.ok"
                 | ResultError -> "result.error"
                 | HtmlTemplate parts -> "html.template" + string parts.Length
+                | LayoutTemplate(head, tail) -> "layout.template" + string head.Length + "." + string tail.Length
+                | LayoutWrap isList -> if isList then "layout.wrap-list" else "layout.wrap"
                 | DbParams order -> "db.params" + String.Join("-", order)
                 | DbDecode -> "db.decode"
                 | ForeignCall spec -> "c.call" + spec

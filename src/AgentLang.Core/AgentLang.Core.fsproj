@@ -18,6 +18,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="FlowParser.fs" />
     <Compile Include="FlowRoutes.fs" />
+    <Compile Include="FlowLayouts.fs" />
     <Compile Include="TypedIR.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="FlowLowering.fs" />

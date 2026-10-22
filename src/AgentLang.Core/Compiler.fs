@@ -488,6 +488,38 @@ module Compiler =
                                 if expected <> actual then
                                     Diagnostics.raiseError "TYPE_CONTAINER_PAYLOAD" "A C binding argument does not match its parameter type." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
                             prefix @ [ List.last arguments ], locals
+                        | LayoutTemplate(head, tail) ->
+                            // The holes of head and tail, in order, give a Layout (report 309).
+                            requireArity 2
+                            let holeTypes =
+                                head @ tail |> List.choose (function
+                                    | HtmlTemplatePart.StringHole -> Some TString
+                                    | HtmlTemplatePart.IntHole -> Some TInt
+                                    | HtmlTemplatePart.HtmlHole -> Some arguments[1]
+                                    | HtmlTemplatePart.HtmlListHole -> Some(TList arguments[1])
+                                    | HtmlTemplatePart.Text _ -> None)
+                            if stack.Length < holeTypes.Length then
+                                Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "A layout template requires one value per hole." (Some wordName) (Some expressionSpan) [ string holeTypes.Length ] [ string stack.Length ]
+                            let refinedString name =
+                                match words.TryFind(name + ".value") with
+                                | Some entry -> entry.Definition.Inputs = [ TNamed name ] && entry.Definition.Outputs = [ TString ]
+                                | None -> false
+                            for expected, actual in List.zip holeTypes (stack |> List.skip (stack.Length - holeTypes.Length)) do
+                                match expected, actual with
+                                | TString, TNamed name when refinedString name -> ()
+                                | _ ->
+                                    try unify Map.empty expected actual |> ignore
+                                    with _ ->
+                                        Diagnostics.raiseError "TYPE_TEMPLATE_HOLE" "A layout template hole must be a String, Int or refined String (escaped), or Html (inserted as-is)." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
+                            (stack |> List.take (stack.Length - holeTypes.Length)) @ [ arguments[0] ], locals
+                        | LayoutWrap isList ->
+                            requireArity 2
+                            if stack.Length < 2 then
+                                Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "layout.wrap needs a Layout and its content." (Some wordName) (Some expressionSpan) [ "2" ] [ string stack.Length ]
+                            let content = if isList then TList arguments[1] else arguments[1]
+                            if (stack |> List.skip (stack.Length - 2)) <> [ arguments[0]; content ] then
+                                Diagnostics.raiseError "TYPE_CONTAINER_PAYLOAD" "layout.wrap takes a Layout and Html or List<Html>." (Some wordName) (Some expressionSpan) [ Types.format arguments[0]; Types.format content ] (stack |> List.skip (stack.Length - 2) |> List.map Types.format)
+                            (stack |> List.take (stack.Length - 2)) @ [ arguments[1] ], locals
                         | HtmlTemplate parts ->
                             requireArity 1
                             let holeTypes =
@@ -900,6 +932,8 @@ module Compiler =
                         | ResultOk -> "result.ok"
                         | ResultError -> "result.error"
                         | HtmlTemplate parts -> "html.template" + string parts.Length
+                        | LayoutTemplate(head, tail) -> "layout.template" + string head.Length + "." + string tail.Length
+                        | LayoutWrap isList -> if isList then "layout.wrap-list" else "layout.wrap"
                         | DbParams _ -> "db.params"
                         | DbDecode -> "db.decode"
                         | ForeignCall spec -> "c.call " + spec
@@ -1223,6 +1257,8 @@ module Compiler =
                          | ResultOk -> "result-ok"
                          | ResultError -> "result-error"
                          | HtmlTemplate _ -> "html-template"
+                         | LayoutTemplate _ -> "layout-template"
+                         | LayoutWrap _ -> "layout-wrap"
                          | DbParams _ -> "db-params"
                          | DbDecode -> "db-decode"
                          | ForeignCall _ -> "c-call")
@@ -1565,6 +1601,8 @@ module Compiler =
         | ConstructContainer(ResultOk, _, _) -> "result-ok"
         | ConstructContainer(ResultError, _, _) -> "result-error"
         | ConstructContainer(HtmlTemplate _, _, _) -> "html-template"
+        | ConstructContainer(LayoutTemplate _, _, _) -> "layout-template"
+        | ConstructContainer(LayoutWrap _, _, _) -> "layout-wrap"
         | ConstructContainer(DbParams _, _, _) -> "db-params"
         | ConstructContainer(DbDecode, _, _) -> "db-decode"
         | ConstructContainer(ForeignCall _, _, _) -> "c-call"
@@ -1751,6 +1789,8 @@ module Compiler =
                             | ResultOk, [ ok; error ] -> IrOperation.ResultOk(ok, error)
                             | ResultError, [ ok; error ] -> IrOperation.ResultError(ok, error)
                             | HtmlTemplate parts, [ IrNominal key ] -> IrOperation.HtmlTemplate(key, parts)
+                            | LayoutTemplate(head, tail), [ IrNominal layoutKey; IrNominal htmlKey ] -> IrOperation.LayoutTemplate(layoutKey, htmlKey, head, tail)
+                            | LayoutWrap isList, [ IrNominal layoutKey; IrNominal htmlKey ] -> IrOperation.LayoutWrap(layoutKey, htmlKey, isList)
                             | DbParams order, [ IrNominal paramsKey; IrNominal dbValueKey ] -> IrOperation.DbParams(paramsKey, dbValueKey, order)
                             | DbDecode, [ IrNominal rowKey; IrNominal dbRowKey; IrNominal sqlErrorKey ] -> IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey)
                             | ForeignCall spec, _ :: _ ->

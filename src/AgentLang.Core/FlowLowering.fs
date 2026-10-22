@@ -859,7 +859,10 @@ module FlowLowering =
             | Some binding -> [ binding.Type ]
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some span) [] [ name ]
         | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
-            let htmlName, _, _ = analyzeTemplate context state environment arguments templateSpan
+            let htmlName, _, _, slot = analyzeTemplate context state environment arguments templateSpan
+            if Option.isSome slot then [ TNamed LayoutBuiltIn.typeName ] else [ TNamed htmlName ]
+        | FlowExpression.Call(name, arguments, callSpan) when name = LayoutBuiltIn.wrapName && context.CompilerContext.Records.ContainsKey LayoutBuiltIn.typeName ->
+            let htmlName, _ = analyzeLayoutWrap context state environment arguments callSpan
             [ TNamed htmlName ]
         | FlowExpression.Call(name, arguments, callSpan) when name.StartsWith("db.rows<", StringComparison.Ordinal) ->
             let rowName, _, _, _ = analyzeDbRows context state environment name arguments callSpan
@@ -1092,6 +1095,8 @@ module FlowLowering =
             |> List.mapi (fun index argument ->
                 match index % 2, argument with
                 | 0, FlowArgument.Positional(FlowExpression.Literal(LString text, _)) -> HtmlTemplatePart.Text text, None
+                // A layout's `{...}` slot is checked as an Html hole (report 309).
+                | 1, FlowArgument.Positional(FlowExpression.Call(slot, [], _)) when slot = LayoutBuiltIn.slotName -> HtmlTemplatePart.HtmlHole, Some HoleKind.Markup
                 | 1, FlowArgument.Positional hole ->
                     match inferExpression context state environment hole with
                     | TString -> HtmlTemplatePart.StringHole, Some HoleKind.Text
@@ -1118,7 +1123,30 @@ module FlowLowering =
                 | Some(FlowArgument.Positional hole) when index % 2 = 1 -> spanOfExpression hole
                 | _ -> templateSpan
             fail "FLOW_TEMPLATE_HOLE_CONTEXT" message None (Some holeSpan) [ "a hole of the kind its context allows" ] []
-        htmlName, parts, kinds
+        let slots =
+            arguments |> List.indexed |> List.choose (fun (index, argument) ->
+                match argument with
+                | FlowArgument.Positional(FlowExpression.Call(slot, [], _)) when slot = LayoutBuiltIn.slotName -> Some index
+                | _ -> None)
+        let slot =
+            match slots with
+            | [] -> None
+            | [ index ] ->
+                match context.CompilerContext.Records.TryFind LayoutBuiltIn.typeName with
+                | Some _ -> Some index
+                | None -> fail "FLOW_LAYOUT_SLOT" "A {...} slot makes the template a Layout, which needs the built-in Layout type." None (Some templateSpan) [] []
+            | _ -> fail "FLOW_LAYOUT_SLOT" "A layout template has exactly one {...} slot." None (Some templateSpan) [ "one {...}" ] [ string slots.Length ]
+        // The slot is element content: not inside a title, textarea, script or style (report 309).
+        match slot with
+        | Some index ->
+            let before = String.concat "" (parts |> List.take index |> List.choose (function HtmlTemplatePart.Text text -> Some text | _ -> None))
+            let lower = before.ToLowerInvariant()
+            let openIn tag = lower.LastIndexOf("<" + tag) > lower.LastIndexOf("</" + tag)
+            match [ "title"; "textarea"; "script"; "style" ] |> List.tryFind openIn with
+            | Some tag -> fail "FLOW_LAYOUT_SLOT" $"A layout's {{...}} slot is element content; it cannot sit inside <{tag}>." None (Some templateSpan) [ "element content" ] [ tag ]
+            | None -> ()
+        | None -> ()
+        htmlName, parts, kinds, slot
 
     /// db.rows<Row>(sql, params) (report 305). Row and the params type are records; sql
     /// is a literal whose named parameters ($user_id for the field user-id) are exactly
@@ -1217,6 +1245,19 @@ module FlowLowering =
                 | other -> fail "FLOW_C_BINDING_TYPE" $"C binding {binding.Prototype.Symbol} returns {ForeignCalls.formatType other}." None (Some callSpan) [ "a number or a bool" ] []
             spec, inputs, output, rest
         | _ -> fail "FLOW_C_BINDING" "A C binding body is its prototype and parameters." None (Some callSpan) [] []
+
+    /// layout.wrap(layout, content): a Layout and Html or List<Html> (report 309).
+    and private analyzeLayoutWrap (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (arguments: FlowArgument list) (callSpan: SourceSpan) =
+        match arguments with
+        | [ FlowArgument.Positional layout; FlowArgument.Positional content ] ->
+            match inferExpression context state environment layout with
+            | TNamed name when name = LayoutBuiltIn.typeName -> ()
+            | actual -> fail "FLOW_LAYOUT_WRAP" "layout.wrap takes a Layout first." None (Some(spanOfExpression layout)) [ "Layout" ] [ Types.format actual ]
+            match inferExpression context state environment content with
+            | TNamed name when name = HtmlBuiltIn.typeName -> name, false
+            | TList(TNamed name) when name = HtmlBuiltIn.typeName -> name, true
+            | actual -> fail "FLOW_LAYOUT_WRAP" "layout.wrap puts Html or List<Html> in the layout's slot." None (Some(spanOfExpression content)) [ "Html"; "List<Html>" ] [ Types.format actual ]
+        | _ -> fail "FLOW_LAYOUT_WRAP" "layout.wrap(layout, content) takes a Layout and its content." None (Some callSpan) [ "(Layout, Html)" ] []
 
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
@@ -1443,18 +1484,32 @@ module FlowLowering =
             | Some binding -> fragment [ Load(binding.InternalName, sourceSpan) ] []
             | None -> fail "FLOW_UNKNOWN_LOCAL" $"Local '{name}' is not available before its immutable binding." None (Some sourceSpan) [] [ name ]
         | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
-            let htmlName, parts, kinds = analyzeTemplate context state environment arguments templateSpan
+            let htmlName, parts, kinds, slot = analyzeTemplate context state environment arguments templateSpan
             ignore kinds
-            // Holes sit at odd argument positions, in order.
+            // Holes sit at odd argument positions, in order; a layout's slot is not a value.
             let fragments =
                 arguments
                 |> List.indexed
-                |> List.filter (fun (index, _) -> index % 2 = 1)
+                |> List.filter (fun (index, _) -> index % 2 = 1 && Some index <> slot)
                 |> List.map (fun (index, argument) ->
                     match argument with
                     | FlowArgument.Positional hole -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument index)) hole
                     | _ -> failwith "parser produced a malformed html template")
-            appendFragments fragments [ ConstructContainer(HtmlTemplate parts, [ TNamed htmlName ], templateSpan) ]
+            match slot with
+            | Some index ->
+                let head = parts |> List.take index
+                let tail = parts |> List.skip (index + 1)
+                appendFragments fragments [ ConstructContainer(LayoutTemplate(head, tail), [ TNamed LayoutBuiltIn.typeName; TNamed htmlName ], templateSpan) ]
+            | None -> appendFragments fragments [ ConstructContainer(HtmlTemplate parts, [ TNamed htmlName ], templateSpan) ]
+        | FlowExpression.Call(name, arguments, callSpan) when name = LayoutBuiltIn.wrapName && context.CompilerContext.Records.ContainsKey LayoutBuiltIn.typeName ->
+            // layout.wrap(layout, content) (report 309): Html by construction, no validation.
+            let htmlName, isList = analyzeLayoutWrap context state environment arguments callSpan
+            let fragments =
+                arguments |> List.mapi (fun index argument ->
+                    match argument with
+                    | FlowArgument.Positional expression -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument index)) expression
+                    | _ -> failwith "analyzed layout.wrap lost an argument")
+            appendFragments fragments [ ConstructContainer(LayoutWrap isList, [ TNamed LayoutBuiltIn.typeName; TNamed htmlName ], callSpan) ]
         | FlowExpression.Call(name, arguments, callSpan) when name = ForeignCalls.intrinsicName ->
             // A C binding (report 307): the parameters, then one non-call ForeignCall step.
             let spec, inputs, output, rest = analyzeForeignCall context state environment arguments callSpan

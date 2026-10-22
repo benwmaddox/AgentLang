@@ -374,6 +374,18 @@ module UrlBuiltIn =
     let usedBy (text: string) =
         not (isNull text) && Text.RegularExpressions.Regex.IsMatch(text, @"(?<![A-Za-z0-9_.-])Url(?![A-Za-z0-9_-])")
 
+/// The built-in Layout (report 309): an html template with one `{...}` slot is a
+/// page shell, checked as one fragment with the slot as an Html hole, so its tail
+/// closes what its head opens. It is a record of the two texts; no user code can
+/// build one (it has no constructor), so `layout.wrap(layout, content)` is Html by
+/// construction.
+module LayoutBuiltIn =
+    let typeName = "Layout"
+    let source = "record Layout {\n    head: String\n    tail: String\n}\n"
+    /// The reserved call the parser makes of a `{...}` template slot.
+    let slotName = "%layout-slot"
+    let wrapName = "layout.wrap"
+
 /// The built-in Html type. `Html.new(text)` escapes its String (like a String
 /// template hole); `html.raw(text)` keeps markup and is checked by
 /// `string.html-fragment?` (at compile time for literals). The declaration is

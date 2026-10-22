@@ -781,6 +781,7 @@ module FlowSource =
                 if index % 2 = 0 then escapeText (textOf argument)
                 else
                     match argument with
+                    | FlowArgument.Positional(FlowExpression.Call(slot, [], _)) when slot = LayoutBuiltIn.slotName -> "{...}"
                     | FlowArgument.Positional hole -> "{" + renderInlineExpression syntaxVersion locals hole + "}"
                     | _ -> failwith "malformed html template hole")
             |> String.concat ""

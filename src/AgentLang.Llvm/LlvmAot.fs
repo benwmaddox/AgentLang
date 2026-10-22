@@ -618,6 +618,8 @@ module LlvmAot =
                 | IrOperation.DbParams _
                 | IrOperation.DbDecode _
                 | IrOperation.ForeignCall _
+                | IrOperation.LayoutTemplate _
+                | IrOperation.LayoutWrap _
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _

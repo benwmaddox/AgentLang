@@ -614,13 +614,15 @@ module Runtime =
                     let constructor =
                         wordDef constructorName (record.Fields |> List.map (fun field -> field.Type)) [ TNamed name ] Set.empty "Constructs a value after all record fields pass their declared types and optional validator." record.SourceText
                     let constructorEntry = entry constructor (Some(RecordConstructor name)) recordEntry.Status LibraryWord 1
+                    // The built-in Layout has no constructor: only layout templates make one (report 309).
+                    let builtInLayout = name = LayoutBuiltIn.typeName && record.SourceText = LayoutBuiltIn.source.TrimEnd('\n')
                     let getters =
                         record.Fields
                         |> List.map (fun field ->
                             let accessorName = prefix + "." + field.Name
                             let definition = wordDef accessorName [ TNamed name ] [ field.Type ] Set.empty $"Returns the {field.Name} field of a {name}." record.SourceText
                             accessorName, entry definition (Some(RecordAccessor(name, field.Name))) recordEntry.Status LibraryWord 1)
-                    (constructorName, constructorEntry) :: getters)
+                    if builtInLayout then getters else (constructorName, constructorEntry) :: getters)
             let scalarWords =
                 state.Scalars
                 |> Map.toList
@@ -4353,7 +4355,18 @@ module Runtime =
                         |> Set.toList
                         |> List.choose (ownerOfGeneratedWordIn words)
                         |> Set.ofList
-                    Set.union signatures generatedDependencies
+                    // The types a body's typed steps name: a template's Html, a layout's
+                    // Layout and Html (report 309), even when the signature has neither.
+                    let rec stepTypes (body: Expr list) =
+                        body
+                        |> List.map (function
+                            | ConstructContainer(_, types, _) -> types |> List.map namedTypes |> Set.unionMany
+                            | If(left, right, _) | MatchOption(_, left, right, _) | MatchResult(_, _, left, right, _) -> Set.union (stepTypes left) (stepTypes right)
+                            | Scope(inner, _) | Compact(inner, _) | ForRange(_, inner, _) | ForList(_, _, inner, _) -> stepTypes inner
+                            | MatchEnum(cases, _) -> cases |> List.map (fun (_, _, branch) -> stepTypes branch) |> Set.unionMany
+                            | _ -> Set.empty)
+                        |> Set.unionMany
+                    Set.unionMany [ signatures; generatedDependencies; stepTypes value.Definition.Body ]
 
             let typeReferencesForWord (name: string) = typeReferencesForState data name
 
@@ -6752,6 +6765,16 @@ module Runtime =
                 | None when syntaxVersion = 2 && not (data.Scalars.ContainsKey HtmlBuiltIn.typeName) && HtmlBuiltIn.usedBy source ->
                     match FlowParser.parseDocumentWithVersion 2 "<built-in:Html>" HtmlBuiltIn.source with
                     | Ok builtIn -> { document with Scalars = document.Scalars @ builtIn.Scalars }
+                    | Error diagnostic -> raise (LanguageException diagnostic)
+                | None -> document
+            // Layout is built in (report 309): added when a template has a {...} slot.
+            let document =
+                match document.Records |> List.tryFind (fun record -> record.Name = LayoutBuiltIn.typeName) with
+                | Some declared ->
+                    error "FLOW_LAYOUT_BUILT_IN" "Layout is built in: an html template with one {...} slot makes one. Do not declare it." (Some declared.Name) (Some declared.Span) [] [ declared.Name ]
+                | None when syntaxVersion = 2 && not (data.Records.ContainsKey LayoutBuiltIn.typeName) && FlowLayouts.usesSlot document ->
+                    match FlowParser.parseDocumentWithVersion 2 "<built-in:Layout>" LayoutBuiltIn.source with
+                    | Ok builtIn -> { document with Records = document.Records @ builtIn.Records }
                     | Error diagnostic -> raise (LanguageException diagnostic)
                 | None -> document
             // Url is built in the same way (report 302).

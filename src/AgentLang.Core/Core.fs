@@ -73,6 +73,12 @@ type ContainerConstructor =
     /// html"…": consumes one value per hole and pushes the type argument (the
     /// program's Html type). Built only by the template lowering.
     | HtmlTemplate of HtmlTemplatePart list
+    /// A layout template (report 309): the parts before and after its `{...}` slot.
+    /// Type arguments: Layout, Html.
+    | LayoutTemplate of head: HtmlTemplatePart list * tail: HtmlTemplatePart list
+    /// layout.wrap: Layout and content (Html, or List<Html> when `list`) to Html.
+    /// Type arguments: Layout, Html.
+    | LayoutWrap of list: bool
     /// db.rows<Row> (report 305): consumes a params record (type argument 1) and
     /// pushes List<DbValue> (type argument 2) holding its fields in `order`, the
     /// order of the SQL's named parameters. Built only by the db.rows lowering.

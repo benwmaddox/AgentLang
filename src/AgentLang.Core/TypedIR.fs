@@ -223,6 +223,11 @@ type IrOperation =
     | DbParams of ParamsKey: ProgramTypeKey * DbValueKey: ProgramTypeKey * Order: int list
     /// db.rows: pops Result<List<DbRow>, SqlError>, pushes Result<List<Row>, SqlError>.
     | DbDecode of RowKey: ProgramTypeKey * DbRowKey: ProgramTypeKey * SqlErrorKey: ProgramTypeKey
+    /// A layout template (report 309): pops the holes of head and tail, pushes the
+    /// Layout record of the two rendered texts.
+    | LayoutTemplate of LayoutKey: ProgramTypeKey * HtmlKey: ProgramTypeKey * Head: HtmlTemplatePart list * Tail: HtmlTemplatePart list
+    /// layout.wrap: pops a Layout and Html (or List<Html>), pushes head ++ content ++ tail as Html.
+    | LayoutWrap of LayoutKey: ProgramTypeKey * HtmlKey: ProgramTypeKey * List: bool
     /// A C binding's call (report 307): pops the inputs, calls the symbol, pushes the output.
     | ForeignCall of Binding: ForeignCalls.Binding * Inputs: IrType list * Output: IrType
     /// Pops one value and overwrites an existing local of exactly that type
@@ -965,6 +970,41 @@ module IrVerifier =
                         let prefix, actual = pop call.InputTypes.Length
                         if actual <> call.InputTypes then operationError "IR_CALL_STACK_MISMATCH" "Enum case payload does not match the stack." (call.InputTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ call.OutputTypes }, call.ResolvedEffects
+                    | IrOperation.LayoutTemplate(layoutKey, htmlKey, head, tail) ->
+                        match program.NominalTypesByKey.TryFind htmlKey, program.NominalTypesByKey.TryFind layoutKey with
+                        | Some(IrScalarDefinition scalar), Some(IrRecordDefinition record)
+                            when scalar.BaseType = IrString && IrHtml.isHtmlValidator scalar.ValidatorCall
+                                 && record.ValidatorCall.IsNone && (record.RecordFields |> List.map (fun field -> field.FieldName, field.FieldType)) = [ "head", IrString; "tail", IrString ] -> ()
+                        | _ -> operationError "IR_LAYOUT_TYPE" "A layout template makes the built-in Layout { head: String, tail: String } from Html parts." [] []
+                        // The whole template, slot as an Html hole, is one fragment: the tail closes what the head opens.
+                        match HtmlMarkup.check (head @ [ HtmlTemplatePart.HtmlHole ] @ tail) with
+                        | Ok() -> ()
+                        | Error(_, message) -> operationError "IR_HTML_TEMPLATE_MARKUP" ("layout template markup is not a well-formed fragment: " + message) [] []
+                        let holeTypes =
+                            head @ tail
+                            |> List.choose (function
+                                | HtmlTemplatePart.StringHole -> Some IrString
+                                | HtmlTemplatePart.IntHole -> Some IrInt
+                                | HtmlTemplatePart.HtmlHole -> Some(IrNominal htmlKey)
+                                | HtmlTemplatePart.HtmlListHole -> Some(IrList(IrNominal htmlKey))
+                                | HtmlTemplatePart.Text _ -> None)
+                        let prefix, actual = pop holeTypes.Length
+                        let fits expected actualType =
+                            expected = actualType
+                            || (expected = IrString
+                                && match actualType with
+                                   | IrNominal candidate ->
+                                       match program.NominalTypesByKey.TryFind candidate with
+                                       | Some(IrScalarDefinition scalar) -> scalar.BaseType = IrString
+                                       | _ -> false
+                                   | _ -> false)
+                        if actual.Length <> holeTypes.Length || not (List.forall2 fits holeTypes actual) then operationError "IR_CALL_STACK_MISMATCH" "layout template holes do not match the stack." (holeTypes |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrNominal layoutKey ] }, Set.empty
+                    | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) ->
+                        let prefix, actual = pop 2
+                        let content = if isList then IrList(IrNominal htmlKey) else IrNominal htmlKey
+                        if actual <> [ IrNominal layoutKey; content ] then operationError "IR_CALL_STACK_MISMATCH" "layout.wrap takes a Layout and its content." [ IrTypes.format (IrNominal layoutKey); IrTypes.format content ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrNominal htmlKey ] }, Set.empty
                     | IrOperation.HtmlTemplate(key, parts) ->
                         match program.NominalTypesByKey.TryFind key with
                         | Some(IrScalarDefinition scalar) when scalar.BaseType = IrString && IrHtml.isHtmlValidator scalar.ValidatorCall -> ()

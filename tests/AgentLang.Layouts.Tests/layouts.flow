@@ -1,0 +1,77 @@
+// Paired layouts (report 309): an html template with one {...} slot is a Layout,
+// checked as one fragment, so its tail closes what its head opens.
+
+fn page.layout(title: String, count: Int) -> Layout {
+    html"""
+    <section class="page">
+      <h1>{count} new</h1>
+      <main>
+        {...}
+      </main>
+      <footer>{title} &amp; more</footer>
+    </section>
+    """
+}
+
+test page.layout/halves {
+    let page = page.layout("a<b", 3)
+    expect string.ends-with(page.head, "<main>\n    ")
+    expect string.starts-with(page.tail, "\n  </main>")
+    expect string.contains(page.head, "<h1>3 new</h1>")
+    expect string.contains(page.tail, "<footer>a&lt;b &amp; more</footer>")
+}
+
+fn page.wrapped(title: String, count: Int, body: Html) -> Html {
+    layout.wrap(page.layout(title, count), body)
+}
+
+test page.wrapped/content {
+    let page = page.wrapped("t", 1, html"<p>hi</p>")
+    expect string.contains(Html.value(page), "<main>\n    <p>hi</p>\n  </main>")
+}
+
+fn page.wrapped-list(title: String, items: List<Html>) -> Html {
+    layout.wrap(page.layout(title, list.count(items)), items)
+}
+
+test page.wrapped-list/items {
+    let page = page.wrapped-list("t", [html"<p>1</p>", html"<p>2</p>"])
+    expect string.contains(Html.value(page), "<h1>2 new</h1>")
+    expect string.contains(Html.value(page), "<p>1</p><p>2</p>")
+}
+
+fn edge.start() -> Layout {
+    html"{...}<p>after</p>"
+}
+
+test edge.start/empty-head {
+    expect edge.start().head == ""
+    expect edge.start().tail == "<p>after</p>"
+}
+
+fn edge.end(name: String) -> Layout {
+    html"<p>{name}</p>{...}"
+}
+
+test edge.end/empty-tail {
+    expect edge.end("é").head == "<p>é</p>"
+    expect edge.end("x").tail == ""
+}
+
+fn edge.split(left: Int, right: String) -> Html {
+    doc "An Int hole before the slot and an escaped String after it: each stays on its side."
+    layout.wrap(edge.pair(left, right), html"<b>mid</b>")
+}
+
+fn edge.pair(left: Int, right: String) -> Layout {
+    html"<div data-n=\"{left}\">{...}<i>{right}</i></div>"
+}
+
+test edge.pair/sides {
+    expect edge.pair(5, "<x>").head == "<div data-n=\"5\">"
+    expect edge.pair(5, "<x>").tail == "<i>&lt;x&gt;</i></div>"
+}
+
+test edge.split/joined {
+    expect Html.value(edge.split(7, "&")) == "<div data-n=\"7\"><b>mid</b><i>&amp;</i></div>"
+}

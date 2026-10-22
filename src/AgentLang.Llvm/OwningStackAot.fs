@@ -1100,6 +1100,8 @@ module OwningStackAot =
         | IrOperation.ListOf(_, count) -> Some(count, 1)
         | IrOperation.DbParams _ | IrOperation.DbDecode _ -> Some(1, 1)
         | IrOperation.ForeignCall(_, inputs, _) -> Some(inputs.Length, 1)
+        | IrOperation.LayoutTemplate(_, _, head, tail) -> Some(head @ tail |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1), 1)
+        | IrOperation.LayoutWrap _ -> Some(2, 1)
         | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
         | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
         | _ -> None
@@ -1783,6 +1785,12 @@ module OwningStackAot =
                     checkType owner (IrList(IrNominal dbValueKey))
                 | IrOperation.ForeignCall(_, inputs, output) ->
                     for ty in inputs @ [ output ] do checkType owner ty
+                | IrOperation.LayoutTemplate(layoutKey, htmlKey, _, _) ->
+                    checkType owner (IrNominal layoutKey)
+                    checkType owner (IrNominal htmlKey)
+                | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) ->
+                    checkType owner (IrNominal layoutKey)
+                    checkType owner (if isList then IrList(IrNominal htmlKey) else IrNominal htmlKey)
                 | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
                     checkType owner (IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey))
                     checkType owner (IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey))
@@ -2245,6 +2253,9 @@ module OwningStackAot =
                     invalidArg (nameof values) "Owning-stack String payload exceeds the bounded 32-bit runtime range."
                 let payload = int payload64
                 payload, alignedExtent payload
+            | IrNominal _, RecordValue(name, _) when name = LayoutBuiltIn.typeName && layout.Name = LayoutBuiltIn.typeName ->
+                // Only layout templates make a Layout (report 309); a host cannot hand one in.
+                invalidArg (nameof values) "A Layout comes only from a layout template, never from outside the program."
             | IrNominal _, RecordValue(name, fields) when name = layout.Name && Option.isSome (recordDefinition info.Program ty) ->
                 let expectedNames = layout.Fields |> List.map (fun (fieldName, _, _) -> fieldName) |> Set.ofList
                 if fields |> Map.toSeq |> Seq.map fst |> Set.ofSeq <> expectedNames then
@@ -2842,6 +2853,12 @@ module OwningStackAot =
                 | IrOperation.ForeignCall(_, inputs, output) ->
                     let _, prefix = pop inputs.Length
                     stack <- prefix @ [ output ]
+                | IrOperation.LayoutTemplate(layoutKey, _, head, tail) ->
+                    let _, prefix = pop (head @ tail |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1))
+                    stack <- prefix @ [ IrNominal layoutKey ]
+                | IrOperation.LayoutWrap(_, htmlKey, _) ->
+                    let _, prefix = pop 2
+                    stack <- prefix @ [ IrNominal htmlKey ]
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.ListSingleton itemType ->
@@ -4258,11 +4275,18 @@ module OwningStackAot =
                 | IrOperation.ForeignCall(binding, _, _) when seenForeign.Add(binding.Library + "\u0000" + binding.PrototypeText) -> foreignBindings.Add binding
                 | IrOperation.Constant(LString value, IrString) when seenStrings.Add value -> stringValues.Add value
                 | IrOperation.DbParams(_, _, order) when seenStrings.Add(String.Join(",", order)) -> stringValues.Add(String.Join(",", order))
-                | IrOperation.HtmlTemplate(_, parts) ->
+                | IrOperation.HtmlTemplate(_, parts) | IrOperation.LayoutTemplate(_, _, parts, _) ->
                     for part in parts do
                         match part with
                         | HtmlTemplatePart.Text text when text <> "" && seenTemplateTexts.Add text -> templateTexts.Add text
                         | _ -> ()
+                    match instruction.Operation with
+                    | IrOperation.LayoutTemplate(_, _, _, tail) ->
+                        for part in tail do
+                            match part with
+                            | HtmlTemplatePart.Text text when text <> "" && seenTemplateTexts.Add text -> templateTexts.Add text
+                            | _ -> ()
+                    | _ -> ()
                 | IrOperation.Scope inner | IrOperation.Compact inner | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> collectStrings inner
                 | IrOperation.If(thenBlock, elseBlock) -> collectStrings thenBlock; collectStrings elseBlock
                 | IrOperation.MatchEnum(_, caseBlocks) -> caseBlocks |> List.iter (fun (_, _, caseBlock) -> collectStrings caseBlock)
@@ -5529,6 +5553,72 @@ module OwningStackAot =
                     emitUpdateLive w "8" "0" failBody
                     emitTraceEvent w $"call void @al_owning_record_layout(ptr %%ctx, i32 6, i32 {typeId sumType}, i32 {cursor}, i32 {sumExtent}, i32 {sumPayload}, i32 {child.Offset}, i32 {child.Extent})" failBody
                     push prefix sumType cursor sumExtent sumPayload next
+                /// One html template write (plan, reserve once, write once) of literal texts
+                /// and hole entries with their modes (1 as-is, 2 escaped, 3 list, 4 Int),
+                /// as `resultType`. Returns the value's offset, extent, payload and end.
+                let emitTemplateWrite (entries: Choice<string, OwningDynamicStackEntry * int> list) (resultType: IrType) instructionSpan =
+                    let count = max 1 entries.Length
+                    let partsArray = w.Fresh "template.parts"
+                    w.Inst($"{partsArray} = alloca [{count} x %%AlOwningTemplatePart], align 8")
+                    entries
+                    |> List.iteri (fun index entry ->
+                        let field fieldIndex =
+                            let slot = w.Fresh "template.field"
+                            w.Inst($"{slot} = getelementptr inbounds [{count} x %%AlOwningTemplatePart], ptr {partsArray}, i32 0, i32 {index}, i32 {fieldIndex}")
+                            slot
+                        let pointerValue, first, second, mode =
+                            match entry with
+                            | Choice1Of2 text ->
+                                let length = (utf8Bytes text).Length
+                                $"getelementptr inbounds ([{length} x i8], ptr {templateTextGlobal text}, i64 0, i64 0)", string length, "0", "0"
+                            | Choice2Of2(hole: OwningDynamicStackEntry, mode) -> "null", hole.Offset, hole.Extent, string mode
+                        w.Inst($"store ptr {pointerValue}, ptr {field 0}, align 8")
+                        w.Inst($"store i32 {first}, ptr {field 1}, align 4")
+                        w.Inst($"store i32 {second}, ptr {field 2}, align 4")
+                        w.Inst($"store i32 {mode}, ptr {field 3}, align 4")
+                        w.Inst($"store i32 0, ptr {field 4}, align 4"))
+                    let cursor = emitContextLoad w "%ctx" 2
+                    let units = w.Fresh "template.units"
+                    let payloadPointer = w.Fresh "template.payload.pointer"
+                    let extentPointer = w.Fresh "template.extent.pointer"
+                    w.Inst($"{units} = alloca i32, align 4")
+                    w.Inst($"{payloadPointer} = alloca i32, align 4")
+                    w.Inst($"{extentPointer} = alloca i32, align 4")
+                    let sizeError = addDiagnostic "RUNTIME_STRING_LENGTH_OVERFLOW" "html template result exceeds the bounded String byte range." currentOwner instructionSpan [] []
+                    let planStatus = w.Fresh "template.plan.status"
+                    w.Inst($"{planStatus} = call i32 @al_owning_html_template_plan(ptr %%ctx, ptr {partsArray}, i32 {entries.Length}, i32 {sizeError}, ptr {units}, ptr {payloadPointer}, ptr {extentPointer})")
+                    emitStatusResult w planStatus failBody
+                    let resultPayload = w.Fresh "template.payload"
+                    let resultExtent = w.Fresh "template.extent"
+                    w.Inst($"{resultPayload} = load i32, ptr {payloadPointer}, align 4")
+                    w.Inst($"{resultExtent} = load i32, ptr {extentPointer}, align 4")
+                    let resultEnd = emitOffset w cursor resultExtent
+                    let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve exact html template output." currentOwner instructionSpan [] []
+                    emitReserve w resultEnd reserveError failBody
+                    let writeStatus = w.Fresh "template.write.status"
+                    let resultUnits = w.Fresh "template.units.value"
+                    w.Inst($"{resultUnits} = load i32, ptr {units}, align 4")
+                    w.Inst($"{writeStatus} = call i32 @al_owning_html_template_write(ptr %%ctx, i32 {cursor}, i32 {resultExtent}, i32 {resultUnits}, i32 {resultPayload}, ptr {partsArray}, i32 {entries.Length}, i32 {typeId resultType}, i32 {sizeError})")
+                    emitStatusResult w writeStatus failBody
+                    emitUpdateLive w resultPayload "0" failBody
+                    cursor, resultExtent, resultPayload, resultEnd
+                let templateEntries (parts: HtmlTemplatePart list) (holes: OwningDynamicStackEntry list) =
+                    let mutable remaining = holes
+                    parts
+                    |> List.choose (fun part ->
+                        match part with
+                        | HtmlTemplatePart.Text "" -> None
+                        | HtmlTemplatePart.Text text -> Some(Choice1Of2 text)
+                        | HtmlTemplatePart.StringHole | HtmlTemplatePart.IntHole | HtmlTemplatePart.HtmlHole | HtmlTemplatePart.HtmlListHole ->
+                            let hole = List.head remaining
+                            remaining <- List.tail remaining
+                            let mode =
+                                match part with
+                                | HtmlTemplatePart.StringHole -> 2
+                                | HtmlTemplatePart.HtmlListHole -> 3
+                                | HtmlTemplatePart.IntHole -> 4
+                                | _ -> 1
+                            Some(Choice2Of2(hole, mode)))
                 let entryAt entries index = entries[index]
                 // `[a, b, c]` of Strings immediately joined: the ListOf emits an n-way
                 // join of the parts and the following string.join becomes a no-op.
@@ -5813,6 +5903,55 @@ module OwningStackAot =
                         emitStatusResult w status failBody
                         stack <- push stack IrString destination (string literalExtent) (string literalPayload) next
                     | IrOperation.Constant _ -> invalidOp "Owning validation missed a verified dynamic constant."
+                    | IrOperation.LayoutTemplate(layoutKey, _, head, tail) ->
+                        // A layout (report 309): the head written at the cursor and the tail right
+                        // after it. A record of two Strings is its fields' bytes in order, so the
+                        // two writes are the Layout value; nothing is copied again.
+                        let holeCount parts = parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1)
+                        let headHoles = holeCount head
+                        let total = headHoles + holeCount tail
+                        let holes, prefix = pop total
+                        let headCursor, headExtent, headPayload, _ = emitTemplateWrite (templateEntries head (List.take headHoles holes)) IrString instructionSpan
+                        let _, tailExtent, tailPayload, tailEnd = emitTemplateWrite (templateEntries tail (List.skip headHoles holes)) IrString instructionSpan
+                        for index in stack.Length - 1 .. -1 .. stack.Length - total do
+                            emitDropEntry stack index
+                        let extent = emitOffset w headExtent tailExtent
+                        let payload = emitOffset w headPayload tailPayload
+                        stack <- push prefix (IrNominal layoutKey) headCursor extent payload tailEnd
+                    | IrOperation.LayoutWrap(layoutKey, htmlKey, isList) ->
+                        // head ++ content ++ tail, written once as Html: Html by construction,
+                        // since only layout templates make a Layout (report 309).
+                        let values, prefix = pop 2
+                        let layoutEntry = values[0]
+                        let content = values[1]
+                        let layoutType = IrNominal layoutKey
+                        let locateError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to locate a layout's head or tail." currentOwner instructionSpan [] []
+                        let fieldEntry index =
+                            let location = w.Fresh "layout.field.location"
+                            w.Inst($"{location} = alloca %%AlOwningFieldLocation, align 4")
+                            let status = w.Fresh "layout.field.status"
+                            w.Inst($"{status} = call i32 @al_owning_locate_field(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex layoutType}, i32 {layoutEntry.Offset}, i32 {layoutEntry.Extent}, i32 {index}, i32 {locateError}, ptr {location})")
+                            emitStatusResult w status failBody
+                            let load fieldIndex name =
+                                let pointer = w.Fresh $"layout.{name}.pointer"
+                                let value = w.Fresh $"layout.{name}"
+                                w.Inst($"{pointer} = getelementptr inbounds %%AlOwningFieldLocation, ptr {location}, i32 0, i32 {fieldIndex}")
+                                w.Inst($"{value} = load i32, ptr {pointer}, align 4")
+                                value
+                            { Type = IrString
+                              Offset = load 0 "offset"
+                              Payload = load 1 "payload"
+                              Extent = load 2 "extent"
+                              OwnerEnd = layoutEntry.OwnerEnd
+                              Register = None }
+                        let headEntry = fieldEntry 0
+                        let tailEntry = fieldEntry 1
+                        let entries = [ Choice2Of2(headEntry, 1); Choice2Of2(content, (if isList then 3 else 1)); Choice2Of2(tailEntry, 1) ]
+                        let htmlType = IrNominal htmlKey
+                        let cursor, extent, payload, resultEnd = emitTemplateWrite entries htmlType instructionSpan
+                        for index in stack.Length - 1 .. -1 .. stack.Length - 2 do
+                            emitDropEntry stack index
+                        stack <- push prefix htmlType cursor extent payload resultEnd
                     | IrOperation.HtmlTemplate(key, parts) ->
                         // One sized result: plan (measure literals, holes and escapes),
                         // reserve once, then write every byte once. Html by construction:

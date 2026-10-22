@@ -322,6 +322,13 @@ module internal ArenaLifetime =
                 // (escaped or as-is), never aliased.
                 let prefix, _ = pop (templateHoleCount parts) state.Stack
                 { state with Stack = prefix @ [ Set.singleton currentRegion ] }
+            | IrOperation.LayoutTemplate(_, _, head, tail) ->
+                // A new owner in the current region; holes are copied, never aliased.
+                let prefix, _ = pop (templateHoleCount (head @ tail)) state.Stack
+                { state with Stack = prefix @ [ Set.singleton currentRegion ] }
+            | IrOperation.LayoutWrap _ ->
+                let prefix, _ = pop 2 state.Stack
+                { state with Stack = prefix @ [ Set.singleton currentRegion ] }
             | IrOperation.ForeignCall(_, inputs, _) ->
                 // A C binding reads its arguments for the call only and returns a scalar.
                 let prefix, _ = pop inputs.Length state.Stack
@@ -514,6 +521,12 @@ module internal ArenaLifetime =
             | IrOperation.ForeignCall(_, inputs, _) ->
                 let prefix, popped = pop inputs.Length state.Stack
                 finishUnknown prefix popped 1
+            | IrOperation.LayoutTemplate(_, _, head, tail) ->
+                let prefix, inputs = pop (templateHoleCount (head @ tail)) state.Stack
+                finishUnknown prefix inputs 1
+            | IrOperation.LayoutWrap _ ->
+                let prefix, inputs = pop 2 state.Stack
+                finishUnknown prefix inputs 1
             | IrOperation.Constant _ | IrOperation.StoreLocal _ | IrOperation.LoadLocal _
             | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _
             | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue
