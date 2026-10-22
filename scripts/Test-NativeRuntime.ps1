@@ -1,7 +1,8 @@
 # Test-NativeRuntime.ps1: builds and runs the C runtime's own tests with the
 # toolchain's clang. The unit tests (owning_stack_runtime_test.c) run at O0, O2
 # and under trap-mode UBSan; the exhaustive HTML escape check (html_escape_test.c,
-# report 310) runs at O2 and under UBSan. Exits nonzero when any build or run fails.
+# report 310) and the substring search (string_find_test.c, report 312) run at
+# O2 and under UBSan. Exits nonzero when any build or run fails.
 [CmdletBinding()]
 param([string] $OutDir = '')
 
@@ -22,7 +23,10 @@ $cases = @(
     @{ Name = 'unit-ubsan'; Flags = $ubsan; Sources = @('owning_stack_runtime_test.c', 'owning_stack_runtime.c') },
     # The escape test includes the runtime source to reach its static helpers.
     @{ Name = 'escape-O2'; Flags = @('-O2', '-Wno-unused-function'); Sources = @('html_escape_test.c') },
-    @{ Name = 'escape-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('html_escape_test.c') }
+    @{ Name = 'escape-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('html_escape_test.c') },
+    # The 8-byte substring search (report 312) against the naive one.
+    @{ Name = 'find-O2'; Flags = @('-O2', '-Wno-unused-function'); Sources = @('string_find_test.c') },
+    @{ Name = 'find-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('string_find_test.c') }
 )
 $failed = 0
 foreach ($case in $cases) {

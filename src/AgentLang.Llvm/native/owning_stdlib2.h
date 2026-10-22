@@ -1022,6 +1022,11 @@ static uint32_t al_cookie_scalar(const uint8_t *x, uint32_t n,
   uint32_t scalar = 0xfffdu;
   uint32_t consumed = 1u;
   uint8_t first;
+  /* A plain ASCII byte is its own scalar (report 312). */
+  if (probe < n && x[probe] < 0x80u && x[probe] != '%' && x[probe] != '+') {
+    *pos = probe + 1u;
+    return x[probe];
+  }
   while (available < 4u && probe < n) {
     look[available] = al_cookie_take(x, &probe);
     ends[available] = probe;
@@ -1078,8 +1083,12 @@ static void al_cookie_unescape(al_stdlib_writer *w, const uint8_t *x,
   uint64_t total = 0u;
   uint32_t pos;
   uint32_t i;
+  int32_t escaped = 0;
   for (i = 0u; i < n;) {
+    if (x[i] == '+')
+      escaped = 1;
     if (x[i] == '%') {
+      escaped = 1;
       if (i + 2u >= n || al_json_hexdigit(x[i + 1u]) < 0 ||
           al_json_hexdigit(x[i + 2u]) < 0) {
         al_stdlib_text(w, x, n);
@@ -1089,6 +1098,12 @@ static void al_cookie_unescape(al_stdlib_writer *w, const uint8_t *x,
     } else {
       i += 1u;
     }
+  }
+  /* Nothing escaped: a String is valid UTF-8, so decoding gives the same
+   * bytes back (report 312). */
+  if (!escaped) {
+    al_stdlib_text(w, x, n);
+    return;
   }
   for (pos = 0u; pos < n;)
     total += al_utf8_encode(al_cookie_scalar(x, n, &pos), out);

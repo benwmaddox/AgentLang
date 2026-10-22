@@ -323,6 +323,54 @@ static void al_owning_put_le64_at(uint8_t *p, uint64_t value) {
   p[7] = (uint8_t)(value >> 56u);
 }
 
+/* The first index at or after `from` where needle occurs in text, or
+ * text_length when it does not; an empty needle occurs at `from` (report 312).
+ * Candidates for the needle's first byte are found eight bytes at a time: the
+ * zero-byte test on the word XOR that byte repeated. Its lowest set bit is
+ * always a real match (a borrow only marks bytes after one), so only those
+ * positions are compared in full. */
+static uint32_t al_owning_find_bytes(const uint8_t *text, uint32_t text_length,
+                                     uint32_t from, const uint8_t *needle,
+                                     uint32_t needle_length) {
+  const uint64_t ones = 0x0101010101010101ull;
+  uint64_t first;
+  uint32_t last;
+  uint32_t index = from;
+  if (needle_length == 0u)
+    return from <= text_length ? from : text_length;
+  if (needle_length > text_length || from > text_length - needle_length)
+    return text_length;
+  last = text_length - needle_length;
+  first = ones * needle[0];
+  while (index <= last) {
+    uint32_t candidate;
+    uint32_t k;
+    if (text_length - index >= 8u) {
+      const uint64_t x = al_owning_le64_at(text + index) ^ first;
+      const uint64_t hits = (x - ones) & ~x & 0x8080808080808080ull;
+      if (hits == 0ull) {
+        index += 8u;
+        continue;
+      }
+      candidate = index + (uint32_t)(__builtin_ctzll(hits) >> 3);
+    } else {
+      candidate = index;
+      if (text[candidate] != needle[0]) {
+        ++index;
+        continue;
+      }
+    }
+    if (candidate > last)
+      return text_length;
+    for (k = 1u; k < needle_length && text[candidate + k] == needle[k]; ++k) {
+    }
+    if (k == needle_length)
+      return candidate;
+    index = candidate + 1u;
+  }
+  return text_length;
+}
+
 static void al_owning_bytes_copy(uint8_t *destination, const uint8_t *source,
                                  uint32_t byte_count) {
   uint32_t index = 0u;
@@ -2942,19 +2990,6 @@ static int32_t al_owning_string_scan_stack_exact(
 /* string.replace: every non-overlapping occurrence of the old String, scanned
  * left to right, becomes the new String. An empty old String leaves the text
  * unchanged. Matching is ordinal over the UTF-8 bytes. */
-static int al_owning_replace_matches_at(const uint8_t *text,
-                                        uint32_t text_units, uint32_t index,
-                                        const uint8_t *old,
-                                        uint32_t old_units) {
-  uint32_t position = 0u;
-  if (old_units == 0u || old_units > text_units ||
-      index > text_units - old_units)
-    return 0;
-  while (position < old_units && text[index + position] == old[position])
-    ++position;
-  return position == old_units;
-}
-
 static uint32_t al_owning_replace_count(const uint8_t *text,
                                         uint32_t text_units,
                                         const uint8_t *old,
@@ -2963,15 +2998,13 @@ static uint32_t al_owning_replace_count(const uint8_t *text,
   uint32_t matches = 0u;
   if (old_units == 0u || old_units > text_units)
     return 0u;
-  while (index <= text_units - old_units) {
-    if (al_owning_replace_matches_at(text, text_units, index, old, old_units)) {
-      ++matches;
-      index += old_units;
-    } else {
-      ++index;
-    }
+  for (;;) {
+    index = al_owning_find_bytes(text, text_units, index, old, old_units);
+    if (index >= text_units)
+      return matches;
+    ++matches;
+    index += old_units;
   }
-  return matches;
 }
 
 int32_t al_owning_string_replace_plan(
@@ -3099,18 +3132,17 @@ int32_t al_owning_string_replace_write(
   cursor = destination_offset + 8u;
   run_start = 0u;
   index = 0u;
-  while (index < text_units) {
-    if (al_owning_replace_matches_at(text, text_units, index, old, old_units)) {
-      al_owning_bytes_copy(ctx->stack_data + cursor, text + run_start,
-                           index - run_start);
-      cursor += index - run_start;
-      al_owning_bytes_copy(ctx->stack_data + cursor, replacement, new_units);
-      cursor += new_units;
-      index += old_units;
-      run_start = index;
-    } else {
-      ++index;
-    }
+  while (old_units != 0u && index < text_units) {
+    index = al_owning_find_bytes(text, text_units, index, old, old_units);
+    if (index >= text_units)
+      break;
+    al_owning_bytes_copy(ctx->stack_data + cursor, text + run_start,
+                         index - run_start);
+    cursor += index - run_start;
+    al_owning_bytes_copy(ctx->stack_data + cursor, replacement, new_units);
+    cursor += new_units;
+    index += old_units;
+    run_start = index;
   }
   al_owning_bytes_copy(ctx->stack_data + cursor, text + run_start,
                        text_units - run_start);
@@ -4225,6 +4257,15 @@ int32_t al_owning_string_find(al_owning_stack_context *ctx,
   if (needle_units > haystack_units)
     return 0;
   last = haystack_units - needle_units;
+  if (mode == 0u) {
+    /* contains: one scan (report 312). */
+    *out_found = al_owning_find_bytes(ctx->stack_data + haystack_offset + 8u,
+                                      haystack_units, 0u,
+                                      ctx->stack_data + needle_offset + 8u,
+                                      needle_units) != haystack_units ||
+                 needle_units == 0u;
+    return 0;
+  }
   first = mode == 2u ? last : 0u;
   if (mode == 1u)
     last = 0u;
@@ -5620,13 +5661,11 @@ static int32_t al_stdlib_emit(al_owning_stack_context *ctx, int32_t op,
       al_stdlib_none(w);
       return 1;
     }
-    for (index = (uint32_t)start; (uint64_t)index + n[1] <= n[0]; ++index) {
-      if (al_stdlib_matches_at(x, n[0], index, needle, n[1])) {
-        al_stdlib_some_int(w, (int64_t)index);
-        return 1;
-      }
-    }
-    al_stdlib_none(w);
+    index = al_owning_find_bytes(x, n[0], (uint32_t)start, needle, n[1]);
+    if (n[1] == 0u || index < n[0])
+      al_stdlib_some_int(w, (int64_t)index);
+    else
+      al_stdlib_none(w);
     return 1;
   }
   case AL_STDLIB_STRING_SLICE: {
