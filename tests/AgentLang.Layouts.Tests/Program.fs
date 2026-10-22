@@ -62,7 +62,7 @@ let private run () =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath + "\nfn page.head-of(page: Layout) -> String {\n    page.head\n}\n\ntest page.head-of/head {\n    expect page.head-of(edge.end(\"a\")) == \"<p>a</p>\"\n}\n"))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "page.layout"; "page.wrapped"; "page.wrapped-list"; "edge.start"; "edge.end"; "edge.pair"; "edge.split"; "page.head-of" ] do
+    for name in [ "page.layout"; "page.wrapped"; "page.wrapped-list"; "edge.start"; "edge.end"; "edge.pair"; "edge.split"; "page.head-of"; "escape.text" ] do
         let response = engine.Dispatch("commit", wordArgs name)
         let text = response.ToJsonString()
         check $"{name} commits (its attached tests pass): {text}" (response["ok"].GetValue<bool>() || text.Contains("COMMIT_NOT_CANDIDATE", StringComparison.Ordinal))
@@ -74,6 +74,16 @@ let private run () =
     let layoutType = TNamed "Layout"
     let htmlType = TNamed "Html"
     let texts = [ ""; "a"; "a<b>&\"'"; "é🚀"; String('x', 300) ]
+    // Escaping scans 8 bytes at a time (report 310): each special at the start,
+    // middle and end of texts around every 8-byte boundary, runs of specials, and
+    // multi-byte text beside them.
+    let escapeTexts =
+        [ for length in [ 1; 7; 8; 9; 15; 16; 17; 24; 25 ] do
+            for position in List.distinct [ 0; length / 2; length - 1 ] do
+                for special in [ '&'; '\''; '<'; '>'; '"' ] -> String('a', position) + string special + String('b', length - position - 1)
+          yield "&'<>\"&'<>\"&'<>\"&'<>"
+          yield "é🚀&é🚀<é🚀>é🚀\"é🚀'"
+          yield String('x', 63) + "<" + String('y', 64) ]
     let entries =
         [ "page.layout", [ TString; TInt ], [ layoutType ], [ for text in texts do for count in [ 0L; -7L; Int64.MaxValue ] -> [ StringValue text; IntValue count ] ]
           "page.wrapped", [ TString; TInt; htmlType ], [ htmlType ], [ for text in texts -> [ StringValue text; IntValue 2L; html "<p>body</p>" ] ]
@@ -81,7 +91,8 @@ let private run () =
           "edge.start", [], [ layoutType ], [ [] ]
           "edge.end", [ TString ], [ layoutType ], [ for text in texts -> [ StringValue text ] ]
           "edge.pair", [ TInt; TString ], [ layoutType ], [ for text in texts -> [ IntValue 9L; StringValue text ] ]
-          "edge.split", [ TInt; TString ], [ htmlType ], [ for text in texts -> [ IntValue -1L; StringValue text ] ] ]
+          "edge.split", [ TInt; TString ], [ htmlType ], [ for text in texts @ escapeTexts -> [ IntValue -1L; StringValue text ] ]
+          "escape.text", [ TString ], [ TString ], [ for text in texts @ escapeTexts -> [ StringValue text ] ] ]
     // The interpreter's head and tail match the template, joined around the content.
     match interpret "edge.split" [ TInt; TString ] [ htmlType ] [ IntValue 7L; StringValue "&" ] with
     | Ok [ NamedValue(_, StringValue text) ] -> check $"edge.split joins head, content and tail ({text})" (text = "<div data-n=\"7\"><b>mid</b><i>&amp;</i></div>")

@@ -75,3 +75,11 @@ test edge.pair/sides {
 test edge.split/joined {
     expect Html.value(edge.split(7, "&")) == "<div data-n=\"7\"><b>mid</b><i>&amp;</i></div>"
 }
+
+fn escape.text(value: String) -> String {
+    string.html-escape(value)
+}
+
+test escape.text/specials {
+    expect escape.text("a<b>&\"'") == "a&lt;b&gt;&amp;&quot;&#39;"
+}
