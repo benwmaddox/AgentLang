@@ -81,6 +81,9 @@ type ContainerConstructor =
     /// Result<List<Row>, SqlError> (type arguments Row, DbRow, SqlError). A NULL
     /// or a value of the wrong kind becomes SqlError 20; nothing is coerced.
     | DbDecode
+    /// A C binding's call (report 307): its spec (library and prototype, as JSON).
+    /// Type arguments: the inputs, then the output.
+    | ForeignCall of spec: string
 
 type Expr =
     | Push of Literal * SourceSpan

@@ -979,23 +979,32 @@ module FlowSource =
         let effects = if Set.isEmpty definition.Effects then "none" else definition.Effects |> Set.toList |> String.concat ", "
         if definition.SyntaxVersion = 2 && not definition.EffectsDeclared && not (Set.isEmpty definition.Effects) then
             Diagnostics.raiseError "FLOW_EFFECTS_UNDECLARED" "Flow/2 cannot omit effects while carrying a nonempty declared effect set." (Some definition.Name) (Some definition.Span) [ "declared effects or an empty effect set" ] (Set.toList definition.Effects)
-        let lines = ResizeArray<string>()
         let outputs =
             match definition.Outputs with
             | [ output ] -> Types.format output
             | values -> "(" + (values |> List.map Types.format |> String.concat ", ") + ")"
-        let keyword = if definition.SyntaxVersion = 1 then "word" else "fn"
-        let modifier = if definition.Inline then "inline " else ""
-        lines.Add($"{modifier}{keyword} {definition.Name}({parameters}) -> {outputs} {{")
-        let metadata = ResizeArray<string>()
-        if definition.SyntaxVersion = 1 || definition.EffectsDeclared then metadata.Add("    effects " + effects)
-        if not (System.String.IsNullOrEmpty definition.Documentation) then metadata.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))
-        metadata |> Seq.iter lines.Add
-        if definition.SyntaxVersion = 2 && metadata.Count > 0 then lines.Add("")
-        let parameterLocals = definition.Parameters |> List.map (fun parameter -> parameter.Name) |> Set.ofList
-        renderStatements definition.SyntaxVersion parameterLocals 1 definition.Body |> fst |> List.iter lines.Add
-        lines.Add("}")
-        String.concat "\n" lines
+        match definition.Body with
+        | [ FlowStatement.Evaluate(FlowExpression.Call(intrinsic, FlowArgument.Positional(FlowExpression.Literal(LString spec, _)) :: _, _)) ] when intrinsic = ForeignCalls.intrinsicName ->
+            // A C binding (report 307) renders as it is written.
+            use parsed = JsonDocument.Parse spec
+            let library = parsed.RootElement.GetProperty("library").GetString()
+            let prototype = parsed.RootElement.GetProperty("prototype").GetString()
+            let effectText = if Set.isEmpty definition.Effects then "" else " effects " + (definition.Effects |> Set.toList |> String.concat ", ")
+            $"fn {definition.Name}({parameters}) -> {outputs} = c {JsonSerializer.Serialize prototype} from {JsonSerializer.Serialize library}{effectText}"
+        | _ ->
+            let lines = ResizeArray<string>()
+            let keyword = if definition.SyntaxVersion = 1 then "word" else "fn"
+            let modifier = if definition.Inline then "inline " else ""
+            lines.Add($"{modifier}{keyword} {definition.Name}({parameters}) -> {outputs} {{")
+            let metadata = ResizeArray<string>()
+            if definition.SyntaxVersion = 1 || definition.EffectsDeclared then metadata.Add("    effects " + effects)
+            if not (System.String.IsNullOrEmpty definition.Documentation) then metadata.Add("    doc " + JsonSerializer.Serialize(definition.Documentation))
+            metadata |> Seq.iter lines.Add
+            if definition.SyntaxVersion = 2 && metadata.Count > 0 then lines.Add("")
+            let parameterLocals = definition.Parameters |> List.map (fun parameter -> parameter.Name) |> Set.ofList
+            renderStatements definition.SyntaxVersion parameterLocals 1 definition.Body |> fst |> List.iter lines.Add
+            lines.Add("}")
+            String.concat "\n" lines
 
     let private renderExpectation syntaxVersion locals = function
         | FlowTestExpectation.Literal(literal, _) -> renderLiteral literal

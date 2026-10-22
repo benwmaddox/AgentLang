@@ -1317,6 +1317,48 @@ module FlowParser =
                     expect state ")" |> ignore
                     List.ofSeq values
                 else [ parseType state ]
+            // `= c "<prototype>" from "<library>"` (report 307): a C binding. Its body is one
+            // call of the reserved intrinsic, so the word is stored, fingerprinted and tested
+            // as any other word.
+            if state.SyntaxVersion = 2 && peek state = Some "=" then
+                consume state |> ignore
+                if peek state <> Some "c" then tokenError state "FLOW_C_BINDING" "A binding is `= c \"<prototype>\" from \"<library>\"`."
+                consume state |> ignore
+                let quoted code message =
+                    match current state with
+                    | Some token when token.Kind = StringLiteral -> JsonSerializer.Deserialize<string>((consume state).Text)
+                    | _ -> tokenError state code message
+                let prototypeText = quoted "FLOW_C_BINDING" "A binding names its C prototype as a quoted string: c \"unsigned long crc32_z(unsigned long, bytes)\"."
+                if peek state <> Some "from" then tokenError state "FLOW_C_BINDING" "A binding names its library: from \"z\"."
+                consume state |> ignore
+                let library = quoted "FLOW_C_BINDING" "A binding names its library as a quoted string: from \"z\"."
+                let effects =
+                    match peek state with
+                    | Some "effects" ->
+                        let marker = consume state
+                        Some(parseEffects state marker.Line)
+                    | _ -> None
+                let endToken = previous state |> Option.get
+                let bindingSpan = sourceSpan state.File wordToken (Some endToken)
+                let spec = ForeignCalls.encode { Library = library; Prototype = { Return = ForeignCalls.CType.Bool; Symbol = ""; Parameters = [] }; PrototypeText = prototypeText }
+                let arguments =
+                    FlowArgument.Positional(FlowExpression.Literal(LString spec, bindingSpan))
+                    :: (parameters |> Seq.map (fun parameter -> FlowArgument.Positional(FlowExpression.Local(parameter.Name, bindingSpan))) |> List.ofSeq)
+                let firstToken = inlineToken |> Option.defaultValue wordToken
+                let definition =
+                    { Name = name
+                      Inline = inlineToken.IsSome
+                      Parameters = List.ofSeq parameters
+                      Outputs = outputs
+                      Effects = effects |> Option.defaultValue Set.empty
+                      EffectsDeclared = true
+                      Documentation = ""
+                      Body = [ FlowStatement.Evaluate(FlowExpression.Call(ForeignCalls.intrinsicName, arguments, bindingSpan)) ]
+                      SourceText = sourceSlice state firstToken endToken
+                      Span = sourceSpan state.File firstToken (Some endToken)
+                      SyntaxVersion = state.SyntaxVersion }
+                definition
+            else
             expect state "{" |> ignore
             let mutable effects = None
             let mutable documentation = ""

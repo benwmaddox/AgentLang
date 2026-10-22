@@ -864,6 +864,9 @@ module FlowLowering =
         | FlowExpression.Call(name, arguments, callSpan) when name.StartsWith("db.rows<", StringComparison.Ordinal) ->
             let rowName, _, _, _ = analyzeDbRows context state environment name arguments callSpan
             [ TResult(TList(TNamed rowName), TNamed "SqlError") ]
+        | FlowExpression.Call(name, arguments, callSpan) when name = ForeignCalls.intrinsicName ->
+            let _, _, output, _ = analyzeForeignCall context state environment arguments callSpan
+            [ output ]
         | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
             escapingHtmlArgument context state environment arguments newSpan |> ignore
             [ TNamed HtmlBuiltIn.typeName ]
@@ -1187,6 +1190,34 @@ module FlowLowering =
         | Some(name, bindingSpan), None ->
             fail "FLOW_MATCH_ENUM_BINDING" $"Enum case '{caseValue.Name}' has no payload to bind to '{name}'; write '{caseValue.Name} =>'." None (Some bindingSpan) [ $"{caseValue.Name} =>" ] [ $"{caseValue.Name} {name} =>" ]
 
+    /// A C binding's body (report 307): the spec literal, then the parameters, which
+    /// must fit the prototype. Returns the spec, input types and output type.
+    and private analyzeForeignCall (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (arguments: FlowArgument list) (callSpan: SourceSpan) =
+        match arguments with
+        | FlowArgument.Positional(FlowExpression.Literal(LString spec, _)) :: rest ->
+            let binding =
+                match ForeignCalls.decode spec with
+                | Ok binding -> binding
+                | Error reason -> fail "FLOW_C_PROTOTYPE" $"C binding prototype: {reason}." None (Some callSpan) [ "<return type> <symbol>(<types>)"; String.Join(", ", ForeignCalls.typeNameList) ] [ spec ]
+            let inputs =
+                rest |> List.map (function
+                    | FlowArgument.Positional expression -> inferExpression context state environment expression
+                    | _ -> fail "FLOW_C_BINDING" "A C binding passes its parameters in order." None (Some callSpan) [] [])
+            let parameters = binding.Prototype.Parameters
+            if inputs.Length <> parameters.Length then
+                fail "FLOW_C_BINDING_TYPE" $"C binding {binding.Prototype.Symbol} takes {parameters.Length} parameter(s); the word declares {inputs.Length}." None (Some callSpan) [ string parameters.Length ] [ string inputs.Length ]
+            List.zip inputs parameters |> List.iteri (fun index (flow, cType) ->
+                if not (ForeignCalls.fits flow cType) then
+                    fail "FLOW_C_BINDING_TYPE" $"Parameter {index + 1} of {binding.Prototype.Symbol} is {ForeignCalls.formatType cType} in C, which a {Types.format flow} cannot be passed as." None (Some callSpan) [ "Int <-> integers; Bool <-> bool or integers; Float <-> double; Bytes <-> bytes; String <-> text" ] [ Types.format flow ])
+            let output =
+                match binding.Prototype.Return with
+                | ForeignCalls.CType.Integer _ -> TInt
+                | ForeignCalls.CType.Bool -> TBool
+                | ForeignCalls.CType.Double -> TFloat
+                | other -> fail "FLOW_C_BINDING_TYPE" $"C binding {binding.Prototype.Symbol} returns {ForeignCalls.formatType other}." None (Some callSpan) [ "a number or a bool" ] []
+            spec, inputs, output, rest
+        | _ -> fail "FLOW_C_BINDING" "A C binding body is its prototype and parameters." None (Some callSpan) [] []
+
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
             match inferExpression context state environment scrutinee with
@@ -1424,6 +1455,15 @@ module FlowLowering =
                     | FlowArgument.Positional hole -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument index)) hole
                     | _ -> failwith "parser produced a malformed html template")
             appendFragments fragments [ ConstructContainer(HtmlTemplate parts, [ TNamed htmlName ], templateSpan) ]
+        | FlowExpression.Call(name, arguments, callSpan) when name = ForeignCalls.intrinsicName ->
+            // A C binding (report 307): the parameters, then one non-call ForeignCall step.
+            let spec, inputs, output, rest = analyzeForeignCall context state environment arguments callSpan
+            let fragments =
+                rest |> List.mapi (fun index argument ->
+                    match argument with
+                    | FlowArgument.Positional expression -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument(index + 1))) expression
+                    | _ -> failwith "analyzed C binding lost a parameter")
+            appendFragments fragments [ ConstructContainer(ForeignCall spec, inputs @ [ output ], callSpan) ]
         | FlowExpression.Call(name, arguments, callSpan) when name.StartsWith("db.rows<", StringComparison.Ordinal) ->
             // sql, params -> DbParams -> db.query (the one call this site binds) -> DbDecode.
             let rowName, paramsName, order, paramsExpression = analyzeDbRows context state environment name arguments callSpan

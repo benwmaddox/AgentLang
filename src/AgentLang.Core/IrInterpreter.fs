@@ -52,6 +52,114 @@ type IrEntryArgument =
     | BoolArgument of bool
     | UnitArgument
 
+/// C binding calls for the interpreter (report 307): the library is loaded and the
+/// symbol found on the first call, then each prototype gets one unmanaged calli
+/// stub, with this platform's widths. Bytes and String arguments are pinned and
+/// passed as a pointer (never null, even when empty) and a size_t length.
+module internal ForeignInvoke =
+    open System.Reflection.Emit
+    open System.Runtime.InteropServices
+
+    type Failure =
+        | LibraryMissing of string
+        | SymbolMissing of string
+        | ArgumentRange of index: int * value: int64 * low: int64 * high: int64
+
+    exception ForeignFailure of Failure
+
+    let private windows = OperatingSystem.IsWindows()
+    let private libraries = Collections.Concurrent.ConcurrentDictionary<string, nativeint>(StringComparer.Ordinal)
+    let private stubs = Collections.Concurrent.ConcurrentDictionary<string, nativeint * DynamicMethod>(StringComparer.Ordinal)
+
+    let private load (library: string) =
+        libraries.GetOrAdd(library, fun name ->
+            let candidates = ForeignCalls.libraryCandidates windows name
+            let paths = candidates |> List.collect (fun file -> [ IO.Path.Combine(AppContext.BaseDirectory, file); file ])
+            let mutable handle = 0n
+            if paths |> List.exists (fun path -> NativeLibrary.TryLoad(path, &handle)) then handle
+            else raise (ForeignFailure(LibraryMissing name)))
+
+    let private clrType (ty: ForeignCalls.CType) =
+        match ty with
+        | ForeignCalls.CType.Integer(signed, width) ->
+            match ForeignCalls.bits windows width, signed with
+            | 8, true -> typeof<sbyte> | 8, false -> typeof<byte>
+            | 16, true -> typeof<int16> | 16, false -> typeof<uint16>
+            | 32, true -> typeof<int32> | 32, false -> typeof<uint32>
+            | _, true -> typeof<int64> | _, false -> typeof<uint64>
+        | ForeignCalls.CType.Bool -> typeof<byte>
+        | ForeignCalls.CType.Double -> typeof<double>
+        | ForeignCalls.CType.Bytes | ForeignCalls.CType.Text -> typeof<nativeint>
+
+    /// The stub for one binding: (target, method taking the C arguments then the target).
+    let private stub (binding: ForeignCalls.Binding) =
+        stubs.GetOrAdd(binding.Library + "\u0000" + binding.PrototypeText, fun _ ->
+            let handle = load binding.Library
+            let mutable target = 0n
+            if not (NativeLibrary.TryGetExport(handle, binding.Prototype.Symbol, &target)) then
+                raise (ForeignFailure(SymbolMissing binding.Prototype.Symbol))
+            let parameters =
+                binding.Prototype.Parameters |> List.collect (fun ty ->
+                    match ty with
+                    | ForeignCalls.CType.Bytes | ForeignCalls.CType.Text -> [ typeof<nativeint>; typeof<unativeint> ]
+                    | other -> [ clrType other ])
+                |> Array.ofList
+            let returnType = clrType binding.Prototype.Return
+            let method = DynamicMethod("c_" + binding.Prototype.Symbol, returnType, Array.append parameters [| typeof<nativeint> |], typeof<Failure>.Module, true)
+            let il = method.GetILGenerator()
+            for index in 0 .. parameters.Length - 1 do il.Emit(OpCodes.Ldarg, index)
+            il.Emit(OpCodes.Ldarg, parameters.Length)
+            il.EmitCalli(OpCodes.Calli, CallingConvention.Cdecl, returnType, parameters)
+            il.Emit(OpCodes.Ret)
+            target, method)
+
+    let private nonEmpty = [| 0uy |]
+
+    /// Calls the binding with Int (bits), Bool, Float and byte-array arguments; returns
+    /// the result as an Int (bits), Bool or Float.
+    let call (binding: ForeignCalls.Binding) (arguments: Choice<int64, bool, double, byte[]> list) : Choice<int64, bool, double> =
+        let target, method = stub binding
+        let handles = Collections.Generic.List<GCHandle>()
+        try
+            let values =
+                List.zip binding.Prototype.Parameters arguments
+                |> List.mapi (fun index pair -> index, pair)
+                |> List.collect (fun (index, (ty, argument)) ->
+                    match ty, argument with
+                    | ForeignCalls.CType.Integer(signed, width), (Choice1Of4 _ | Choice2Of4 _) ->
+                        let value = match argument with Choice1Of4 number -> number | Choice2Of4 flag -> (if flag then 1L else 0L) | _ -> 0L
+                        let low, high = ForeignCalls.range windows signed width
+                        if value < low || value > high then raise (ForeignFailure(ArgumentRange(index + 1, value, low, high)))
+                        let boxed: obj =
+                            match ForeignCalls.bits windows width, signed with
+                            | 8, true -> box (sbyte value) | 8, false -> box (byte value)
+                            | 16, true -> box (int16 value) | 16, false -> box (uint16 value)
+                            | 32, true -> box (int32 value) | 32, false -> box (uint32 value)
+                            | _, true -> box value | _, false -> box (uint64 value)
+                        [ boxed ]
+                    | ForeignCalls.CType.Bool, Choice2Of4 flag -> [ box (if flag then 1uy else 0uy) ]
+                    | ForeignCalls.CType.Double, Choice3Of4 number -> [ box number ]
+                    | (ForeignCalls.CType.Bytes | ForeignCalls.CType.Text), Choice4Of4 data ->
+                        let pinned = GCHandle.Alloc((if data.Length = 0 then nonEmpty else data), GCHandleType.Pinned)
+                        handles.Add pinned
+                        [ box (pinned.AddrOfPinnedObject()); box (unativeint data.Length) ]
+                    | _ -> invalidOp "A verified C binding argument does not fit its prototype.")
+            let result = method.Invoke(null, Array.ofList (values @ [ box target ]))
+            match binding.Prototype.Return, result with
+            | ForeignCalls.CType.Bool, (:? byte as flag) -> Choice2Of3(flag <> 0uy)
+            | ForeignCalls.CType.Double, (:? double as number) -> Choice3Of3 number
+            | ForeignCalls.CType.Integer _, (:? sbyte as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? byte as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? int16 as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? uint16 as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? int32 as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? uint32 as n) -> Choice1Of3(int64 n)
+            | ForeignCalls.CType.Integer _, (:? int64 as n) -> Choice1Of3 n
+            | ForeignCalls.CType.Integer _, (:? uint64 as n) -> Choice1Of3(int64 n)
+            | _ -> invalidOp "A C binding returned a value of another type."
+        finally
+            for pinned in handles do pinned.Free()
+
 /// Internal semantic values shared by the interpreter and its opaque retained
 /// result. They are never exposed through the public entry API.
 type internal IrInterpreterRuntimeValue =
@@ -1755,6 +1863,33 @@ module IrInterpreter =
                         | _ -> fail "RUNTIME_STACK_TYPE" "db.rows parameters are not the expected record." (Some currentWord) (sourceSpan instruction.Site) [] []
                     let values = order |> List.map (fun index -> DbRows.parameter program dbValueKey fields[index])
                     stack <- prefix @ [ RuntimeList(IrNominal dbValueKey, values) ]
+                | IrOperation.ForeignCall(binding, inputs, output) ->
+                    if stack.Length < inputs.Length then
+                        fail "RUNTIME_STACK_UNDERFLOW" "A C binding call needs one value per parameter." (Some currentWord) (sourceSpan instruction.Site) [ string inputs.Length ] [ string stack.Length ]
+                    let prefix = stack |> List.take (stack.Length - inputs.Length)
+                    let arguments =
+                        stack |> List.skip (stack.Length - inputs.Length) |> List.map (function
+                            | RuntimeInt number -> Choice1Of4 number
+                            | RuntimeBool flag -> Choice2Of4 flag
+                            | RuntimeFloat number -> Choice3Of4 number
+                            | RuntimeBytes data -> Choice4Of4 data
+                            | RuntimeString text -> Choice4Of4(Text.Encoding.UTF8.GetBytes text)
+                            | _ -> fail "RUNTIME_STACK_TYPE" "A C binding argument is not a scalar, Bytes or String." (Some currentWord) (sourceSpan instruction.Site) [] [])
+                    let result =
+                        try ForeignInvoke.call binding arguments
+                        with ForeignInvoke.ForeignFailure failure ->
+                            match failure with
+                            | ForeignInvoke.LibraryMissing name -> fail "RUNTIME_C_LIBRARY_MISSING" $"C library '{name}' could not be loaded." (Some currentWord) (sourceSpan instruction.Site) (ForeignCalls.libraryCandidates (OperatingSystem.IsWindows()) name) []
+                            | ForeignInvoke.SymbolMissing symbol -> fail "RUNTIME_C_SYMBOL_MISSING" $"C library '{binding.Library}' has no symbol '{symbol}'." (Some currentWord) (sourceSpan instruction.Site) [ symbol ] []
+                            | ForeignInvoke.ArgumentRange(index, value, low, high) -> fail "RUNTIME_C_ARGUMENT_RANGE" $"Argument {index} of {binding.Prototype.Symbol} is {value}, outside its C type's range {low}..{high}." (Some currentWord) (sourceSpan instruction.Site) [ $"{low}..{high}" ] [ string value ]
+                    let value =
+                        match output, result with
+                        | IrInt, Choice1Of3 number -> RuntimeInt number
+                        | IrBool, Choice2Of3 flag -> RuntimeBool flag
+                        | IrBool, Choice1Of3 number -> RuntimeBool(number <> 0L)
+                        | IrFloat, Choice3Of3 number -> RuntimeFloat number
+                        | _ -> fail "RUNTIME_STACK_TYPE" "A C binding result does not fit its output type." (Some currentWord) (sourceSpan instruction.Site) [] []
+                    stack <- prefix @ [ value ]
                 | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
                     let prefix, value = popOne "db.rows requires a query result." currentWord instruction.Site []
                     let rowType = IrList(IrNominal rowKey)

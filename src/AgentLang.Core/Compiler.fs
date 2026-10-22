@@ -477,6 +477,17 @@ module Compiler =
                         | DbDecode ->
                             requireArity 3
                             consume (TResult(TList arguments[1], arguments[2])) (TResult(TList arguments[0], arguments[2]))
+                        | ForeignCall _ ->
+                            // Inputs, then the output (report 307).
+                            if arguments.IsEmpty then requireArity 1
+                            let inputs = arguments |> List.take (arguments.Length - 1)
+                            if stack.Length < inputs.Length then
+                                Diagnostics.raiseError "TYPE_STACK_UNDERFLOW" "A C binding call needs one value per parameter." (Some wordName) (Some expressionSpan) [ string inputs.Length ] [ string stack.Length ]
+                            let prefix = stack |> List.take (stack.Length - inputs.Length)
+                            for expected, actual in List.zip inputs (stack |> List.skip (stack.Length - inputs.Length)) do
+                                if expected <> actual then
+                                    Diagnostics.raiseError "TYPE_CONTAINER_PAYLOAD" "A C binding argument does not match its parameter type." (Some wordName) (Some expressionSpan) [ Types.format expected ] [ Types.format actual ]
+                            prefix @ [ List.last arguments ], locals
                         | HtmlTemplate parts ->
                             requireArity 1
                             let holeTypes =
@@ -891,6 +902,7 @@ module Compiler =
                         | HtmlTemplate parts -> "html.template" + string parts.Length
                         | DbParams _ -> "db.params"
                         | DbDecode -> "db.decode"
+                        | ForeignCall spec -> "c.call " + spec
                     name + "<" + (types |> List.map Types.format |> String.concat ", ") + ">"
                 | MapList(name, _) -> "list.map " + name
                 | FilterList(name, _) -> "list.filter " + name
@@ -1212,7 +1224,8 @@ module Compiler =
                          | ResultError -> "result-error"
                          | HtmlTemplate _ -> "html-template"
                          | DbParams _ -> "db-params"
-                         | DbDecode -> "db-decode")
+                         | DbDecode -> "db-decode"
+                         | ForeignCall _ -> "c-call")
                     match kind with
                     | DbParams order ->
                         appendInt order.Length
@@ -1554,6 +1567,7 @@ module Compiler =
         | ConstructContainer(HtmlTemplate _, _, _) -> "html-template"
         | ConstructContainer(DbParams _, _, _) -> "db-params"
         | ConstructContainer(DbDecode, _, _) -> "db-decode"
+        | ConstructContainer(ForeignCall _, _, _) -> "c-call"
         | MapList _ -> "list-map"
         | FilterList _ -> "list-filter"
         | EachList _ -> "list-each"
@@ -1739,6 +1753,10 @@ module Compiler =
                             | HtmlTemplate parts, [ IrNominal key ] -> IrOperation.HtmlTemplate(key, parts)
                             | DbParams order, [ IrNominal paramsKey; IrNominal dbValueKey ] -> IrOperation.DbParams(paramsKey, dbValueKey, order)
                             | DbDecode, [ IrNominal rowKey; IrNominal dbRowKey; IrNominal sqlErrorKey ] -> IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey)
+                            | ForeignCall spec, _ :: _ ->
+                                match ForeignCalls.decode spec with
+                                | Ok binding -> IrOperation.ForeignCall(binding, args |> List.take (args.Length - 1), List.last args)
+                                | Error reason -> irFailure "IR_FOREIGN_CALL_TYPE" $"C binding prototype is invalid: {reason}." (Some ownerName) (Some span) [] [ spec ]
                             | _ -> irFailure "IR_CONTAINER_ANNOTATION_INVALID" "Typed inference produced malformed constructor arguments." (Some ownerName) (Some span) [] (args |> List.map IrTypes.format)
                         | MapList(name, _) ->
                             let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Map lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []

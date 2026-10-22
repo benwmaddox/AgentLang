@@ -614,6 +614,34 @@ int32_t AL_OWNING_PROFILE_IMPL(al_owning_check_initialized)(
 #endif
 }
 
+const uint8_t *al_owning_foreign_bytes(al_owning_stack_context *ctx,
+                                       uint32_t offset, uint64_t *out_length,
+                                       uint32_t error_id) {
+  uint32_t length;
+  if (out_length != 0)
+    *out_length = 0u;
+  if (ctx == 0 || out_length == 0 || ctx->stack_data == 0)
+    return (const uint8_t *)"";
+  if (ctx->status != AL_OWNING_STATUS_OK)
+    return ctx->stack_data;
+  if (offset > ctx->cursor_bytes || ctx->cursor_bytes - offset < 8u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, offset,
+                          ctx->cursor_bytes);
+    return ctx->stack_data;
+  }
+  length = (uint32_t)ctx->stack_data[offset] |
+           ((uint32_t)ctx->stack_data[offset + 1u] << 8) |
+           ((uint32_t)ctx->stack_data[offset + 2u] << 16) |
+           ((uint32_t)ctx->stack_data[offset + 3u] << 24);
+  if (length > ctx->cursor_bytes - offset - 8u) {
+    al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, length,
+                          ctx->cursor_bytes - offset - 8u);
+    return ctx->stack_data;
+  }
+  *out_length = length;
+  return ctx->stack_data + offset + 8u;
+}
+
 #if AL_OWNING_DETAILED_PROFILE
 int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
                                     uint32_t offset, uint32_t byte_count) {

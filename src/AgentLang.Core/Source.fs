@@ -39,6 +39,7 @@ module Source =
                 | HtmlTemplate parts -> "html.template" + string parts.Length
                 | DbParams order -> "db.params" + String.Join("-", order)
                 | DbDecode -> "db.decode"
+                | ForeignCall spec -> "c.call" + spec
             prefix + renderConstructor name types
         | MapList(name, _) -> prefix + "list.map " + name
         | FilterList(name, _) -> prefix + "list.filter " + name

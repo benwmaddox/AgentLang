@@ -193,6 +193,9 @@ module VocabularyAnalysis =
                     writer.Write order.Length
                     for index in order do writer.Write index
                 | DbDecode -> writer.Write 10uy
+                | ForeignCall spec ->
+                    writer.Write 11uy
+                    writeString writer spec
                 writeTypeList writer types
             | MapList(name, _) ->
                 writer.Write 4uy

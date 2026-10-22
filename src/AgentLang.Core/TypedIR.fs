@@ -223,6 +223,8 @@ type IrOperation =
     | DbParams of ParamsKey: ProgramTypeKey * DbValueKey: ProgramTypeKey * Order: int list
     /// db.rows: pops Result<List<DbRow>, SqlError>, pushes Result<List<Row>, SqlError>.
     | DbDecode of RowKey: ProgramTypeKey * DbRowKey: ProgramTypeKey * SqlErrorKey: ProgramTypeKey
+    /// A C binding's call (report 307): pops the inputs, calls the symbol, pushes the output.
+    | ForeignCall of Binding: ForeignCalls.Binding * Inputs: IrType list * Output: IrType
     /// Pops one value and overwrites an existing local of exactly that type
     /// (a Flow `var`). Unlike StoreLocal it never introduces a slot.
     | AssignLocal of LocalSlot
@@ -735,6 +737,20 @@ module IrVerifier =
                         let prefix, actual = pop 1
                         if actual <> [ IrNominal paramsKey ] then operationError "IR_CALL_STACK_MISMATCH" "db.rows parameters do not match the stack." [ IrTypes.format (IrNominal paramsKey) ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrList(IrNominal dbValueKey) ] }, Set.empty
+                    | IrOperation.ForeignCall(binding, inputs, output) ->
+                        let irFits (ty: IrType) (cType: ForeignCalls.CType) =
+                            match ty, cType with
+                            | IrInt, ForeignCalls.CType.Integer _ -> true
+                            | IrBool, (ForeignCalls.CType.Bool | ForeignCalls.CType.Integer _) -> true
+                            | IrFloat, ForeignCalls.CType.Double -> true
+                            | IrBytes, ForeignCalls.CType.Bytes -> true
+                            | IrString, ForeignCalls.CType.Text -> true
+                            | _ -> false
+                        if inputs.Length <> binding.Prototype.Parameters.Length || not (List.forall2 irFits inputs binding.Prototype.Parameters) || not (irFits output binding.Prototype.Return) then
+                            operationError "IR_FOREIGN_CALL_TYPE" $"C binding {binding.Prototype.Symbol} does not fit its prototype." [ binding.PrototypeText ] (inputs @ [ output ] |> List.map IrTypes.format)
+                        let prefix, actual = pop inputs.Length
+                        if actual <> inputs then operationError "IR_CALL_STACK_MISMATCH" "C binding inputs do not match the stack." (inputs |> List.map IrTypes.format) (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ output ] }, Set.empty
                     | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
                         match program.NominalTypesByKey.TryFind rowKey with
                         | Some(IrRecordDefinition record) when record.ValidatorCall.IsNone -> ()

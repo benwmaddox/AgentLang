@@ -1099,6 +1099,7 @@ module OwningStackAot =
         | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ -> Some(1, 1)
         | IrOperation.ListOf(_, count) -> Some(count, 1)
         | IrOperation.DbParams _ | IrOperation.DbDecode _ -> Some(1, 1)
+        | IrOperation.ForeignCall(_, inputs, _) -> Some(inputs.Length, 1)
         | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
         | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
         | _ -> None
@@ -1780,6 +1781,8 @@ module OwningStackAot =
                 | IrOperation.DbParams(paramsKey, dbValueKey, _) ->
                     checkType owner (IrNominal paramsKey)
                     checkType owner (IrList(IrNominal dbValueKey))
+                | IrOperation.ForeignCall(_, inputs, output) ->
+                    for ty in inputs @ [ output ] do checkType owner ty
                 | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
                     checkType owner (IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey))
                     checkType owner (IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey))
@@ -2836,6 +2839,9 @@ module OwningStackAot =
                 | IrOperation.DbDecode(rowKey, _, sqlErrorKey) ->
                     let _, prefix = pop 1
                     stack <- prefix @ [ IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ]
+                | IrOperation.ForeignCall(_, inputs, output) ->
+                    let _, prefix = pop inputs.Length
+                    stack <- prefix @ [ output ]
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.ListSingleton itemType ->
@@ -4238,6 +4244,9 @@ module OwningStackAot =
         for current in bodies do allBlocks.Add(current.BodyName, current.BodyBlock)
         for fn in functions do allBlocks.Add(fn.FunctionName, fn.FunctionBody)
         let stringValues = ResizeArray<string>()
+        // C bindings (report 307): one resolver and cached address per binding.
+        let foreignBindings = ResizeArray<ForeignCalls.Binding>()
+        let seenForeign = HashSet<string>(StringComparer.Ordinal)
         let seenStrings = HashSet<string>(StringComparer.Ordinal)
         // html template text parts: raw UTF-8 in read-only data, copied straight
         // into the template result (never staged as arena Strings).
@@ -4246,6 +4255,7 @@ module OwningStackAot =
         let rec collectStrings (block: IrBlock) =
             for instruction in block.Code do
                 match instruction.Operation with
+                | IrOperation.ForeignCall(binding, _, _) when seenForeign.Add(binding.Library + "\u0000" + binding.PrototypeText) -> foreignBindings.Add binding
                 | IrOperation.Constant(LString value, IrString) when seenStrings.Add value -> stringValues.Add value
                 | IrOperation.DbParams(_, _, order) when seenStrings.Add(String.Join(",", order)) -> stringValues.Add(String.Join(",", order))
                 | IrOperation.HtmlTemplate(_, parts) ->
@@ -4261,6 +4271,8 @@ module OwningStackAot =
                 | _ -> ()
         for _, block in allBlocks do collectStrings block
         let stringIndexes = stringValues |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
+        let foreignIndex (binding: ForeignCalls.Binding) =
+            foreignBindings |> Seq.findIndex (fun item -> item.Library = binding.Library && item.PrototypeText = binding.PrototypeText)
         let stringGlobal value = $"@al_owning_string_literal_{stringIndexes[value]}"
         let templateTextIndexes = templateTexts |> Seq.mapi (fun index value -> value, index) |> Map.ofSeq
         let templateTextGlobal value = $"@al_owning_template_text_{templateTextIndexes[value]}"
@@ -4380,6 +4392,43 @@ module OwningStackAot =
         for value in stringValues do
             let bytes, _, _ = encodeLiteral value
             writer.Line($"{stringGlobal value} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 8")
+        // C bindings (report 307): the library is loaded and the symbol found on the
+        // first call, then the address is cached. A resolver returns null for a
+        // missing symbol and the address 1 for a missing library.
+        let windowsTarget = target = OwningTarget.WindowsX64
+        foreignBindings |> Seq.iteri (fun index binding ->
+            let cString (text: string) = Array.append (utf8Bytes text) [| 0uy |]
+            let symbol = cString binding.Prototype.Symbol
+            writer.Line($"@al_foreign_cache_{index} = internal global ptr null, align 8")
+            writer.Line($"@al_foreign_symbol_{index} = private unnamed_addr constant [{symbol.Length} x i8] c\"{llvmByteString symbol}\", align 1")
+            let candidates = ForeignCalls.libraryCandidates windowsTarget binding.Library
+            candidates |> List.iteri (fun candidate name ->
+                let bytes = cString name
+                writer.Line($"@al_foreign_library_{index}_{candidate} = private unnamed_addr constant [{bytes.Length} x i8] c\"{llvmByteString bytes}\", align 1"))
+            writer.Line($"define internal ptr @al_foreign_resolve_{index}() {{")
+            writer.Line("entry:")
+            writer.Line($"  %%cached = load atomic ptr, ptr @al_foreign_cache_{index} acquire, align 8")
+            writer.Line("  %have = icmp ne ptr %cached, null")
+            writer.Line("  br i1 %have, label %done, label %try0")
+            candidates |> List.iteri (fun candidate _ ->
+                writer.Line($"try{candidate}:")
+                if windowsTarget then writer.Line($"  %%handle{candidate} = call ptr @LoadLibraryA(ptr @al_foreign_library_{index}_{candidate})")
+                else writer.Line($"  %%handle{candidate} = call ptr @dlopen(ptr @al_foreign_library_{index}_{candidate}, i32 2)")
+                writer.Line($"  %%loaded{candidate} = icmp ne ptr %%handle{candidate}, null")
+                let next = if candidate = candidates.Length - 1 then "missing" else $"try{candidate + 1}"
+                writer.Line($"  br i1 %%loaded{candidate}, label %%found, label %%{next}"))
+            writer.Line("found:")
+            let incoming = candidates |> List.mapi (fun candidate _ -> $"[ %%handle{candidate}, %%try{candidate} ]") |> String.concat ", "
+            writer.Line($"  %%library = phi ptr {incoming}")
+            if windowsTarget then writer.Line($"  %%address = call ptr @GetProcAddress(ptr %%library, ptr @al_foreign_symbol_{index})")
+            else writer.Line($"  %%address = call ptr @dlsym(ptr %%library, ptr @al_foreign_symbol_{index})")
+            writer.Line($"  store atomic ptr %%address, ptr @al_foreign_cache_{index} release, align 8")
+            writer.Line("  ret ptr %address")
+            writer.Line("missing:")
+            writer.Line("  ret ptr inttoptr (i64 1 to ptr)")
+            writer.Line("done:")
+            writer.Line("  ret ptr %cached")
+            writer.Line("}"))
         constantListImages |> Seq.iteri (fun index image ->
             writer.Line($"@al_owning_list_literal_{index} = private unnamed_addr constant [{image.Length} x i8] c\"{llvmByteString image}\", align 8"))
         for value in templateTexts do
@@ -4406,6 +4455,14 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_check_initialized(ptr, i32, i32)")
         writer.Line("declare i32 @al_owning_locate_field(ptr, ptr, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i32 @al_owning_locate_sum_case(ptr, ptr, i32, i32, i32, i32, ptr, ptr)")
+        if foreignBindings.Count > 0 then
+            writer.Line("declare ptr @al_owning_foreign_bytes(ptr, i32, ptr, i32)")
+            if target = OwningTarget.WindowsX64 then
+                writer.Line("declare dllimport ptr @LoadLibraryA(ptr)")
+                writer.Line("declare dllimport ptr @GetProcAddress(ptr, ptr)")
+            else
+                writer.Line("declare ptr @dlopen(ptr, i32)")
+                writer.Line("declare ptr @dlsym(ptr, ptr)")
         if nativeHostProfile.IsSome then
             writer.Line("declare i32 @al_owning_commit_host_output(ptr, ptr, i32, i32, i32, i32, i32, i32, ptr)")
             match nativeHostProfile with
@@ -5617,6 +5674,106 @@ module OwningStackAot =
                         stack <- push stack IrString cursor (string literalExtent) (string literalPayload) next
                         let values, prefix = pop 3
                         emitAppHostCall manifest 19u "db.rows" values prefix outputType $"Result<List<Row>, SqlError> ({typeName info.Program outputType})"
+                    | IrOperation.ForeignCall(binding, inputs, output) ->
+                        // A C binding (report 307): each argument in its C type (Ints range-checked
+                        // into narrower types, Bytes and String as a pointer and a length), the
+                        // address from the binding's resolver, the call, the result widened to 64 bits.
+                        let index = foreignIndex binding
+                        let windows = target = OwningTarget.WindowsX64
+                        let values, prefix = pop inputs.Length
+                        let symbol = binding.Prototype.Symbol
+                        let arguments = ResizeArray<string>()
+                        let failWith (code: string) (message: string) =
+                            let error = addDiagnostic code message currentOwner instructionSpan [] []
+                            w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {error}, i32 0, i32 0)")
+                            w.Inst($"br label %%{failBody}")
+                        for position, (entry, cType) in List.zip values binding.Prototype.Parameters |> List.indexed do
+                            match cType with
+                            | ForeignCalls.CType.Integer(signed, width) ->
+                                let bits = ForeignCalls.bits windows width
+                                let value = scalarValue entry
+                                if bits < 64 then
+                                    let low, high = ForeignCalls.range windows signed width
+                                    let below = w.Fresh "c.arg.below"
+                                    let above = w.Fresh "c.arg.above"
+                                    let bad = w.Fresh "c.arg.bad"
+                                    w.Inst($"{below} = icmp slt i64 {value}, {low}")
+                                    w.Inst($"{above} = icmp sgt i64 {value}, {high}")
+                                    w.Inst($"{bad} = or i1 {below}, {above}")
+                                    let rangeLabel = w.Label "c.arg.range"
+                                    let okLabel = w.Label "c.arg.ok"
+                                    w.Inst($"br i1 {bad}, label %%{rangeLabel}, label %%{okLabel}")
+                                    w.Line($"{rangeLabel}:")
+                                    failWith "RUNTIME_C_ARGUMENT_RANGE" $"Argument {position + 1} of {symbol} is outside its C type's range {low}..{high}."
+                                    w.Line($"{okLabel}:")
+                                    let narrow = w.Fresh "c.arg"
+                                    w.Inst($"{narrow} = trunc i64 {value} to i{bits}")
+                                    let extension = if bits < 32 then (if signed then " signext" else " zeroext") else ""
+                                    arguments.Add($"i{bits}{extension} {narrow}")
+                                else arguments.Add($"i64 {value}")
+                            | ForeignCalls.CType.Bool ->
+                                let flag = w.Fresh "c.arg.bool"
+                                w.Inst($"{flag} = icmp ne i64 {scalarValue entry}, 0")
+                                arguments.Add($"i1 zeroext {flag}")
+                            | ForeignCalls.CType.Double ->
+                                let number = w.Fresh "c.arg.double"
+                                w.Inst($"{number} = bitcast i64 {scalarValue entry} to double")
+                                arguments.Add($"double {number}")
+                            | ForeignCalls.CType.Bytes | ForeignCalls.CType.Text ->
+                                let lengthSlot = w.Fresh "c.arg.length.slot"
+                                w.Inst($"{lengthSlot} = alloca i64, align 8")
+                                let readError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to read a C binding's bytes argument." currentOwner instructionSpan [] []
+                                let pointer = w.Fresh "c.arg.bytes"
+                                w.Inst($"{pointer} = call ptr @al_owning_foreign_bytes(ptr %%ctx, i32 {entry.Offset}, ptr {lengthSlot}, i32 {readError})")
+                                emitRuntimeStatus w "%ctx" failBody
+                                let length = w.Fresh "c.arg.length"
+                                w.Inst($"{length} = load i64, ptr {lengthSlot}, align 8")
+                                arguments.Add($"ptr {pointer}")
+                                arguments.Add($"i64 {length}")
+                        let address = w.Fresh "c.address"
+                        w.Inst($"{address} = call ptr @al_foreign_resolve_{index}()")
+                        let noSymbol = w.Fresh "c.no.symbol"
+                        let noLibrary = w.Fresh "c.no.library"
+                        w.Inst($"{noSymbol} = icmp eq ptr {address}, null")
+                        w.Inst($"{noLibrary} = icmp eq ptr {address}, inttoptr (i64 1 to ptr)")
+                        let symbolLabel = w.Label "c.symbol.missing"
+                        let libraryCheck = w.Label "c.library.check"
+                        let libraryLabel = w.Label "c.library.missing"
+                        let callLabel = w.Label "c.call"
+                        w.Inst($"br i1 {noSymbol}, label %%{symbolLabel}, label %%{libraryCheck}")
+                        w.Line($"{symbolLabel}:")
+                        failWith "RUNTIME_C_SYMBOL_MISSING" $"C library '{binding.Library}' has no symbol '{symbol}'."
+                        w.Line($"{libraryCheck}:")
+                        w.Inst($"br i1 {noLibrary}, label %%{libraryLabel}, label %%{callLabel}")
+                        w.Line($"{libraryLabel}:")
+                        failWith "RUNTIME_C_LIBRARY_MISSING" $"C library '{binding.Library}' could not be loaded."
+                        w.Line($"{callLabel}:")
+                        let returnType =
+                            match binding.Prototype.Return with
+                            | ForeignCalls.CType.Integer(_, width) -> $"i{ForeignCalls.bits windows width}"
+                            | ForeignCalls.CType.Bool -> "zeroext i1"
+                            | _ -> "double"
+                        let result = w.Fresh "c.result"
+                        let joined = String.Join(", ", arguments)
+                        w.Inst($"{result} = call {returnType} {address}({joined})")
+                        let wide =
+                            match binding.Prototype.Return with
+                            | ForeignCalls.CType.Integer(signed, width) when ForeignCalls.bits windows width < 64 ->
+                                let extended = w.Fresh "c.result.wide"
+                                w.Inst($"""{extended} = {(if signed then "sext" else "zext")} i{ForeignCalls.bits windows width} {result} to i64""")
+                                extended
+                            | ForeignCalls.CType.Integer _ -> result
+                            | ForeignCalls.CType.Bool ->
+                                let extended = w.Fresh "c.result.wide"
+                                w.Inst($"{extended} = zext i1 {result} to i64")
+                                extended
+                            | _ ->
+                                let bits = w.Fresh "c.result.bits"
+                                w.Inst($"{bits} = bitcast double {result} to i64")
+                                bits
+                        for drop in stack.Length - 1 .. -1 .. stack.Length - inputs.Length do
+                            emitDropEntry stack drop
+                        stack <- prefix @ [ registerEntry output wide ]
                     | IrOperation.DbDecode _ -> Diagnostics.raiseError "IR_OWNING_STACK_DB_ROWS_SHAPE" "Row decoding must follow its db.rows query." (Some currentOwner) instructionSpan [] []
                     | _ when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantListElements.Contains instruction -> ()
                     | IrOperation.ListOf(itemType, _) when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantLists.ContainsKey instruction ->

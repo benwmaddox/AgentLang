@@ -1,0 +1,115 @@
+// C bindings (report 307) to the test library flowffi, one per ABI shape.
+
+fn ffi.add64(a: Int, b: Int) -> Int = c "int64_t ffi_add64(int64_t, int64_t)" from "flowffi"
+
+test ffi.add64/values {
+    expect ffi.add64(2, 3) == 5
+}
+
+fn ffi.xor32(a: Int, b: Int) -> Int = c "uint32_t ffi_xor32(uint32_t, int32_t)" from "flowffi"
+
+test ffi.xor32/values {
+    expect ffi.xor32(4294967295, 1) == 4294967294
+}
+
+fn ffi.negate8(a: Int) -> Int = c "int8_t ffi_negate8(int8_t)" from "flowffi"
+
+test ffi.negate8/values {
+    expect ffi.negate8(-128) == -128
+    expect ffi.negate8(5) == -5
+}
+
+fn ffi.double16(a: Int) -> Int = c "uint16_t ffi_double16(uint16_t)" from "flowffi"
+
+test ffi.double16/wraps {
+    expect ffi.double16(40000) == 14464
+}
+
+fn ffi.flip-high(a: Int) -> Int = c "uint64_t ffi_flip_high(uint64_t)" from "flowffi"
+
+test ffi.flip-high/bits {
+    expect ffi.flip-high(ffi.flip-high(5000000000)) == 5000000000
+}
+
+fn ffi.next-long(a: Int) -> Int = c "unsigned long ffi_next_long(unsigned long)" from "flowffi"
+
+test ffi.next-long/values {
+    expect ffi.next-long(41) == 42
+}
+
+fn ffi.negate-long(a: Int) -> Int = c "long ffi_negate_long(long)" from "flowffi"
+
+test ffi.negate-long/values {
+    expect ffi.negate-long(7) == -7
+}
+
+fn ffi.scale(x: Float, n: Int) -> Float = c "double ffi_scale(double, int32_t)" from "flowffi"
+
+test ffi.scale/values {
+    expect ffi.scale(1.5, 4) == 6.0
+}
+
+fn ffi.even?(n: Int) -> Bool = c "bool ffi_even(int64_t)" from "flowffi"
+
+test ffi.even?/values {
+    expect ffi.even?(4) && bool.not(ffi.even?(-3))
+}
+
+fn ffi.not(flag: Bool) -> Bool = c "bool ffi_not(bool)" from "flowffi"
+
+test ffi.not/values {
+    expect ffi.not(false)
+}
+
+fn ffi.sum(data: Bytes) -> Int = c "int64_t ffi_sum(bytes)" from "flowffi"
+
+test ffi.sum/values {
+    expect ffi.sum(bytes.from-utf8("ab")) == 195
+    expect ffi.sum(bytes.from-utf8("")) == 0
+}
+
+fn ffi.first(data: Bytes, seed: Int) -> Int = c "int64_t ffi_first(bytes, int64_t)" from "flowffi"
+
+test ffi.first/values {
+    expect ffi.first(bytes.from-utf8("a"), 7) == 97007
+}
+
+fn ffi.middle(a: Int, data: Bytes, b: Int) -> Int = c "int64_t ffi_middle(int64_t, bytes, int64_t)" from "flowffi"
+
+test ffi.middle/values {
+    expect ffi.middle(1, bytes.from-utf8("a"), 2) == 1097002
+}
+
+fn ffi.last(a: Int, data: Bytes) -> Int = c "int64_t ffi_last(int64_t, bytes)" from "flowffi"
+
+test ffi.last/values {
+    expect ffi.last(3, bytes.from-utf8("xyz")) == 3003
+}
+
+fn ffi.text-bytes(text: String) -> Int = c "size_t ffi_text_bytes(text)" from "flowffi"
+
+test ffi.text-bytes/utf8 {
+    expect ffi.text-bytes("é") == 2
+    expect ffi.text-bytes("") == 0
+}
+
+fn ffi.compare(left: String, right: Bytes) -> Int = c "int32_t ffi_compare(text, bytes)" from "flowffi"
+
+test ffi.compare/order {
+    expect ffi.compare("a", bytes.from-utf8("b")) == -1
+}
+
+fn ffi.crc32-update(crc: Int, data: Bytes) -> Int = c "uint32_t ffi_crc32(uint32_t, bytes)" from "flowffi"
+
+fn ffi.crc32(data: Bytes) -> Int {
+    doc "CRC-32 of data, from seed 0: the binding takes the seed, as zlib's crc32 does."
+    ffi.crc32-update(0, data)
+}
+
+test ffi.crc32-update/check {
+    expect ffi.crc32-update(0, bytes.from-utf8("123456789")) == 3421780262
+}
+
+test ffi.crc32/check {
+    expect ffi.crc32(bytes.from-utf8("123456789")) == 3421780262
+}

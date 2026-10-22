@@ -222,6 +222,13 @@ module LlvmToolchain =
                  |> Seq.tryFind File.Exists
                  |> Option.map Path.GetFullPath)
 
+    /// kernel32.lib, for C bindings' LoadLibraryA/GetProcAddress (report 307); like
+    /// bcrypt.lib, it adds nothing to modules that never reference it.
+    let private windowsSdkKernel32Library =
+        lazy
+            (try Some(findWindowsSdkKernel32Library ())
+             with _ -> None)
+
     let private linkObjects (toolchain: LlvmToolchain) (outputDllPath: string) (objectPaths: string list) =
         if File.Exists outputDllPath then File.Delete outputDllPath
         let workingDirectory = Path.GetDirectoryName outputDllPath
@@ -229,6 +236,7 @@ module LlvmToolchain =
         let runtimeLibraries =
             (toolchain.CompilerRuntimeLibrary |> Option.toList)
             @ (if alreadyLinked "bcrypt.lib" then [] else windowsSdkBcryptLibrary.Force() |> Option.toList)
+            @ (if alreadyLinked "kernel32.lib" then [] else windowsSdkKernel32Library.Force() |> Option.toList)
         run toolchain.LldLinkPath
             ([ "/dll"; "/noentry"; "/nodefaultlib"; "/machine:x64"
                $"/out:{outputDllPath}" ] @ objectPaths @ runtimeLibraries)

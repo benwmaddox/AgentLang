@@ -497,6 +497,10 @@ module IrFormatting =
             addKey "paramsKey" paramsKey
             addKey "dbValueKey" dbValueKey
             addString node "order" (String.Join(",", order))
+        | IrOperation.ForeignCall(binding, _, _) ->
+            addString node "kind" "c-call"
+            addString node "library" binding.Library
+            addString node "prototype" binding.PrototypeText
         | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
             addString node "kind" "db-decode"
             addKey "rowKey" rowKey
@@ -585,6 +589,7 @@ module IrFormatting =
         | IrOperation.HtmlTemplate(key, _) -> [ IrString; IrNominal key ]
         | IrOperation.DbParams(paramsKey, dbValueKey, _) -> [ IrNominal paramsKey; IrList(IrNominal dbValueKey) ]
         | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> [ IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey); IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ]
+        | IrOperation.ForeignCall(_, inputs, output) -> inputs @ [ output ]
         | IrOperation.MakeRecord(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.WrapScalar(call, _, validator) ->
@@ -682,6 +687,7 @@ module IrFormatting =
                 | IrOperation.HtmlTemplate(key, _) -> Set.add key found
                 | IrOperation.DbParams(paramsKey, dbValueKey, _) -> found |> Set.add paramsKey |> Set.add dbValueKey
                 | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> found |> Set.add rowKey |> Set.add dbRowKey |> Set.add sqlErrorKey
+                | IrOperation.ForeignCall _ -> found
                 | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ | IrOperation.Compact _
                 | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue | IrOperation.ForRange _ -> found

@@ -617,6 +617,7 @@ module LlvmAot =
                 | IrOperation.HtmlTemplate _
                 | IrOperation.DbParams _
                 | IrOperation.DbDecode _
+                | IrOperation.ForeignCall _
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _

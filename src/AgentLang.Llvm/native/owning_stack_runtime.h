@@ -128,6 +128,13 @@ typedef struct al_owning_stack_context {
   uint64_t diagnostic_float_bits;
 } al_owning_stack_context;
 
+/* C bindings (report 307): the bytes of the String or Bytes value at offset, for
+   a C call. Returns a pointer that is never null (also for an empty value) and
+   stores the length; sets error_id and returns the arena base on a bad value. */
+const uint8_t *al_owning_foreign_bytes(al_owning_stack_context *ctx,
+                                       uint32_t offset, uint64_t *out_length,
+                                       uint32_t error_id);
+
 enum {
   AL_OWNING_STATUS_OK = 0,
   AL_OWNING_STATUS_DIAGNOSTIC = 1,
