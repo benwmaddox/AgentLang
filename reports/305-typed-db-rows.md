@@ -157,6 +157,7 @@ they still do, now as `SqlError` 20, which `db-error` maps to
   (Windows and Linux, trusted and diagnostic):
   - parameters named in the reverse of the record's field order;
   - an `Option<String>` parameter, both NULL and set;
+  - a refined parameter (`min-id: ItemId`, a `type ItemId : Int`);
   - Option, Bool and Bytes row fields;
   - one Bool per row;
   - text into Int;

@@ -255,8 +255,10 @@ record OddOnly {
     odd: Bool
 }
 
+type ItemId : Int { }
+
 record OneId {
-    min-id: Int
+    min-id: ItemId
 }
 
 fn counter.row-line(row: ItemRow) -> String {
@@ -310,7 +312,7 @@ test counter.row-error/text {
 fn counter.typed-row-errors(path: String) -> HttpResponse {
     effects db.read
     doc "/rows-bools reads one Bool per row. Each other /rows-* path reads rows that do not fit the row type: text into Int, NULL into String, 2 into Bool, two columns into a one-field row."
-    let params = oneId.new(min-id = 1)
+    let params = oneId.new(min-id = ItemId.new(1))
     if path == "/rows-bools" {
         match db.rows<OddOnly>("select id % 2 as odd from items where id >= $min_id order by id", params) {
             error failure => counter.row-error(failure)
