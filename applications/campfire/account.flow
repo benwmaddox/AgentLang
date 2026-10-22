@@ -31,7 +31,7 @@ fn campfire.views.account-user(user: AccountUserRow, viewer-id: Int, viewer-admi
     let delete = if viewer-admin && active && bool.not(self) { campfire.views.text(html"      <form class=\"button_to\" method=\"post\" action=\"/account/users/{id}\"><input type=\"hidden\" name=\"_method\" value=\"delete\" /><button class=\"btn txt-small flex-item-no-shrink btn--negative\" data-turbo-confirm=\"Are you sure you want to permanently remove this person from the account? This can’t be undone.\" type=\"submit\">\n        <img aria-hidden=\"true\" src=\"/assets/minus-b31a1093.svg\" width=\"20\" height=\"20\" />\n        <span class=\"for-screen-reader\">Delete {name}</span>\n</button></form>") } else { "" }
     let link = if self { campfire.views.text(html"    <a class=\"btn txt-small flex-item-no-shrink\" target=\"_top\" href=\"/users/me/profile\">\n      <img aria-hidden=\"true\" src=\"/assets/pencil-cf9d28aa.svg\" width=\"20\" height=\"20\" />\n      <span class=\"for-screen-reader\">My settings</span>\n</a>") } else { "" }
     let actions = html.raw(string.join([role-form, delete, link]))
-    html"<li class=\"flex align-center gap margin-none {banned}\">\n  <figure class=\"avatar flex-item-no-shrink\" style=\"--avatar-size: 3.75ch;\">\n    <a title=\"{title}\" class=\"btn avatar\" data-turbo-frame=\"_top\" href=\"/users/{id}\"><img aria-hidden=\"true\" loading=\"lazy\" src=\"{Url.new(avatar)}\" width=\"48\" height=\"48\" /></a>\n  </figure>\n\n  <div class=\"min-width\">\n    <div class=\"overflow-ellipsis fill-shade\"><strong>{name}</strong></div>\n  </div>\n\n  <hr class=\"separator\" aria-hidden=\"true\">\n\n{actions}</li>\n"
+    html"<li class=\"flex align-center gap margin-none {banned}\">\n  <figure class=\"avatar flex-item-no-shrink\" style=\"--avatar-size: 3.75ch;\">\n    <a title=\"{title}\" class=\"btn avatar\" data-turbo-frame=\"_top\" href=\"{campfire.route.user(id)}\"><img aria-hidden=\"true\" loading=\"lazy\" src=\"{Url.new(avatar)}\" width=\"48\" height=\"48\" /></a>\n  </figure>\n\n  <div class=\"min-width\">\n    <div class=\"overflow-ellipsis fill-shade\"><strong>{name}</strong></div>\n  </div>\n\n  <hr class=\"separator\" aria-hidden=\"true\">\n\n{actions}</li>\n"
 }
 
 test campfire.views.account-user/banned {
@@ -151,7 +151,7 @@ fn campfire.views.account-page(head: Html, body-class: String, back: String, adm
 
     <nav id="nav">
         <div class="flex-item-justify-start">
-    <a class="btn" href="/rooms/{back}"><img aria-hidden="true" src="/assets/arrow-left-abe40556.svg" width="20" height="20" /><span class="for-screen-reader">Go Back</span></a>
+    <a class="btn" href="{campfire.route.room(back)}"><img aria-hidden="true" src="/assets/arrow-left-abe40556.svg" width="20" height="20" /><span class="for-screen-reader">Go Back</span></a>
   </div>
 
 {nav-admin}

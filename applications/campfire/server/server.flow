@@ -731,7 +731,7 @@ fn campfire.server.page-chrome(room: RoomRow, user: AuthUser, base-url: String, 
     let stamps = campfire.server.chrome-stamps(user.id)
     let user-stamp = match list.get(stamps, 0) { none => ""; some text => text }
     let account-stamp = match list.get(stamps, 1) { none => ""; some text => text }
-    let avatar = if user-stamp == "" { "" } else { string.join(["/users/", campfire.server.avatar-token(context.avatar-key, UserId.value(user.id)), "/avatar?v=", campfire.server.number-stamp(user-stamp)]) }
+    let avatar = if user-stamp == "" { "" } else { campfire.route.avatar-src(campfire.server.avatar-token(context.avatar-key, UserId.value(user.id)), campfire.server.number-stamp(user-stamp)) }
     let loaded-at = match campfire.server.parse-timestamp(room.updated-at) { none => ""; some micros => int.to-string(micros / 1000) }
     let title = if base.room-key == "rooms_direct" {
         let others = campfire.server.sentence(campfire.server.room-member-names(RoomId.value(room.id), UserId.value(user.id)))

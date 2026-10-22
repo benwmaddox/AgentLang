@@ -139,7 +139,7 @@ fn campfire.views.page-layout(chrome: PageChrome) -> Layout {
 
 
 
-<div id="message-area" class="message-area" contents="true" data-controller="messages presence drop-target" data-action="turbo:before-stream-render@document-&gt;messages#beforeStreamRender keydown.up@document-&gt;messages#editMyLastMessage dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop visibilitychange@document-&gt;presence#visibilityChanged" data-messages-first-of-day-class="message--first-of-day" data-messages-formatted-class="message--formatted" data-messages-me-class="message--me" data-messages-mentioned-class="message--mentioned" data-messages-threaded-class="message--threaded" data-messages-page-url-value="{chrome.base-url}/rooms/{chrome.room-id}/messages">
+<div id="message-area" class="message-area" contents="true" data-controller="messages presence drop-target" data-action="turbo:before-stream-render@document-&gt;messages#beforeStreamRender keydown.up@document-&gt;messages#editMyLastMessage dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop visibilitychange@document-&gt;presence#visibilityChanged" data-messages-first-of-day-class="message--first-of-day" data-messages-formatted-class="message--formatted" data-messages-me-class="message--me" data-messages-mentioned-class="message--mentioned" data-messages-threaded-class="message--threaded" data-messages-page-url-value="{chrome.base-url}{campfire.route.messages(chrome.room-id)}">
   <script type="text/template" data-messages-target="template">
   <div class="message message--me $messageClasses$"
       id="message_$clientMessageId$"
@@ -150,7 +150,7 @@ fn campfire.views.page-layout(chrome: PageChrome) -> Layout {
     <div class="message__day-separator"><time class="message__timestamp" datetime="$messageDatetime$" data-local-time-target="date"></time></div>
 
     <figure class="avatar message__avatar">
-      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="/users/{chrome.user-id}"><img aria-hidden="true" src="{Url.new(chrome.user-avatar-url)}" width="48" height="48" /></a>
+      <a title="{chrome.user-name}" class="btn avatar" data-turbo-frame="_top" href="{campfire.route.user(chrome.user-id)}"><img aria-hidden="true" src="{Url.new(chrome.user-avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <div class="message__body">
@@ -189,12 +189,12 @@ fn campfire.views.page-layout(chrome: PageChrome) -> Layout {
       <footer id="footer">
           <div class="composer flex align-end gap position-relative"
       data-controller="typing-notifications" data-typing-notifications-active-class="typing-indicator--active">
-    <a class="btn flex-item-no-shrink margin-block-end composer__context-btn" style="view-transition-name: input-switcher" href="/searches">
+    <a class="btn flex-item-no-shrink margin-block-end composer__context-btn" style="view-transition-name: input-switcher" href="{campfireRoute.path(CampfireRoute.searches())}">
       <img aria-hidden="true" src="/assets/search-5f29565f.svg" width="20" height="20" />
       <span class="for-screen-reader">Search</span>
 </a>
     <turbo-frame id="composer-frame">
-      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="/rooms/{chrome.room-id}/messages" accept-charset="UTF-8" method="post">
+      <form id="composer" class="margin-block flex-item-grow contain" data-controller="composer drop-target" data-action="dragenter-&gt;drop-target#dragenter dragover-&gt;drop-target#dragover drop-&gt;drop-target#drop drop-target:drop@window-&gt;composer#dropFiles lexxy:file-accept-&gt;composer#preventAttachment refresh-room:online@window-&gt;composer#online typing-notifications#stop paste-&gt;composer#pasteFiles turbo:submit-end-&gt;composer#submitEnd refresh-room:offline@window-&gt;composer#offline" data-composer-messages-outlet="#message-area" data-composer-toolbar-class="composer--rich-text" data-composer-room-id-value="{chrome.room-id}" action="{campfire.route.messages(chrome.room-id)}" accept-charset="UTF-8" method="post">
         <fieldset data-composer-target="fields" contents>
           <div class="flex flex-column">
             <div class="composer__filelist flex flex--align-center gap flex-wrap" data-composer-target="fileList"></div>
@@ -239,7 +239,7 @@ fn campfire.views.page-layout(chrome: PageChrome) -> Layout {
     </main>
 
     <aside id="sidebar" data-controller="toggle-class" data-toggle-class-toggle-class="open">
-      <turbo-frame data-turbo-permanent="true" data-controller="rooms-list read-rooms turbo-frame" data-rooms-list-unread-class="unread" data-action="presence:present@window->rooms-list#read read-rooms:read->rooms-list#read turbo:frame-load->rooms-list#loaded refresh-room:visible@window->turbo-frame#reload" id="user_sidebar" src="/users/me/sidebar" target="_top"></turbo-frame>
+      <turbo-frame data-turbo-permanent="true" data-controller="rooms-list read-rooms turbo-frame" data-rooms-list-unread-class="unread" data-action="presence:present@window->rooms-list#read read-rooms:read->rooms-list#read turbo:frame-load->rooms-list#loaded refresh-room:visible@window->turbo-frame#reload" id="user_sidebar" src="{campfireRoute.path(CampfireRoute.sidebar())}" target="_top"></turbo-frame>
     </aside>
 
 {lightbox}  </body>

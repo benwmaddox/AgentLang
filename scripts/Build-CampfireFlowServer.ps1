@@ -33,7 +33,7 @@ $ErrorActionPreference = 'Stop'
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $campfire = Join-Path $repo 'applications/campfire'
 $shared = @(
-    'campfire-types.flow', 'authentication-types.flow', 'http-types.flow', 'session-policy.flow',
+    'campfire-types.flow', 'routes.flow', 'authentication-types.flow', 'http-types.flow', 'session-policy.flow',
     'request-policy.flow', 'browser-types.flow', 'browser-policy.flow', 'user-agent.flow',
     'views.flow', 'layout.flow', 'emoji.flow', 'sounds.flow', 'message.flow', 'presentation.flow', 'sidebar.flow', 'search.flow', 'users.flow', 'avatars.flow', 'account.flow', 'authentication.flow',
     # Attached tests: every committed word needs one.

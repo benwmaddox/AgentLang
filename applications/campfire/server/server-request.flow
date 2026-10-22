@@ -113,25 +113,6 @@ test campfire.server.equal-ignoring-case?/ascii {
     expect bool.not(campfire.server.equal-ignoring-case?("/rooms", "/rooms/"))
 }
 
-// The read routes (report 306). Room ids and the @message stay text here: a room id
-// that does not parse is a 400 (campfire.server.parse-room-id), and the message is
-// cast as ActiveRecord casts it (campfire.server.ruby-to-i).
-record AroundPath {
-    room: String
-    message: String
-}
-
-enum CampfireRoute {
-    room(String) at "/rooms/{room}"
-    around(AroundPath) at "/rooms/{room}/@{message}"
-    messages(String) at "/rooms/{room}/messages"
-    sidebar at "/users/me/sidebar"
-    searches at "/searches"
-    user(String) at "/users/{user}"
-    avatar(String) at "/users/{token}/avatar"
-    account at "/account/edit"
-}
-
 fn campfire.server.route(path: String) -> Option<CampfireRoute> {
     doc "The route of a request path. Two parity quirks stay here, outside the route table: the /rooms/ prefix matches in any case, and an @message segment may not contain a dot (the at_message route's constraint)."
     let length = string.byte-length(path)

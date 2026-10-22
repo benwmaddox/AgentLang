@@ -108,7 +108,7 @@ fn campfire.views.search-page(head: Html, body-class: String, pill: Html, recent
 
       <footer id="footer">
           <div class="composer flex align-end gap">
-    <a class="btn flex-item-no-shrink margin-block-end" style="view-transition-name: input-switcher; --btn-border-radius: 0.5em" href="/rooms/{return-room}">
+    <a class="btn flex-item-no-shrink margin-block-end" style="view-transition-name: input-switcher; --btn-border-radius: 0.5em" href="{campfire.route.room(return-room)}">
       <img aria-hidden="true" src="/assets/arrow-left-abe40556.svg" />
       <span class="for-screen-reader">Exit search </span>
 </a>
@@ -118,7 +118,7 @@ fn campfire.views.search-page(head: Html, body-class: String, pill: Html, recent
 
         {input}
 
-        <a data-form-target="cancel" role="button" class="searches__reset" href="/searches">
+        <a data-form-target="cancel" role="button" class="searches__reset" href="{campfireRoute.path(CampfireRoute.searches())}">
           <img aria-hidden="true" class="colorize--black" src="/assets/remove-0e7a045d.svg" width="14" height="14" />
           <span class="for-screen-reader">Clear search field</span>
 </a>

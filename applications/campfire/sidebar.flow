@@ -162,7 +162,7 @@ fn campfire.views.sidebar-direct(direct: SidebarDirect) -> Html {
       </span>
 """
     }
-    let link = html"""  <a class="{class}" id="list_rooms_direct_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-number="{number}" href="/rooms/{id}">
+    let link = html"""  <a class="{class}" id="list_rooms_direct_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-number="{number}" href="{campfire.route.room(id)}">
 {picture}
     <span class="direct__author flex align-center gap max-width min-width border-radius txt-small">
       <span class="txt-nowrap overflow-ellipsis">
@@ -211,7 +211,7 @@ fn campfire.views.sidebar-room(room: SidebarRoom) -> Html {
     doc "users/sidebars/rooms/_shared, as the each loop indents it."
     let id = int.to-string(room.room-id)
     let class = if room.unread { "align-center gap room btn txt-nowrap unread" } else { "align-center gap room btn txt-nowrap" }
-    html"""          <a id="list_rooms_{room.kind}_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-name="{room.name}" style="--column-gap: 0.5em" class="{class}" href="/rooms/{id}">
+    html"""          <a id="list_rooms_{room.kind}_{id}" data-rooms-list-target="room" data-room-id="{id}" data-badge-dot-target="unread" data-sorted-list-target="item" data-sorted-list-name="{room.name}" style="--column-gap: 0.5em" class="{class}" href="{campfire.route.room(id)}">
   <span class="overflow-ellipsis">{room.name}</span>
 </a>
 """
@@ -284,7 +284,7 @@ fn campfire.views.sidebar-frame(sidebar: SidebarView) -> Html {
       <img aria-hidden="true" style="view-transition-name: avatar-{sidebar.user-id}" src="{Url.new(sidebar.user-avatar-url)}" width="48" height="48" />
       <span class="for-screen-reader">My Settings</span>
 </a>
-    <a class="btn align-center gap txt-reversed sidebar__tool" href="/account/edit">
+    <a class="btn align-center gap txt-reversed sidebar__tool" href="{campfireRoute.path(CampfireRoute.account())}">
       <img aria-hidden="true" style="view-transition-name: account-settings" src="/assets/settings-aee56972.svg" width="20" height="20" />
       <span class="for-screen-reader">Account Settings</span>
 </a>  </div>

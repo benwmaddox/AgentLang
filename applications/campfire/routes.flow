@@ -1,0 +1,66 @@
+// Campfire's read routes (report 306): the server parses request paths with
+// campfireRoute.parse, and the views build their links with campfireRoute.path
+// (report 311), so a link cannot name a path the table does not have. Room ids
+// and the @message stay text here: a room id that does not parse is a 400
+// (campfire.server.parse-room-id), and the message is cast as ActiveRecord casts
+// it (campfire.server.ruby-to-i).
+record AroundPath {
+    room: String
+    message: String
+}
+
+enum CampfireRoute {
+    room(String) at "/rooms/{room}"
+    around(AroundPath) at "/rooms/{room}/@{message}"
+    messages(String) at "/rooms/{room}/messages"
+    sidebar at "/users/me/sidebar"
+    searches at "/searches"
+    user(String) at "/users/{user}"
+    avatar(String) at "/users/{token}/avatar"
+    account at "/account/edit"
+}
+
+fn campfire.route.room(room: String) -> Url {
+    doc "The room page."
+    campfireRoute.path(CampfireRoute.room(room))
+}
+
+test campfire.route.room/path {
+    expect Url.value(campfire.route.room("12")) == "/rooms/12"
+}
+
+fn campfire.route.message(room: String, message: String) -> Url {
+    doc "A message's permalink: its room page around it."
+    campfireRoute.path(CampfireRoute.around(aroundPath.new(room = room, message = message)))
+}
+
+test campfire.route.message/path {
+    expect Url.value(campfire.route.message("12", "345")) == "/rooms/12/@345"
+}
+
+fn campfire.route.messages(room: String) -> Url {
+    doc "A room's messages: the page of older messages, and where the composer posts."
+    campfireRoute.path(CampfireRoute.messages(room))
+}
+
+test campfire.route.messages/path {
+    expect Url.value(campfire.route.messages("12")) == "/rooms/12/messages"
+}
+
+fn campfire.route.user(user: String) -> Url {
+    doc "A user's profile."
+    campfireRoute.path(CampfireRoute.user(user))
+}
+
+test campfire.route.user/path {
+    expect Url.value(campfire.route.user("7")) == "/users/7"
+}
+
+fn campfire.route.avatar-src(token: String, version: String) -> String {
+    doc "A signed avatar path with its ?v= version (fresh_user_avatar_path)."
+    string.join([Url.value(campfireRoute.path(CampfireRoute.avatar(token))), "?v=", version])
+}
+
+test campfire.route.avatar-src/path {
+    expect campfire.route.avatar-src("eyJ--a1", "20261022") == "/users/eyJ--a1/avatar?v=20261022"
+}

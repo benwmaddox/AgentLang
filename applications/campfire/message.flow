@@ -93,7 +93,7 @@ fn campfire.views.boost(boost: BoostView) -> Html {
       class="boost boost-item flex-inline postion--relative max-width align-center fill-white gap"
       data-controller="boost-delete" data-boost-delete-perform-class="boost--deleting" data-boost-delete-reveal-class="expanded" data-boost-delete-booster-id-value="{booster-id}">
     <figure class="avatar boost__avatar flex-item-no-shrink">
-      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{booster-id}"><img aria-label="{label}" src="{Url.new(boost.booster-avatar-url)}" width="48" height="48" /></a>
+      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="{campfire.route.user(booster-id)}"><img aria-label="{label}" src="{Url.new(boost.booster-avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <span role="button" class="{span-class}" data-action="click-&gt;boost-delete#reveal keydown.enter-&gt;boost-delete#reveal:prevent" data-boost-delete-target="content">{boost.content}</span>
@@ -144,7 +144,7 @@ fn campfire.views.rails-message-shown(context: MessageContext, message: MessageW
     let updated-ms = int.to-string(message.updated-at-ms)
     let iso = string.concat(string.replace(message.created-at, " ", "T"), "Z")
     let stamp = string.replace(string.replace(string.replace(message.creator-updated-at, "-", ""), ":", ""), " ", "")
-    let avatar-url = string.concat(string.concat(string.concat("/users/", message.creator-avatar-token), "/avatar?v="), stamp)
+    let avatar-url = campfire.route.avatar-src(message.creator-avatar-token, stamp)
     let title = campfire.views.user-title(message.creator-name, message.creator-bio)
     let boosts = boost-views.map(campfire.views.boost)
     let emoji-class = if shown.emoji { "message--emoji" } else { "" }
@@ -152,7 +152,7 @@ fn campfire.views.rails-message-shown(context: MessageContext, message: MessageW
     <h2 class="message__day-separator"><time datetime="{iso}" data-local-time-target="date"></time></h2>
 
     <figure class="avatar message__avatar">
-      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="/users/{creator-id}"><img aria-hidden="true" src="{Url.new(avatar-url)}" width="48" height="48" /></a>
+      <a title="{title}" class="btn avatar" data-turbo-frame="_top" href="{campfire.route.user(creator-id)}"><img aria-hidden="true" src="{Url.new(avatar-url)}" width="48" height="48" /></a>
     </figure>
 
     <turbo-frame id="edit_message_{message.client-message-id}">
@@ -163,9 +163,9 @@ fn campfire.views.rails-message-shown(context: MessageContext, message: MessageW
               <span class="message__author" title="{title}">
                 <strong data-reply-target="author">{message.creator-name}</strong>
               </span>
-              <a target="_top" class="message__permalink" href="/rooms/{context.room-id}/@{id}"><time class="message__timestamp" datetime="{iso}" data-local-time-target="time"></time></a>
+              <a target="_top" class="message__permalink" href="{campfire.route.message(context.room-id, id)}"><time class="message__timestamp" datetime="{iso}" data-local-time-target="time"></time></a>
               <span class="message__room">
-                <a target="_top" data-reply-target="link" href="/rooms/{context.room-id}/@{id}">{context.room-name}</a>
+                <a target="_top" data-reply-target="link" href="{campfire.route.message(context.room-id, id)}">{context.room-name}</a>
               </span>
             </h3>
             
@@ -225,7 +225,7 @@ fn campfire.views.rails-message-shown(context: MessageContext, message: MessageW
 </a>      </div>
 
       <div class="flex flex-wrap border-top margin-block-start-half pad-block-start-half message__actions-grid">
-{shown.actions}        <button class="btn message__action-btn center full-width" title="Copy link" aria-label="Copy link" data-controller="copy-to-clipboard" data-action="copy-to-clipboard#copy" data-copy-to-clipboard-success-class="btn--success" data-copy-to-clipboard-content-value="{context.base-url}/rooms/{context.room-id}/@{id}">
+{shown.actions}        <button class="btn message__action-btn center full-width" title="Copy link" aria-label="Copy link" data-controller="copy-to-clipboard" data-action="copy-to-clipboard#copy" data-copy-to-clipboard-success-class="btn--success" data-copy-to-clipboard-content-value="{context.base-url}{campfire.route.message(context.room-id, id)}">
           <img class="colorize--black" aria-hidden="true" src="/assets/link-e546a5df.svg" width="20" height="20" />
 </button>
         <a class="btn message__action-btn center full-width message__edit-btn" data-turbo-frame="edit_message_{message.client-message-id}" title="Edit" aria-label="Edit" href="/rooms/{context.room-id}/messages/{id}/edit">

@@ -24,7 +24,7 @@ fn campfire.views.room(room: RoomRow, messages: List<MessageRow>) -> Html {
         none => ""
         some text => text
     }
-    html"""<!doctype html><html><body><h1>{name}</h1><section id="messages">{messages.map(campfire.views.message)}</section><form method="post" action="/rooms/{int.to-string(RoomId.value(room.id))}/messages"><textarea name="message[body]"></textarea><button type="submit">Send</button></form></body></html>"""
+    html"""<!doctype html><html><body><h1>{name}</h1><section id="messages">{messages.map(campfire.views.message)}</section><form method="post" action="{campfire.route.messages(int.to-string(RoomId.value(room.id)))}"><textarea name="message[body]"></textarea><button type="submit">Send</button></form></body></html>"""
 }
 
 fn campfire.views.room-text(room: RoomRow, messages: List<MessageRow>) -> String {

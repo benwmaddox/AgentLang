@@ -26,7 +26,7 @@ open AgentLang.Llvm
 let private repo = Path.GetFullPath(Path.Combine(__SOURCE_DIRECTORY__, "../.."))
 let private sources =
     // The app's bootstrap type documents (as in Http/Application.fs), then the views.
-    [ "campfire-types.flow"; "session-policy.flow"; "authentication-types.flow"; "browser-types.flow"
+    [ "campfire-types.flow"; "routes.flow"; "session-policy.flow"; "authentication-types.flow"; "browser-types.flow"
       "request-policy.flow"; "http-types.flow"; "views.flow"; "layout.flow"; "emoji.flow"; "sounds.flow"; "message.flow"; "views-tests.flow" ]
     |> List.map (fun name -> "applications/campfire/" + name)
     |> List.map (fun path -> Path.Combine(repo, path))

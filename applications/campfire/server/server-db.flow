@@ -820,7 +820,7 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
                         booster-id = booster,
                         booster-name = row.booster-name,
                         booster-bio = row.booster-bio,
-                        booster-avatar-url = string.join(["/users/", token, "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")]),
+                        booster-avatar-url = campfire.route.avatar-src(token, string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")),
                         content = row.content))
                 }
                 result.ok<List<BoostView>, DbError>(boosts)
@@ -886,7 +886,7 @@ fn campfire.server.mention-users(ids: List<Int>, avatar-key: Bytes) -> List<Ment
                         id = id,
                         name = row.name,
                         bio = row.bio,
-                        avatar-url = string.join(["/users/", campfire.server.avatar-token(avatar-key, id), "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")])))
+                        avatar-url = campfire.route.avatar-src(campfire.server.avatar-token(avatar-key, id), string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", ""))))
                 }
                 users
             }

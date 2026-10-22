@@ -135,7 +135,7 @@ test campfire.presentation.blank?/whitespace {
 fn campfire.presentation.mention-html(user: MentionUser) -> String {
     doc "users/_mention as the sanitizer leaves it. The title is the name and the bio joined by ' – ' (a blank bio is left out)."
     let title = if campfire.presentation.blank?(user.bio) { user.name } else { string.join([user.name, " – ", user.bio]) }
-    string.join(["<span class=\"mention\"><a title=\"", rich-html.escape-attribute(title), "\" class=\"btn avatar\" href=\"/users/", int.to-string(user.id), "\"><img src=\"", rich-html.escape-attribute(user.avatar-url), "\" width=\"48\" height=\"48\"></a> ", rich-html.escape-text(user.name), "</span>"])
+    string.join(["<span class=\"mention\"><a title=\"", rich-html.escape-attribute(title), "\" class=\"btn avatar\" href=\"", Url.value(campfire.route.user(int.to-string(user.id))), "\"><img src=\"", rich-html.escape-attribute(user.avatar-url), "\" width=\"48\" height=\"48\"></a> ", rich-html.escape-text(user.name), "</span>"])
 }
 
 test campfire.presentation.mention-html/markup {

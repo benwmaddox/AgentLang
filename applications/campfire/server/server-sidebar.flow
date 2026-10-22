@@ -13,7 +13,7 @@ test campfire.server.signed-stream/rooms {
 
 fn campfire.server.user-avatar-path(avatar-key: Bytes, user-id: Int, updated-at: String) -> String {
     doc "fresh_user_avatar_path: the signed avatar path versioned by updated_at.to_fs(:number)."
-    string.join(["/users/", campfire.server.avatar-token(avatar-key, user-id), "/avatar?v=", campfire.server.number-stamp(updated-at)])
+    campfire.route.avatar-src(campfire.server.avatar-token(avatar-key, user-id), campfire.server.number-stamp(updated-at))
 }
 
 test campfire.server.user-avatar-path/version {
