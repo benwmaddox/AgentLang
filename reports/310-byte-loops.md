@@ -204,6 +204,18 @@ write.
   tokens. One token per distinct user per page would save part of the 2.2%.
   It is a Campfire change and the same answers, but it is not a byte loop, so
   it is listed here.
-- **`rich-html.space?` as `inline fn`.** It is a one-line predicate. LLVM
-  already inlines its body; marking it would remove the frame release.
-  Not measured.
+- **`rich-html.space?` as `inline fn`.** It is still a real call: the shipped
+  `rich-html.tag` calls it 7 times, as report 308 found. It is the next small
+  lead, and it is not measured.
+
+## Build and other checks
+
+- **Verified build:** 37.4 s warm (38.3 s in report 309).
+- **C runtime unit tests** (`owning_stack_runtime_test.c`): they pass at O0, O2
+  and with UBSan, compiled directly.
+  - `scripts/Verify-NativeValueStack.ps1`, which normally runs them, fails
+    before reaching them. The experiment it builds
+    (`experiments/AgentLang.NativeValueStack`) no longer compiles against the
+    current `Value` type. That break predates this work.
+- **The gate script** now also runs `AgentLang.OwningListBuild.Tests`, which
+  holds the list-walk tests.
