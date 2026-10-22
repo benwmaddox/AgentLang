@@ -1113,6 +1113,57 @@ module OwningStackAot =
         | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
         | _ -> None
 
+    /// String literals used only as the `set` of string.next-byte-in or
+    /// next-byte-not-in (report 313). The IR stack is simulated block by block:
+    /// a literal pushed and consumed as that call's second argument, in the same
+    /// straight-line code, is never loaded from a local, duplicated or passed
+    /// anywhere else. The compiler gives such a call its byte table as constants,
+    /// so the literal needs no copy in the arena; copying it made every scanning
+    /// iteration allocate, which defeated the loop's no-relocation skip.
+    let private setOnlyLiterals (body: IrBlock) =
+        let found = HashSet<IrInstruction>(HashIdentity.Reference)
+        let isNextByte (call: IrResolvedCall) =
+            match call.ResolvedTarget with
+            | PrimitiveTarget(PrimitiveId("string.next-byte-in" | "string.next-byte-not-in")) -> true
+            | _ -> false
+        let rec visit (block: IrBlock) =
+            // Some marks a String literal still on the stack as pushed. A nested
+            // block leaves its exit shape with nothing marked (as loopAccumulatorPattern).
+            let mutable stack: IrInstruction option list = List.replicate block.EntryShape.StackTypes.Length None
+            let mutable valid = true
+            let pop count =
+                if stack.Length < count then valid <- false
+                else stack <- stack |> List.take (stack.Length - count)
+            let nested (blocks: IrBlock list) exitLength =
+                for inner in blocks do visit inner
+                stack <- List.replicate exitLength None
+            for instruction in block.Code do
+                match instruction.Operation with
+                | IrOperation.Scope inner | IrOperation.Compact inner -> nested [ inner ] inner.ExitShape.StackTypes.Length
+                | IrOperation.ForRange(_, inner) | IrOperation.ForList(_, _, _, inner) -> nested [ inner ] inner.ExitShape.StackTypes.Length
+                | IrOperation.If(left, right) | IrOperation.MatchOption(_, left, right) | IrOperation.MatchResult(_, _, left, right) ->
+                    nested [ left; right ] left.ExitShape.StackTypes.Length
+                | IrOperation.MatchEnum(_, cases) ->
+                    match cases with
+                    | (_, _, first) :: _ -> nested (cases |> List.map (fun (_, _, caseBlock) -> caseBlock)) first.ExitShape.StackTypes.Length
+                    | [] -> valid <- false
+                | _ when not valid -> ()
+                | IrOperation.Constant(LString _, IrString) -> stack <- stack @ [ Some instruction ]
+                | IrOperation.Call call when isNextByte call && stack.Length >= 3 ->
+                    match stack[stack.Length - 2] with
+                    | Some literal -> found.Add literal |> ignore
+                    | None -> ()
+                    pop 3
+                    stack <- stack @ [ None ]
+                | operation ->
+                    match straightLineEffect operation with
+                    | Some(pops, pushes) ->
+                        pop pops
+                        stack <- stack @ List.replicate pushes None
+                    | None -> valid <- false
+        visit body
+        found
+
     /// WrapScalar sites in one function body whose String input is already valid
     /// for the wrapped type, so its (pure) validator would return true:
     /// - the input is `UnwrapScalar` of the same type, as in
@@ -5279,6 +5330,10 @@ module OwningStackAot =
             // offset: string.next-byte-in can then take its byte table as compile-time
             // constants (report 312).
             let literalStrings = Collections.Generic.Dictionary<string, string>()
+            let setOnly =
+                match runtimeProfile with
+                | OwningRuntimeProfile.TrustedGenerated -> setOnlyLiterals block
+                | OwningRuntimeProfile.Diagnostic -> HashSet<IrInstruction>(HashIdentity.Reference)
             let failBody = w.Label "frame.failure"
             let failEnter = w.Label "frame.enter.failure"
             let frameParameters =
@@ -5980,6 +6035,13 @@ module OwningStackAot =
                             | LFloat value, IrFloat -> BitConverter.DoubleToInt64Bits value
                             | _ -> invalidOp "Verified dynamic scalar constant had an inconsistent literal."
                         stack <- stack @ [ registerEntry ty (string bits) ]
+                    | IrOperation.Constant(LString value, IrString) when setOnly.Contains instruction ->
+                        // Only a next-byte call's set (report 313): that call takes the byte
+                        // table as constants and never reads these bytes, so nothing is copied.
+                        // The descriptor names the cursor and is dropped by the call.
+                        let cursor = emitContextLoad w "%ctx" 2
+                        literalStrings[cursor] <- value
+                        stack <- push stack IrString cursor "0" "0" cursor
                     | IrOperation.Constant(LString value, IrString) ->
                         let bytes, literalPayload, literalExtent = encodeLiteral value
                         let cursor = emitContextLoad w "%ctx" 2
