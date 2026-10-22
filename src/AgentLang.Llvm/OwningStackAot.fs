@@ -6717,6 +6717,18 @@ module OwningStackAot =
                                     w.Line($"{releasedLabel}:")
                                 | OwningRuntimeProfile.Diagnostic -> emitArenaRewind w mark failBody
                             else
+                                // An iteration that allocated nothing reassigned no carried var to a
+                                // new arena value, so the relocation would move nothing: trusted
+                                // builds skip the call (report 308).
+                                let skipRelocation = accumulator.IsNone && runtimeProfile = OwningRuntimeProfile.TrustedGenerated
+                                let unmovedLabel = w.Label "loop.unmoved"
+                                if skipRelocation then
+                                    let cursorNow = emitContextLoad w "%ctx" 2
+                                    let allocated = w.Fresh "loop.allocated"
+                                    let relocateLabel = w.Label "loop.relocate"
+                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {mark}")
+                                    w.Inst($"br i1 {allocated}, label %%{relocateLabel}, label %%{unmovedLabel}")
+                                    w.Line($"{relocateLabel}:")
                                 let quads = w.Fresh "loop.carried"
                                 w.Inst($"{quads} = alloca [{4 * carried.Length} x i32], align 4")
                                 let fieldPointer index field =
@@ -6744,6 +6756,9 @@ module OwningStackAot =
                                     |> List.iteri (fun index (slot, entry) ->
                                         let moved = { entry with Offset = loadQuad index 0 "loop.carried.offset"; OwnerEnd = loadQuad index 3 "loop.carried.owner.end" }
                                         emitStoreLocal (localBinding slot localsBeforeLoop) moved)
+                                    if skipRelocation then
+                                        w.Inst($"br label %%{unmovedLabel}")
+                                        w.Line($"{unmovedLabel}:")
                                 | Some(state, _, _, _) ->
                                     let _, listEntry = List.head resolved
                                     let count = w.Fresh "acc.latch.count"
