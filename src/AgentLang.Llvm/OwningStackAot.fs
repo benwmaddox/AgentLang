@@ -6788,6 +6788,10 @@ module OwningStackAot =
                         w.Inst($"call void @al_owning_set_failure(ptr %%ctx, i32 1, i32 {budgetError}, i32 {nextSteps}, i32 {IrLoops.DefaultIterationBudget})")
                         w.Inst($"br label %%{failBody}")
                         w.Line($"{readyLabel}:")
+                        // Where this iteration starts allocating: an iteration that leaves the
+                        // cursor here allocated nothing, so it moved no carried var (report 308).
+                        // The loop's mark is not enough once carried values sit above it.
+                        let iterationStart = emitContextLoad w "%ctx" 2
                         match header, boundSlots with
                         | Choice1Of2(counter, _), [ indexLocal ] ->
                             let current = loadSlot "i64" counter
@@ -6848,7 +6852,7 @@ module OwningStackAot =
                                     let allocated = w.Fresh "loop.allocated"
                                     let releaseLabel = w.Label "loop.release"
                                     let releasedLabel = w.Label "loop.released"
-                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {mark}")
+                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {iterationStart}")
                                     w.Inst($"br i1 {allocated}, label %%{releaseLabel}, label %%{releasedLabel}")
                                     w.Line($"{releaseLabel}:")
                                     emitArenaRewind w mark failBody
@@ -6865,7 +6869,7 @@ module OwningStackAot =
                                     let cursorNow = emitContextLoad w "%ctx" 2
                                     let allocated = w.Fresh "loop.allocated"
                                     let relocateLabel = w.Label "loop.relocate"
-                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {mark}")
+                                    w.Inst($"{allocated} = icmp ne i32 {cursorNow}, {iterationStart}")
                                     w.Inst($"br i1 {allocated}, label %%{relocateLabel}, label %%{unmovedLabel}")
                                     w.Line($"{relocateLabel}:")
                                 let quads = w.Fresh "loop.carried"

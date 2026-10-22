@@ -48,16 +48,43 @@ non-scalar values, as long as the cursor is still at the mark. The reasoning:
 - **Profile:** `loop_relocate` falls from 4.36% to 3.96%.
 - **Checks:** all 45 sampled responses are byte-identical. All 24 suites pass.
 
+## Step 2: the mark is per iteration
+
+After step 1, `rich-html.tag` still spent 2.1% in relocation. It turned out to
+be re-copying, not some allocation on every character:
+- **The loop's mark is taken once, before the first iteration.** Once a carried
+  value had been reassigned, relocation left it at the mark. After that, the
+  cursor stayed above the mark even in iterations that allocated nothing.
+- **So step 1's skip almost never fired.** Every back edge copied `attributes`,
+  `value-prefix` and `attr-value` up and back down again.
+
+**Fix:** each iteration records where it starts allocating, and the back edge
+skips relocation when the cursor is still there. An iteration that allocated
+nothing moved no carried value. An older value stays where it is until an
+iteration that does allocate compacts it, so memory stays bounded.
+
+**Speed** (ABBA against the item-8 build):
+
+| | 1 A | 2 B | 3 B | 4 A |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 2,292 | 2,373 | 2,402 | 2,286 |
+| Uncached CPU ms per request | 1.883 | 1.792 | 1.793 | 1.874 |
+| Cached req/s | 7,687 | 7,799 | 7,751 | 7,829 |
+| Cached CPU ms per request | 0.536 | 0.531 | 0.529 | 0.536 |
+
+- **Uncached: 4% more requests a second, and 5% less CPU per request.**
+- **Cached:** unchanged.
+- **Profile:** `al_owning_loop_relocate` falls from 3.96% to 1.50% of CPU.
+- **Checks:** all 45 sampled responses are byte-identical, and all 25 suites
+  pass.
+
 ## What a builder could still buy
 
 - **Hot sites.** All 72 self-append sites in Campfire and the stdlib are in
-  words the native server contains, but only the two above show up in the
-  profile. The rest run too rarely, or over too few items, to matter.
-- **`rich-html.tag`'s 2.1% is not an accumulator.** Its iterations do allocate
-  something on each character, but the carried values hardly grow. A builder
-  would not touch it. The cost is whatever each iteration allocates, and
-  finding that is the next lead (see below).
-- **`whole-room-page`'s 0.57% is the one accumulator:** 40 rendered messages
+  words the native server contains, but only `whole-room-page` shows a real
+  accumulator in the profile. The rest run too rarely, or over too few items,
+  to matter.
+- **`whole-room-page`'s 0.57% is that accumulator:** 40 rendered messages
   appended to a `List<Html>`. A builder for Html there could remove most of
   it, but it needs:
   - an Html-producing variant (Html pieces kept as they are, String pieces
@@ -75,15 +102,10 @@ rather than build it.
   read better with a builder than with self-appends, and a page with longer
   loops would gain more. But on today's room page it is a small speed win for
   a medium amount of work.
-- **The better next speed lead:** find what `rich-html.tag` allocates on every
-  character. If it is a temporary that could live in a register or a stack
-  slot, most of the remaining 2.1% goes away, along with the same cost in
-  every loop like it.
 
 ## A finding along the way
 
 `rich-html.space?` is a one-line predicate called on most characters of every
 tag. It is not inlined: each call costs a full call, including releasing its
 frame and updating the live-bytes count. Marking it `inline fn` (report 280) is
-a one-word change. Measure it together with the search for what each iteration
-allocates.
+a one-word change, and the next small lead.
