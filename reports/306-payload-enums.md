@@ -118,8 +118,8 @@ kind 6.
 **Checks:**
 - `AgentLang.PayloadEnums.Tests` now has 736 assertions. Every entry point gives
   the interpreter's values at O0, O2 and trusted O2:
-  - all 13 sample routes through `describe` and `kind`;
-  - the 169-pair equality matrix;
+  - all 12 sample routes through `describe` and `kind`;
+  - the 144-pair equality matrix;
   - construction;
   - a payload enum in a list, an option and a record.
 
