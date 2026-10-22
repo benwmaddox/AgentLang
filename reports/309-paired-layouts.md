@@ -84,4 +84,24 @@ layouts, `db.rows` and others).
 
 **Suites:** all 25 pass.
 
-CAMPFIRE
+## (b) Campfire
+
+- **The page template is a layout:** `campfire.views.page-layout(chrome)
+  -> Layout`, with `{...}` where `{messages}` was.
+- **The page keeps its signature:** `campfire.views.page(chrome, messages)` is
+  now `layout.wrap(page-layout(chrome), messages)`, so its callers are
+  unchanged.
+- **`page-frame` reads the two texts:** it takes the layout's `head` and
+  `tail`. The marker search, the slicing and `skip-whitespace` are gone: 37
+  lines out, 19 in.
+- **A new attached test** checks that head and tail join into the empty page.
+  The existing test that `head ++ message ++ tail` equals the page with that
+  message still passes.
+
+**Checks:**
+- **Byte comparison:** all 45 responses are byte-identical to the previous
+  build, including every room page, which streams head, messages and tail.
+- **Suites:** CampfireViews and SqlCheck pass.
+- **Build:** the verified build takes 38.3 s.
+
+SPEED

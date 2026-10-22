@@ -324,42 +324,11 @@ record PageFrame {
     tail: String
 }
 
-fn campfire.server.skip-whitespace(text: String, from: Int) -> Int {
-    doc "The first index at or after from that is not a space, tab, CR or LF."
-    var at = from
-    for index in from..string.byte-length(text) {
-        let byte = string.byte-at-or(text, index, 0)
-        if byte != 32 && byte != 9 && byte != 10 && byte != 13 {
-            break
-        }
-        at = index + 1
-    }
-    at
-}
-
-test campfire.server.skip-whitespace/stops {
-    expect campfire.server.skip-whitespace("a\n  b", 1) == 4
-    expect campfire.server.skip-whitespace("ab", 2) == 2
-}
-
 fn campfire.server.page-frame(chrome: PageChrome) -> PageFrame {
-    doc "campfire.views.page with no messages, split where the messages go: after the opening tag of the messages container (the first '\">' after its data-messages-target attribute; attribute values are escaped, so page text cannot end it early) and the whitespace the layout puts before the messages. head ++ messages ++ tail is the page. The layout stays one compile-time-checked template."
+    doc "The room page's layout, as the text before and after its messages: head ++ messages ++ tail is the page. The layout template is checked as one fragment, so the tail closes what the head opens (report 309)."
 
-    let empty = campfire.views.text(campfire.views.page(chrome, list.empty<Html>()))
-    let split = match string.index-of(empty, "data-messages-target=\"messages\"", 0) {
-        none => -1
-        some at => match string.index-of(empty, "\">", at) {
-            none => -1
-            some end => campfire.server.skip-whitespace(empty, end + 2)
-        }
-    }
-    if split < 0 {
-        pageFrame.new(head = empty, tail = "")
-    } else {
-        pageFrame.new(
-            head = match string.slice(empty, 0, split) { none => ""; some text => text },
-            tail = match string.slice(empty, split, string.byte-length(empty) - split) { none => ""; some text => text })
-    }
+    let page = campfire.views.page-layout(chrome)
+    pageFrame.new(head = page.head, tail = page.tail)
 }
 
 test campfire.server.page-frame/joins-to-page {

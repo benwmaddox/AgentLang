@@ -48,6 +48,14 @@ test campfire.views.room-chrome/closed-admin {
     => value "rooms_closed"
 }
 
+test campfire.views.page-layout/halves {
+    let chrome = campfire.views.room-chrome(roomRow.new(id = RoomId.new(3), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "a", updated-at = "b"), authUser.new(id = UserId.new(9), name = "Ann", role = Role.member(), status = AuthUserStatus.active()), "http://x")
+    let page = campfire.views.page-layout(chrome)
+    expect string.contains(page.head, "data-messages-target=\"messages\"")
+    expect string.starts-with(page.tail, "</div>")
+    expect string.concat(page.head, page.tail) == campfire.views.text(campfire.views.page(chrome, list.empty<Html>()))
+}
+
 test campfire.views.page/layout {
     string.starts-with(campfire.views.text(campfire.views.page(campfire.views.room-chrome(roomRow.new(id = RoomId.new(3), name = option.some<String>("Lobby"), kind = RoomKind.open(), creator-id = UserId.new(1), created-at = "a", updated-at = "b"), authUser.new(id = UserId.new(9), name = "Ann & Bo", role = Role.member(), status = AuthUserStatus.active()), "https://chat.test"), list.empty<Html>())), "<!DOCTYPE html>")
     => value true
