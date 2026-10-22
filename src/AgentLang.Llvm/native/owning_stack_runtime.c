@@ -1222,13 +1222,12 @@ static int32_t al_owning_validate_type_descriptor(
   }
   type = &layout->types[type_index];
 #if AL_OWNING_TRUSTED_GENERATED
-  /* Trusted builds take the compiler-emitted descriptor as it is for values
-   * verified code built, as report 270 does for the type graph (report 304).
-   * Host and caller values (external views) keep the full check. */
-  if (!view->external) {
-    *out_type = type;
-    return 1;
-  }
+  /* Trusted builds take the compiler-emitted descriptor as it is (report 304).
+   * The descriptor is the module's constant layout, not part of the value, so
+   * this holds for host and caller values too (report 313); their bytes still
+   * get every value check in al_owning_scan_value. */
+  *out_type = type;
+  return 1;
 #endif
   if (type->first_field > layout->field_count ||
       type->field_count > layout->field_count - type->first_field) {
@@ -1659,21 +1658,21 @@ static int32_t al_owning_validate_type_graph_full(
                                              state, height, &visited_fields);
 }
 
-/* Trusted builds skip the walk for values that verified code built: the
- * layout is a compiler-emitted constant (report 270). Values admitted from a
- * host or caller (external views) keep the full walk, which their malformed-
- * input rejection depends on. */
+/* Trusted builds skip the walk: the layout is a compiler-emitted constant
+ * (report 270). The walk reads only the layout, never a value's bytes, so this
+ * holds for values admitted from a host or caller (external views) as well
+ * (report 313): their bytes still get the full scan (bounds, counts, tags,
+ * Bool and enum ranges, zero padding, UTF-8). Diagnostic builds, and runtimes
+ * built without AL_OWNING_TRUSTED_GENERATED, keep the walk. */
 static int32_t AL_OWNING_PROFILE_IMPL(al_owning_validate_type_graph)(
     al_owning_scan_view *view, const al_owning_layout *layout,
     uint32_t type_index) {
 #if AL_OWNING_TRUSTED_GENERATED
-  if (!view->external) {
-    if (layout != 0 && type_index < layout->type_count)
-      return 1;
-    al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
-                          type_index, layout != 0 ? layout->type_count : 0u);
-    return 0;
-  }
+  if (layout != 0 && type_index < layout->type_count)
+    return 1;
+  al_owning_set_failure(view->ctx, AL_OWNING_STATUS_INTERNAL, view->error_id,
+                        type_index, layout != 0 ? layout->type_count : 0u);
+  return 0;
 #endif
   return al_owning_validate_type_graph_full(view, layout, type_index);
 }

@@ -2,7 +2,8 @@
 # toolchain's clang. The unit tests (owning_stack_runtime_test.c) run at O0, O2
 # and under trap-mode UBSan; the exhaustive HTML escape check (html_escape_test.c,
 # report 310) and the substring search (string_find_test.c, report 312) run at
-# O2 and under UBSan. Exits nonzero when any build or run fails.
+# O2 and under UBSan; external_values_test.c (report 313) runs with and without
+# the trusted layout. Exits nonzero when any build or run fails.
 [CmdletBinding()]
 param([string] $OutDir = '')
 
@@ -26,7 +27,12 @@ $cases = @(
     @{ Name = 'escape-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('html_escape_test.c') },
     # The 8-byte substring search (report 312) against the naive one.
     @{ Name = 'find-O2'; Flags = @('-O2', '-Wno-unused-function'); Sources = @('string_find_test.c') },
-    @{ Name = 'find-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('string_find_test.c') }
+    @{ Name = 'find-ubsan'; Flags = $ubsan + @('-Wno-unused-function'); Sources = @('string_find_test.c') },
+    # External values keep every value check when the layout is trusted (report 313):
+    # built with the trusted runtime and with the layout-walking one.
+    @{ Name = 'external-trusted'; Flags = @('-O2', '-Wno-unused-function', '-DAL_OWNING_TRUSTED_GENERATED=1'); Sources = @('external_values_test.c') },
+    @{ Name = 'external-trusted-ubsan'; Flags = $ubsan + @('-Wno-unused-function', '-DAL_OWNING_TRUSTED_GENERATED=1'); Sources = @('external_values_test.c') },
+    @{ Name = 'external-walked'; Flags = @('-O2', '-Wno-unused-function'); Sources = @('external_values_test.c') }
 )
 $failed = 0
 foreach ($case in $cases) {
