@@ -104,4 +104,22 @@ layouts, `db.rows` and others).
 - **Suites:** CampfireViews and SqlCheck pass.
 - **Build:** the verified build takes 38.3 s.
 
-SPEED
+**Speed** (ABBA against the build before item 8):
+
+| | 1 A | 2 B | 3 B | 4 A |
+| --- | ---: | ---: | ---: | ---: |
+| Uncached req/s | 2,355 | 2,338 | 2,299 | 2,280 |
+| Uncached CPU ms per request | 1.861 | 1.880 | 1.893 | 1.851 |
+| Cached req/s | 7,199 | 7,618 | 7,491 | 7,216 |
+| Cached CPU ms per request | 0.566 | 0.533 | 0.539 | 0.565 |
+
+- **Cached: 5% more requests a second, and 5% less CPU per request.** The
+  cached room page builds its frame on every request, and building it no
+  longer renders an empty page or searches it.
+- **Uncached: unchanged** (2,318 against 2,318 req/s). It builds the whole page
+  in one pass instead.
+
+## Not done, for the user
+
+- **Other pages** (sidebar, account, search, user) build their full page as one
+  template. They could use layouts too, but none of them streams.
