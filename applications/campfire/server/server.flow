@@ -294,8 +294,8 @@ fn campfire.server.message-cache-key(message: MessageWithCreator) -> String {
 
 fn campfire.server.fragment-key(id: Int, updated-at-ms: Int) -> String {
     doc "campfire.server.message-cache-key from a message id and its updated_at (ms)."
-    let record = string.concat(string.concat(string.concat("messages/", int.to-string(id)), "-"), int.to-string(updated-at-ms))
-    cache.key([campfire.server.message-template-version(), record, "presentation-v3"])
+    // cache.key([version, "messages/<id>-<ms>", "presentation-v3"]), written as one join (report 314).
+    string.join([campfire.server.message-template-version(), "/messages/", int.to-string(id), "-", int.to-string(updated-at-ms), "/presentation-v3"])
 }
 
 test campfire.server.fragment-key/same-as-message-key {
@@ -363,16 +363,31 @@ test campfire.server.find-message/by-id {
     expect campfire.server.find-message([message], 8) == option.none<MessageWithCreator>()
 }
 
-fn campfire.server.missing-ids(cache: WorkerCache, keys: List<PageKey>) -> List<Int> {
+record PageLookup {
+    keys: List<String>
+    entries: List<CacheEntry>
+    missing: List<Int>
+}
+
+fn campfire.server.page-lookup(cache: WorkerCache, keys: List<PageKey>) -> PageLookup {
     effects store.read
-    doc "The page's message ids whose fragment is not in the worker cache."
+    doc "Each page message's fragment key and cache entry (length -1 on a miss), in page order, and the ids of the misses: one key and one cache lookup per message (report 314). An entry stays valid until the next put, and the page's puts come after it is written."
+    var fragment-keys = list.empty<String>()
+    var entries = list.empty<CacheEntry>()
     var missing = list.empty<Int>()
     for key in keys {
-        if worker-cache.find(cache, campfire.server.fragment-key(key.id, key.updated-at-ms)) == option.none<CacheEntry>() {
+        let fragment-key = campfire.server.fragment-key(key.id, key.updated-at-ms)
+        let entry = match worker-cache.find(cache, fragment-key) {
+            none => cacheEntry.new(offset = 0, length = -1)
+            some found => found
+        }
+        if entry.length < 0 {
             missing = list.append(missing, key.id)
         }
+        fragment-keys = list.append(fragment-keys, fragment-key)
+        entries = list.append(entries, entry)
     }
-    missing
+    pageLookup.new(keys = fragment-keys, entries = entries, missing = missing)
 }
 
 record StreamedPage {
@@ -523,16 +538,19 @@ test campfire.server.render-message/boost-markup {
     expect string.contains(text, "aria-label=\"Bo boosted 👀\"")
 }
 
-fn campfire.server.write-messages(cache: WorkerCache, context: MessageContext, keys: List<PageKey>, loaded: List<MessageWithCreator>, boosts: List<BoostView>, extras: PageExtras) -> StreamedPage {
+fn campfire.server.write-messages(lookup: PageLookup, context: MessageContext, keys: List<PageKey>, loaded: List<MessageWithCreator>, boosts: List<BoostView>, extras: PageExtras) -> StreamedPage {
     effects store.read, response.write
     doc "Writes each message's fragment to the response stream in page order: a hit straight from the store, a miss rendered from the loaded rows. Returns the rendered fragments and their keys for storing afterwards; written is false when a fragment could not be written."
     var written = true
     var rendered = list.empty<String>()
     var rendered-keys = list.empty<String>()
-    for key in keys {
-        let cache-key = campfire.server.fragment-key(key.id, key.updated-at-ms)
-        if bool.not(worker-cache.write-to-response(cache, cache-key)) {
-            let found = campfire.server.find-message(loaded, key.id)
+    for cache-key, index in lookup.keys {
+        let id = match list.get(keys, index) { none => 0; some key => key.id }
+        let entry = match list.get(lookup.entries, index) { none => cacheEntry.new(offset = 0, length = -1); some found => found }
+        // A hit goes straight from the store, from the entry page-lookup found (report 314).
+        let sent = entry.length >= 0 && response.write-store(entry.offset, entry.length)
+        if bool.not(sent) {
+            let found = campfire.server.find-message(loaded, id)
             if found == option.none<MessageWithCreator>() {
                 written = false
             } else {
@@ -566,7 +584,8 @@ fn campfire.server.stream-room-page(chrome: PageChrome, keys: List<PageKey>, cac
     effects db.read, store.read, store.write, response.write
     doc "Writes the whole room page to the response stream (head, fragments, tail) and stores the fragments it rendered. Ok holds how many were stored; an error leaves a partial stream that the caller's non-streamed error response drops."
 
-    let missing = campfire.server.missing-ids(cache, keys)
+    let lookup = campfire.server.page-lookup(cache, keys)
+    let missing = lookup.missing
     let loaded-boosts = match campfire.server.boosts-for(missing, server.avatar-key) {
         error failure => result.error<List<BoostView>, DbError>(failure)
         ok boosts => result.ok<List<BoostView>, DbError>(boosts)
@@ -579,7 +598,7 @@ fn campfire.server.stream-room-page(chrome: PageChrome, keys: List<PageKey>, cac
             let context = messageContext.new(room-id = chrome.room-id, room-name = campfire.server.message-room-name(chrome), base-url = chrome.base-url)
             let frame = campfire.server.page-frame(chrome)
             let head = response.write(frame.head)
-            let page = campfire.server.write-messages(cache, context, keys, loaded, boosts, campfire.server.page-extras(loaded, server))
+            let page = campfire.server.write-messages(lookup, context, keys, loaded, boosts, campfire.server.page-extras(loaded, server))
             let tail = response.write(frame.tail)
             if head && page.written && tail {
                 result.ok<Int, DbError>(campfire.server.store-fragments(cache, page))
@@ -849,12 +868,19 @@ test campfire.server.worker-cache/ready-in-tests {
     expect campfire.server.worker-cache().ready
 }
 
-test campfire.server.missing-ids/only-uncached {
+test campfire.server.page-lookup/only-uncached {
     let cache = campfire.server.worker-cache()
     let keys = [pageKey.new(id = 1, updated-at-ms = 5), pageKey.new(id = 2, updated-at-ms = 6)]
-    expect campfire.server.missing-ids(cache, keys) == [1, 2]
+    expect campfire.server.page-lookup(cache, keys).missing == [1, 2]
     expect worker-cache.put(cache, campfire.server.fragment-key(1, 5), "<one>")
-    expect campfire.server.missing-ids(cache, keys) == [2]
+    let lookup = campfire.server.page-lookup(cache, keys)
+    expect lookup.missing == [2]
+    expect lookup.keys == [campfire.server.fragment-key(1, 5), campfire.server.fragment-key(2, 6)]
+    expect match list.get(lookup.entries, 0) { none => false; some entry => entry.length == 5 } && match list.get(lookup.entries, 1) { none => false; some entry => entry.length == -1 }
+}
+
+test campfire.server.fragment-key/cache-key-form {
+    expect campfire.server.fragment-key(12, 1772465460123) == cache.key([campfire.server.message-template-version(), "messages/12-1772465460123", "presentation-v3"])
 }
 
 test campfire.server.write-messages/hits-and-misses-in-order {
@@ -862,11 +888,13 @@ test campfire.server.write-messages/hits-and-misses-in-order {
     expect worker-cache.put(cache, campfire.server.fragment-key(1, 5), "<one>")
     let message = messageWithCreator.new(id = MessageId.new(2), room-id = RoomId.new(1), creator-id = UserId.new(1), created-at-ms = 0, updated-at-ms = 6, client-message-id = "c2", created-at = "2026-01-01 00:00:00", creator-name = "Ann", creator-bio = "", creator-updated-at = "2026-01-01 00:00:00", creator-avatar-token = "t", body = option.some<String>("two"))
     let context = messageContext.new(room-id = "1", room-name = "Lobby", base-url = "http://x")
-    let page = campfire.server.write-messages(cache, context, [pageKey.new(id = 1, updated-at-ms = 5), pageKey.new(id = 2, updated-at-ms = 6)], [message], list.empty<BoostView>(), campfire.server.no-extras())
+    let keys = [pageKey.new(id = 1, updated-at-ms = 5), pageKey.new(id = 2, updated-at-ms = 6)]
+    let page = campfire.server.write-messages(campfire.server.page-lookup(cache, keys), context, keys, [message], list.empty<BoostView>(), campfire.server.no-extras())
     expect page.written
     expect page.rendered-keys == [campfire.server.fragment-key(2, 6)]
     expect response.written(0) == string.concat("<one>", campfire.views.text(campfire.views.rails-message(context, message)))
-    let missing = campfire.server.write-messages(cache, context, [pageKey.new(id = 3, updated-at-ms = 1)], list.empty<MessageWithCreator>(), list.empty<BoostView>(), campfire.server.no-extras())
+    let lonely = [pageKey.new(id = 3, updated-at-ms = 1)]
+    let missing = campfire.server.write-messages(campfire.server.page-lookup(cache, lonely), context, lonely, list.empty<MessageWithCreator>(), list.empty<BoostView>(), campfire.server.no-extras())
     expect bool.not(missing.written)
 }
 
