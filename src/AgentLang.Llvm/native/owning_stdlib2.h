@@ -1209,8 +1209,8 @@ static int64_t al_time_d2(const uint8_t *x) {
   return (int64_t)(x[0] - '0') * 10 + (int64_t)(x[1] - '0');
 }
 
-/* Rails "exp": yyyy-MM-ddTHH:mm:ss[.f{1,7}](Z|z|+HH:mm|-HH:mm), as
- * al_campfire_parse_rails_expiry. Unix microseconds; sub-microsecond digits
+/* ISO 8601 as Rails writes "exp": yyyy-MM-ddTHH:mm:ss[.f{1,7}](Z|z|+HH:mm|-HH:mm).
+ * Unix microseconds; sub-microsecond digits
  * round up so `now >= exp` equals the tick comparison. */
 static int32_t al_time_parse_iso8601(const uint8_t *x, uint32_t n,
                                      int64_t *out) {

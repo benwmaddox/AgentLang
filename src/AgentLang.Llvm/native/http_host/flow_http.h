@@ -91,7 +91,7 @@ typedef struct fh_db fh_db;
 
 /* Process-wide SQLite settings; call once before the first SQLite call. */
 void fh_db_configure(void);
-/* Opens a connection with WAL and the Campfire host PRAGMAs. Returns NULL on
+/* Opens a connection with WAL and the host PRAGMAs. Returns NULL on
  * failure and writes a short reason (never config values) to reason. */
 fh_db *fh_db_open(const char *path, char *reason, uint32_t reason_capacity);
 void fh_db_close(fh_db *db);

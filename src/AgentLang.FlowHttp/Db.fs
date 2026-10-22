@@ -58,7 +58,7 @@ module Db =
                   "text-value", StringValue text
                   "blob-value", BytesValue blob ])
 
-    /// One worker's connection: WAL and the PRAGMAs of the Campfire host
+    /// One worker's connection: WAL and the host PRAGMAs
     /// (extended result codes, 5 s busy timeout, foreign keys, FULL sync).
     type Connection(path: string) =
         do initialized.Force()

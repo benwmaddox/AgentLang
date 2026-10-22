@@ -113,7 +113,7 @@ type OwningAppHostOperation =
       Effects: string list }
 
 /// An application's native host boundary, supplied by the application's build
-/// (for Campfire, applications/campfire/Native/room-read-host.json). The
+/// (a JSON manifest the application owns). The
 /// compiler knows nothing about any application: it generates the calls into
 /// AdapterSymbol, links the app's adapter source, and copies the app-owned
 /// HeaderPath next to it. Every adapter output is validated against its type

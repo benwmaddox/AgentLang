@@ -36,7 +36,7 @@ module FlowRoutes =
     let private validName (name: string) =
         name.Length > 0 && Char.IsLetter name[0] && name |> Seq.forall (fun c -> Char.IsLetterOrDigit c || c = '-' || c = '_')
 
-    /// "CampfireRoute" -> "campfireRoute", as record constructors are named.
+    /// "SiteRoute" -> "siteRoute", as record constructors are named.
     let wordPrefix (typeName: string) = string (Char.ToLowerInvariant typeName[0]) + typeName.Substring 1
 
     /// The words a routed enum generates, for collision checks.
