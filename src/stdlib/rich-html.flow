@@ -253,7 +253,7 @@ test rich-html.word-byte?/classes {
 
 fn rich-html.email-like?(text: String) -> Bool {
     doc "True when some '@' is followed by word characters, a '.', and another word character: the shape auto_link links as an e-mail address (user@host.tld). '@' without a dotted host after it is left alone, as auto_link leaves it."
-    let length = string.byte-length(text)
+    let length = if string.contains(text, "@") { string.byte-length(text) } else { 0 }
     var found = false
     for index in 0..length {
         if string.byte-at-or(text, index, 0) == 64 {
@@ -276,6 +276,17 @@ fn rich-html.email-like?(text: String) -> Bool {
 test rich-html.email-like?/shapes {
     expect rich-html.email-like?("mail a@b.c") && rich-html.email-like?("x@host.example")
     expect bool.not(rich-html.email-like?("Deployed campfire@4f2c1e9 to production")) && bool.not(rich-html.email-like?("@ home")) && bool.not(rich-html.email-like?("a@b."))
+    expect bool.not(rich-html.email-like?("no at sign.here"))
+}
+
+fn rich-html.blank?(text: String) -> Bool {
+    doc "True when text is only spaces, newlines and tabs (or empty)."
+    string.replace(string.replace(string.replace(text, " ", ""), "\n", ""), "\t", "") == ""
+}
+
+test rich-html.blank?/kinds {
+    expect rich-html.blank?("") && rich-html.blank?(" \n\t ")
+    expect bool.not(rich-html.blank?(" x ")) && bool.not(rich-html.blank?("\r"))
 }
 
 fn rich-html.text-ok?(stack: String, text: String) -> Bool {
@@ -287,11 +298,12 @@ fn rich-html.text-ok-for?(stack: String, text: String, links-allowed: Bool) -> B
     doc "Text a parser keeps in place and auto_link leaves alone: only whitespace directly in table structure; nothing that looks like a URL or e-mail address."
     let parent = rich-html.top(stack)
     let in-table = parent == "table" || parent == "thead" || parent == "tbody" || parent == "tfoot" || parent == "tr"
-    let blank = string.replace(string.replace(string.replace(text, " ", ""), "\n", ""), "\t", "") == ""
-    if in-table && bool.not(blank) {
+    // Only text in table structure must be blank, and "www." needs a '.', so most
+    // text skips the replaces and the lower-cased copy (report 310).
+    if in-table && bool.not(rich-html.blank?(text)) {
         false
     } else {
-        (links-allowed || (bool.not(string.contains(text, "://")) && bool.not(string.contains(string.to-lower-ascii(text), "www.")))) && bool.not(rich-html.email-like?(text))
+        (links-allowed || (bool.not(string.contains(text, "://")) && bool.not(string.contains(text, ".") && string.contains(string.to-lower-ascii(text), "www.")))) && bool.not(rich-html.email-like?(text))
     }
 }
 
@@ -299,6 +311,7 @@ test rich-html.text-ok?/links-and-tables {
     expect rich-html.text-ok?("/p", "plain text")
     expect bool.not(rich-html.text-ok?("/p", "see https://x.y")) && bool.not(rich-html.text-ok?("/p", "mail a@b.c")) && bool.not(rich-html.text-ok?("/p", "WWW.example.com"))
     expect rich-html.text-ok?("/table/tbody", " ") && bool.not(rich-html.text-ok?("/table/tbody", "x"))
+    expect rich-html.text-ok?("/p", "a.b") && bool.not(rich-html.text-ok?("/p", "go to www.x"))
 }
 
 fn rich-html.canonical?(text: String) -> Bool {
