@@ -133,7 +133,7 @@ test rich-html.safe-url?/schemes {
     expect bool.not(rich-html.safe-url?("data:text/html,x"))
 }
 
-fn rich-html.name-char?(byte: Int) -> Bool {
+inline fn rich-html.name-char?(byte: Int) -> Bool {
     (byte >= 97 && byte <= 122) || (byte >= 48 && byte <= 57) || byte == 45 || byte == 58
 }
 
@@ -242,7 +242,7 @@ test rich-html.child-ok?/rules {
     expect rich-html.child-ok?("div", "p", "/div")
 }
 
-fn rich-html.word-byte?(byte: Int) -> Bool {
+inline fn rich-html.word-byte?(byte: Int) -> Bool {
     doc "A byte auto_link's e-mail pattern may treat as a word character: ASCII letters, digits, '_' and '-', and (conservatively) any non-ASCII byte."
     (byte >= 97 && byte <= 122) || (byte >= 65 && byte <= 90) || (byte >= 48 && byte <= 57) || byte == 95 || byte == 45 || byte >= 128
 }
@@ -500,7 +500,7 @@ test rich-html.without-figure/lexxy-table {
 // refused (none), never guessed: a non-ASCII character where a URL ends (Ruby
 // strips by Unicode word class), and '&' or "'" in an e-mail address.
 
-fn rich-html.ascii-word?(byte: Int) -> Bool {
+inline fn rich-html.ascii-word?(byte: Int) -> Bool {
     (byte >= 97 && byte <= 122) || (byte >= 65 && byte <= 90) || (byte >= 48 && byte <= 57) || byte == 95
 }
 
@@ -508,7 +508,7 @@ test rich-html.ascii-word?/classes {
     expect rich-html.ascii-word?(95) && rich-html.ascii-word?(90) && bool.not(rich-html.ascii-word?(45))
 }
 
-fn rich-html.url-char?(byte: Int) -> Bool {
+inline fn rich-html.url-char?(byte: Int) -> Bool {
     doc "AUTO_LINK_RE's [^ \\t\\r\\n\\v\\f<\\u00A0\"] on a byte (raw U+00A0 never occurs in canonical text)."
     byte != 32 && byte != 9 && byte != 13 && byte != 10 && byte != 11 && byte != 12 && byte != 60 && byte != 34
 }
@@ -751,7 +751,7 @@ record HtmlTag {
     valid: Bool
 }
 
-fn rich-html.space?(byte: Int) -> Bool {
+inline fn rich-html.space?(byte: Int) -> Bool {
     byte == 32 || byte == 9 || byte == 10 || byte == 12 || byte == 13
 }
 
@@ -1003,7 +1003,7 @@ test rich-html.escape-attribute/set {
 // decoded) and to find the first element of a name or class. Comments are
 // skipped; a reference this library cannot decode makes the text unreadable.
 
-fn rich-html.letter?(byte: Int) -> Bool {
+inline fn rich-html.letter?(byte: Int) -> Bool {
     (byte >= 65 && byte <= 90) || (byte >= 97 && byte <= 122)
 }
 
