@@ -89,6 +89,8 @@ static inline uint32_t fh_get_count(fh_reader *r) {
 /* Per-worker database context (the host provider context). */
 typedef struct fh_db fh_db;
 
+/* Process-wide SQLite settings; call once before the first SQLite call. */
+void fh_db_configure(void);
 /* Opens a connection with WAL and the Campfire host PRAGMAs. Returns NULL on
  * failure and writes a short reason (never config values) to reason. */
 fh_db *fh_db_open(const char *path, char *reason, uint32_t reason_capacity);

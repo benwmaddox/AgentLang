@@ -24,6 +24,9 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 #define SQLITE_OPEN_NOMUTEX 0x00008000
 #define SQLITE_OPEN_PRIVATECACHE 0x00040000
 #define SQLITE_STATIC ((void (*)(void *))0)
+#define SQLITE_CONFIG_MEMSTATUS 9
+
+int sqlite3_config(int option, ...);
 
 int sqlite3_open_v2(const char *filename, sqlite3 **db, int flags, const char *vfs);
 int sqlite3_close_v2(sqlite3 *db);

@@ -913,6 +913,7 @@ int main(int argc, char **argv) {
   options.store_bytes = (((uint64_t)options.store_mb << 20) / (uint64_t)options.workers) & ~(uint64_t)16383u;
   if (!fh_load_config(&options)) return 2;
   if (fh_cache_init((uint64_t)options.cache_mb << 20, (uint32_t)options.workers) != 0) { fh_log("cache allocation failed\n"); return 3; }
+  fh_db_configure(); /* before the first SQLite call */
   {
     char reason[160];
     if (!fh_db_provision(options.db_path, reason, sizeof(reason))) {

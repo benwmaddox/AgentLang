@@ -48,6 +48,15 @@ static int fh_exec(sqlite3 *connection, const char *sql) {
   return sqlite3_exec(connection, sql, 0, 0, 0) == SQLITE_OK;
 }
 
+/* Before any other SQLite call, once per process (report 311): no memory
+ * statistics. With them on (the default build), every SQLite allocation takes
+ * one process-wide mutex that all workers share; this host never reads them
+ * (no sqlite3_memory_used, no soft heap limit). A build that has them off
+ * already, or a library already initialized, just reports an error here. */
+void fh_db_configure(void) {
+  (void)sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0);
+}
+
 fh_db *fh_db_open(const char *path, char *reason, uint32_t reason_capacity) {
   fh_db *db = (fh_db *)calloc(1u, sizeof(fh_db));
   int rc;
