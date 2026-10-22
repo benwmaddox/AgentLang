@@ -649,18 +649,37 @@ fn campfire.server.message-row(row: PageRow, avatar-token: String) -> MessageWit
         body = row.body)
 }
 
+fn campfire.server.known-token(ids: List<Int>, tokens: List<String>, user-id: Int) -> String {
+    doc "The token already made for this user on this page (tokens[i] belongs to ids[i]), or empty. A token is never empty."
+    var found = ""
+    for id, index in ids {
+        if id == user-id {
+            found = match list.get(tokens, index) { none => ""; some token => token }
+            break
+        }
+    }
+    found
+}
+
+test campfire.server.known-token/lookup {
+    expect campfire.server.known-token([3, 7], ["a", "b"], 7) == "b"
+    expect campfire.server.known-token([3, 7], ["a", "b"], 5) == ""
+}
+
 fn campfire.server.message-page(rows: List<PageRow>, avatar-key: Bytes) -> Option<List<MessageWithCreator>> {
-    doc "Maps the page rows in order; one avatar token per run of rows by the same creator. Any row whose timestamps do not parse rejects the page."
+    doc "Maps the page rows in order; one avatar token per distinct creator on the page (an HMAC each; report 311). Any row whose timestamps do not parse rejects the page."
 
     var messages = list.empty<MessageWithCreator>()
     var valid = true
-    var token-user = 0
-    var token = ""
+    var token-ids = list.empty<Int>()
+    var tokens = list.empty<String>()
     for row in rows {
         valid = valid && campfire.server.page-row-ok?(row)
-        if token == "" || token-user != row.creator-id {
+        var token = campfire.server.known-token(token-ids, tokens, row.creator-id)
+        if token == "" {
             token = campfire.server.avatar-token(avatar-key, row.creator-id)
-            token-user = row.creator-id
+            token-ids = list.append(token-ids, row.creator-id)
+            tokens = list.append(tokens, token)
         }
         messages = list.append(messages, campfire.server.message-row(row, token))
     }
@@ -783,16 +802,25 @@ fn campfire.server.boosts-for(ids: List<Int>, avatar-key: Bytes) -> Result<List<
             error failure => result.error<List<BoostView>, DbError>(campfire.server.db-error(failure))
             ok rows => {
                 var boosts = list.empty<BoostView>()
+                var token-ids = list.empty<Int>()
+                var tokens = list.empty<String>()
                 for row in rows {
                     let booster = row.booster-id
                     let stamp = row.booster-updated-at
+                    // One token per distinct booster (report 311).
+                    var token = campfire.server.known-token(token-ids, tokens, booster)
+                    if token == "" {
+                        token = campfire.server.avatar-token(avatar-key, booster)
+                        token-ids = list.append(token-ids, booster)
+                        tokens = list.append(tokens, token)
+                    }
                     boosts = list.append(boosts, boostView.new(
                         id = row.id,
                         message-id = row.message-id,
                         booster-id = booster,
                         booster-name = row.booster-name,
                         booster-bio = row.booster-bio,
-                        booster-avatar-url = string.join(["/users/", campfire.server.avatar-token(avatar-key, booster), "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")]),
+                        booster-avatar-url = string.join(["/users/", token, "/avatar?v=", string.replace(string.replace(string.replace(match string.slice(stamp, 0, 19) { none => stamp; some text => text }, "-", ""), ":", ""), " ", "")]),
                         content = row.content))
                 }
                 result.ok<List<BoostView>, DbError>(boosts)
