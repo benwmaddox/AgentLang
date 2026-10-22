@@ -250,7 +250,7 @@ module Parser =
         |> List.tryPick (fun (prefix, kind) ->
             if token.Text.StartsWith(prefix + "<", StringComparison.Ordinal) && token.Text.EndsWith(">", StringComparison.Ordinal) then
                 let arguments = token.Text.Substring(prefix.Length + 1, token.Text.Length - prefix.Length - 2) |> parseGenericArguments file line
-                let expected = match kind with ListEmpty | ListSingleton | ListOf _ | OptionNone | OptionSome | HtmlTemplate _ -> 1 | ResultOk | ResultError -> 2
+                let expected = match kind with ListEmpty | ListSingleton | ListOf _ | OptionNone | OptionSome | HtmlTemplate _ -> 1 | ResultOk | ResultError | DbParams _ -> 2 | DbDecode -> 3
                 if arguments.Length <> expected then fail file line.Number token.Column "PARSE_INVALID_CONTAINER_CONSTRUCTOR" $"'{prefix}' requires {expected} explicit type argument(s)."
                 Some(ConstructContainer(kind, arguments, span file line.Number token.Column token.Text.Length))
             elif token.Text.StartsWith(prefix, StringComparison.Ordinal) then

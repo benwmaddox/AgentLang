@@ -106,6 +106,89 @@ type IrInterpreterResult internal
     interface IDisposable with
         member this.Dispose() = this.Dispose()
 
+/// db.rows<Row> (report 305): the params record as List<DbValue>, and query rows as
+/// typed records. Decoding never coerces: a NULL outside an Option, or a value of
+/// another kind, is SqlError 20 ("column N: expected T, got K"). The native host's
+/// typed path (flow_http_db.c, FH_DB_ROWS) gives the same answers and messages.
+module internal DbRows =
+    let private kindNames = [| "null"; "integer"; "text"; "blob" |]
+
+    let private record (program: IrProgram) key =
+        match program.NominalTypesByKey.TryFind key with
+        | Some(IrRecordDefinition definition) -> definition
+        | _ -> invalidOp "db.rows record type is missing from the verified program."
+
+    /// A DbValue {kind, int-value, text-value, blob-value}.
+    let private dbValue (program: IrProgram) dbValueKey kind (number: int64) (text: string) (blob: byte[]) =
+        let kindKey =
+            match (record program dbValueKey).RecordFields with
+            | first :: _ ->
+                match first.FieldType with
+                | IrNominal key -> key
+                | _ -> invalidOp "DbValue.kind is not an enum."
+            | [] -> invalidOp "DbValue has no fields."
+        RuntimeRecord(dbValueKey, [ RuntimeEnum(kindKey, kind); RuntimeInt number; RuntimeString text; RuntimeBytes blob ])
+
+    let rec parameter (program: IrProgram) dbValueKey value =
+        match value with
+        | RuntimeInt number -> dbValue program dbValueKey 1 number "" [||]
+        | RuntimeBool flag -> dbValue program dbValueKey 1 (if flag then 1L else 0L) "" [||]
+        | RuntimeString text -> dbValue program dbValueKey 2 0L text [||]
+        | RuntimeBytes blob -> dbValue program dbValueKey 3 0L "" blob
+        | RuntimeOption(_, None) -> dbValue program dbValueKey 0 0L "" [||]
+        | RuntimeOption(_, Some inner) | RuntimeScalar(_, inner) -> parameter program dbValueKey inner
+        | _ -> invalidOp "db.rows parameter has a type the lowering should have rejected."
+
+    let rec private expectedName ty =
+        match ty with
+        | IrInt -> "Int"
+        | IrBool -> "Bool"
+        | IrString -> "String"
+        | IrBytes -> "Bytes"
+        | IrOption inner -> expectedName inner
+        | _ -> "a supported type"
+
+    let rec private field ty value : Result<IrInterpreterRuntimeValue, int> =
+        match value with
+        | RuntimeRecord(_, [ RuntimeEnum(_, kind); RuntimeInt number; RuntimeString text; RuntimeBytes blob ]) ->
+            match ty, kind with
+            | IrOption inner, 0 -> Ok(RuntimeOption(inner, None))
+            | IrOption inner, _ -> field inner value |> Result.map (fun decoded -> RuntimeOption(inner, Some decoded))
+            | IrInt, 1 -> Ok(RuntimeInt number)
+            | IrBool, 1 when number = 0L || number = 1L -> Ok(RuntimeBool(number = 1L))
+            | IrString, 2 -> Ok(RuntimeString text)
+            | IrBytes, 3 -> Ok(RuntimeBytes blob)
+            | _, kind -> Error kind
+        | _ -> invalidOp "db.rows column is not a DbValue."
+
+    let decode (program: IrProgram) rowKey sqlErrorKey (rows: IrInterpreterRuntimeValue list) =
+        let definition = record program rowKey
+        let rowType = IrList(IrNominal rowKey)
+        let failure (message: string) =
+            RuntimeResult(rowType, IrNominal sqlErrorKey, Error(RuntimeRecord(sqlErrorKey, [ RuntimeInt 20L; RuntimeString message ])))
+        let decoded = ResizeArray<IrInterpreterRuntimeValue>()
+        let mutable error = None
+        for row in rows do
+            if error.IsNone then
+                match row with
+                | RuntimeRecord(_, [ RuntimeList(_, values) ]) when values.Length <> definition.RecordFields.Length ->
+                    error <- Some $"a row has {values.Length} columns; the row type has {definition.RecordFields.Length} fields"
+                | RuntimeRecord(_, [ RuntimeList(_, values) ]) ->
+                    let fields = ResizeArray<IrInterpreterRuntimeValue>()
+                    List.iteri2 (fun index (target: IrRecordField) value ->
+                        if error.IsNone then
+                            match field target.FieldType value with
+                            | Ok decodedField -> fields.Add decodedField
+                            | Error kind ->
+                                let got = if kind >= 0 && kind < kindNames.Length then kindNames[kind] else "unknown"
+                                let shown = if target.FieldType = IrBool && kind = 1 then "integer other than 0 or 1" else got
+                                error <- Some $"column {index + 1}: expected {expectedName target.FieldType}, got {shown}") definition.RecordFields values
+                    if error.IsNone then decoded.Add(RuntimeRecord(rowKey, List.ofSeq fields))
+                | _ -> invalidOp "db.rows row is not a DbRow."
+        match error with
+        | Some message -> failure message
+        | None -> RuntimeResult(rowType, IrNominal sqlErrorKey, Ok(RuntimeList(IrNominal rowKey, List.ofSeq decoded)))
+
 module IrInterpreter =
     type private TypeFormatTask = FormatType of IrType | FormatText of string
     type private RuntimeValue = IrInterpreterRuntimeValue
@@ -1656,6 +1739,24 @@ module IrInterpreter =
                 | IrOperation.ListSingleton itemType ->
                     let prefix, value = popOne "Typed container constructor requires one payload value." currentWord instruction.Site [ formatType program itemType ]
                     stack <- prefix @ [ RuntimeList(itemType, [ value ]) ]
+                | IrOperation.DbParams(paramsKey, dbValueKey, order) ->
+                    let prefix, value = popOne "db.rows requires its parameters record." currentWord instruction.Site [ formatType program (IrNominal paramsKey) ]
+                    let fields =
+                        match value with
+                        | RuntimeRecord(key, fields) when key = paramsKey -> fields
+                        | _ -> fail "RUNTIME_STACK_TYPE" "db.rows parameters are not the expected record." (Some currentWord) (sourceSpan instruction.Site) [] []
+                    let values = order |> List.map (fun index -> DbRows.parameter program dbValueKey fields[index])
+                    stack <- prefix @ [ RuntimeList(IrNominal dbValueKey, values) ]
+                | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
+                    let prefix, value = popOne "db.rows requires a query result." currentWord instruction.Site []
+                    let rowType = IrList(IrNominal rowKey)
+                    let decoded =
+                        match value with
+                        | RuntimeResult(_, _, Error error) -> RuntimeResult(rowType, IrNominal sqlErrorKey, Error error)
+                        | RuntimeResult(_, _, Ok(RuntimeList(_, rows))) -> DbRows.decode program rowKey sqlErrorKey rows
+                        | _ -> fail "RUNTIME_STACK_TYPE" "db.rows input is not a query result." (Some currentWord) (sourceSpan instruction.Site) [] []
+                    ignore dbRowKey
+                    stack <- prefix @ [ decoded ]
                 | IrOperation.ListOf(itemType, count) ->
                     if count < 1 || stack.Length < count then
                         fail "RUNTIME_STACK_UNDERFLOW" "List literal requires one value per element." (Some currentWord) (sourceSpan instruction.Site) [ string count ] [ string stack.Length ]

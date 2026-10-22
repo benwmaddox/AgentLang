@@ -861,6 +861,9 @@ module FlowLowering =
         | FlowExpression.Call(name, arguments, templateSpan) when name = IrHtml.templateCallName ->
             let htmlName, _, _ = analyzeTemplate context state environment arguments templateSpan
             [ TNamed htmlName ]
+        | FlowExpression.Call(name, arguments, callSpan) when name.StartsWith("db.rows<", StringComparison.Ordinal) ->
+            let rowName, _, _, _ = analyzeDbRows context state environment name arguments callSpan
+            [ TResult(TList(TNamed rowName), TNamed "SqlError") ]
         | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
             escapingHtmlArgument context state environment arguments newSpan |> ignore
             [ TNamed HtmlBuiltIn.typeName ]
@@ -1114,6 +1117,61 @@ module FlowLowering =
             fail "FLOW_TEMPLATE_HOLE_CONTEXT" message None (Some holeSpan) [ "a hole of the kind its context allows" ] []
         htmlName, parts, kinds
 
+    /// db.rows<Row>(sql, params) (report 305). Row and the params type are records; sql
+    /// is a literal whose named parameters ($user_id for the field user-id) are exactly
+    /// the params fields. Returns the row and params names and the params field indexes
+    /// in the SQL's parameter order (SQLite numbers named parameters by first appearance).
+    and private analyzeDbRows (context: Context) (state: LoweringState) (environment: Map<string, Binding>) (name: string) (arguments: FlowArgument list) (callSpan: SourceSpan) =
+        let rowName = name.Substring("db.rows<".Length, name.Length - "db.rows<".Length - 1)
+        let records = context.CompilerContext.Records
+        for required in [ "DbValue"; "DbRow"; "SqlError" ] do
+            if not (records.ContainsKey required) then
+                fail "FLOW_DB_ROWS_UNAVAILABLE" "db.rows needs the db stdlib (DbValue, DbRow, SqlError)." None (Some callSpan) [ required ] []
+        let rec supported (ty: LangType) =
+            match ty with
+            | TInt | TBool | TString | TBytes -> true
+            | TOption inner -> (match inner with TOption _ -> false | _ -> supported inner)
+            | _ -> false
+        let rowRecord =
+            match records.TryFind rowName with
+            | Some record when record.Validator.IsNone -> record
+            | Some _ -> fail "FLOW_DB_ROWS_TYPE" $"db.rows<{rowName}>: a row record cannot have a validator; check rows after reading them." None (Some callSpan) [] [ rowName ]
+            | None -> fail "FLOW_DB_ROWS_TYPE" $"db.rows<{rowName}> needs a record type." None (Some callSpan) [ "record" ] [ rowName ]
+        for field in rowRecord.Fields do
+            if not (supported field.Type) then
+                fail "FLOW_DB_ROWS_TYPE" $"db.rows<{rowName}>: field {field.Name} is {Types.format field.Type}; row fields are Int, Bool, String, Bytes or an Option of one." None (Some callSpan) [ "Int"; "Bool"; "String"; "Bytes"; "Option<...>" ] [ Types.format field.Type ]
+        let sql, paramsExpression =
+            match arguments with
+            | [ FlowArgument.Positional(FlowExpression.Literal(LString sql, _)); FlowArgument.Positional paramsExpression ] -> sql, paramsExpression
+            | _ -> fail "FLOW_DB_ROWS_CALL" "db.rows<Row> takes a literal SQL String and a params record: db.rows<Row>(\"SELECT ...\", params)." None (Some callSpan) [ "(sql literal, params record)" ] []
+        let paramsName, paramsRecord =
+            match inferExpression context state environment paramsExpression with
+            | TNamed paramsName when records.ContainsKey paramsName -> paramsName, records[paramsName]
+            | actual -> fail "FLOW_DB_ROWS_PARAMS" "db.rows parameters are a record whose fields are the SQL's named parameters." None (Some(spanOfExpression paramsExpression)) [ "record" ] [ Types.format actual ]
+        let parameterSupported (ty: LangType) =
+            supported ty
+            || (match ty with
+                | TNamed scalarName -> (match context.CompilerContext.Scalars.TryFind scalarName with Some scalar -> supported scalar.BaseType | None -> false)
+                | _ -> false)
+        for field in paramsRecord.Fields do
+            if not (parameterSupported field.Type) then
+                fail "FLOW_DB_ROWS_PARAMS" $"db.rows parameter {field.Name} is {Types.format field.Type}; parameters are Int, Bool, String, Bytes, a refined one of those, or an Option of one." None (Some(spanOfExpression paramsExpression)) [] [ Types.format field.Type ]
+        let names = DbSql.namedParameters sql
+        match DbSql.positionalParameter sql with
+        | Some marker -> fail "FLOW_DB_ROWS_PARAMS" $"db.rows SQL uses the positional parameter '{marker}'; name each one, as $user_id for a field user-id." None (Some callSpan) [ "$name" ] [ marker ]
+        | None -> ()
+        let fieldFor (sqlName: string) =
+            paramsRecord.Fields |> List.tryFindIndex (fun field -> field.Name.Replace('-', '_') = sqlName)
+        let order =
+            names |> List.map (fun sqlName ->
+                match fieldFor sqlName with
+                | Some index -> index
+                | None -> fail "FLOW_DB_ROWS_PARAMS" $"db.rows SQL names ${sqlName}, but {paramsName} has no field {sqlName.Replace('_', '-')}." None (Some callSpan) (paramsRecord.Fields |> List.map (fun field -> "$" + field.Name.Replace('-', '_'))) [ "$" + sqlName ])
+        paramsRecord.Fields |> List.iteri (fun index field ->
+            if not (List.contains index order) then
+                fail "FLOW_DB_ROWS_PARAMS" $"{paramsName}.{field.Name} is not a parameter of the SQL (expected ${field.Name.Replace('-', '_')})." None (Some(spanOfExpression paramsExpression)) [ "$" + field.Name.Replace('-', '_') ] [])
+        rowName, paramsName, order, paramsExpression
+
     and private inferEnumMatchOutput context state environment scrutinee cases matchSpan =
         let enumName =
             match inferExpression context state environment scrutinee with
@@ -1351,6 +1409,26 @@ module FlowLowering =
                     | FlowArgument.Positional hole -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument index)) hole
                     | _ -> failwith "parser produced a malformed html template")
             appendFragments fragments [ ConstructContainer(HtmlTemplate parts, [ TNamed htmlName ], templateSpan) ]
+        | FlowExpression.Call(name, arguments, callSpan) when name.StartsWith("db.rows<", StringComparison.Ordinal) ->
+            // sql, params -> DbParams -> db.query (the one call this site binds) -> DbDecode.
+            let rowName, paramsName, order, paramsExpression = analyzeDbRows context state environment name arguments callSpan
+            let sqlFragment =
+                match arguments with
+                | sql :: _ ->
+                    match sql with
+                    | FlowArgument.Positional sqlExpression -> lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument 0)) sqlExpression
+                    | _ -> failwith "analyzed db.rows lost its SQL"
+                | [] -> failwith "analyzed db.rows lost its SQL"
+            let paramsFragment = lowerFlowExpression context state environment (extendPath path (FlowAstPathSegment.CallArgument 1)) paramsExpression
+            let query =
+                exactCandidateFor state "db.query"
+                |> Option.defaultWith (fun () -> fail "FLOW_DB_ROWS_UNAVAILABLE" "db.rows needs the db.query host operation." None (Some callSpan) [ "db.query" ] [])
+            let lowered =
+                appendFragments [ sqlFragment; paramsFragment ]
+                    [ ConstructContainer(DbParams order, [ TNamed paramsName; TNamed "DbValue" ], callSpan)
+                      Call(query.Name, callSpan)
+                      ConstructContainer(DbDecode, [ TNamed rowName; TNamed "DbRow"; TNamed "SqlError" ], callSpan) ]
+            { lowered with CallEvents = lowered.CallEvents @ [ callEvent path FlowCallForm.Direct name query callSpan ] }
         | FlowExpression.Call(name, arguments, newSpan) when name = HtmlBuiltIn.typeName + ".new" && isBuiltInHtml context ->
             // Html.new(text) escapes: the same proven operation as html"{text}".
             let argument = escapingHtmlArgument context state environment arguments newSpan

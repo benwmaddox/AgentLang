@@ -227,6 +227,128 @@ test counter.store-unstreamed/drops {
     expect failed.status == 500 && bool.not(failed.streamed)
 }
 
+// db.rows<Row>(sql, params) (report 305): the host binds the params record's
+// fields by name and decodes each row into a Row, checking column kinds.
+
+record ItemRow {
+    id: Int
+    name: String
+    note: Option<String>
+    odd: Bool
+    raw: Bytes
+}
+
+record ItemQuery {
+    skip: Option<String>
+    min-id: Int
+}
+
+record NameAsInt {
+    name: Int
+}
+
+record NoteRequired {
+    note: String
+}
+
+record OddOnly {
+    odd: Bool
+}
+
+record OneId {
+    min-id: Int
+}
+
+fn counter.row-line(row: ItemRow) -> String {
+    let note = match row.note {
+        none => "(none)"
+        some value => value
+    }
+    let odd = if row.odd { "odd" } else { "even" }
+    string.join([int.to-string(row.id), ":", row.name, ":", note, ":", odd, ":", hex.encode(row.raw), "\n"])
+}
+
+test counter.row-line/format {
+    let row = itemRow.new(id = 3, name = "x", note = option.none<String>(), odd = true, raw = bytes.from-utf8("x"))
+    expect counter.row-line(row) == "3:x:(none):odd:78\n"
+}
+
+fn counter.typed-rows(target: String) -> HttpResponse {
+    effects db.read
+    doc "GET /rows?skip=<name>: items with id >= 2 whose name is not <name> (all of them without skip), through db.rows. The SQL names $min_id before $skip, the reverse of the record's field order."
+    let query = http.query(target)
+    let skip = if string.starts-with(query, "skip=") {
+        string.slice(query, 5, string.byte-length(query) - 5)
+    } else {
+        option.none<String>()
+    }
+    let params = itemQuery.new(skip = skip, min-id = 2)
+    match db.rows<ItemRow>("select id, name, note, id % 2 as odd, cast(name as blob) as raw from items where id >= $min_id and ($skip is null or name <> $skip) order by id", params) {
+        error failure => counter.text(500, string.join(["db error ", int.to-string(failure.code), " ", failure.message]))
+        ok rows => {
+            var text = ""
+            for row in rows {
+                text = string.concat(text, counter.row-line(row))
+            }
+            counter.text(200, text)
+        }
+    }
+}
+
+test counter.typed-rows/no-table {
+    expect counter.typed-rows("/rows").status == 500
+}
+
+fn counter.row-error(failure: SqlError) -> HttpResponse {
+    counter.text(500, string.join(["db error ", int.to-string(failure.code), " ", failure.message]))
+}
+
+test counter.row-error/text {
+    expect counter.row-error(sqlError.new(code = 20, message = "m")).body == "db error 20 m"
+}
+
+fn counter.typed-row-errors(path: String) -> HttpResponse {
+    effects db.read
+    doc "/rows-bools reads one Bool per row. Each other /rows-* path reads rows that do not fit the row type: text into Int, NULL into String, 2 into Bool, two columns into a one-field row."
+    let params = oneId.new(min-id = 1)
+    if path == "/rows-bools" {
+        match db.rows<OddOnly>("select id % 2 as odd from items where id >= $min_id order by id", params) {
+            error failure => counter.row-error(failure)
+            ok rows => {
+                var text = ""
+                for row in rows {
+                    text = string.concat(text, if row.odd { "1" } else { "0" })
+                }
+                counter.text(200, text)
+            }
+        }
+    } else if path == "/rows-text-as-int" {
+        match db.rows<NameAsInt>("select name from items where id >= $min_id order by id", params) {
+            error failure => counter.row-error(failure)
+            ok rows => counter.text(200, int.to-string(list.count(rows)))
+        }
+    } else if path == "/rows-null" {
+        match db.rows<NoteRequired>("select note from items where id >= $min_id order by id", params) {
+            error failure => counter.row-error(failure)
+            ok rows => counter.text(200, int.to-string(list.count(rows)))
+        }
+    } else if path == "/rows-bool" {
+        match db.rows<OddOnly>("select id as odd from items where id >= $min_id order by id", params) {
+            error failure => counter.row-error(failure)
+            ok rows => counter.text(200, int.to-string(list.count(rows)))
+        }
+    } else {
+        match db.rows<OddOnly>("select 1, 0 from items where id >= $min_id", params) {
+            error failure => counter.row-error(failure)
+            ok rows => counter.text(200, int.to-string(list.count(rows)))
+        }
+    }
+}
+
+test counter.typed-row-errors/no-table {
+    expect counter.typed-row-errors("/rows-null").status == 500
+}
+
 fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse {
     effects db.read, db.write, cache.read, cache.write, store.read, store.write, response.write
     let path = http.path(request.target)
@@ -248,6 +370,10 @@ fn counter.handle(request: HttpRequest, context: CounterContext) -> HttpResponse
         counter.store(request)
     } else if path == "/store-discard" || path == "/store-error" {
         counter.store-unstreamed(request)
+    } else if path == "/rows" {
+        counter.typed-rows(request.target)
+    } else if string.starts-with(path, "/rows-") {
+        counter.typed-row-errors(path)
     } else if path == "/bad-sql" {
         match db.execute("insert into missing_table values (?1)", [db.int-param(1)]) {
             error failure => counter.text(500, string.concat("db error ", int.to-string(failure.code)))

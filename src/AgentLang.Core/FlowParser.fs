@@ -1168,6 +1168,17 @@ module FlowParser =
                         FlowExpression.Local(first.Text, sourceSpan state.File first (Some first))
                     | None when state.SyntaxVersion = 2 && not legacyQualified ->
                         match dottedNameAhead state with
+                        | Some(name, endIndex) when name = "db.rows" && endIndex < state.Tokens.Length && state.Tokens[endIndex].Text = "<"
+                                                    && state.Tokens[endIndex].Offset = state.Tokens[endIndex - 1].Offset + state.Tokens[endIndex - 1].Text.Length ->
+                            // db.rows<Row>(sql, params) (report 305): the row type travels in the
+                            // call's name, so every walker sees one ordinary call site.
+                            parseDottedName state |> ignore
+                            expect state "<" |> ignore
+                            let rowType = parseType state
+                            expect state ">" |> ignore
+                            if peek state <> Some "(" then tokenError state "FLOW_DB_ROWS_CALL" "db.rows<Row> must be called: db.rows<Row>(sql, params)."
+                            let arguments = parseArguments state None
+                            FlowExpression.Call($"db.rows<{Types.format rowType}>", arguments, sourceSpan state.File first (previous state))
                         | Some(name, endIndex) when endIndex < state.Tokens.Length && state.Tokens[endIndex].Text = "(" ->
                             parseDottedName state |> ignore
                             let arguments = parseArguments state None

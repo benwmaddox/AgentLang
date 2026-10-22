@@ -211,6 +211,11 @@ type IrOperation =
     /// the result satisfies `string.html-fragment?` by construction and no
     /// backend runs the validator.
     | HtmlTemplate of HtmlKey: ProgramTypeKey * Parts: HtmlTemplatePart list
+    /// db.rows (report 305): pops a params record, pushes List<DbValue> with its
+    /// fields in the SQL's named-parameter order.
+    | DbParams of ParamsKey: ProgramTypeKey * DbValueKey: ProgramTypeKey * Order: int list
+    /// db.rows: pops Result<List<DbRow>, SqlError>, pushes Result<List<Row>, SqlError>.
+    | DbDecode of RowKey: ProgramTypeKey * DbRowKey: ProgramTypeKey * SqlErrorKey: ProgramTypeKey
     /// Pops one value and overwrites an existing local of exactly that type
     /// (a Flow `var`). Unlike StoreLocal it never introduces a slot.
     | AssignLocal of LocalSlot
@@ -713,6 +718,21 @@ module IrVerifier =
                         let prefix, actual = pop 1
                         if actual <> [ item ] then operationError "IR_CONTAINER_PAYLOAD" "List singleton payload type does not match its closed element type." [ IrTypes.format item ] (actual |> List.map IrTypes.format)
                         { shape with StackTypes = prefix @ [ IrList item ] }, Set.empty
+                    | IrOperation.DbParams(paramsKey, dbValueKey, order) ->
+                        match program.NominalTypesByKey.TryFind paramsKey, program.NominalTypesByKey.TryFind dbValueKey with
+                        | Some(IrRecordDefinition record), Some(IrRecordDefinition _) when order |> List.forall (fun index -> index >= 0 && index < record.RecordFields.Length) -> ()
+                        | _ -> operationError "IR_DB_PARAMS_TYPE" "db.rows parameters must be a record whose fields the order names." [] []
+                        let prefix, actual = pop 1
+                        if actual <> [ IrNominal paramsKey ] then operationError "IR_CALL_STACK_MISMATCH" "db.rows parameters do not match the stack." [ IrTypes.format (IrNominal paramsKey) ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrList(IrNominal dbValueKey) ] }, Set.empty
+                    | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
+                        match program.NominalTypesByKey.TryFind rowKey with
+                        | Some(IrRecordDefinition record) when record.ValidatorCall.IsNone -> ()
+                        | _ -> operationError "IR_DB_ROWS_TYPE" "db.rows rows must be a record without a validator." [] []
+                        let prefix, actual = pop 1
+                        let expected = IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey)
+                        if actual <> [ expected ] then operationError "IR_CALL_STACK_MISMATCH" "db.rows results do not match the stack." [ IrTypes.format expected ] (actual |> List.map IrTypes.format)
+                        { shape with StackTypes = prefix @ [ IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ] }, Set.empty
                     | IrOperation.ListOf(item, count) ->
                         if count < 1 then operationError "IR_CONTAINER_PAYLOAD" "List literal must have at least one element." [ "count >= 1" ] [ string count ]
                         let prefix, actual = pop count

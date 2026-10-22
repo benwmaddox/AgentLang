@@ -50,6 +50,49 @@ let private run () =
     fails "two statements in one literal" "one statement per literal" (call "db.execute" "DELETE FROM bans; DELETE FROM users" none)
     fails "a fixture column the schema lacks" "fixture column users.nickname" (call "db.execute" "CREATE TABLE users (id INTEGER PRIMARY KEY, nickname TEXT)" none)
     fails "a fixture table the schema lacks" "fixture table people" (call "db.execute" "CREATE TABLE people (id INTEGER PRIMARY KEY)" none)
+    // db.rows<Row> (report 305): result columns against the row record.
+    let rowsErrors (row: string) (sql: string) =
+        let source = $"record UserRow {{
+{row}
+}}
+
+record ByMin {{
+    min-id: Int
+}}
+
+fn slip.case() -> Int {{
+    effects db.read
+    let ignored = db.rows<UserRow>(\"{sql}\", byMin.new(min-id = 1))
+    0
+}}
+"
+        (SqlCheck.run schema [ "slip.flow", source ] 256).Errors
+    let rowsPass label row sql =
+        let text = String.Join(" | ", rowsErrors row sql)
+        check $"{label} passes (got: {text})" (text = "")
+    let rowsFailCount count label (expected: string) row sql =
+        let errors = rowsErrors row sql
+        let text = String.Join(" | ", errors)
+        check $"{label}: {count} error(s), naming '{expected}' (got: {text})" (errors.Length = count && text.Contains(expected, StringComparison.Ordinal) && text.StartsWith("slip.flow:", StringComparison.Ordinal))
+    let rowsFail = rowsFailCount 1
+    let userRow = "    id: Int
+    name: String
+    bio: Option<String>
+    created-at: String
+    role: Int"
+    rowsPass "a db.rows query" userRow "SELECT id, name, bio, created_at, role FROM users WHERE id >= $min_id"
+    rowsPass "expression columns named with AS" "    id: Int
+    shown: Bool" "SELECT id, status = 0 AS shown FROM users WHERE id >= $min_id"
+    rowsPass "a NOT NULL column into an Option" "    name: Option<String>" "SELECT name FROM users WHERE id >= $min_id"
+    rowsFailCount 2 "columns in another order" "column 1 is name but UserRow field 1 is id" "    id: Int
+    name: String" "SELECT name, id FROM users WHERE id >= $min_id"
+    rowsFail "an unnamed expression column" "name the column total (AS total)" "    total: Int" "SELECT count(*) FROM users WHERE id >= $min_id"
+    rowsFail "a missing column" "returns 1 column(s) but UserRow has 2 field(s)" "    id: Int
+    name: String" "SELECT id FROM users WHERE id >= $min_id"
+    rowsFail "a text column into Int" "column name is declared varchar (TEXT affinity) but UserRow.name is Int" "    name: Int" "SELECT name FROM users WHERE id >= $min_id"
+    rowsFail "an integer column into String" "column role is declared INTEGER (INTEGER affinity) but UserRow.role is String" "    role: String" "SELECT role FROM users WHERE id >= $min_id"
+    rowsFail "a nullable column into a plain field" "column users.bio may be NULL but UserRow.bio is String; make it Option<String>" "    bio: String" "SELECT bio FROM users WHERE id >= $min_id"
+    rowsFail "a write through db.rows" "db.rows is declared db.read" "    id: Int" "UPDATE users SET name = 'x' WHERE id >= $min_id RETURNING id"
     // Calls in tests are checked too.
     let inTest = "fn slip.ok() -> Int {\n    1\n}\n\ntest slip.ok/one {\n    let rows = db.query(\"SELECT nope FROM users\", list.empty<DbValue>())\n    expect slip.ok() == 1\n}\n"
     let testErrors = (SqlCheck.run schema [ "slip.flow", inTest ] 256).Errors
@@ -69,7 +112,7 @@ let private run () =
     let result = SqlCheck.run schema sources 256
     let campfireText = String.Join(" | ", result.Errors)
     check $"Campfire's SQL matches its schema ({campfireText})" result.Errors.IsEmpty
-    let literalCount = sources |> List.sumBy (fun (_, text) -> Text.RegularExpressions.Regex.Matches(text, @"\bdb\.(query|execute)\(\s*""").Count)
+    let literalCount = sources |> List.sumBy (fun (_, text) -> Text.RegularExpressions.Regex.Matches(text, @"\bdb\.(query|execute|rows<[\w.]+>)\(\s*""").Count)
     check $"every literal call is found ({result.Checked} of {literalCount})" (result.Checked = literalCount)
     let changed = Path.Combine(Path.GetTempPath(), $"schema-{Guid.NewGuid():N}.sql")
     File.WriteAllText(changed, File.ReadAllText schema + "\nCREATE INDEX extra ON users (name);\n")

@@ -318,6 +318,10 @@ module internal ArenaLifetime =
                 // (escaped or as-is), never aliased.
                 let prefix, _ = pop (templateHoleCount parts) state.Stack
                 { state with Stack = prefix @ [ Set.singleton currentRegion ] }
+            | IrOperation.DbParams _ | IrOperation.DbDecode _ ->
+                // db.rows: a new owner in the current region, built from copies.
+                let prefix, _ = pop 1 state.Stack
+                { state with Stack = prefix @ [ Set.singleton currentRegion ] }
             | IrOperation.MatchEnum(_, caseBlocks) ->
                 let prefix, _ = pop 1 state.Stack
                 let entry = { state with Stack = prefix }
@@ -483,6 +487,9 @@ module internal ArenaLifetime =
                 finishUnknown state.Stack [] call.OutputTypes.Length
             | IrOperation.HtmlTemplate(_, parts) ->
                 let prefix, inputs = pop (templateHoleCount parts) state.Stack
+                finishUnknown prefix inputs 1
+            | IrOperation.DbParams _ | IrOperation.DbDecode _ ->
+                let prefix, inputs = pop 1 state.Stack
                 finishUnknown prefix inputs 1
             | IrOperation.Constant _ | IrOperation.StoreLocal _ | IrOperation.LoadLocal _
             | IrOperation.Scope _ | IrOperation.Compact _ | IrOperation.If _

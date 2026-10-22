@@ -71,6 +71,13 @@ let private cases =
       case "GET" "/store-discard" [] ""                   // stream emptied by the app,
       case "GET" "/store-error" [] ""                     // a non-streamed response drops partial writes,
       case "GET" "/store?s1" [] ""                        // still a hit
+      case "GET" "/rows" [] ""                           // db.rows<Row>: named params out of field order, Option, Bool, Bytes
+      case "GET" "/rows?skip=third" [] ""
+      case "GET" "/rows-text-as-int" [] ""               // SqlError 20: column kind mismatch
+      case "GET" "/rows-null" [] ""                      // NULL into a String field
+      case "GET" "/rows-bool" [] ""                      // 2 into a Bool field
+      case "GET" "/rows-arity" [] ""                     // two columns, one field
+      case "GET" "/rows-bools" [] ""                     // a one-Bool row record
       case "GET" "/nope" [] "" ]
 
 type private Response = { Status: int; Headers: (string * string) list; Body: string }
@@ -178,11 +185,11 @@ let private stopServer (server: Server) =
     let errors = lock server.Errors (fun () -> server.Errors.ToString())
     check $"{server.Label}: exit code 0 ({server.Process.ExitCode}) {errors}" (server.Process.ExitCode = 0)
     check $"{server.Label}: clean stop with no failed requests: {errors}" (errors.Contains("STOPPED") && errors.Contains("failures=0"))
-    // Prepared once per worker per SQL literal: the counter app has 4 distinct
-    // statements that prepare (init count, list, find, insert; bad-sql fails to prepare),
-    // and the parity sequence runs each several times.
+    // Prepared once per worker per SQL literal: the counter app has 10 distinct
+    // statements that prepare (init count, list, find, insert, six db.rows; bad-sql
+    // fails to prepare), and the parity sequence runs each several times.
     let prepared = Text.RegularExpressions.Regex.Match(errors, @"max-prepared-statements=(\d+)")
-    check $"{server.Label}: statements prepared once per literal ({prepared.Value})" (prepared.Success && int prepared.Groups[1].Value >= 1 && int prepared.Groups[1].Value <= 4)
+    check $"{server.Label}: statements prepared once per literal ({prepared.Value})" (prepared.Success && int prepared.Groups[1].Value >= 1 && int prepared.Groups[1].Value <= 10)
     check $"{server.Label}: config values are never logged" (not (errors.Contains "s3cret") && not (server.Output.ToString().Contains "s3cret"))
     check $"{server.Label}: store size per worker is logged" (errors.Contains "store-bytes=")
 
@@ -286,6 +293,13 @@ let private run () =
     check "interpreter: listing after inserts" (expected[6].Body = "1:first\n2:second\n3:third\n")
     check "interpreter: optional-text null" (expected[8].Body = "third / (none)")
     check "interpreter: cache miss, stored, kept, first writer wins" ((expected[12].Status, expected[13].Body, expected[14].Body, expected[15].Body) = (404, "stored", "kept", "hit:v1"))
+    check $"interpreter: db.rows {expected[24].Body}" (expected[24].Body = "2:second:n2:even:7365636f6e64\n3:third:(none):odd:7468697264\n")
+    check $"interpreter: db.rows skip {expected[25].Body}" (expected[25].Body = "2:second:n2:even:7365636f6e64\n")
+    check $"interpreter: db.rows text into Int {expected[26].Body}" (expected[26].Status = 500 && expected[26].Body.StartsWith "db error 20 ")
+    check $"interpreter: db.rows NULL into String {expected[27].Body}" (expected[27].Status = 500 && expected[27].Body.StartsWith "db error 20 ")
+    check $"interpreter: db.rows 2 into Bool {expected[28].Body}" (expected[28].Status = 500 && expected[28].Body.StartsWith "db error 20 ")
+    check $"interpreter: db.rows arity {expected[29].Body}" (expected[29].Status = 500 && expected[29].Body.StartsWith "db error 20 ")
+    check $"interpreter: db.rows one Bool per row {expected[30].Body}" (expected[30].Body = "101")
     printfn "interpreter: %d responses" expected.Length
 
     let profiles =

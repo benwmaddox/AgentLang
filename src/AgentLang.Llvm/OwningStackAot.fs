@@ -1087,6 +1087,7 @@ module OwningStackAot =
         | IrOperation.ListSingleton _ | IrOperation.OptionSome _ | IrOperation.ResultOk _ | IrOperation.ResultError _
         | IrOperation.ListMap _ | IrOperation.ListFilter _ | IrOperation.ListEach _ -> Some(1, 1)
         | IrOperation.ListOf(_, count) -> Some(count, 1)
+        | IrOperation.DbParams _ | IrOperation.DbDecode _ -> Some(1, 1)
         | IrOperation.ListFold _ | IrOperation.ListMapWithContext _ -> Some(2, 1)
         | IrOperation.StoreLocal _ | IrOperation.AssignLocal _ -> Some(1, 0)
         | _ -> None
@@ -1759,6 +1760,12 @@ module OwningStackAot =
                 | IrOperation.ListEmpty itemType
                 | IrOperation.ListSingleton itemType
                 | IrOperation.ListOf(itemType, _) -> checkType owner (IrList itemType)
+                | IrOperation.DbParams(paramsKey, dbValueKey, _) ->
+                    checkType owner (IrNominal paramsKey)
+                    checkType owner (IrList(IrNominal dbValueKey))
+                | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
+                    checkType owner (IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey))
+                    checkType owner (IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey))
                 | IrOperation.ListMap(call, _, _)
                 | IrOperation.ListFilter(call, _)
                 | IrOperation.ListEach(call, _)
@@ -2770,6 +2777,12 @@ module OwningStackAot =
                 | IrOperation.HtmlTemplate(key, parts) ->
                     let _, prefix = pop (parts |> List.sumBy (function HtmlTemplatePart.Text _ -> 0 | _ -> 1))
                     stack <- prefix @ [ IrNominal key ]
+                | IrOperation.DbParams(_, dbValueKey, _) ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrList(IrNominal dbValueKey) ]
+                | IrOperation.DbDecode(rowKey, _, sqlErrorKey) ->
+                    let _, prefix = pop 1
+                    stack <- prefix @ [ IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ]
                 | IrOperation.OptionNone itemType -> stack <- stack @ [ IrOption itemType ]
                 | IrOperation.ListEmpty itemType -> stack <- stack @ [ IrList itemType ]
                 | IrOperation.ListSingleton itemType ->
@@ -4165,6 +4178,7 @@ module OwningStackAot =
             for instruction in block.Code do
                 match instruction.Operation with
                 | IrOperation.Constant(LString value, IrString) when seenStrings.Add value -> stringValues.Add value
+                | IrOperation.DbParams(_, _, order) when seenStrings.Add(String.Join(",", order)) -> stringValues.Add(String.Join(",", order))
                 | IrOperation.HtmlTemplate(_, parts) ->
                     for part in parts do
                         match part with
@@ -5392,6 +5406,18 @@ module OwningStackAot =
                 let entryAt entries index = entries[index]
                 // `[a, b, c]` of Strings immediately joined: the ListOf emits an n-way
                 // join of the parts and the following string.join becomes a no-op.
+                // db.rows triples (report 305): DbParams -> db.query host call -> DbDecode.
+                let dbRowsTriples = Dictionary<IrInstruction, IrInstruction>(HashIdentity.Reference)
+                let dbRowsFused = HashSet<IrInstruction>(HashIdentity.Reference)
+                do
+                    let code = Array.ofList current.Code
+                    for index in 0 .. code.Length - 3 do
+                        match code[index].Operation, code[index + 1].Operation, code[index + 2].Operation with
+                        | IrOperation.DbParams _, IrOperation.Call call, IrOperation.DbDecode _ when call.ResolvedName = "db.query" ->
+                            dbRowsTriples[code[index]] <- code[index + 2]
+                            dbRowsFused.Add code[index + 1] |> ignore
+                            dbRowsFused.Add code[index + 2] |> ignore
+                        | _ -> ()
                 let fusedJoinSites =
                     current.Code
                     |> List.pairwise
@@ -5416,9 +5442,113 @@ module OwningStackAot =
                     | OwningRuntimeProfile.TrustedGenerated -> ()
                 for instruction in current.Code do
                     let instructionSpan = frameSourceMap.TryFind instruction.Site |> Option.map (fun source -> source.SiteSpan)
+                    /// One call into the application host adapter: reserve a bounded output at the
+                    /// cursor, pass every input in place, then commit (validate) the adapter's
+                    /// output as `outputType` and push it.
+                    let emitAppHostCall (manifest: OwningAppHostManifest) (operationTag: uint32) (resolvedName: string) (values: OwningDynamicStackEntry list) (prefix: OwningDynamicStackEntry list) (outputType: IrType) (outputTypeText: string) =
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let stackCapacity = emitContextLoad w "%ctx" 1
+                        let remaining = emitSub w stackCapacity cursor
+                        let belowHostLimit = w.Fresh "room.read.output.below.limit"
+                        let capacity = w.Fresh "room.read.output.capacity"
+                        w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {manifest.OutputLimitBytes}")
+                        w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {manifest.OutputLimitBytes}")
+                        let minimumExtent = (typeInfo outputType).MinimumExtentBytes
+                        let enoughForMinimum = w.Fresh "room.read.output.minimum.fits"
+                        let enoughLabel = w.Label "room.read.output.minimum.fits"
+                        let tooSmallLabel = w.Label "room.read.output.minimum.too.small"
+                        w.Inst($"{enoughForMinimum} = icmp uge i32 {capacity}, {minimumExtent}")
+                        w.Inst($"br i1 {enoughForMinimum}, label %%{enoughLabel}, label %%{tooSmallLabel}")
+                        w.Line($"{tooSmallLabel}:")
+                        let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum native host result." resolvedName instructionSpan [ string minimumExtent ] []
+                        let minimumEnd = emitOffset w cursor (string minimumExtent)
+                        emitReserve w minimumEnd capacityError failBody
+                        w.Inst($"br label %%{failBody}")
+                        w.Line($"{enoughLabel}:")
+                        let reservedEnd = emitOffset w cursor capacity
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the native host operation." resolvedName instructionSpan [] []
+                        emitReserve w reservedEnd reserveError failBody
+
+                        // Reserve the output before deriving any borrowed input
+                        // pointers. The callback may write only into this suffix;
+                        // every input remains live until it returns.
+                        let inputArray = w.Fresh "room.read.inputs"
+                        w.Inst($"{inputArray} = alloca [{values.Length} x %%AlOwningHostInput], align 8")
+                        let stackDataField = w.Fresh "room.read.stack.data.field"
+                        let stackData = w.Fresh "room.read.stack.data"
+                        let outputPointer = w.Fresh "room.read.output.pointer"
+                        w.Inst($"{stackDataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
+                        w.Inst($"{stackData} = load ptr, ptr {stackDataField}, align 8")
+                        w.Inst($"{outputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
+                        for index, value in values |> List.indexed do
+                            let element = w.Fresh "room.read.input.element"
+                            let dataField = w.Fresh "room.read.input.data.field"
+                            let extentField = w.Fresh "room.read.input.extent.field"
+                            let typeField = w.Fresh "room.read.input.type.field"
+                            let inputPointer = w.Fresh "room.read.input.pointer"
+                            w.Inst($"{element} = getelementptr inbounds %%AlOwningHostInput, ptr {inputArray}, i32 {index}")
+                            w.Inst($"{dataField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 0")
+                            w.Inst($"{extentField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 1")
+                            w.Inst($"{typeField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 2")
+                            w.Inst($"{inputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {value.Offset}")
+                            w.Inst($"store ptr {inputPointer}, ptr {dataField}, align 8")
+                            w.Inst($"store i32 {value.Extent}, ptr {extentField}, align 4")
+                            w.Inst($"store i32 {typeIndex value.Type}, ptr {typeField}, align 4")
+                        let outputExtentPointer = w.Fresh "room.read.output.extent.pointer"
+                        let hostStatus = w.Fresh "room.read.call.status"
+                        w.Inst($"{outputExtentPointer} = alloca i32, align 4")
+                        w.Inst($"store i32 0, ptr {outputExtentPointer}, align 4")
+                        w.Inst($"{hostStatus} = call i32 @{manifest.AdapterSymbol}(ptr %%provider.context, i32 {operationTag}, ptr {layoutSymbol}, ptr {inputArray}, i32 {values.Length}, i32 {typeIndex outputType}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
+                        let outputExtent = w.Fresh "room.read.output.extent"
+                        let outputPayloadPointer = w.Fresh "room.read.output.payload.pointer"
+                        let outputPayload = w.Fresh "room.read.output.payload"
+                        w.Inst($"{outputExtent} = load i32, ptr {outputExtentPointer}, align 4")
+                        w.Inst($"{outputPayloadPointer} = alloca i32, align 4")
+                        w.Inst($"store i32 0, ptr {outputPayloadPointer}, align 4")
+                        let outputTypeNames = outputTypeText
+                        let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native host adapter failed or returned a malformed bounded value." resolvedName instructionSpan [ $"valid {outputTypeNames} layout" ] [ "adapter failure or invalid serialized output" ]
+                        let commitStatus = w.Fresh "room.read.output.commit.status"
+                        w.Inst($"{commitStatus} = call i32 @al_owning_commit_host_output(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex outputType}, i32 {cursor}, i32 {reservedEnd}, i32 {outputExtent}, i32 {hostStatus}, i32 {boundaryError}, ptr {outputPayloadPointer})")
+                        emitStatusResult w commitStatus failBody
+                        w.Inst($"{outputPayload} = load i32, ptr {outputPayloadPointer}, align 4")
+                        for index in 0 .. values.Length - 1 do
+                            emitDropEntry stack (stack.Length - 1 - index)
+                        let outputOwnerEnd = emitOffset w cursor outputExtent
+                        stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
                     if not (registerAware instruction.Operation) then
                         stack <- materializeAll currentOwner instructionSpan stack
                     match instruction.Operation with
+                    | _ when dbRowsFused.Contains instruction -> ()
+                    | IrOperation.DbParams(_, _, order) ->
+                        // db.rows<Row> (report 305): DbParams, the db.query call and DbDecode run as
+                        // one typed host call (FH_DB_ROWS): the host binds the params record's
+                        // fields in `order` and writes Row values in the output layout.
+                        let manifest =
+                            match nativeHostProfile with
+                            | Some(OwningNativeHostProfile.AppHost manifest) -> manifest
+                            | None -> Diagnostics.raiseError "IR_OWNING_STACK_DB_ROWS_HOST" "db.rows runs only in a native app host." (Some currentOwner) instructionSpan [] []
+                        let outputType =
+                            match dbRowsTriples.TryGetValue instruction with
+                            | true, decode ->
+                                match decode.Operation with
+                                | IrOperation.DbDecode(rowKey, _, sqlErrorKey) -> IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey)
+                                | _ -> invalidOp "db.rows triple lost its DbDecode."
+                            | _ -> Diagnostics.raiseError "IR_OWNING_STACK_DB_ROWS_SHAPE" "db.rows parameters must be followed by its db.query call and row decoding." (Some currentOwner) instructionSpan [] []
+                        let orderText = String.Join(",", order)
+                        let bytes, literalPayload, literalExtent = encodeLiteral orderText
+                        let cursor = emitContextLoad w "%ctx" 2
+                        let next = emitOffset w cursor (string literalExtent)
+                        let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve the db.rows parameter order." currentOwner instructionSpan [] []
+                        emitReserve w next reserveError failBody
+                        let source = $"getelementptr inbounds ([{bytes.Length} x i8], ptr {stringGlobal orderText}, i64 0, i64 0)"
+                        let status = w.Fresh "db.rows.order.status"
+                        let literalError = addDiagnostic "OWNING_STACK_INTERNAL" "Invalid db.rows parameter order bytes." currentOwner instructionSpan [] []
+                        w.Inst($"{status} = call i32 @al_owning_copy_constant(ptr %%ctx, i32 {cursor}, ptr {source}, i32 {literalExtent}, i32 {literalPayload}, i32 {literalExtent}, i32 {typeId IrString}, i32 {literalError})")
+                        emitStatusResult w status failBody
+                        stack <- push stack IrString cursor (string literalExtent) (string literalPayload) next
+                        let values, prefix = pop 3
+                        emitAppHostCall manifest 19u "db.rows" values prefix outputType $"Result<List<Row>, SqlError> ({typeName info.Program outputType})"
+                    | IrOperation.DbDecode _ -> Diagnostics.raiseError "IR_OWNING_STACK_DB_ROWS_SHAPE" "Row decoding must follow its db.rows query." (Some currentOwner) instructionSpan [] []
                     | _ when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantListElements.Contains instruction -> ()
                     | IrOperation.ListOf(itemType, _) when runtimeProfile = OwningRuntimeProfile.TrustedGenerated && constantLists.ContainsKey instruction ->
                         let globalIndex, extent, payload = constantLists[instruction]
@@ -7972,75 +8102,7 @@ module OwningStackAot =
                                 match call.OutputTypes with
                                 | [ ty ] when (call.OutputTypes |> List.map (typeName info.Program)) = operation.OutputTypes -> ty
                                 | _ -> invalidOp "Verified host operation did not retain its declared output type."
-                            let cursor = emitContextLoad w "%ctx" 2
-                            let stackCapacity = emitContextLoad w "%ctx" 1
-                            let remaining = emitSub w stackCapacity cursor
-                            let belowHostLimit = w.Fresh "room.read.output.below.limit"
-                            let capacity = w.Fresh "room.read.output.capacity"
-                            w.Inst($"{belowHostLimit} = icmp ult i32 {remaining}, {manifest.OutputLimitBytes}")
-                            w.Inst($"{capacity} = select i1 {belowHostLimit}, i32 {remaining}, i32 {manifest.OutputLimitBytes}")
-                            let minimumExtent = (typeInfo outputType).MinimumExtentBytes
-                            let enoughForMinimum = w.Fresh "room.read.output.minimum.fits"
-                            let enoughLabel = w.Label "room.read.output.minimum.fits"
-                            let tooSmallLabel = w.Label "room.read.output.minimum.too.small"
-                            w.Inst($"{enoughForMinimum} = icmp uge i32 {capacity}, {minimumExtent}")
-                            w.Inst($"br i1 {enoughForMinimum}, label %%{enoughLabel}, label %%{tooSmallLabel}")
-                            w.Line($"{tooSmallLabel}:")
-                            let capacityError = addDiagnostic "OWNING_STACK_CAPACITY" "Insufficient owning-stack capacity for the minimum native host result." call.ResolvedName instructionSpan [ string minimumExtent ] []
-                            let minimumEnd = emitOffset w cursor (string minimumExtent)
-                            emitReserve w minimumEnd capacityError failBody
-                            w.Inst($"br label %%{failBody}")
-                            w.Line($"{enoughLabel}:")
-                            let reservedEnd = emitOffset w cursor capacity
-                            let reserveError = addDiagnostic "OWNING_STACK_INTERNAL" "Unable to reserve bounded arena output for the native host operation." call.ResolvedName instructionSpan [] []
-                            emitReserve w reservedEnd reserveError failBody
-
-                            // Reserve the output before deriving any borrowed input
-                            // pointers. The callback may write only into this suffix;
-                            // every input remains live until it returns.
-                            let inputArray = w.Fresh "room.read.inputs"
-                            w.Inst($"{inputArray} = alloca [{values.Length} x %%AlOwningHostInput], align 8")
-                            let stackDataField = w.Fresh "room.read.stack.data.field"
-                            let stackData = w.Fresh "room.read.stack.data"
-                            let outputPointer = w.Fresh "room.read.output.pointer"
-                            w.Inst($"{stackDataField} = getelementptr inbounds %%AlOwningContext, ptr %%ctx, i32 0, i32 25")
-                            w.Inst($"{stackData} = load ptr, ptr {stackDataField}, align 8")
-                            w.Inst($"{outputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {cursor}")
-                            for index, value in values |> List.indexed do
-                                let element = w.Fresh "room.read.input.element"
-                                let dataField = w.Fresh "room.read.input.data.field"
-                                let extentField = w.Fresh "room.read.input.extent.field"
-                                let typeField = w.Fresh "room.read.input.type.field"
-                                let inputPointer = w.Fresh "room.read.input.pointer"
-                                w.Inst($"{element} = getelementptr inbounds %%AlOwningHostInput, ptr {inputArray}, i32 {index}")
-                                w.Inst($"{dataField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 0")
-                                w.Inst($"{extentField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 1")
-                                w.Inst($"{typeField} = getelementptr inbounds %%AlOwningHostInput, ptr {element}, i32 0, i32 2")
-                                w.Inst($"{inputPointer} = getelementptr inbounds i8, ptr {stackData}, i32 {value.Offset}")
-                                w.Inst($"store ptr {inputPointer}, ptr {dataField}, align 8")
-                                w.Inst($"store i32 {value.Extent}, ptr {extentField}, align 4")
-                                w.Inst($"store i32 {typeIndex value.Type}, ptr {typeField}, align 4")
-                            let outputExtentPointer = w.Fresh "room.read.output.extent.pointer"
-                            let hostStatus = w.Fresh "room.read.call.status"
-                            w.Inst($"{outputExtentPointer} = alloca i32, align 4")
-                            w.Inst($"store i32 0, ptr {outputExtentPointer}, align 4")
-                            w.Inst($"{hostStatus} = call i32 @{manifest.AdapterSymbol}(ptr %%provider.context, i32 {operation.Tag}, ptr {layoutSymbol}, ptr {inputArray}, i32 {values.Length}, i32 {typeIndex outputType}, ptr {outputPointer}, i32 {capacity}, ptr {outputExtentPointer})")
-                            let outputExtent = w.Fresh "room.read.output.extent"
-                            let outputPayloadPointer = w.Fresh "room.read.output.payload.pointer"
-                            let outputPayload = w.Fresh "room.read.output.payload"
-                            w.Inst($"{outputExtent} = load i32, ptr {outputExtentPointer}, align 4")
-                            w.Inst($"{outputPayloadPointer} = alloca i32, align 4")
-                            w.Inst($"store i32 0, ptr {outputPayloadPointer}, align 4")
-                            let outputTypeNames = String.concat " " operation.OutputTypes
-                            let boundaryError = addDiagnostic "NATIVE_HOST_BOUNDARY" "The native host adapter failed or returned a malformed bounded value." call.ResolvedName instructionSpan [ $"valid {outputTypeNames} layout" ] [ "adapter failure or invalid serialized output" ]
-                            let commitStatus = w.Fresh "room.read.output.commit.status"
-                            w.Inst($"{commitStatus} = call i32 @al_owning_commit_host_output(ptr %%ctx, ptr {layoutSymbol}, i32 {typeIndex outputType}, i32 {cursor}, i32 {reservedEnd}, i32 {outputExtent}, i32 {hostStatus}, i32 {boundaryError}, ptr {outputPayloadPointer})")
-                            emitStatusResult w commitStatus failBody
-                            w.Inst($"{outputPayload} = load i32, ptr {outputPayloadPointer}, align 4")
-                            for index in 0 .. values.Length - 1 do
-                                emitDropEntry stack (stack.Length - 1 - index)
-                            let outputOwnerEnd = emitOffset w cursor outputExtent
-                            stack <- push prefix outputType cursor outputExtent outputPayload outputOwnerEnd
+                            emitAppHostCall manifest operation.Tag call.ResolvedName values prefix outputType (String.concat " " operation.OutputTypes)
                         | HostOperationTarget operationId -> rejectHostOperation currentOwner instructionSpan operationId
                         | _ -> invalidOp "Verified dynamic call target is neither a primitive nor a user function."
                     emitStackCheck ()

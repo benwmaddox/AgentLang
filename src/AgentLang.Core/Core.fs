@@ -72,6 +72,14 @@ type ContainerConstructor =
     /// html"…": consumes one value per hole and pushes the type argument (the
     /// program's Html type). Built only by the template lowering.
     | HtmlTemplate of HtmlTemplatePart list
+    /// db.rows<Row> (report 305): consumes a params record (type argument 1) and
+    /// pushes List<DbValue> (type argument 2) holding its fields in `order`, the
+    /// order of the SQL's named parameters. Built only by the db.rows lowering.
+    | DbParams of order: int list
+    /// db.rows<Row>: consumes Result<List<DbRow>, SqlError> and pushes
+    /// Result<List<Row>, SqlError> (type arguments Row, DbRow, SqlError). A NULL
+    /// or a value of the wrong kind becomes SqlError 20; nothing is coerced.
+    | DbDecode
 
 type Expr =
     | Push of Literal * SourceSpan

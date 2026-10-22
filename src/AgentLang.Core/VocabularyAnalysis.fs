@@ -188,6 +188,11 @@ module VocabularyAnalysis =
                         | HtmlTemplatePart.HtmlHole -> writer.Write 3uy
                         | HtmlTemplatePart.HtmlListHole -> writer.Write 4uy
                         | HtmlTemplatePart.IntHole -> writer.Write 5uy
+                | DbParams order ->
+                    writer.Write 9uy
+                    writer.Write order.Length
+                    for index in order do writer.Write index
+                | DbDecode -> writer.Write 10uy
                 writeTypeList writer types
             | MapList(name, _) ->
                 writer.Write 4uy

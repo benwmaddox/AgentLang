@@ -489,6 +489,16 @@ module IrFormatting =
             addCall "call" call
             addKey "typeKey" key
             addInt node "caseIndex" caseIndex
+        | IrOperation.DbParams(paramsKey, dbValueKey, order) ->
+            addString node "kind" "db-params"
+            addKey "paramsKey" paramsKey
+            addKey "dbValueKey" dbValueKey
+            addString node "order" (String.Join(",", order))
+        | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) ->
+            addString node "kind" "db-decode"
+            addKey "rowKey" rowKey
+            addKey "dbRowKey" dbRowKey
+            addKey "sqlErrorKey" sqlErrorKey
         | IrOperation.HtmlTemplate(key, parts) ->
             addString node "kind" "html-template"
             addKey "typeKey" key
@@ -570,6 +580,8 @@ module IrFormatting =
         | IrOperation.GetRecordField(call, _, _) | IrOperation.UnwrapScalar(call, _)
         | IrOperation.MakeEnumCase(call, _, _) -> call.InputTypes @ call.OutputTypes
         | IrOperation.HtmlTemplate(key, _) -> [ IrString; IrNominal key ]
+        | IrOperation.DbParams(paramsKey, dbValueKey, _) -> [ IrNominal paramsKey; IrList(IrNominal dbValueKey) ]
+        | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> [ IrResult(IrList(IrNominal dbRowKey), IrNominal sqlErrorKey); IrResult(IrList(IrNominal rowKey), IrNominal sqlErrorKey) ]
         | IrOperation.MakeRecord(call, _, validator) ->
             call.InputTypes @ call.OutputTypes @ (validator |> Option.map (fun item -> item.InputTypes @ item.OutputTypes) |> Option.defaultValue [])
         | IrOperation.WrapScalar(call, _, validator) ->
@@ -665,6 +677,8 @@ module IrFormatting =
                 | IrOperation.MakeEnumCase(call, key, _) -> collectCallTypeKeys (Set.add key found) call
                 | IrOperation.MatchEnum(key, _) -> Set.add key found
                 | IrOperation.HtmlTemplate(key, _) -> Set.add key found
+                | IrOperation.DbParams(paramsKey, dbValueKey, _) -> found |> Set.add paramsKey |> Set.add dbValueKey
+                | IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey) -> found |> Set.add rowKey |> Set.add dbRowKey |> Set.add sqlErrorKey
                 | IrOperation.If _ | IrOperation.MatchOption _ | IrOperation.MatchResult _
                 | IrOperation.StoreLocal _ | IrOperation.LoadLocal _ | IrOperation.Scope _ | IrOperation.Compact _
                 | IrOperation.AssignLocal _ | IrOperation.Break | IrOperation.Continue | IrOperation.ForRange _ -> found

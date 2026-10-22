@@ -16,6 +16,9 @@
 #define FH_DB_EXECUTE 2u
 #define FH_CACHE_GET 3u /* src/AgentLang.FlowHttp/Cache.fs nativeOperations */
 #define FH_CACHE_PUT 4u
+/* db.rows<Row> (report 305): typed parameters and rows; the generated code passes
+ * the SQL, the params record and the parameter order, and names the output type. */
+#define FH_DB_ROWS 19u
 #define FH_PARAMETER_COUNT_MESSAGE "parameter count does not match the statement"
 
 /* DbValueKind ordinals, declaration order in src/stdlib/db.flow. */
@@ -306,6 +309,208 @@ static int32_t fh_run(fh_db *db, uint32_t operation, const uint8_t *sql, uint32_
   return 0;
 }
 
+/* ---------------------------------------------------------------- db.rows */
+
+/* The extent of a record field value of a supported kind (Int, Bool, String,
+ * Bytes, or an Option of one), reading tags and length headers in place. */
+static int fh_field_extent(const al_owning_layout *layout, uint32_t type_index,
+                           const uint8_t *data, uint32_t at, uint32_t end, uint32_t *extent) {
+  const al_owning_type_descriptor *type;
+  uint32_t length;
+  if (type_index >= layout->type_count || at > end || end - at < 8u) return 0;
+  type = &layout->types[type_index];
+  switch (type->kind) {
+    case AL_OWNING_TYPE_I64: case AL_OWNING_TYPE_BOOL: *extent = 8u; return 1;
+    case AL_OWNING_TYPE_STRING: case AL_OWNING_TYPE_BYTES:
+      memcpy(&length, data + at, 4);
+      *extent = fh_pad8(8u + length);
+      return *extent <= end - at;
+    case AL_OWNING_TYPE_OPTION: {
+      int64_t tag;
+      uint32_t inner;
+      memcpy(&tag, data + at, 8);
+      if (tag == 1) { *extent = 8u; return 1; }
+      if (tag != 0 || !fh_field_extent(layout, layout->fields[type->first_field].child_type_index, data, at + 8u, end, &inner)) return 0;
+      *extent = 8u + inner;
+      return 1;
+    }
+    default: return 0;
+  }
+}
+
+/* Binds one parameter value at data[at] of the given type to SQL parameter index. */
+static int fh_bind_field(sqlite3_stmt *statement, int index, const al_owning_layout *layout,
+                         uint32_t type_index, const uint8_t *data, uint32_t at) {
+  const al_owning_type_descriptor *type = &layout->types[type_index];
+  int64_t number;
+  uint32_t length;
+  switch (type->kind) {
+    case AL_OWNING_TYPE_I64: case AL_OWNING_TYPE_BOOL:
+      memcpy(&number, data + at, 8);
+      return sqlite3_bind_int64(statement, index, number);
+    case AL_OWNING_TYPE_STRING:
+      memcpy(&length, data + at, 4);
+      return sqlite3_bind_text(statement, index, (const char *)(data + at + 8u), (int)length, SQLITE_STATIC);
+    case AL_OWNING_TYPE_BYTES:
+      memcpy(&length, data + at, 4);
+      return sqlite3_bind_blob(statement, index, length ? (const void *)(data + at + 8u) : (const void *)"", (int)length, SQLITE_STATIC);
+    case AL_OWNING_TYPE_OPTION:
+      memcpy(&number, data + at, 8);
+      if (number == 1) return sqlite3_bind_null(statement, index);
+      return fh_bind_field(statement, index, layout, layout->fields[type->first_field].child_type_index, data, at + 8u);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+#define FH_DB_ROWS_MAX_FIELDS 64u
+
+/* Binds the params record's fields in `order` ("2,0,1": field indexes, one per
+ * SQL parameter). Returns 1 when bound, 0 after writing an SqlError, -1 on a
+ * malformed input. */
+static int fh_rows_bind(fh_db *db, sqlite3_stmt *statement, const al_owning_layout *layout,
+                        const fh_host_input *params, const uint8_t *order, uint32_t order_length, fh_writer *w) {
+  const al_owning_type_descriptor *record;
+  uint32_t offsets[FH_DB_ROWS_MAX_FIELDS];
+  uint32_t at = 0u, field, count = 0u, k = 0u;
+  if (params->type_index >= layout->type_count) return -1;
+  record = &layout->types[params->type_index];
+  if (record->kind != AL_OWNING_TYPE_RECORD || record->field_count > FH_DB_ROWS_MAX_FIELDS) return -1;
+  for (field = 0u; field < record->field_count; ++field) {
+    uint32_t extent;
+    offsets[field] = at;
+    if (!fh_field_extent(layout, layout->fields[record->first_field + field].child_type_index, params->data, at, params->extent_bytes, &extent)) return -1;
+    at += extent;
+  }
+  sqlite3_reset(statement);
+  sqlite3_clear_bindings(statement);
+  while (k < order_length) {
+    uint32_t index = 0u;
+    int rc;
+    while (k < order_length && order[k] >= '0' && order[k] <= '9') index = index * 10u + (uint32_t)(order[k++] - '0');
+    if (k < order_length) ++k; /* the comma */
+    if (index >= record->field_count) return -1;
+    ++count;
+    if (count > (uint32_t)sqlite3_bind_parameter_count(statement)) break;
+    rc = fh_bind_field(statement, (int)count, layout, layout->fields[record->first_field + index].child_type_index, params->data, offsets[index]);
+    if (rc != SQLITE_OK) { fh_put_sqlite_error(w, db); return 0; }
+  }
+  if ((uint32_t)sqlite3_bind_parameter_count(statement) != count) {
+    fh_put_db_error(w, SQLITE_RANGE, FH_PARAMETER_COUNT_MESSAGE);
+    return 0;
+  }
+  return 1;
+}
+
+static const char *fh_column_kind(int type) {
+  return type == SQLITE_NULL ? "null" : type == SQLITE_INTEGER ? "integer" : type == SQLITE_BLOB ? "blob" : "text";
+}
+
+static const char *fh_expected_kind(uint32_t kind) {
+  return kind == AL_OWNING_TYPE_I64 ? "Int" : kind == AL_OWNING_TYPE_BOOL ? "Bool" : kind == AL_OWNING_TYPE_STRING ? "String" : kind == AL_OWNING_TYPE_BYTES ? "Bytes" : "a supported type";
+}
+
+/* Writes one column into the Row layout; on a mismatch fills `problem` (the
+ * interpreter's DbRows.decode message) and returns 0. */
+static int fh_rows_column(fh_writer *w, sqlite3_stmt *statement, int column, const al_owning_layout *layout,
+                          uint32_t type_index, char *problem, size_t problem_capacity) {
+  const al_owning_type_descriptor *type = &layout->types[type_index];
+  int sql_type = sqlite3_column_type(statement, column);
+  uint32_t kind = type->kind;
+  if (kind == AL_OWNING_TYPE_OPTION) {
+    if (sql_type == SQLITE_NULL) { fh_put_i64(w, 1); return 1; }
+    fh_put_i64(w, 0);
+    type_index = layout->fields[type->first_field].child_type_index;
+    kind = layout->types[type_index].kind;
+  }
+  if (kind == AL_OWNING_TYPE_I64 && sql_type == SQLITE_INTEGER) {
+    fh_put_i64(w, sqlite3_column_int64(statement, column));
+    return 1;
+  }
+  if (kind == AL_OWNING_TYPE_BOOL && sql_type == SQLITE_INTEGER) {
+    int64_t value = sqlite3_column_int64(statement, column);
+    if (value == 0 || value == 1) { fh_put_i64(w, value); return 1; }
+    snprintf(problem, problem_capacity, "column %d: expected Bool, got integer other than 0 or 1", column + 1);
+    return 0;
+  }
+  /* TEXT, and REAL rendered as text, as db.query does. */
+  if (kind == AL_OWNING_TYPE_STRING && (sql_type == SQLITE_TEXT || sql_type == SQLITE_FLOAT)) {
+    const unsigned char *text = sqlite3_column_text(statement, column);
+    fh_put_bytes(w, text, (uint32_t)sqlite3_column_bytes(statement, column));
+    return 1;
+  }
+  if (kind == AL_OWNING_TYPE_BYTES && sql_type == SQLITE_BLOB) {
+    fh_put_bytes(w, sqlite3_column_blob(statement, column), (uint32_t)sqlite3_column_bytes(statement, column));
+    return 1;
+  }
+  snprintf(problem, problem_capacity, "column %d: expected %s, got %s", column + 1, fh_expected_kind(kind), fh_column_kind(sql_type));
+  return 0;
+}
+
+/* db.rows<Row>: binds the params record, then writes Result<List<Row>, SqlError>
+ * in the output type's layout. Same answers as the interpreter's DbParams,
+ * db.query and DbDecode. */
+static int32_t fh_rows(fh_db *db, const al_owning_layout *layout, const fh_host_input *inputs,
+                       uint32_t output_type_index, fh_writer *w) {
+  fh_reader reader;
+  const uint8_t *sql, *order;
+  uint32_t sql_length, order_length, rows = 0u, list_at;
+  const al_owning_type_descriptor *result, *list, *row;
+  sqlite3_stmt *statement = 0;
+  int rc, bound;
+  char problem[160];
+  reader.data = inputs[0].data; reader.extent = inputs[0].extent_bytes; reader.at = 0u; reader.failed = 0;
+  sql = fh_get_bytes(&reader, &sql_length);
+  reader.data = inputs[2].data; reader.extent = inputs[2].extent_bytes; reader.at = 0u; reader.failed = 0;
+  order = fh_get_bytes(&reader, &order_length);
+  if (sql == 0 || order == 0 || output_type_index >= layout->type_count) return 1;
+  result = &layout->types[output_type_index];
+  if (result->kind != AL_OWNING_TYPE_RESULT) return 1;
+  list = &layout->types[layout->fields[result->first_field].child_type_index];
+  if (list->kind != AL_OWNING_TYPE_LIST) return 1;
+  row = &layout->types[layout->fields[list->first_field].child_type_index];
+  if (row->kind != AL_OWNING_TYPE_RECORD) return 1;
+  rc = fh_statement_for(db, sql, sql_length, &statement);
+  if (rc != SQLITE_OK) {
+    if (rc == SQLITE_RANGE && statement == 0 && db->count + 1u >= FH_DB_STATEMENTS)
+      fh_put_db_error(w, SQLITE_RANGE, "too many distinct SQL statements");
+    else
+      fh_put_sqlite_error(w, db);
+    return 0;
+  }
+  bound = fh_rows_bind(db, statement, layout, &inputs[1], order, order_length, w);
+  if (bound < 0) return 1;
+  if (bound == 0) { sqlite3_clear_bindings(statement); return 0; }
+  fh_put_i64(w, 0); /* Result.ok */
+  list_at = fh_put_list_header(w, 0u);
+  problem[0] = 0;
+  for (;;) {
+    uint32_t field;
+    rc = sqlite3_step(statement);
+    if (rc != SQLITE_ROW) break;
+    if ((uint32_t)sqlite3_column_count(statement) != row->field_count) {
+      snprintf(problem, sizeof problem, "a row has %d columns; the row type has %u fields", sqlite3_column_count(statement), row->field_count);
+      break;
+    }
+    for (field = 0u; field < row->field_count && problem[0] == 0; ++field)
+      fh_rows_column(w, statement, (int)field, layout, layout->fields[row->first_field + field].child_type_index, problem, sizeof problem);
+    if (problem[0] != 0 || w->failed) break;
+    ++rows;
+  }
+  if (w->failed) { sqlite3_reset(statement); sqlite3_clear_bindings(statement); return 1; }
+  if (problem[0] != 0) {
+    w->used = 0u;
+    fh_put_db_error(w, 20, problem); /* SQLITE_MISMATCH */
+  } else if (rc != SQLITE_DONE) {
+    w->used = 0u;
+    fh_put_sqlite_error(w, db);
+  } else {
+    fh_patch_count(w, list_at, rows);
+  }
+  sqlite3_reset(statement);
+  sqlite3_clear_bindings(statement);
+  return 0;
+}
+
 /* cache.get(key) -> Option<String> (a hit's bytes are copied straight into
  * the output, which is the request arena); cache.put(key, value) -> Bool. */
 static int32_t fh_cache_host(uint32_t worker, uint32_t operation, const fh_host_input *inputs,
@@ -521,8 +726,6 @@ int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
   const uint8_t *sql;
   uint32_t sql_length;
   int32_t status;
-  (void)layout;
-  (void)output_type_index;
   if (provider != 0 && output != 0 && operation >= FH_STORE_CAPACITY && operation <= FH_RESPONSE_WRITE_FILE) {
     w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
     status = fh_store_host(provider, operation, inputs, input_count, &w);
@@ -533,6 +736,14 @@ int32_t al_host_flow_http_v1(void *provider_context, uint32_t operation,
   if (provider != 0 && output != 0 && (operation == FH_CACHE_GET || operation == FH_CACHE_PUT)) {
     w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
     status = fh_cache_host(provider->worker, operation, inputs, input_count, &w);
+    if (status != 0 || w.failed) return 1;
+    *output_extent_bytes = w.used;
+    return 0;
+  }
+  if (operation == FH_DB_ROWS) {
+    if (db == 0 || input_count != 3u || inputs == 0 || output == 0 || layout == 0) return 1;
+    w.data = output; w.capacity = output_capacity_bytes; w.used = 0u; w.failed = 0;
+    status = fh_rows(db, layout, inputs, output_type_index, &w);
     if (status != 0 || w.failed) return 1;
     *output_extent_bytes = w.used;
     return 0;

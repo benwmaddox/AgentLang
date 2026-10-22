@@ -388,3 +388,50 @@ module HtmlBuiltIn =
         && (text.Contains("html\"", StringComparison.Ordinal)
             || text.Contains("html.raw", StringComparison.Ordinal)
             || Text.RegularExpressions.Regex.IsMatch(text, @"(?<![A-Za-z0-9_.-])Html(?![A-Za-z0-9_-])"))
+
+/// The parameters of an SQL text (report 305), read outside string literals,
+/// quoted identifiers and comments, as SQLite numbers them.
+module DbSql =
+    let private scan (sql: string) (visit: char -> string -> unit) =
+        let mutable i = 0
+        while i < sql.Length do
+            let ch = sql[i]
+            if ch = '\'' || ch = '"' || ch = '`' then
+                // A quoted literal or identifier; a doubled quote stays inside it.
+                i <- i + 1
+                let mutable closed = false
+                while not closed && i < sql.Length do
+                    if sql[i] = ch then
+                        if i + 1 < sql.Length && sql[i + 1] = ch then i <- i + 2
+                        else
+                            closed <- true
+                            i <- i + 1
+                    else i <- i + 1
+            elif ch = '[' then
+                while i < sql.Length && sql[i] <> ']' do i <- i + 1
+                i <- i + 1
+            elif ch = '-' && i + 1 < sql.Length && sql[i + 1] = '-' then
+                while i < sql.Length && sql[i] <> '\n' do i <- i + 1
+            elif ch = '/' && i + 1 < sql.Length && sql[i + 1] = '*' then
+                i <- i + 2
+                while i + 1 < sql.Length && not (sql[i] = '*' && sql[i + 1] = '/') do i <- i + 1
+                i <- i + 2
+            elif ch = '$' || ch = ':' || ch = '@' || ch = '?' then
+                let start = i + 1
+                let mutable stop = start
+                while stop < sql.Length && (Char.IsLetterOrDigit sql[stop] || sql[stop] = '_') do stop <- stop + 1
+                visit ch (sql.Substring(start, stop - start))
+                i <- max stop (i + 1)
+            else i <- i + 1
+
+    /// $name parameters in order of first appearance, each once.
+    let namedParameters (sql: string) =
+        let found = Collections.Generic.List<string>()
+        scan sql (fun marker name -> if marker = '$' && name <> "" && not (found.Contains name) then found.Add name)
+        List.ofSeq found
+
+    /// The first parameter that is not a $name one (?, ?NNN, :name, @name), if any.
+    let positionalParameter (sql: string) =
+        let mutable first = None
+        scan sql (fun marker name -> if first.IsNone && (marker <> '$' || name = "") then first <- Some(string marker + name))
+        first

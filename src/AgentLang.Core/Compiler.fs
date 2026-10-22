@@ -471,6 +471,12 @@ module Compiler =
                         | ResultError ->
                             requireArity 2
                             consume arguments[1] (TResult(arguments[0], arguments[1]))
+                        | DbParams _ ->
+                            requireArity 2
+                            consume arguments[0] (TList arguments[1])
+                        | DbDecode ->
+                            requireArity 3
+                            consume (TResult(TList arguments[1], arguments[2])) (TResult(TList arguments[0], arguments[2]))
                         | HtmlTemplate parts ->
                             requireArity 1
                             let holeTypes =
@@ -870,6 +876,8 @@ module Compiler =
                         | ResultOk -> "result.ok"
                         | ResultError -> "result.error"
                         | HtmlTemplate parts -> "html.template" + string parts.Length
+                        | DbParams _ -> "db.params"
+                        | DbDecode -> "db.decode"
                     name + "<" + (types |> List.map Types.format |> String.concat ", ") + ">"
                 | MapList(name, _) -> "list.map " + name
                 | FilterList(name, _) -> "list.filter " + name
@@ -1189,8 +1197,13 @@ module Compiler =
                          | OptionSome -> "option-some"
                          | ResultOk -> "result-ok"
                          | ResultError -> "result-error"
-                         | HtmlTemplate _ -> "html-template")
+                         | HtmlTemplate _ -> "html-template"
+                         | DbParams _ -> "db-params"
+                         | DbDecode -> "db-decode")
                     match kind with
+                    | DbParams order ->
+                        appendInt order.Length
+                        for index in order do appendInt index
                     | HtmlTemplate parts ->
                         appendInt parts.Length
                         for part in parts do
@@ -1521,6 +1534,8 @@ module Compiler =
         | ConstructContainer(ResultOk, _, _) -> "result-ok"
         | ConstructContainer(ResultError, _, _) -> "result-error"
         | ConstructContainer(HtmlTemplate _, _, _) -> "html-template"
+        | ConstructContainer(DbParams _, _, _) -> "db-params"
+        | ConstructContainer(DbDecode, _, _) -> "db-decode"
         | MapList _ -> "list-map"
         | FilterList _ -> "list-filter"
         | EachList _ -> "list-each"
@@ -1704,6 +1719,8 @@ module Compiler =
                             | ResultOk, [ ok; error ] -> IrOperation.ResultOk(ok, error)
                             | ResultError, [ ok; error ] -> IrOperation.ResultError(ok, error)
                             | HtmlTemplate parts, [ IrNominal key ] -> IrOperation.HtmlTemplate(key, parts)
+                            | DbParams order, [ IrNominal paramsKey; IrNominal dbValueKey ] -> IrOperation.DbParams(paramsKey, dbValueKey, order)
+                            | DbDecode, [ IrNominal rowKey; IrNominal dbRowKey; IrNominal sqlErrorKey ] -> IrOperation.DbDecode(rowKey, dbRowKey, sqlErrorKey)
                             | _ -> irFailure "IR_CONTAINER_ANNOTATION_INVALID" "Typed inference produced malformed constructor arguments." (Some ownerName) (Some span) [] (args |> List.map IrTypes.format)
                         | MapList(name, _) ->
                             let itemType = match List.last node.InputStack with | TList item -> item | _ -> irFailure "IR_LIST_ANNOTATION_INVALID" "Map lowering lost its input List<T> annotation." (Some ownerName) (Some span) [ "List<T>" ] []

@@ -11,6 +11,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 
 #define SQLITE_OK 0
 #define SQLITE_RANGE 25
+#define SQLITE_MISUSE 21
 #define SQLITE_ROW 100
 #define SQLITE_DONE 101
 #define SQLITE_INTEGER 1

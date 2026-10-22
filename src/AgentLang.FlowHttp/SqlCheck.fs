@@ -15,6 +15,10 @@ open SQLitePCL
 /// CREATE TABLE statements (attached-test fixtures) must name a schema table
 /// and only its columns. The schema's hash is compiled into the server, which
 /// refuses a database with another schema.
+/// db.rows<Row> literals (report 305) also check the result columns against Row:
+/// one column per field, named after it ($created_at for created-at) in field
+/// order, a declared column type that fits the field, and no nullable table
+/// column read into a field that is not an Option.
 module SqlCheck =
     type Site =
         { File: string
@@ -23,7 +27,9 @@ module SqlCheck =
           Operation: string
           Sql: string
           /// Elements of a list-literal parameter argument; None when the argument is not a literal.
-          ParameterCount: int option }
+          ParameterCount: int option
+          /// db.rows<Row>: the row record's name.
+          RowType: string option }
 
     let private initialized = lazy (Batteries_V2.Init())
 
@@ -45,7 +51,14 @@ module SqlCheck =
                     | [ FlowArgument.Positional(FlowExpression.Container(FlowContainerConstructor.ListEmpty, _, _, _)) ] -> Some 0
                     | [ FlowArgument.Positional(FlowExpression.Container(FlowContainerConstructor.ListSingleton, _, _, _)) ] -> Some 1
                     | _ -> None
-                sites.Add { File = file; Line = span.Line; Column = span.Column; Operation = operation; Sql = sql; ParameterCount = count }
+                sites.Add { File = file; Line = span.Line; Column = span.Column; Operation = operation; Sql = sql; ParameterCount = count; RowType = None }
+            | _ -> ()
+            arguments args
+        | FlowExpression.Call(name, args, span) when name.StartsWith("db.rows<", StringComparison.Ordinal) && name.EndsWith(">", StringComparison.Ordinal) ->
+            match args with
+            | FlowArgument.Positional(FlowExpression.Literal(LString sql, _)) :: _ ->
+                let rowType = name.Substring(8, name.Length - 9)
+                sites.Add { File = file; Line = span.Line; Column = span.Column; Operation = "db.rows"; Sql = sql; ParameterCount = None; RowType = Some rowType }
             | _ -> ()
             arguments args
         | FlowExpression.Call(_, args, _) | FlowExpression.RootCall(_, args, _) -> arguments args
@@ -71,13 +84,20 @@ module SqlCheck =
         | FlowStatement.ForEach(_, _, items, body, _) -> recurse items; List.iter (statementSites file sites) body
         | FlowStatement.Break _ | FlowStatement.Continue _ -> ()
 
-    /// Every db.query/db.execute call with a literal SQL argument, in words, tests and test files.
+    let private parse (path: string) (source: string) =
+        match FlowParser.parseDocumentWithVersion 2 (Path.GetFileName path) source with
+        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
+        | Ok document -> document
+
+    /// The record definitions of a source, for db.rows row types.
+    let records (path: string) (source: string) = (parse path source).Records
+
+    /// Every db.query/db.execute/db.rows call with a literal SQL argument, in words, tests and test files.
     let sites (path: string) (source: string) =
         let found = ResizeArray<Site>()
         let file = Path.GetFileName path
-        match FlowParser.parseDocumentWithVersion 2 file source with
-        | Error diagnostic -> failwith (Diagnostics.render diagnostic)
-        | Ok document ->
+        let document = parse path source
+        do
             let body = List.iter (statementSites file found)
             for word in document.Words do body word.Body
             for test in document.Tests do body test.Body
@@ -143,6 +163,60 @@ module SqlCheck =
             | _ -> builder.Append("\\").Append(Convert.ToString(int b, 8).PadLeft(3, '0')) |> ignore
         builder.ToString()
 
+    /// SQLite's type affinity of a declared column type (the rules of section 3.1 of datatype3).
+    let private affinity (declared: string) =
+        let upper = declared.ToUpperInvariant()
+        if upper.Contains "INT" then "INTEGER"
+        elif upper.Contains "CHAR" || upper.Contains "CLOB" || upper.Contains "TEXT" then "TEXT"
+        elif upper = "" || upper.Contains "BLOB" then "BLOB"
+        elif upper.Contains "REAL" || upper.Contains "FLOA" || upper.Contains "DOUB" then "REAL"
+        else "NUMERIC"
+
+    /// db.rows<Row>: the statement's result columns against the row record's fields.
+    let private checkRows (db: sqlite3) (statement: sqlite3_stmt) (at: string) (row: RecordDefinition) (errors: ResizeArray<string>) =
+        let columnCount = raw.sqlite3_column_count statement
+        let fields = Array.ofList row.Fields
+        if columnCount <> fields.Length then
+            errors.Add $"{at}: the statement returns {columnCount} column(s) but {row.Name} has {fields.Length} field(s)"
+        for index in 0 .. (min columnCount fields.Length) - 1 do
+            let field = fields[index]
+            let expected = field.Name.Replace('-', '_')
+            let column = raw.sqlite3_column_name(statement, index).utf8_to_string()
+            if not (String.Equals(column, expected, StringComparison.OrdinalIgnoreCase)) then
+                errors.Add $"{at}: column {index + 1} is {column} but {row.Name} field {index + 1} is {field.Name}; name the column {expected} (AS {expected})"
+            else
+                let optional, inner =
+                    match field.Type with
+                    | TOption inner -> true, inner
+                    | other -> false, other
+                // Expression columns have no declared type; the host checks each value when it reads it.
+                let declared = raw.sqlite3_column_decltype(statement, index).utf8_to_string()
+                if not (isNull declared) then
+                    let kind = affinity declared
+                    let fits =
+                        match inner with
+                        | TInt | TBool -> kind = "INTEGER" || kind = "NUMERIC"
+                        // NUMERIC keeps text that is not a number as text (Rails' datetime(6) columns).
+                        | TString -> kind = "TEXT" || kind = "NUMERIC"
+                        | TBytes -> kind = "BLOB"
+                        | _ -> true
+                    if not fits then
+                        errors.Add $"{at}: column {column} is declared {declared} ({kind} affinity) but {row.Name}.{field.Name} is {Types.format field.Type}"
+                    let table = raw.sqlite3_column_table_name(statement, index).utf8_to_string()
+                    let origin = raw.sqlite3_column_origin_name(statement, index).utf8_to_string()
+                    if not optional && not (isNull table) && not (isNull origin) then
+                        let mutable dataType: string = null
+                        let mutable collation: string = null
+                        let mutable notNull = 0
+                        let mutable primaryKey = 0
+                        let mutable autoIncrement = 0
+                        let databaseName = raw.sqlite3_column_database_name(statement, index).utf8_to_string()
+                        if raw.sqlite3_table_column_metadata(db, databaseName, table, origin, &dataType, &collation, &notNull, &primaryKey, &autoIncrement) = raw.SQLITE_OK then
+                            // INTEGER PRIMARY KEY is the rowid: never NULL.
+                            let rowid = primaryKey <> 0 && String.Equals(dataType, "INTEGER", StringComparison.OrdinalIgnoreCase)
+                            if notNull = 0 && not rowid then
+                                errors.Add $"{at}: column {table}.{origin} may be NULL but {row.Name}.{field.Name} is {Types.format field.Type}; make it Option<{Types.format field.Type}> or the column NOT NULL"
+
     type Result =
         { Errors: string list
           Checked: int
@@ -154,6 +228,11 @@ module SqlCheck =
     /// Checks every site against schema.sql. `statementLimit` is the native host's
     /// per-worker prepared-statement table (FH_DB_STATEMENTS).
     let run (schemaPath: string) (sources: (string * string) list) (statementLimit: int) =
+        let rowRecords =
+            sources
+            |> List.collect (fun (path, source) -> records path source)
+            |> List.map (fun record -> record.Name, record)
+            |> Map.ofList
         let db = openMemory ()
         try
             exec db (File.ReadAllText schemaPath)
@@ -199,10 +278,13 @@ module SqlCheck =
                         | _ -> ()
                         let readonly = raw.sqlite3_stmt_readonly statement <> 0
                         let columnCount = raw.sqlite3_column_count statement
-                        if site.Operation = "db.query" && not readonly then
-                            errors.Add $"{at}: the statement writes, but db.query is declared db.read; use db.execute"
+                        if (site.Operation = "db.query" || site.Operation = "db.rows") && not readonly then
+                            errors.Add $"{at}: the statement writes, but {site.Operation} is declared db.read; use db.execute"
                         if site.Operation = "db.query" && columnCount = 0 then
                             errors.Add $"{at}: the statement returns no columns; use db.execute"
+                        match site.RowType |> Option.bind rowRecords.TryFind with
+                        | Some row -> checkRows db statement $"{at}<{row.Name}>" row errors
+                        | None -> ()
                         if site.Operation = "db.execute" && columnCount > 0 && readonly then
                             errors.Add $"{at}: the statement only reads rows; use db.query"
                         raw.sqlite3_finalize(statement) |> ignore

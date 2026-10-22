@@ -615,6 +615,8 @@ module LlvmAot =
                 | IrOperation.Continue -> ()
                 | IrOperation.MakeEnumCase(call, _, _) -> add call
                 | IrOperation.HtmlTemplate _
+                | IrOperation.DbParams _
+                | IrOperation.DbDecode _
                 | IrOperation.Constant _
                 | IrOperation.ListEmpty _
                 | IrOperation.ListSingleton _
