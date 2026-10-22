@@ -290,6 +290,39 @@ static void al_owning_poison(al_owning_stack_context *ctx, uint32_t offset,
 typedef uint8_t al_owning_chunk16
     __attribute__((vector_size(16), aligned(1), may_alias));
 
+/* Little-endian integers at a byte pointer. Indexing through the pointer (not
+ * base[offset + k] with a 32-bit offset, which could wrap) lets the compiler
+ * merge the bytes into one load or store on little-endian targets (report 310). */
+static uint32_t al_owning_le32_at(const uint8_t *p) {
+  return (uint32_t)p[0] | ((uint32_t)p[1] << 8u) | ((uint32_t)p[2] << 16u) |
+         ((uint32_t)p[3] << 24u);
+}
+
+static uint64_t al_owning_le64_at(const uint8_t *p) {
+  return (uint64_t)p[0] | ((uint64_t)p[1] << 8u) | ((uint64_t)p[2] << 16u) |
+         ((uint64_t)p[3] << 24u) | ((uint64_t)p[4] << 32u) |
+         ((uint64_t)p[5] << 40u) | ((uint64_t)p[6] << 48u) |
+         ((uint64_t)p[7] << 56u);
+}
+
+static void al_owning_put_le32_at(uint8_t *p, uint32_t value) {
+  p[0] = (uint8_t)value;
+  p[1] = (uint8_t)(value >> 8u);
+  p[2] = (uint8_t)(value >> 16u);
+  p[3] = (uint8_t)(value >> 24u);
+}
+
+static void al_owning_put_le64_at(uint8_t *p, uint64_t value) {
+  p[0] = (uint8_t)value;
+  p[1] = (uint8_t)(value >> 8u);
+  p[2] = (uint8_t)(value >> 16u);
+  p[3] = (uint8_t)(value >> 24u);
+  p[4] = (uint8_t)(value >> 32u);
+  p[5] = (uint8_t)(value >> 40u);
+  p[6] = (uint8_t)(value >> 48u);
+  p[7] = (uint8_t)(value >> 56u);
+}
+
 static void al_owning_bytes_copy(uint8_t *destination, const uint8_t *source,
                                  uint32_t byte_count) {
   uint32_t index = 0u;
@@ -629,10 +662,7 @@ const uint8_t *al_owning_foreign_bytes(al_owning_stack_context *ctx,
                           ctx->cursor_bytes);
     return ctx->stack_data;
   }
-  length = (uint32_t)ctx->stack_data[offset] |
-           ((uint32_t)ctx->stack_data[offset + 1u] << 8) |
-           ((uint32_t)ctx->stack_data[offset + 2u] << 16) |
-           ((uint32_t)ctx->stack_data[offset + 3u] << 24);
+  length = al_owning_le32_at(ctx->stack_data + offset);
   if (length > ctx->cursor_bytes - offset - 8u) {
     al_owning_set_failure(ctx, AL_OWNING_STATUS_INTERNAL, error_id, length,
                           ctx->cursor_bytes - offset - 8u);
@@ -655,19 +685,13 @@ int32_t al_owning_check_initialized(al_owning_stack_context *ctx,
 #endif
 
 int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset) {
-  uint64_t result = 0u;
-  uint32_t index;
   if (al_owning_check_initialized(ctx, offset, 8u) != 0)
     return 0;
-  for (index = 0u; index < 8u; ++index)
-    result |= (uint64_t)ctx->stack_data[offset + index] << (index * 8u);
-  return (int64_t)result;
+  return (int64_t)al_owning_le64_at(ctx->stack_data + offset);
 }
 
 void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
                          int64_t value, uint32_t type_id) {
-  uint64_t bits = (uint64_t)value;
-  uint32_t index;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return;
   if (!al_owning_range_valid(ctx, offset, 8u) ||
@@ -676,9 +700,7 @@ void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
                           ctx->cursor_bytes);
     return;
   }
-  for (index = 0u; index < 8u; ++index) {
-    ctx->stack_data[offset + index] = (uint8_t)(bits >> (index * 8u));
-  }
+  al_owning_put_le64_at(ctx->stack_data + offset, (uint64_t)value);
   al_owning_mark(ctx, offset, 8u, 1, 0);
   al_owning_event(ctx, AL_OWNING_EVENT_ALLOCATE, type_id, offset, 8u, 8u, 0u,
                   0u, 0u);
@@ -1016,22 +1038,16 @@ static int32_t al_owning_scan_readable_in_owner(
 }
 
 static uint32_t al_owning_read_u32_le(const uint8_t *bytes, uint32_t offset) {
-  return (uint32_t)bytes[offset] | ((uint32_t)bytes[offset + 1u] << 8u) |
-         ((uint32_t)bytes[offset + 2u] << 16u) |
-         ((uint32_t)bytes[offset + 3u] << 24u);
+  return al_owning_le32_at(bytes + offset);
 }
 
 static uint64_t al_owning_read_u64_le(const uint8_t *bytes, uint32_t offset) {
-  return (uint64_t)al_owning_read_u32_le(bytes, offset) |
-         ((uint64_t)al_owning_read_u32_le(bytes, offset + 4u) << 32u);
+  return al_owning_le64_at(bytes + offset);
 }
 
 static void al_owning_write_u32_le(uint8_t *bytes, uint32_t offset,
                                    uint32_t value) {
-  bytes[offset] = (uint8_t)value;
-  bytes[offset + 1u] = (uint8_t)(value >> 8u);
-  bytes[offset + 2u] = (uint8_t)(value >> 16u);
-  bytes[offset + 3u] = (uint8_t)(value >> 24u);
+  al_owning_put_le32_at(bytes + offset, value);
 }
 
 typedef struct al_owning_scan_target {
@@ -3475,13 +3491,87 @@ static const char *al_owning_html_escape_entity(uint32_t unit) {
   }
 }
 
+/* Nonzero when some byte of the 8 in word is an HTML special (& ' < > "): the
+ * zero-byte test on word XOR each special, which is exact for "some byte
+ * matches" though not for which one. Byte order does not matter (report 310). */
+static uint64_t al_owning_html_word_special(uint64_t word) {
+  const uint64_t ones = 0x0101010101010101ull;
+  uint64_t found = 0ull;
+  uint64_t x;
+  x = word ^ (ones * 0x26u);
+  found |= (x - ones) & ~x;
+  x = word ^ (ones * 0x27u);
+  found |= (x - ones) & ~x;
+  x = word ^ (ones * 0x3Cu);
+  found |= (x - ones) & ~x;
+  x = word ^ (ones * 0x3Eu);
+  found |= (x - ones) & ~x;
+  x = word ^ (ones * 0x22u);
+  found |= (x - ones) & ~x;
+  return found & 0x8080808080808080ull;
+}
+
+/* The bytes escaping data[0..length) adds. Eight bytes with no special are
+ * passed in one test; a word with one is read a byte at a time. */
+static uint64_t al_owning_html_escape_extra_total(const uint8_t *data,
+                                                  uint32_t length) {
+  uint64_t extra = 0ull;
+  uint32_t index = 0u;
+  while (index < length) {
+    const uint32_t stop = length - index >= 8u ? index + 8u : length;
+    if (stop - index == 8u &&
+        al_owning_html_word_special(al_owning_le64_at(data + index)) == 0ull) {
+      index = stop;
+      continue;
+    }
+    for (; index < stop; ++index) {
+      if (al_owning_html_is_special(data[index]))
+        extra += al_owning_html_escape_extra(data[index]);
+    }
+  }
+  return extra;
+}
+
+/* Escapes source[0..length) into destination (Rails ERB::Util.html_escape) and
+ * returns the bytes written; runs between specials are range-copied once, and
+ * runs are found eight bytes at a time as above. */
+static uint32_t al_owning_html_escape_into(uint8_t *destination,
+                                           const uint8_t *source,
+                                           uint32_t length) {
+  uint32_t written = 0u;
+  uint32_t run_start = 0u;
+  uint32_t index = 0u;
+  while (index < length) {
+    const uint32_t stop = length - index >= 8u ? index + 8u : length;
+    if (stop - index == 8u &&
+        al_owning_html_word_special(al_owning_le64_at(source + index)) == 0ull) {
+      index = stop;
+      continue;
+    }
+    for (; index < stop; ++index) {
+      const uint32_t unit = source[index];
+      if (al_owning_html_is_special(unit)) {
+        const char *entity = al_owning_html_escape_entity(unit);
+        al_owning_bytes_copy(destination + written, source + run_start,
+                             index - run_start);
+        written += index - run_start;
+        while (*entity != '\0')
+          destination[written++] = (uint8_t)*entity++;
+        run_start = index + 1u;
+      }
+    }
+  }
+  al_owning_bytes_copy(destination + written, source + run_start,
+                       length - run_start);
+  return written + (length - run_start);
+}
+
 int32_t al_owning_string_html_escape_plan(
     al_owning_stack_context *ctx, uint32_t offset, uint32_t extent_bytes,
     uint32_t error_id, uint32_t *out_string_bytes, uint32_t *out_payload_bytes,
     uint32_t *out_extent_bytes) {
   uint32_t units;
   uint32_t ignored_payload;
-  uint32_t index;
   uint64_t escaped_units = 0ull;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
@@ -3492,12 +3582,8 @@ int32_t al_owning_string_html_escape_plan(
   if (!al_owning_string_scan_stack_exact(ctx, offset, extent_bytes, error_id,
                                          &units, &ignored_payload))
     return 1;
-  escaped_units = units;
-  for (index = 0u; index < units; ++index) {
-    const uint32_t unit = ctx->stack_data[offset + 8u + index];
-    if (al_owning_html_is_special(unit))
-      escaped_units += al_owning_html_escape_extra(unit);
-  }
+  escaped_units = units + al_owning_html_escape_extra_total(
+                              ctx->stack_data + offset + 8u, units);
   if (!al_owning_string_result_plan(ctx, escaped_units, error_id,
                                     out_string_bytes, out_payload_bytes,
                                     out_extent_bytes))
@@ -3514,8 +3600,6 @@ int32_t al_owning_string_html_escape_write(
   uint32_t extent;
   uint32_t units;
   uint32_t cursor;
-  uint32_t index;
-  uint32_t run_start;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK)
     return 1;
   if (al_owning_string_html_escape_plan(ctx, offset, extent_bytes, error_id,
@@ -3528,25 +3612,8 @@ int32_t al_owning_string_html_escape_write(
                                      error_id))
     return 1;
   cursor = destination_offset + 8u;
-  run_start = 0u;
-  for (index = 0u; index < units; ++index) {
-    const uint32_t unit = ctx->stack_data[offset + 8u + index];
-    if (al_owning_html_is_special(unit)) {
-      const char *entity = al_owning_html_escape_entity(unit);
-      const uint32_t run_bytes = index - run_start;
-      al_owning_bytes_copy(ctx->stack_data + cursor,
-                           ctx->stack_data + offset + 8u + run_start,
-                           run_bytes);
-      cursor += run_bytes;
-      while (*entity != '\0')
-        ctx->stack_data[cursor++] = (uint8_t)*entity++;
-      run_start = index + 1u;
-    }
-  }
-  al_owning_bytes_copy(ctx->stack_data + cursor,
-                       ctx->stack_data + offset + 8u + run_start,
-                       units - run_start);
-  cursor += units - run_start;
+  cursor += al_owning_html_escape_into(ctx->stack_data + cursor,
+                                       ctx->stack_data + offset + 8u, units);
   al_owning_string_result_finish(ctx, destination_offset, cursor, payload,
                                  extent, type_id);
   return 0;
@@ -3892,31 +3959,6 @@ int32_t al_owning_string_html_fragment(al_owning_stack_context *ctx,
   return 0;
 }
 
-/* Escapes source[0..length) into destination (Rails ERB::Util.html_escape) and
- * returns the bytes written; runs between specials are range-copied once. */
-static uint32_t al_owning_html_escape_into(uint8_t *destination,
-                                           const uint8_t *source,
-                                           uint32_t length) {
-  uint32_t written = 0u;
-  uint32_t run_start = 0u;
-  uint32_t index;
-  for (index = 0u; index < length; ++index) {
-    const uint32_t unit = source[index];
-    if (al_owning_html_is_special(unit)) {
-      const char *entity = al_owning_html_escape_entity(unit);
-      al_owning_bytes_copy(destination + written, source + run_start,
-                           index - run_start);
-      written += index - run_start;
-      while (*entity != '\0')
-        destination[written++] = (uint8_t)*entity++;
-      run_start = index + 1u;
-    }
-  }
-  al_owning_bytes_copy(destination + written, source + run_start,
-                       length - run_start);
-  return written + (length - run_start);
-}
-
 /* Decimal digits of an Int template hole (mode 4, report 302): the sign and
  * digits written backwards into out[20], returning the first used index. */
 static uint32_t al_owning_int_digits(int64_t value, uint8_t out[20]) {
@@ -3974,7 +4016,6 @@ int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
     } else {
       uint32_t units;
       uint32_t ignored_payload;
-      uint32_t unit_index;
       if ((part->mode != 1u && part->mode != 2u) ||
           !al_owning_string_scan_stack_exact(ctx, part->offset_or_length,
                                              part->extent_bytes, error_id,
@@ -3985,13 +4026,9 @@ int32_t al_owning_html_template_plan(al_owning_stack_context *ctx,
         return 1;
       }
       total += units;
-      if (part->mode == 2u) {
-        const uint8_t *data = ctx->stack_data + part->offset_or_length + 8u;
-        for (unit_index = 0u; unit_index < units; ++unit_index) {
-          if (al_owning_html_is_special(data[unit_index]))
-            total += al_owning_html_escape_extra(data[unit_index]);
-        }
-      }
+      if (part->mode == 2u)
+        total += al_owning_html_escape_extra_total(
+            ctx->stack_data + part->offset_or_length + 8u, units);
     }
   }
   if (!al_owning_string_result_plan(ctx, total, error_id, out_string_bytes,
