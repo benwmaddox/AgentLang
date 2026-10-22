@@ -186,6 +186,11 @@ int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset);
 int64_t al_owning_string_next_byte(al_owning_stack_context *ctx,
                                    uint32_t text_offset, uint32_t set_offset,
                                    int64_t from, int32_t wanted);
+/* The same with set's 256-bit byte table computed by the compiler (a literal set). */
+int64_t al_owning_string_next_byte_table(al_owning_stack_context *ctx,
+                                         uint32_t text_offset, uint64_t t0,
+                                         uint64_t t1, uint64_t t2, uint64_t t3,
+                                         int64_t from, int32_t wanted);
 void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
                          int64_t value, uint32_t type_id);
 void al_owning_store_token(al_owning_stack_context *ctx, uint32_t offset,

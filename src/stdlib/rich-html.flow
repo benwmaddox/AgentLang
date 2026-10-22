@@ -344,7 +344,8 @@ fn rich-html.scan(text: String, links-allowed: Bool) -> Bool {
             ok = ok && rich-html.text-ok-for?(stack, run, links-allowed)
             let closing = string.byte-at-or(text, at + 1, 0) == 47
             // The name is the run of rich-html.name-char? bytes (report 312: one scan).
-            let name-end = string.next-byte-not-in(text, "abcdefghijklmnopqrstuvwxyz0123456789-:", if closing { at + 2 } else { at + 1 })
+            let name-scan = if closing { at + 2 } else { at + 1 }
+            let name-end = string.next-byte-not-in(text, "abcdefghijklmnopqrstuvwxyz0123456789-:", name-scan)
             let name-start = if closing { at + 2 } else { at + 1 }
             let name = match string.slice(text, name-start, name-end - name-start) { none => ""; some s => s }
             if name == "" || bool.not(rich-html.allowed-tag?(name)) {
@@ -921,8 +922,9 @@ fn rich-html.tag(text: String, at: Int) -> HtmlTag {
             } else {
                 // Plain value bytes: jump to the closing quote, the end of an unquoted
                 // value, or the next '&' (report 312).
-                let stops = if state == 6 { " \t\n\f\r>&" } else if quote == 34 { "\"&" } else { "'&" }
-                advance = string.next-byte-in(text, stops, i + 1) - i
+                // Each set is a literal, so native builds get its byte table at compile time.
+                let next = if state == 6 { string.next-byte-in(text, " \t\n\f\r>&", i + 1) } else if quote == 34 { string.next-byte-in(text, "\"&", i + 1) } else { string.next-byte-in(text, "'&", i + 1) }
+                advance = next - i
             }
         } else if state == 7 {
             if rich-html.space?(byte) { state = 1 } else if byte == 47 { state = 8 } else if byte == 62 { stop = i } else { state = 1; advance = 0 }

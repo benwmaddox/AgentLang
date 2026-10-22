@@ -4510,6 +4510,7 @@ module OwningStackAot =
         writer.Line("declare i32 @al_owning_stdlib_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_stdlib_scalar(ptr, i32, i32, i32, i32, i32, i32, ptr)")
         writer.Line("declare i64 @al_owning_string_next_byte(ptr, i32, i32, i64, i32)")
+        writer.Line("declare i64 @al_owning_string_next_byte_table(ptr, i32, i64, i64, i64, i64, i64, i32)")
         writer.Line("declare i64 @al_owning_stdlib_call(ptr, i32, i64, i64, i64, i64, i32, i32)")
         writer.Line("declare i32 @al_owning_string_replace_write(ptr, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32)")
         writer.Line("declare i32 @al_owning_string_join_plan(ptr, i32, i32, i32, ptr, ptr, ptr)")
@@ -5274,6 +5275,10 @@ module OwningStackAot =
         let emitFrameFunction (registerAbi: bool) symbol owner (inputTypes: IrType list) (outputTypes: IrType list) (block: IrBlock) (analysis: ArenaLifetimeBodyAnalysis) (frameSourceMap: Map<SourceSiteId, IrSourceSite>) =
             let plan = buildDynamicFunctionPlan block
             let w = OwningLlvmWriter()
+            // String literals pushed in this function, by the SSA name of their
+            // offset: string.next-byte-in can then take its byte table as compile-time
+            // constants (report 312).
+            let literalStrings = Collections.Generic.Dictionary<string, string>()
             let failBody = w.Label "frame.failure"
             let failEnter = w.Label "frame.enter.failure"
             let frameParameters =
@@ -5987,6 +5992,7 @@ module OwningStackAot =
                         let literalError = addDiagnostic "OWNING_STACK_INTERNAL" "Invalid verified String literal bytes." currentOwner instructionSpan [] []
                         w.Inst($"{status} = call i32 @al_owning_copy_constant(ptr %%ctx, i32 {destination}, ptr {source}, i32 {literalExtent}, i32 {literalPayload}, i32 {literalExtent}, i32 {typeId IrString}, i32 {literalError})")
                         emitStatusResult w status failBody
+                        literalStrings[destination] <- value
                         stack <- push stack IrString destination (string literalExtent) (string literalPayload) next
                     | IrOperation.Constant _ -> invalidOp "Owning validation missed a verified dynamic constant."
                     | IrOperation.LayoutTemplate(layoutKey, _, head, tail) ->
@@ -7749,7 +7755,17 @@ module OwningStackAot =
                                         value
                                 let wanted = if operation = "string.next-byte-in" then 1 else 0
                                 let result = w.Fresh "next.byte.index"
-                                w.Inst($"{result} = call i64 @al_owning_string_next_byte(ptr %%ctx, i32 {text.Offset}, i32 {set.Offset}, i64 {fromValue}, i32 {wanted})")
+                                match literalStrings.TryGetValue set.Offset with
+                                | true, literal ->
+                                    // A literal set: its 256-bit byte table is built here, once,
+                                    // and passed as four constants (report 312).
+                                    let table = Array.zeroCreate<uint64> 4
+                                    for b in utf8Bytes literal do
+                                        table[int b >>> 6] <- table[int b >>> 6] ||| (1UL <<< (int b &&& 63))
+                                    let words = table |> Array.map (fun word -> $"i64 {int64 word}") |> String.concat ", "
+                                    w.Inst($"{result} = call i64 @al_owning_string_next_byte_table(ptr %%ctx, i32 {text.Offset}, {words}, i64 {fromValue}, i32 {wanted})")
+                                | _ ->
+                                    w.Inst($"{result} = call i64 @al_owning_string_next_byte(ptr %%ctx, i32 {text.Offset}, i32 {set.Offset}, i64 {fromValue}, i32 {wanted})")
                                 emitScalarResult IrInt result
                             | ("list.count" | "list.get" | "list.is-empty?") as operation, listEntry :: rest ->
                                 // The count is the list header. list.get finds the element (fixed

@@ -60,7 +60,7 @@ let private valueChecks (runRoot: string) =
     let engine = Runtime.Engine(Path.Combine(runRoot, "flow-engine"), Set.empty, fileSystemMode = FileSystemMode.Virtual)
     let defined = engine.Dispatch("define", flowArgs (File.ReadAllText sourcePath))
     if not (defined["ok"].GetValue<bool>()) then failwith (defined.ToJsonString())
-    for name in [ "native.parity.member?"; "native.parity.literal-sum"; "native.parity.literal-grow"; "native.parity.literal-join"; "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim"; "native.parity.next-in"; "native.parity.next-not-in" ] do
+    for name in [ "native.parity.member?"; "native.parity.literal-sum"; "native.parity.literal-grow"; "native.parity.literal-join"; "native.parity.same?"; "native.parity.same-bytes?"; "native.parity.same-label?"; "native.parity.abs"; "native.parity.min"; "native.parity.max"; "native.parity.empty?"; "native.parity.trim"; "native.parity.next-in"; "native.parity.next-not-in"; "native.parity.next-in-literal"; "native.parity.next-not-in-literal" ] do
         let response = engine.Dispatch("commit", wordArgs name)
         check $"{name} commits: {response.ToJsonString()}" (response["ok"].GetValue<bool>())
     let interpret word inputs outputs values =
@@ -119,6 +119,15 @@ let private valueChecks (runRoot: string) =
             | other -> failwith $"bad case {other}")
         pair "native.parity.next-not-in" [ TString; TString; TInt ] [ TInt ] scanCases (function
             | [ StringValue text; StringValue set; IntValue from ] -> Ok [ IntValue(scan false text set from) ]
+            | other -> failwith $"bad case {other}")
+        // Literal sets: the compiler's byte table must match the runtime's.
+        let literalTexts = scanTexts @ [ "ab-1>"; "\u007f~"; "x" + String('a', 70) + "\u00e9"; "AZaz09-:" ]
+        let literalCases = [ for text in literalTexts do for from in [ -1L; 0L; 1L; 3L; 80L ] -> [ StringValue text; IntValue from ] ]
+        pair "native.parity.next-in-literal" [ TString; TInt ] [ TInt ] literalCases (function
+            | [ StringValue text; IntValue from ] -> Ok [ IntValue(scan true text "<>&\u00e9\u00a0~\u007f" from) ]
+            | other -> failwith $"bad case {other}")
+        pair "native.parity.next-not-in-literal" [ TString; TInt ] [ TInt ] literalCases (function
+            | [ StringValue text; IntValue from ] -> Ok [ IntValue(scan false text "abcdefghijklmnopqrstuvwxyz0123456789-:" from) ]
             | other -> failwith $"bad case {other}")
         let lists = [ []; [ "a" ]; [ ""; "b" ]; [ for k in 1..20 -> string k ] ]
         pair "native.parity.empty?" [ TList TString ] [ TBool ] [ for items in lists -> [ ListValue(TString, items |> List.map StringValue) ] ] (function

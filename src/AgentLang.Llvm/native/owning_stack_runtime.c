@@ -738,31 +738,20 @@ int64_t al_owning_load_i64(al_owning_stack_context *ctx, uint32_t offset) {
   return (int64_t)al_owning_le64_at(ctx->stack_data + offset);
 }
 
-/* report 312: a 256-bit table of set's bytes, then one pass from `from`.
- * Strings are an 8-byte header (u32 length) and their bytes. */
-int64_t al_owning_string_next_byte(al_owning_stack_context *ctx,
-                                   uint32_t text_offset, uint32_t set_offset,
-                                   int64_t from, int32_t wanted) {
-  uint64_t table[4];
+/* report 312: string.next-byte-in / next-byte-not-in over a 256-bit table of
+ * set's bytes (table[b >> 6] bit b & 63). Strings are an 8-byte header (u32
+ * length) and their bytes. */
+static int64_t al_owning_next_byte_scan(al_owning_stack_context *ctx,
+                                        uint32_t text_offset,
+                                        const uint64_t table[4], int64_t from,
+                                        int32_t wanted) {
   const uint8_t *text;
-  const uint8_t *set;
   uint32_t length;
-  uint32_t set_length;
   uint32_t index;
-  uint32_t k;
   if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK || ctx->stack_data == 0)
     return 0;
   length = al_owning_le32_at(ctx->stack_data + text_offset);
-  set_length = al_owning_le32_at(ctx->stack_data + set_offset);
   text = ctx->stack_data + text_offset + 8u;
-  set = ctx->stack_data + set_offset + 8u;
-  /* Four stores, not an initializer: modules link without the C library's memset. */
-  table[0] = 0u;
-  table[1] = 0u;
-  table[2] = 0u;
-  table[3] = 0u;
-  for (k = 0u; k < set_length; ++k)
-    table[set[k] >> 6u] |= 1ull << (set[k] & 63u);
   index = from <= 0 ? 0u : (from >= (int64_t)length ? length : (uint32_t)from);
   if (wanted) {
     while (index < length &&
@@ -774,6 +763,41 @@ int64_t al_owning_string_next_byte(al_owning_stack_context *ctx,
       ++index;
   }
   return (int64_t)index;
+}
+
+/* A set computed at run time: its table is built here. */
+int64_t al_owning_string_next_byte(al_owning_stack_context *ctx,
+                                   uint32_t text_offset, uint32_t set_offset,
+                                   int64_t from, int32_t wanted) {
+  uint64_t table[4];
+  const uint8_t *set;
+  uint32_t set_length;
+  uint32_t k;
+  if (ctx == 0 || ctx->status != AL_OWNING_STATUS_OK || ctx->stack_data == 0)
+    return 0;
+  set_length = al_owning_le32_at(ctx->stack_data + set_offset);
+  set = ctx->stack_data + set_offset + 8u;
+  /* Four stores, not an initializer: modules link without the C library's memset. */
+  table[0] = 0u;
+  table[1] = 0u;
+  table[2] = 0u;
+  table[3] = 0u;
+  for (k = 0u; k < set_length; ++k)
+    table[set[k] >> 6] |= 1ull << (set[k] & 63u);
+  return al_owning_next_byte_scan(ctx, text_offset, table, from, wanted);
+}
+
+/* A literal set: the compiler built its table (report 312). */
+int64_t al_owning_string_next_byte_table(al_owning_stack_context *ctx,
+                                         uint32_t text_offset, uint64_t t0,
+                                         uint64_t t1, uint64_t t2, uint64_t t3,
+                                         int64_t from, int32_t wanted) {
+  uint64_t table[4];
+  table[0] = t0;
+  table[1] = t1;
+  table[2] = t2;
+  table[3] = t3;
+  return al_owning_next_byte_scan(ctx, text_offset, table, from, wanted);
 }
 
 void al_owning_store_i64(al_owning_stack_context *ctx, uint32_t offset,
